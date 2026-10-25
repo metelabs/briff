@@ -1,0 +1,32 @@
+{
+  "action": "added",
+  "installation": {
+    "id": 2311213,
+    "node_id": "MDIzOkludGVncmF0aW9uSW5zdGFsbGF0aW9uMjMxMTIxMw==",
+    "account": { "login": "acme", "id": 9001, "type": "Organization" },
+    "repository_selection": "selected",
+    "app_id": 1,
+    "app_slug": "briff",
+    "target_type": "Organization"
+  },
+  "repository_selection": "selected",
+  "repositories_added": [
+    {
+      "id": 186853101,
+      "node_id": "MDEwOlJlcG9zaXRvcnkxODY4NTMxMDE=",
+      "name": "shop",
+      "full_name": "acme/shop",
+      "private": true
+    },
+    {
+      "id": 186853102,
+      "node_id": "MDEwOlJlcG9zaXRvcnkxODY4NTMxMDI=",
+      "name": "docs",
+      "full_name": "acme/docs",
+      "private": false
+    }
+  ],
+  "repositories_removed": [],
+  "requester": null,
+  "sender": { "login": "octocat", "id": 1 }
+}

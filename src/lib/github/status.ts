@@ -22,7 +22,10 @@ export const GITHUB_FLOW_MESSAGES: Record<GithubFlowStatus, { ok: boolean; text:
     ok: true,
     text: "GitHub connected. Briff is scanning your repos; they appear here within a minute.",
   },
-  updated: { ok: true, text: "Repo selection updated. Briff is scanning again." },
+  updated: {
+    ok: true,
+    text: "Repo selection updated. Briff scans the repos you added as soon as GitHub reports them.",
+  },
   requested: {
     ok: true,
     text: "Install requested. Once an owner of the GitHub organisation approves it, connect GitHub again.",

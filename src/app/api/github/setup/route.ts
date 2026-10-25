@@ -4,7 +4,7 @@ import { getOrgContext } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { getEnv } from "@/lib/env";
 import { githubAppConfig } from "@/lib/github/config";
-import { enqueueGithubScan, reposUrl } from "@/lib/github/flow";
+import { reposUrl } from "@/lib/github/flow";
 import { findInstallation } from "@/lib/github/installations";
 import { signState, verifyState } from "@/lib/github/state";
 import { log } from "@/lib/log";
@@ -26,11 +26,11 @@ export async function GET(request: Request): Promise<Response> {
   if (!/^\d{1,20}$/.test(installationId)) return Response.redirect(reposUrl("invalid-state"), 303);
   const db = getDb();
   const linked = await findInstallation(db, installationId);
-  // A change of repo selection on GitHub ("Redirect on update") carries no state of ours; an
-  // installation already linked to this org only gets a rescan (webhooks do the rest).
+  // A change of repo selection on GitHub ("Redirect on update") carries no state of ours. The
+  // `installation_repositories` webhook owns the scan: it names exactly the repos added (and
+  // removed), so queueing a full rescan here as well scanned the same repos twice.
   if (linked?.orgId === ctx.orgId) {
-    await enqueueGithubScan(db, { installationId, force: true });
-    log.info({ orgId: ctx.orgId, installationId }, "github: installation updated, scan queued");
+    log.info({ orgId: ctx.orgId, installationId }, "github: installation updated");
     return Response.redirect(reposUrl("updated"), 303);
   }
   const secret = getEnv().BETTER_AUTH_SECRET;
