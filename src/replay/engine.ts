@@ -1,8 +1,7 @@
 import { renderUrgentEmail } from "@/lib/email/alert-email";
 import { renderBulletinEmail } from "@/lib/email/bulletin-email";
 import { PRODUCT_LANGUAGE, strings } from "@/lib/i18n";
-import { matchItem, type MatchSource, type OrgStack } from "@/lib/match/matcher";
-import { runtimesOf } from "@/lib/match/stack";
+import { matchItem, runtimesOf, type MatchSource, type OrgStack } from "@/lib/match/matcher";
 import { RUNTIME_SECURITY_REASON, type RuntimeItemMeta } from "@/lib/runtime-security";
 import {
   assembleBulletin,
@@ -29,8 +28,8 @@ import {
   runtimeMetaFor,
   selectRuntimeWork,
   type StoredRuntimeMatch,
-} from "@/pipeline/runtime-urgent";
-import { RULE_MODEL } from "@/pipeline/triage";
+} from "@/pipeline/runtime-urgent-plan";
+import { RULE_MODEL } from "@/pipeline/triage-rule";
 import { ruleMinorReason } from "@/pipeline/versions";
 import { parseWeights } from "@/pipeline/weights";
 import { mergeRuntimes, parseRuntimeFile, runtimeFileKind, UNKNOWN_IMAGE } from "@scan/runtimes";

@@ -4,39 +4,13 @@ import type { PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
 import { serviceByKey, serviceForPackage } from "@/lib/services";
 
-import { UNKNOWN_IMAGE } from "@scan/runtimes";
-
 import {
+  runtimesOf,
   stackPackageKey,
   type OrgStack,
   type StackPackage,
-  type StackRuntime,
   type StackService,
 } from "./matcher";
-
-interface RuntimeRow {
-  repoId: string;
-  name: string;
-  version: string;
-  normalized: string | null;
-}
-
-/** Groups runtime rows by runtime id; unmapped `image` rows are not runtimes. */
-export function runtimesOf(rows: readonly RuntimeRow[]): Map<string, StackRuntime> {
-  const runtimes = new Map<string, StackRuntime>();
-  for (const row of rows) {
-    if (row.name === UNKNOWN_IMAGE) continue;
-    const runtime = runtimes.get(row.name) ?? {
-      name: row.name,
-      versions: new Set<string>(),
-      repoIds: new Set<string>(),
-    };
-    runtime.versions.add(row.normalized ?? row.version);
-    runtime.repoIds.add(row.repoId);
-    runtimes.set(row.name, runtime);
-  }
-  return runtimes;
-}
 
 /** Builds each org's stack (or the given orgs') from all scanned repos (inclusion is applied at bulletin time). */
 export async function loadOrgStacks(db: PrismaClient, orgIds?: string[]): Promise<OrgStack[]> {

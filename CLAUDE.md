@@ -257,7 +257,8 @@ Checks before a PR: `npm run typecheck && npm run lint && npm test`. DB-backed t
   payload) fetches all. Runtime sources (`RUNTIME_SOURCES` in `src/sources/curated.ts`) carry
   `runtime` and a class; `github_advisories` sources read `GET /repos/{o}/{r}/security-advisories`
   through `fetchWithRetry` (fixed host, `GITHUB_TOKEN` when set, ETag).
-- Deterministic runtime urgent path (collect-sources, no LLM, `src/pipeline/runtime-urgent.ts`):
+- Deterministic runtime urgent path (collect-sources, no LLM, `src/pipeline/runtime-urgent-plan.ts`
+  pure planning shared with the replay, `runtime-urgent.ts` the DB/email pass):
   new items of a `security` source with a runtime that are advisories or match the security
   pattern get `Item.metadata` (CVEs, severity, fixed versions, `lineSpecific`, `scheduledAt`) and a
   rule `ItemTriage` (`security`, reason `runtime-security`, model `rule`; only items of the last

@@ -101,7 +101,7 @@ that runtime (`runtime:<id>` match, score 1.0). GitHub advisory repos were check
 
 ## Runtime security items (deterministic, no LLM)
 
-`src/lib/runtime-security.ts`, `src/pipeline/runtime-urgent.ts`, `src/pipeline/runtime-fixes.ts`.
+`src/lib/runtime-security.ts`, `src/pipeline/runtime-urgent-plan.ts` (pure) + `runtime-urgent.ts` (DB, email), `src/pipeline/runtime-fixes.ts`.
 
 - A **runtime security item** is a new item of a `security` source with a `runtime`: every GitHub
   advisory, and a feed post whose title says security / `CVE-` / vulnerab / advisory / out-of-cycle

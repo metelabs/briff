@@ -11,11 +11,8 @@ import { importGraph, runtimeImports } from "./import-graph";
 // page for `/` must not be able to read a session or tenant data. Walk their runtime imports
 // and fail on anything that opens the database, the auth layer, the request's cookies or a
 // Server Action module. Like the "use server" check next door, this reads source, not a build.
-//
-// One tenant-layer file is reachable on purpose: `withOrg` (src/lib/db/with-org.ts), through
-// pipeline modules the replay engine shares with the worker (runtime-urgent.ts, stack.ts keep
-// their pure planning next to their DB step). withOrg only wraps a client its caller passes;
-// with `getDb` (src/lib/db/client.ts) and the Prisma client unreachable, there is no client.
+// The replay engine shares pure planning with the worker (runtime-urgent-plan.ts, matcher.ts,
+// triage-rule.ts); the DB-bound halves next to them stay out of reach.
 
 const ROOT = path.resolve(__dirname, "../..");
 
@@ -29,10 +26,7 @@ const ENTRIES = [
 
 /** Modules a public route may not reach, with why. */
 const FORBIDDEN: { test: (mod: string) => boolean; why: string }[] = [
-  {
-    test: (m) => m.startsWith("src/lib/db/") && m !== "src/lib/db/with-org.ts",
-    why: "database client",
-  },
+  { test: (m) => m.startsWith("src/lib/db/"), why: "database client or tenant layer" },
   { test: (m) => m.startsWith("src/lib/auth/"), why: "session" },
   { test: (m) => m.startsWith("src/generated/"), why: "Prisma client" },
   { test: (m) => /^(@prisma\/|pg$)/.test(m), why: "database driver" },

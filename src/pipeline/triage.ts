@@ -15,6 +15,7 @@ import {
   triageOutputSchema,
   type TriageDecision,
 } from "./triage-schema";
+import { RULE_MODEL, RULE_VERSION } from "./triage-rule";
 import { ruleMinorReason } from "./versions";
 
 // triage-items (plan §7.5): only items that the deterministic matcher tied to an
@@ -86,9 +87,7 @@ export async function classifyBatch(
   return { decisions: interpretTriage(refs, res.data), usage: res.usage, model: res.model };
 }
 
-/** Triage rows written by a rule rather than the model carry these instead of a model id. */
-export const RULE_MODEL = "rule";
-export const RULE_VERSION = "rule-v1";
+export { RULE_MODEL, RULE_VERSION };
 
 /**
  * Pre-release and commit-sha tag titles are minor by rule: they never become

@@ -10,7 +10,7 @@ import {
   selectRuntimeWork,
   type PendingRuntimeMatch,
   type StoredRuntimeMatch,
-} from "./runtime-urgent";
+} from "./runtime-urgent-plan";
 
 const security = { class: "security", runtime: "php", kind: "rss" };
 

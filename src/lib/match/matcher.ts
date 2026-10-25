@@ -4,6 +4,8 @@
 // mention of one of its direct packages/services.
 // Triage (next PR) refines what reaches the bulletin.
 
+import { UNKNOWN_IMAGE } from "@scan/runtimes";
+
 export interface StackPackage {
   packageId: string;
   /** `Package.ecosystem`; absent in older test stacks, which are npm. */
@@ -26,6 +28,31 @@ export interface StackRuntime {
   /** Normalised versions (or raw ones when none was derivable) across the org's repos. */
   versions: Set<string>;
   repoIds: Set<string>;
+}
+
+/** A repo's declared runtime as stored (`RepoRuntime`). */
+export interface RuntimeStackRow {
+  repoId: string;
+  name: string;
+  version: string;
+  normalized: string | null;
+}
+
+/** Groups runtime rows by runtime id; unmapped `image` rows are not runtimes. */
+export function runtimesOf(rows: readonly RuntimeStackRow[]): Map<string, StackRuntime> {
+  const runtimes = new Map<string, StackRuntime>();
+  for (const row of rows) {
+    if (row.name === UNKNOWN_IMAGE) continue;
+    const runtime = runtimes.get(row.name) ?? {
+      name: row.name,
+      versions: new Set<string>(),
+      repoIds: new Set<string>(),
+    };
+    runtime.versions.add(row.normalized ?? row.version);
+    runtime.repoIds.add(row.repoId);
+    runtimes.set(row.name, runtime);
+  }
+  return runtimes;
 }
 
 /**
