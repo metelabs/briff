@@ -659,8 +659,9 @@ model Feedback {
   tag       String?
   createdAt DateTime     @default(now())
 
-  @@unique([userId, itemId])
-  @@index([orgId])
+  // One rating per user and item in each org: a user in two orgs rates an item in both.
+  @@unique([orgId, userId, itemId])
+  @@index([userId])
   @@map("feedback")
 }
 
