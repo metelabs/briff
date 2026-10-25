@@ -106,6 +106,23 @@ describe("planWebhook: installation events", () => {
     ).toEqual([{ kind: "remove", installationId: "2311213", repos: ["acme/a"] }]);
   });
 
+  it("scans exactly the repos a recorded installation_repositories delivery adds", () => {
+    const added = JSON.parse(
+      readFileSync(
+        path.join(__dirname, "__fixtures__", "events", "installation_repositories.json"),
+        "utf8"
+      )
+    ) as unknown;
+    expect(planWebhook("installation_repositories", added)).toEqual([
+      {
+        kind: "scan",
+        installationId: "2311213",
+        repos: ["acme/shop", "acme/docs"],
+        reason: "repositories added",
+      },
+    ]);
+  });
+
   it("ignores other events and throws on payloads it cannot read", () => {
     expect(planWebhook("ping", {})[0].kind).toBe("ignore");
     expect(planWebhook("issues", {})[0].kind).toBe("ignore");

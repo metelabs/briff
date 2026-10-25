@@ -66,7 +66,8 @@ one-time OAuth check is used once and dropped. What leaves Briff afterwards is l
   exchanges the code and links the installation only if `GET /user/installations` for that
   GitHub user contains it. An installation belongs to exactly one Briff org
   (`GithubInstallation.installationId` is unique). A change of repo selection on an
-  installation already linked to your org ("Redirect on update") just rescans.
+  installation already linked to your org ("Redirect on update") only shows a confirmation;
+  the `installation_repositories` webhook scans the added repos, so they are scanned once.
 - **Scan** (`github-scan` job, `src/lib/github/scan.ts`): one scan session per job (`scanId`,
   `final` on the last upload), so the runtime urgent pass runs once afterwards, as for a CLI
   run. On a rate limit the repos read so far are stored and the rest are scanned again at
