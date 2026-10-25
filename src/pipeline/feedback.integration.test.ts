@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "@/generated/prisma/client";
+import { withOrg } from "@/lib/db/with-org";
 
 import { recordFeedback } from "./feedback";
 
@@ -29,8 +30,9 @@ describe.skipIf(!url)("recordFeedback against Postgres", () => {
       })
     ).id;
     orgC = (await db.org.create({ data: { name: `c-${suffix}` } })).id;
-    await db.orgMember.create({ data: { orgId: orgA, userId } });
-    await db.orgMember.create({ data: { orgId: orgC, userId } });
+    for (const orgId of [orgA, orgC]) {
+      await withOrg(db, orgId).orgMember.create({ data: { orgId, userId } });
+    }
     packageId = (await db.package.create({ data: { ecosystem: "npm", name: `pkg-${suffix}` } })).id;
     sourceId = (
       await db.source.create({
@@ -43,7 +45,7 @@ describe.skipIf(!url)("recordFeedback against Postgres", () => {
       })
     ).id;
     for (const orgId of [orgA, orgC]) {
-      await db.itemMatch.create({
+      await withOrg(db, orgId).itemMatch.create({
         data: { orgId, itemId, packageId, reason: "release", score: 1 },
       });
     }
@@ -88,10 +90,11 @@ describe.skipIf(!url)("recordFeedback against Postgres", () => {
   });
 
   it("keeps one rating per org when the same user rates the same item in two orgs", async () => {
-    const rows = (orgId: string) => db.feedback.findMany({ where: { orgId, userId, itemId } });
+    const rows = (orgId: string) =>
+      withOrg(db, orgId).feedback.findMany({ where: { userId, itemId } });
     const weight = async (orgId: string) =>
       (
-        ((await db.interestProfile.findUnique({ where: { orgId } }))?.weights ?? {}) as Record<
+        ((await withOrg(db, orgId).interestProfile.findFirst())?.weights ?? {}) as Record<
           string,
           number
         >
