@@ -103,8 +103,8 @@ function upgradesHtml(item: BulletinViewItem, margin: string): string {
 function actCard(item: BulletinViewItem, t: Strings, detailsUrl: string): string {
   const top = kicker(item, t);
   const also = alsoLine(item, t);
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.bg}" class="b-card${topBorderClass(item)}" style="border-collapse:separate;margin:0 0 12px;background:${C.bg};border:1px solid ${C.border};${topClass(item)}border-radius:14px;">
-<tr><td class="b-card b-text" bgcolor="${C.bg}" style="padding:16px 16px 14px;background:${C.bg};color:${C.text};border-radius:14px;">
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.bg}" class="b-card m-flat m-fixed${topBorderClass(item)}" style="border-collapse:separate;margin:0 0 12px;background:${C.bg};border:1px solid ${C.border};${topClass(item)}border-radius:14px;">
+<tr><td class="b-card b-text m-flat-cell" bgcolor="${C.bg}" style="padding:16px 16px 14px;background:${C.bg};color:${C.text};border-radius:14px;">
 ${top ? `<div style="margin:0 0 8px;">${tag(top, item.bucket === "security" ? "sec" : "upgrade")}</div>` : ""}
 <div class="b-text" style="font-family:${DISPLAY};font-size:19px;line-height:1.25;font-weight:600;letter-spacing:-0.01em;color:${C.text};margin:0;">${esc(item.headline)}</div>
 ${item.line ? `<div class="b-muted" style="font-size:14px;line-height:1.5;color:${C.muted};margin:8px 0 0;">${esc(item.line)}</div>` : ""}

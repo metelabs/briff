@@ -11,6 +11,8 @@ import { caps } from "@/lib/i18n";
 //   every table and cell carries an explicit `bgcolor` attribute and every text element an
 //   inline `color`, no surface is pure #fff or #000 (those invert to harsh edges), and the
 //   logo is a white-on-petrol tile with transparent corners that reads on any background.
+// Phone width (mobileCss): the frame's padding shrinks and item cards flatten into stacked
+// sections so text gets the width back; inline styles stay the desktop look.
 // No web fonts are loaded: Bricolage Grotesque / Geist are named first and fall back to the
 // system stack.
 
@@ -125,6 +127,32 @@ ${ogsb.join("\n")}
 ${ogsc.join("\n")}`;
 }
 
+/** Viewport width at and below which the phone layout applies. */
+export const MOBILE_MAX_WIDTH = 480;
+
+/**
+ * Phone layout, by `m-*` class: the page and frame paddings shrink, `m-flat` cards lose
+ * their side and bottom borders, radius, margin and side padding and become sections under
+ * their top rule (a hairline, or the 3px security / deadline colour), inset boxes keep 8px,
+ * and `m-cmd` commands scroll sideways instead of breaking inside a token (the tables around
+ * one are `m-fixed`; auto layout would widen to the unbroken line). Class selectors only, in
+ * a <style> block of its own: Gmail drops a whole block over a rule it rejects, and this one
+ * must survive next to the dark palette's attribute selectors. Clients that strip <style>
+ * entirely keep the inline desktop layout.
+ */
+export function mobileCss(): string {
+  return `
+@media only screen and (max-width: ${MOBILE_MAX_WIDTH}px){
+  .m-fixed{table-layout:fixed !important}
+  .m-page{padding:16px 8px 32px !important}
+  .m-frame{padding:18px 12px !important}
+  .m-flat{border-left-width:0 !important;border-right-width:0 !important;border-bottom-width:0 !important;border-radius:0 !important;margin:0 !important}
+  .m-flat-cell{padding:14px 0 16px !important;border-radius:0 !important}
+  .m-inset{padding:8px !important}
+  .m-cmd{padding:8px !important;white-space:pre !important;overflow-x:auto !important;word-break:normal !important;overflow-wrap:normal !important}
+}`;
+}
+
 /**
  * Email header logo (docs/DESIGN.md §12): the lockup in white on a petrol tile with
  * transparent corners (88x40, the 20px lockup with its clear space), one image that reads
@@ -156,14 +184,15 @@ export function emailShell(args: {
 <meta name="color-scheme" content="light dark">
 <meta name="supported-color-schemes" content="light dark">
 <title>${esc(args.title)}</title>
+<style>${mobileCss()}</style>
 <style>${darkCss()}</style>
 </head>
 <body class="b-page" bgcolor="${C.page}" style="margin:0;padding:0;background:${C.page};color:${C.text};font-family:${FONT};">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.page}" class="b-page" style="background:${C.page};">
-<tr><td align="center" bgcolor="${C.page}" class="b-page" style="padding:24px 12px 40px;background:${C.page};color:${C.text};">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.page}" class="b-page" style="max-width:600px;background:${C.page};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.page}" class="b-page m-fixed" style="background:${C.page};">
+<tr><td align="center" bgcolor="${C.page}" class="b-page m-page" style="padding:24px 12px 40px;background:${C.page};color:${C.text};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.page}" class="b-page m-fixed" style="max-width:600px;background:${C.page};">
 <tr><td class="b-page" bgcolor="${C.page}" style="padding:2px 4px 18px;background:${C.page};">${headerLogo(args.assetBaseUrl)}</td></tr>
-<tr><td class="b-card b-text" bgcolor="${C.bg}" style="background:${C.bg};border:1px solid ${C.border};border-radius:16px;padding:24px 22px;color:${C.text};">
+<tr><td class="b-card b-text m-frame" bgcolor="${C.bg}" style="background:${C.bg};border:1px solid ${C.border};border-radius:16px;padding:24px 22px;color:${C.text};">
 ${args.body}
 </td></tr>
 <tr><td class="b-page b-muted" bgcolor="${C.page}" style="padding:16px 6px 0;font-size:12px;line-height:1.5;background:${C.page};color:${C.muted};">${esc(args.footer)}</td></tr>
@@ -208,9 +237,9 @@ export function smallHeading(text: string): string {
 /** The inset "fix" box: an eyebrow, then a command (mono) or a sentence. */
 export function fixBox(eyebrow: string, action: string, command: boolean, after = ""): string {
   const body = command
-    ? `<div class="b-card b-text" style="background:${C.bg};border:1px solid ${C.border};border-radius:9px;padding:9px 12px;font-family:${MONO};font-size:13px;line-height:1.45;color:${C.text};word-break:break-word;">${esc(action)}</div>`
+    ? `<div class="b-card b-text m-cmd" style="background:${C.bg};border:1px solid ${C.border};border-radius:9px;padding:9px 12px;font-family:${MONO};font-size:13px;line-height:1.45;color:${C.text};word-break:break-word;">${esc(action)}</div>`
     : `<div class="b-text" style="font-size:15px;line-height:1.5;font-weight:600;color:${C.text};">${esc(action)}</div>`;
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.inset}" class="b-inset" style="margin:14px 0 0;background:${C.inset};border-radius:12px;"><tr><td class="b-inset b-text" bgcolor="${C.inset}" style="background:${C.inset};border-radius:12px;padding:12px 14px;color:${C.text};">
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.inset}" class="b-inset m-fixed" style="margin:14px 0 0;background:${C.inset};border-radius:12px;"><tr><td class="b-inset b-text m-inset" bgcolor="${C.inset}" style="background:${C.inset};border-radius:12px;padding:12px 14px;color:${C.text};">
 <div class="b-link" style="font-size:11px;letter-spacing:.06em;font-weight:600;color:${C.brand};margin:0 0 8px;">${esc(caps(eyebrow))}</div>
 ${body}${after}
 </td></tr></table>`;

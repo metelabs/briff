@@ -184,6 +184,19 @@ describe("dark-mode safety", () => {
   });
 });
 
+describe("phone layout", () => {
+  it("flattens act cards into sections that keep the security rule", () => {
+    const { html } = renderBulletinEmail(view, links);
+    const card = html.match(/<table[^>]*class="b-card m-flat[^"]*"[^>]*>/)?.[0] ?? "";
+    expect(card).toContain('class="b-card m-flat m-fixed b-sec-top"');
+    expect(card).toContain("border-top:3px solid #b93522;");
+    expect(html).toContain('class="b-card b-text m-flat-cell"');
+    // The command sits in fixed-layout tables all the way up, so it scrolls instead of widening the page.
+    expect(html).toContain('class="b-card b-text m-cmd"');
+    expect(html.match(/class="b-page m-fixed"/g)).toHaveLength(2);
+  });
+});
+
 describe("bulletin backlog line", () => {
   const backlogLine = {
     packageName: "undici",
