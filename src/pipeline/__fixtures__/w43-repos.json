@@ -1,0 +1,126 @@
+{
+  "_comment": "W43 production bulletin (synthesis-v7), reduced to the items whose affectedRepos and upgrades disagreed or whose line named only some affected repos. Repos, installed versions and match repos as stored; advisory ranges chosen so the alerted repos are the ones production listed in upgrades.",
+  "streams": {
+    "Acme": [
+      "bakery.example",
+      "briff",
+      "briff-reader",
+      "clinic.example",
+      "garden.example",
+      "office-ledger",
+      "orchid-hotel",
+      "pixel-studio",
+      "west.garden.example"
+    ],
+    "Sigma": ["sigma/budget", "sigma/forms-web", "sigma/mailer-v2", "sigma/pantheon"]
+  },
+  "dependencies": [
+    { "repo": "bakery.example", "package": "payload", "version": "2.32.3", "direct": true },
+    {
+      "repo": "bakery.example",
+      "package": "@payloadcms/bundler-webpack",
+      "version": "1.0.7",
+      "direct": true
+    },
+    { "repo": "clinic.example", "package": "payload", "version": "3.86.0", "direct": true },
+    { "repo": "garden.example", "package": "payload", "version": "3.65.0", "direct": true },
+    { "repo": "orchid-hotel", "package": "payload", "version": "3.85.1", "direct": true },
+    { "repo": "pixel-studio", "package": "payload", "version": "3.85.0", "direct": true },
+    { "repo": "west.garden.example", "package": "payload", "version": "3.65.0", "direct": true },
+    { "repo": "briff", "package": "@hono/node-server", "version": "2.1.5", "direct": false },
+    {
+      "repo": "briff-reader",
+      "package": "@hono/node-server",
+      "version": "1.19.14",
+      "direct": false
+    },
+    {
+      "repo": "sigma/mailer-v2",
+      "package": "@hono/node-server",
+      "version": "1.19.11",
+      "direct": true
+    },
+    {
+      "repo": "sigma/pantheon",
+      "package": "@hono/node-server",
+      "version": "2.0.12",
+      "direct": false
+    },
+    { "repo": "sigma/budget", "package": "better-auth", "version": "1.4.9", "direct": true },
+    {
+      "repo": "sigma/forms-web",
+      "package": "better-auth",
+      "version": "1.6.23",
+      "direct": true
+    },
+    { "repo": "bakery.example", "package": "i18next", "version": "25.5.2", "direct": true },
+    { "repo": "briff", "package": "i18next", "version": "25.6.0", "direct": true },
+    { "repo": "clinic.example", "package": "i18next", "version": "25.6.0", "direct": true },
+    { "repo": "garden.example", "package": "i18next", "version": "25.3.1", "direct": true },
+    { "repo": "west.garden.example", "package": "i18next", "version": "25.3.1", "direct": true },
+    { "repo": "briff", "package": "openai", "version": "5.23.0", "direct": true },
+    { "repo": "briff-reader", "package": "openai", "version": "5.20.1", "direct": true },
+    { "repo": "office-ledger", "package": "openai", "version": "5.23.0", "direct": true }
+  ],
+  "items": [
+    {
+      "key": "payload",
+      "title": "payloadcms/payload v3.92.0",
+      "text": "Security: fixes an access-control bypass in the REST API (GHSA). Raises the minimum Node version to 22.23.4.",
+      "bucket": "security",
+      "package": "payload",
+      "reason": "release:@payloadcms/bundler-webpack",
+      "matchedRepos": ["bakery.example", "garden.example", "west.garden.example"],
+      "advisory": { "introduced": "3.80.0", "fixed": "3.92.0" },
+      "alertedRepos": ["clinic.example", "orchid-hotel", "pixel-studio"]
+    },
+    {
+      "key": "better-auth",
+      "title": "better-auth/better-auth v1.7.12",
+      "text": "Security: fixes JWT, OAuth and ID token verification.",
+      "bucket": "security",
+      "package": "better-auth",
+      "reason": "release:better-auth",
+      "matchedRepos": ["sigma/budget", "sigma/forms-web"],
+      "advisory": { "introduced": "0", "fixed": "1.5.0" },
+      "alertedRepos": ["sigma/budget"]
+    },
+    {
+      "key": "hono",
+      "title": "honojs/node-server v1.19.15",
+      "text": "Security: fixes path traversal in serveStatic.",
+      "bucket": "security",
+      "package": "@hono/node-server",
+      "reason": "release:@hono/node-server",
+      "matchedRepos": ["briff", "briff-reader", "sigma/mailer-v2", "sigma/pantheon"],
+      "advisory": { "introduced": "1.0.0", "fixed": "1.19.15" },
+      "alertedRepos": ["briff-reader", "sigma/mailer-v2"]
+    },
+    {
+      "key": "i18next",
+      "title": "i18next v26.0.0",
+      "text": "Breaking: drops the legacy JSON v3 format and the `initImmediate` option.",
+      "bucket": "breaking_or_feature",
+      "package": "i18next",
+      "reason": "release:i18next",
+      "matchedRepos": [
+        "bakery.example",
+        "briff",
+        "clinic.example",
+        "garden.example",
+        "west.garden.example"
+      ],
+      "modelLineNames": ["briff", "clinic.example", "garden.example", "west.garden.example"]
+    },
+    {
+      "key": "openai",
+      "title": "openai/openai-node v6.0.0",
+      "text": "Breaking: removes the Assistants API helpers.",
+      "bucket": "breaking_or_feature",
+      "package": "openai",
+      "reason": "release:openai",
+      "matchedRepos": ["briff", "briff-reader", "office-ledger"],
+      "modelLineNames": ["briff-reader"]
+    }
+  ]
+}

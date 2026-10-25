@@ -1,0 +1,28 @@
+{
+  "name": "mono",
+  "version": "1.0.0",
+  "lockfileVersion": 3,
+  "requires": true,
+  "packages": {
+    "": {
+      "name": "mono",
+      "version": "1.0.0",
+      "workspaces": ["packages/*"],
+      "dependencies": { "react": "^19.0.0" },
+      "devDependencies": { "typescript": "^5.9.0" }
+    },
+    "packages/app": {
+      "name": "app",
+      "version": "0.1.0",
+      "dependencies": { "lodash": "^4.17.0" }
+    },
+    "node_modules/app": { "resolved": "packages/app", "link": true },
+    "node_modules/react": { "version": "19.0.0" },
+    "node_modules/typescript": { "version": "5.9.3", "dev": true },
+    "node_modules/loose-envify": { "version": "1.4.0" },
+    "node_modules/lodash": { "version": "4.17.21" },
+    "node_modules/foo": { "version": "2.0.0" },
+    "node_modules/foo/node_modules/react": { "version": "18.3.1" },
+    "packages/app/node_modules/lodash": { "version": "4.17.20" }
+  }
+}

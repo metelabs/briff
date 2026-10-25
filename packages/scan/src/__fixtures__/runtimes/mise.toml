@@ -1,0 +1,8 @@
+[env]
+NODE_ENV = "development"
+
+[tools]
+node = "22"
+python = ["3.13", "3.12"]
+"core:ruby" = { version = "3.3.5" }
+erlang = "27"

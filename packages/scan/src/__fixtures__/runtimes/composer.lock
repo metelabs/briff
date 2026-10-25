@@ -1,0 +1,8 @@
+{
+  "_readme": ["This file locks the dependencies of your project to a known state"],
+  "content-hash": "abc",
+  "packages": [],
+  "platform": { "php": ">=8.1", "ext-mbstring": "*" },
+  "platform-overrides": { "php": "8.3.12" },
+  "plugin-api-version": "2.6.0"
+}

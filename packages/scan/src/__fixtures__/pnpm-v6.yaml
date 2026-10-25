@@ -1,0 +1,22 @@
+lockfileVersion: "6.0"
+
+dependencies:
+  react:
+    specifier: ^18.2.0
+    version: 18.2.0
+
+devDependencies:
+  "@types/react":
+    specifier: ^18.2.0
+    version: 18.2.79
+
+packages:
+  /@types/react@18.2.79:
+    resolution: { integrity: sha512-x }
+    dev: true
+
+  /loose-envify@1.4.0:
+    resolution: { integrity: sha512-x }
+
+  /react@18.2.0:
+    resolution: { integrity: sha512-x }

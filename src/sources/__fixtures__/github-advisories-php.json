@@ -1,0 +1,239 @@
+[
+  {
+    "ghsa_id": "GHSA-w8hw-w9fx-j79w",
+    "cve_id": "CVE-2026-109618",
+    "url": "https://api.github.com/repos/php/php-src/security-advisories/GHSA-w8hw-w9fx-j79w",
+    "html_url": "https://github.com/php/php-src/security/advisories/GHSA-w8hw-w9fx-j79w",
+    "summary": "RCE via OOM corruption",
+    "description": "## Summary\r\n\r\nPHP uses `longjmp()` for out-of-memory (OOM) errors to exit the current context and abort handling of the request. In some contexts, request memory is temporarily reachable before it is fully initialized. If any allocation fails at that point, PHP does not properly account for the early exit and leaves the request memory in an invalid state. The failed allocation does not need to be related to the invalid memory. The request shutdown procedure may then read or branch on it. Multiple OOM strategies can consistently trigger this condition and lead to remote code execution (RCE).\r\n\r\n## Vulnerability\r\n\r\n### OOM strategies\r\n\r\nSeveral multipart parsing problems can let a request reac",
+    "severity": "critical",
+    "identifiers": [
+      {
+        "value": "GHSA-w8hw-w9fx-j79w",
+        "type": "GHSA"
+      },
+      {
+        "value": "CVE-2026-109618",
+        "type": "CVE"
+      }
+    ],
+    "state": "published",
+    "created_at": null,
+    "updated_at": "2026-10-21T13:34:25Z",
+    "published_at": "2026-10-21T13:34:25Z",
+    "closed_at": null,
+    "withdrawn_at": null,
+    "vulnerabilities": [
+      {
+        "package": {
+          "ecosystem": "php",
+          "name": "php-src"
+        },
+        "vulnerable_version_range": "< 8.2.35",
+        "patched_versions": "8.2.35",
+        "vulnerable_functions": []
+      },
+      {
+        "package": {
+          "ecosystem": "php",
+          "name": "php-src"
+        },
+        "vulnerable_version_range": "< 8.3.36",
+        "patched_versions": "8.3.36",
+        "vulnerable_functions": []
+      },
+      {
+        "package": {
+          "ecosystem": "php",
+          "name": "php-src"
+        },
+        "vulnerable_version_range": "< 8.4.27",
+        "patched_versions": "8.4.27",
+        "vulnerable_functions": []
+      },
+      {
+        "package": {
+          "ecosystem": "php",
+          "name": "php-src"
+        },
+        "vulnerable_version_range": "< 8.5.12",
+        "patched_versions": "8.5.12",
+        "vulnerable_functions": []
+      }
+    ],
+    "cvss_severities": {
+      "cvss_v3": {
+        "vector_string": null,
+        "score": null
+      },
+      "cvss_v4": {
+        "vector_string": "CVSS:4.0/AV:N/AC:H/AT:P/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+        "score": 9.2
+      }
+    },
+    "cwe_ids": ["CWE-416", "CWE-755", "CWE-824", "CWE-1325", "CWE-1419"],
+    "comments": 6,
+    "cvss": {
+      "vector_string": null,
+      "score": null
+    }
+  },
+  {
+    "ghsa_id": "GHSA-6wmf-4rv5-p3rp",
+    "cve_id": "CVE-2026-109619",
+    "url": "https://api.github.com/repos/php/php-src/security-advisories/GHSA-6wmf-4rv5-p3rp",
+    "html_url": "https://github.com/php/php-src/security/advisories/GHSA-6wmf-4rv5-p3rp",
+    "summary": "RCE via stale global state",
+    "description": "## Summary\r\n\r\nPHP contains various global state, such as error, session, object and extension state that is retained by a worker but points to memory owned by one request. That state must be reset before the request memory is released. Some input, configuration, session and error handling operations run before normal initialization of the next request. They inadvertently access stale state not reset by the previous request before initialization has a chance to replace it, causing a use after free. A strategically crafted heap layout can produce full remote code execution (RCE).\r\n\r\nState can survive for more than one reason. A fatal error, including one caused by memory exhaustion, can abando",
+    "severity": "critical",
+    "identifiers": [
+      {
+        "value": "GHSA-6wmf-4rv5-p3rp",
+        "type": "GHSA"
+      },
+      {
+        "value": "CVE-2026-109619",
+        "type": "CVE"
+      }
+    ],
+    "state": "published",
+    "created_at": null,
+    "updated_at": "2026-10-21T13:34:13Z",
+    "published_at": "2026-10-21T13:34:13Z",
+    "closed_at": null,
+    "withdrawn_at": null,
+    "vulnerabilities": [
+      {
+        "package": {
+          "ecosystem": "php",
+          "name": "php-src"
+        },
+        "vulnerable_version_range": "< 8.2.35",
+        "patched_versions": "8.2.35",
+        "vulnerable_functions": []
+      },
+      {
+        "package": {
+          "ecosystem": "php",
+          "name": "php-src"
+        },
+        "vulnerable_version_range": "< 8.3.36",
+        "patched_versions": "8.3.36",
+        "vulnerable_functions": []
+      },
+      {
+        "package": {
+          "ecosystem": "php",
+          "name": "php-src"
+        },
+        "vulnerable_version_range": "< 8.4.27",
+        "patched_versions": "8.4.27",
+        "vulnerable_functions": []
+      },
+      {
+        "package": {
+          "ecosystem": "php",
+          "name": "php-src"
+        },
+        "vulnerable_version_range": "< 8.5.12",
+        "patched_versions": "8.5.12",
+        "vulnerable_functions": []
+      }
+    ],
+    "cvss_severities": {
+      "cvss_v3": {
+        "vector_string": null,
+        "score": null
+      },
+      "cvss_v4": {
+        "vector_string": "CVSS:4.0/AV:N/AC:H/AT:P/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+        "score": 9.2
+      }
+    },
+    "cwe_ids": ["CWE-416", "CWE-755", "CWE-824", "CWE-1325", "CWE-1419"],
+    "comments": 7,
+    "cvss": {
+      "vector_string": null,
+      "score": null
+    }
+  },
+  {
+    "ghsa_id": "GHSA-7875-c8px-7q5f",
+    "cve_id": "CVE-2026-93682",
+    "url": "https://api.github.com/repos/php/php-src/security-advisories/GHSA-7875-c8px-7q5f",
+    "html_url": "https://github.com/php/php-src/security/advisories/GHSA-7875-c8px-7q5f",
+    "summary": "Out-of-bounds read in the HTTP stream wrapper when following a redirect with an empty Location header",
+    "description": "### Summary\r\n\r\nWhen the HTTP stream wrapper follows a redirect and the response carries a `Location` header with an empty value, the redirect code reads one byte past the end of the heap buffer holding the location. The value of that out-of-bounds byte decides which redirect target is built, so a malicious server controls whether the client is sent to the host root or to the current directory.\r\n\r\n### Details\r\n\r\nSince the fix for GHSA-52jp-hrpf-2jff (CVE-2025-1861), `php_stream_http_response_headers_parse()` stores the `Location` value in a heap buffer of exactly `location_len + 1` bytes:\r\n\r\nhttps://github.com/php/php-src/blob/a66f30d78e10773048720b4b5f279136fdd0a433/ext/standard/http_fopen_w",
+    "severity": "medium",
+    "identifiers": [
+      {
+        "value": "GHSA-7875-c8px-7q5f",
+        "type": "GHSA"
+      },
+      {
+        "value": "CVE-2026-93682",
+        "type": "CVE"
+      }
+    ],
+    "state": "published",
+    "created_at": null,
+    "updated_at": "2026-09-25T19:54:11Z",
+    "published_at": "2026-09-24T10:07:25Z",
+    "closed_at": null,
+    "withdrawn_at": null,
+    "vulnerabilities": [
+      {
+        "package": {
+          "ecosystem": "php",
+          "name": "ext-standard"
+        },
+        "vulnerable_version_range": "<8.2.34",
+        "patched_versions": "8.2.34",
+        "vulnerable_functions": []
+      },
+      {
+        "package": {
+          "ecosystem": "php",
+          "name": "ext-standard"
+        },
+        "vulnerable_version_range": "<8.3.35",
+        "patched_versions": "8.3.35",
+        "vulnerable_functions": []
+      },
+      {
+        "package": {
+          "ecosystem": "php",
+          "name": "ext-standard"
+        },
+        "vulnerable_version_range": "<8.4.26",
+        "patched_versions": "8.4.26",
+        "vulnerable_functions": []
+      },
+      {
+        "package": {
+          "ecosystem": "php",
+          "name": "ext-standard"
+        },
+        "vulnerable_version_range": "<8.5.11",
+        "patched_versions": "8.5.11",
+        "vulnerable_functions": []
+      }
+    ],
+    "cvss_severities": {
+      "cvss_v3": {
+        "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
+        "score": 5.3
+      },
+      "cvss_v4": {
+        "vector_string": null,
+        "score": null
+      }
+    },
+    "cwe_ids": ["CWE-125"],
+    "comments": 0,
+    "cvss": {
+      "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
+      "score": 5.3
+    }
+  }
+]

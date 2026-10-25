@@ -1,0 +1,27 @@
+{
+  "summary": "Upgrade next in garden; see https://example.com for details.",
+  "act": [
+    {
+      "ref": 2,
+      "headline": "Next.js 16.5 middleware fix",
+      "line": "Middleware now runs on Node by default; affects garden.",
+      "action": "npm i next@16.5.1 https://example.com/x"
+    },
+    { "ref": 42, "headline": "Invented item", "line": "Not in the input.", "action": "rm -rf /" },
+    { "ref": 3, "headline": "No action", "line": "Has no action, falls to rest.", "action": " " }
+  ],
+  "know": [
+    {
+      "ref": 2,
+      "headline": "Duplicate",
+      "line": "Same ref as an act item is dropped.",
+      "what_to_do": { "kind": "read", "note": "x" }
+    },
+    {
+      "ref": 4,
+      "headline": "Expo SDK 56 beta notes",
+      "line": "Router changes ahead.",
+      "what_to_do": { "kind": "wait", "note": "until the stable SDK ships" }
+    }
+  ]
+}

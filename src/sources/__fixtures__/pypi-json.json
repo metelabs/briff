@@ -1,0 +1,25 @@
+{
+  "info": {
+    "author": "Acme",
+    "classifiers": [
+      "Development Status :: 5 - Production/Stable",
+      "Programming Language :: Python :: 3"
+    ],
+    "home_page": "",
+    "name": "Acme_HTTP",
+    "project_urls": {
+      "Documentation": "https://acme-http.example/docs",
+      "Homepage": "https://acme-http.example",
+      "Source": "https://github.com/acme/acme-http"
+    },
+    "requires_python": ">=3.8",
+    "summary": "HTTP for humans at Acme.",
+    "version": "2.32",
+    "yanked": false,
+    "yanked_reason": null
+  },
+  "last_serial": 1,
+  "releases": {},
+  "urls": [],
+  "vulnerabilities": []
+}

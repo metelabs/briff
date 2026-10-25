@@ -1,0 +1,99 @@
+{
+  "name": "main",
+  "commit": {
+    "sha": "4ff48cec099f0514c3e9bbca18706c9c21122bfb",
+    "node_id": "C_kwDOADfIwNoAKDRmZjQ4Y2VjMDk5ZjA1MTRjM2U5YmJjYTE4NzA2YzljMjExMjJiZmI",
+    "commit": {
+      "author": {
+        "name": "Steven",
+        "email": "steven@ceriously.com",
+        "date": "2026-05-20T22:20:35Z"
+      },
+      "committer": {
+        "name": "GitHub",
+        "email": "noreply@github.com",
+        "date": "2026-05-20T22:20:35Z"
+      },
+      "message": "chore: minimumReleaseAge: 2880 (#289)\n\n- bump pnpm and set minimumReleaseAge",
+      "tree": {
+        "sha": "97b2713a417f56c08721d88cfd339d652bc48c98",
+        "url": "https://api.github.com/repos/vercel/ms/git/trees/97b2713a417f56c08721d88cfd339d652bc48c98"
+      },
+      "url": "https://api.github.com/repos/vercel/ms/git/commits/4ff48cec099f0514c3e9bbca18706c9c21122bfb",
+      "comment_count": 0,
+      "verification": {
+        "verified": true,
+        "reason": "valid",
+        "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJqDjOzCRC1aQ7uu5UhlAAAbVgQAEj8f09J7gYUHEO0kYOkjKAM\nFSmMwe69PiG97xp6qhRnQMg7zUl5T4m7WceFC6+MVELUDyKo0z13zW66w/l+Dc8x\n/ju+Qu0qy+o6u0qrUmzHX1QVuJJNVAi9zjV+fZbYKxxHvs+DnHA3DNIuisjFEKb9\nMTrJckMRAHz62mdG9spwMN0i4vmQgWPYvzYXZ04kwt8ZaN1OrQMnJPBfAT1uXI92\ngSn84WjO7ddZ1kLFlga7hR8NjNadmjXV6B4g4wLZBi2SUsdvit4kaLcoZ8u9f1mY\nzGy4l4zdT3Ab1mXjZONVgzGqfrjwEZ7QC1SFtvm54KFGbFOxNpogqZUAmOqppBVq\n0Q7d21gwPG1evl3MvhRSbBhGGAsqT8cDSe9bCCNaVP2yMCXSo0ZTUPsaCrZYIAZv\n/2Dbw3/mrh/JPm39qNsXcTmHb0PyVRtNIBhbIx/XOLGTbcbcgn3D81DlkychC4KF\n3ywDogCOmNgCMM6K4DG28NSjREWt0hqkzxPanQ00eAL7QBAyHkDgfptgy9AeRIkB\nXPsSz0gDY12qD+dsVUr4oLESfDdT/wMvI1oTlLE6fEiIYfH23zlDr1FfgCgcGgoe\n7S/0pNmZZ+wgl0vGvuqcI9naEEZPCddBdJfLm1eZhl299VSXzOFoUtw3WDM0YwWH\nd3lpqIRGct1/nZY0z6AF\n=s4p3\n-----END PGP SIGNATURE-----\n",
+        "payload": "tree 97b2713a417f56c08721d88cfd339d652bc48c98\nparent 6ec025f7e35899c436aaa0fbac57657af81467d3\nauthor Steven <steven@ceriously.com> 1779315635 -0400\ncommitter GitHub <noreply@github.com> 1779315635 -0700\n\nchore: minimumReleaseAge: 2880 (#289)\n\n- bump pnpm and set minimumReleaseAge",
+        "verified_at": "2026-05-20T22:20:36Z"
+      }
+    },
+    "url": "https://api.github.com/repos/vercel/ms/commits/4ff48cec099f0514c3e9bbca18706c9c21122bfb",
+    "html_url": "https://github.com/vercel/ms/commit/4ff48cec099f0514c3e9bbca18706c9c21122bfb",
+    "comments_url": "https://api.github.com/repos/vercel/ms/commits/4ff48cec099f0514c3e9bbca18706c9c21122bfb/comments",
+    "author": {
+      "login": "styfle",
+      "id": 229881,
+      "node_id": "MDQ6VXNlcjIyOTg4MQ==",
+      "avatar_url": "https://avatars.githubusercontent.com/u/229881?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/styfle",
+      "html_url": "https://github.com/styfle",
+      "followers_url": "https://api.github.com/users/styfle/followers",
+      "following_url": "https://api.github.com/users/styfle/following{/other_user}",
+      "gists_url": "https://api.github.com/users/styfle/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/styfle/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/styfle/subscriptions",
+      "organizations_url": "https://api.github.com/users/styfle/orgs",
+      "repos_url": "https://api.github.com/users/styfle/repos",
+      "events_url": "https://api.github.com/users/styfle/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/styfle/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "web-flow",
+      "id": 19864447,
+      "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/web-flow",
+      "html_url": "https://github.com/web-flow",
+      "followers_url": "https://api.github.com/users/web-flow/followers",
+      "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+      "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+      "organizations_url": "https://api.github.com/users/web-flow/orgs",
+      "repos_url": "https://api.github.com/users/web-flow/repos",
+      "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/web-flow/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "6ec025f7e35899c436aaa0fbac57657af81467d3",
+        "url": "https://api.github.com/repos/vercel/ms/commits/6ec025f7e35899c436aaa0fbac57657af81467d3",
+        "html_url": "https://github.com/vercel/ms/commit/6ec025f7e35899c436aaa0fbac57657af81467d3"
+      }
+    ]
+  },
+  "_links": {
+    "self": "https://api.github.com/repos/vercel/ms/branches/main",
+    "html": "https://github.com/vercel/ms/tree/main"
+  },
+  "protected": true,
+  "protection": {
+    "enabled": true,
+    "required_status_checks": {
+      "enforcement_level": "non_admins",
+      "contexts": [],
+      "checks": []
+    }
+  },
+  "protection_url": "https://api.github.com/repos/vercel/ms/branches/main/protection"
+}

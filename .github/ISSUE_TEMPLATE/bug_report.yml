@@ -1,0 +1,43 @@
+name: Bug report
+description: Something in Briff does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Security problems go to the private form instead: see SECURITY.md.
+        Please remove repo names, emails and tokens you do not want to make public.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      description: Steps, a lockfile or Dockerfile excerpt, or `npx briff-scan@0 --dry-run --json` output.
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options:
+        - Hosted (app.briff.dev)
+        - Self-hosted
+        - briff-scan CLI or GitHub Action
+        - GitHub App
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Image tag or commit for the server, `briff-scan --version` for the scanner.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Relevant log lines (JSON lines from web or worker). Secrets are redacted by the logger, but check.
+      render: text

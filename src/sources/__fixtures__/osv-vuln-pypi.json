@@ -1,0 +1,17 @@
+{
+  "id": "GHSA-acme-0000-0101",
+  "summary": "acme-http sends the proxy password to the target host",
+  "aliases": ["CVE-2026-00101"],
+  "modified": "2026-10-21T08:00:00Z",
+  "published": "2026-10-20T12:00:00Z",
+  "database_specific": { "severity": "MODERATE" },
+  "affected": [
+    {
+      "package": { "ecosystem": "PyPI", "name": "Acme_HTTP" },
+      "ranges": [
+        { "type": "ECOSYSTEM", "events": [{ "introduced": "2.3" }, { "fixed": "2.32.0" }] },
+        { "type": "ECOSYSTEM", "events": [{ "introduced": "3.0.0rc1" }, { "fixed": "3.0.1" }] }
+      ]
+    }
+  ]
+}

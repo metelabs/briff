@@ -1,0 +1,56 @@
+import type { ReactNode } from "react";
+
+import type { OrgContext } from "@/lib/auth/session";
+import { isInstanceAdmin } from "@/lib/auth/session";
+import { getDb } from "@/lib/db/client";
+import { hasUnseenAlerts } from "@/lib/member-state";
+import { loadStreamScope, repoScope } from "@/lib/stream-scope";
+import { readTheme } from "@/lib/theme-cookie";
+
+import { ConnectSheetProvider } from "./connect-sheet";
+import type { NavHref } from "./nav";
+import { PageContainer } from "./page-container";
+import { SiteFooter } from "./site-footer";
+import { TopBar } from "./top-bar";
+
+/**
+ * One shell for every signed-in page (DESIGN.md §2): sticky top bar with the pill nav,
+ * Connect repos, the stream picker and the account menu, then the page in the shared
+ * `PageContainer`, then a quiet footer.
+ */
+export async function AppShell({
+  ctx,
+  active,
+  children,
+}: {
+  ctx: OrgContext;
+  active: NavHref;
+  children: ReactNode;
+}) {
+  const [admin, scope, theme] = await Promise.all([
+    isInstanceAdmin(ctx.userId),
+    loadStreamScope(ctx.orgId),
+    readTheme(),
+  ]);
+  const alertsDot = await hasUnseenAlerts(getDb(), ctx.orgId, ctx.userId, repoScope(scope));
+
+  return (
+    <ConnectSheetProvider>
+      <div className="flex min-h-svh flex-col">
+        <TopBar
+          active={active}
+          admin={admin}
+          theme={theme}
+          alertsDot={alertsDot}
+          user={{ name: ctx.name, email: ctx.email }}
+          streams={scope.streams}
+          currentStreamId={scope.current?.id ?? null}
+        />
+        <PageContainer as="main" className="flex flex-1 flex-col pb-16">
+          {children}
+        </PageContainer>
+        <SiteFooter />
+      </div>
+    </ConnectSheetProvider>
+  );
+}

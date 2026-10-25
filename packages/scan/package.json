@@ -1,0 +1,40 @@
+{
+  "name": "briff-scan",
+  "version": "0.1.1",
+  "description": "Briff scanner: reads lockfiles and runtime files and sends package names, installed versions and runtimes to Briff. No source code leaves the machine.",
+  "keywords": [
+    "briff",
+    "dependencies",
+    "lockfile",
+    "security",
+    "scanner",
+    "github-action"
+  ],
+  "homepage": "https://briff.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/metelabs/briff.git",
+    "directory": "packages/scan"
+  },
+  "bugs": {
+    "url": "https://github.com/metelabs/briff/issues"
+  },
+  "license": "MIT",
+  "author": "Fikret Yunus Yildiz",
+  "type": "module",
+  "bin": {
+    "briff-scan": "dist/cli.mjs"
+  },
+  "files": [
+    "dist/cli.mjs",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node build.mjs",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

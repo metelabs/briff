@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "acme-api"
+version = "0.1.0"
+description = ""
+authors = ["Acme <dev@acme.example>"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+acme-http = "^2.31"
+acme-internal = { path = "../acme-internal", develop = true }
+
+[tool.poetry.group.dev.dependencies]
+acme_test = { version = "^8.1.0rc1", allow-prereleases = true }
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

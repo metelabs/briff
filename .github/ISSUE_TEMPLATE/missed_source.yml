@@ -1,0 +1,38 @@
+name: A source Briff missed
+description: A release, advisory or announcement that touched your stack but was not in your bulletin or alerts.
+labels: [source]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Briff only reads official feeds and APIs (docs/SOURCES.md) and never scrapes HTML.
+        This form helps find the missing feed or the matching rule that skipped the item.
+  - type: input
+    id: item
+    attributes:
+      label: Item URL
+      description: The release, advisory or post Briff should have reported.
+    validations:
+      required: true
+  - type: input
+    id: feed
+    attributes:
+      label: Official feed
+      description: An RSS/Atom feed, GitHub releases or advisories, or an API that publishes it, if you know one.
+  - type: input
+    id: package
+    attributes:
+      label: Package or runtime
+      description: The package name and ecosystem, or the runtime and version line, it concerns.
+    validations:
+      required: true
+  - type: textarea
+    id: how
+    attributes:
+      label: How your repo uses it
+      description: Direct or transitive dependency, Dockerfile `FROM`, version file, ... and the installed version.
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: A same-day alert, an act item in the weekly bulletin, a know item, ...

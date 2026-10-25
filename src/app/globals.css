@@ -1,0 +1,367 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Design system: docs/DESIGN.md ("Triage"). Raw tokens below, Tailwind names in @theme. */
+
+/* `dark:` follows the resolved theme: an explicit choice on <html>, else the OS. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+}
+
+:root {
+  color-scheme: light;
+  --bg: #f2f5f7;
+  --surface: #ffffff;
+  --surface-2: #f2f5f7;
+  --line: #dde4e9;
+  --line-strong: #b9c5ce;
+  --fg: #0d1b24;
+  --fg-muted: #566874;
+  --fg-subtle: #8a99a3;
+  --brand: #0b6b67;
+  --brand-soft: #d9eeec;
+  --on-brand: #ffffff;
+  --sec: #b93522;
+  --sec-soft: #fde6e0;
+  --read: #3659b8;
+  --read-soft: #e3eafb;
+  --upgrade: #8a560a;
+  --upgrade-soft: #fbefd9;
+  --wait: #5a6973;
+  --wait-soft: #e8edf0;
+  --ok: #1a6b43;
+  --ok-soft: #dcf1e4;
+  --code: #ffffff;
+  --shadow: rgb(13 27 36 / 0.07);
+  --scrim: rgb(10 17 21 / 0.45);
+  --bar-bg: rgb(242 245 247 / 0.85);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0a1115;
+    --surface: #111a20;
+    --surface-2: #0d161b;
+    --line: #21303a;
+    --line-strong: #34495a;
+    --fg: #e5edf1;
+    --fg-muted: #8d9faa;
+    --fg-subtle: #5d6f7a;
+    --brand: #3ccfc2;
+    --brand-soft: #0e2e2d;
+    --on-brand: #04201e;
+    --sec: #ff7b64;
+    --sec-soft: #3a1912;
+    --read: #8eaaff;
+    --read-soft: #192343;
+    --upgrade: #f1b85b;
+    --upgrade-soft: #32260f;
+    --wait: #93a3ad;
+    --wait-soft: #1b252c;
+    --ok: #4cc98a;
+    --ok-soft: #10291c;
+    --code: #0d161b;
+    --shadow: rgb(0 0 0 / 0.35);
+    --scrim: rgb(0 0 0 / 0.6);
+    --bar-bg: rgb(10 17 21 / 0.85);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0a1115;
+  --surface: #111a20;
+  --surface-2: #0d161b;
+  --line: #21303a;
+  --line-strong: #34495a;
+  --fg: #e5edf1;
+  --fg-muted: #8d9faa;
+  --fg-subtle: #5d6f7a;
+  --brand: #3ccfc2;
+  --brand-soft: #0e2e2d;
+  --on-brand: #04201e;
+  --sec: #ff7b64;
+  --sec-soft: #3a1912;
+  --read: #8eaaff;
+  --read-soft: #192343;
+  --upgrade: #f1b85b;
+  --upgrade-soft: #32260f;
+  --wait: #93a3ad;
+  --wait-soft: #1b252c;
+  --ok: #4cc98a;
+  --ok-soft: #10291c;
+  --code: #0d161b;
+  --shadow: rgb(0 0 0 / 0.35);
+  --scrim: rgb(0 0 0 / 0.6);
+  --bar-bg: rgb(10 17 21 / 0.85);
+}
+
+/* shadcn/Base UI variable names, mapped onto the tokens (never the default zinc palette). */
+:root {
+  --background: var(--bg);
+  --foreground: var(--fg);
+  --card: var(--surface);
+  --card-foreground: var(--fg);
+  --popover: var(--surface);
+  --popover-foreground: var(--fg);
+  --primary: var(--brand);
+  --primary-foreground: var(--on-brand);
+  --secondary: var(--surface);
+  --secondary-foreground: var(--fg);
+  --muted: var(--surface-2);
+  --muted-foreground: var(--fg-muted);
+  --accent: var(--surface-2);
+  --accent-foreground: var(--fg);
+  --destructive: var(--sec);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--brand);
+  --radius: 10px;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-on-brand: var(--on-brand);
+  --color-sec: var(--sec);
+  --color-sec-soft: var(--sec-soft);
+  --color-read: var(--read);
+  --color-read-soft: var(--read-soft);
+  --color-upgrade: var(--upgrade);
+  --color-upgrade-soft: var(--upgrade-soft);
+  --color-wait: var(--wait);
+  --color-wait-soft: var(--wait-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-code: var(--code);
+  --color-scrim: var(--scrim);
+  --color-bar: var(--bar-bg);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --radius-label: 6px;
+  --radius-chip: 7px;
+  --radius-control: 10px;
+  --radius-inset: 12px;
+  --radius-tile: 14px;
+  --radius-card: 16px;
+
+  --shadow-raised: 0 10px 28px var(--shadow);
+  --shadow-lift: 0 8px 20px var(--shadow);
+
+  --ease-entrance: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-indicator: cubic-bezier(0.3, 0.8, 0.2, 1);
+}
+
+@layer base {
+  * {
+    @apply border-line;
+  }
+  html {
+    @apply bg-bg font-sans;
+    -webkit-text-size-adjust: 100%;
+    /* Same width with or without a scrollbar, so short and long pages centre alike. */
+    scrollbar-gutter: stable;
+  }
+  body {
+    @apply bg-bg text-fg text-[14px] leading-normal antialiased;
+    overflow-x: hidden;
+  }
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+  code,
+  kbd,
+  pre {
+    @apply font-mono;
+  }
+}
+
+/* Type roles (DESIGN.md §4). Bricolage only for headings and numbers. */
+@utility type-hero {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(34px, 5vw, 56px);
+  line-height: 1;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+@utility type-page {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(28px, 3.6vw, 40px);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+@utility type-h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 19px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+@utility type-h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 21px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  @media (width < 560px) {
+    font-size: 19px;
+  }
+}
+@utility type-stat {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+@utility type-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+}
+
+/* Page side gutter: 16px (or the safe area), 24px from 1024px. */
+@utility gutter {
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  @media (width >= 1024px) {
+    padding-left: max(24px, env(safe-area-inset-left, 0px));
+    padding-right: max(24px, env(safe-area-inset-right, 0px));
+  }
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Motion (DESIGN.md §7). Entrance: rise 10px + fade, 55ms stagger via --i, capped at 10. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* Jump highlight: a clear brand outline and soft tint for ~3s, then it fades out. */
+@keyframes flash-ring {
+  0%,
+  80% {
+    outline-color: var(--brand);
+    background-color: var(--brand-soft);
+  }
+  100% {
+    outline-color: transparent;
+  }
+}
+@utility rise {
+  animation: rise 0.45s var(--ease-entrance) both;
+  animation-delay: calc(min(var(--i, 0), 10) * 55ms);
+}
+/* Unlayered, so it wins over the card's own `rise` entrance animation. */
+.flash {
+  outline: 2px solid transparent;
+  outline-offset: 3px;
+  animation: flash-ring 3s ease-out;
+}
+/* Expand/collapse: grid rows 0fr -> 1fr; the child needs `min-h-0 overflow-hidden`. */
+@utility expand {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s var(--ease-entrance);
+  &[data-open="true"] {
+    grid-template-rows: 1fr;
+  }
+}
+
+/* Theme change: colours only, for 300ms, while the class is on <html>. */
+html.theming *,
+html.theming *::before,
+html.theming *::after {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* Reduced motion keeps the jump highlight, without the fade: on for 3s, then off. */
+@media (prefers-reduced-motion: reduce) {
+  .flash {
+    animation-duration: 3s !important;
+    animation-timing-function: steps(1, end) !important;
+  }
+}

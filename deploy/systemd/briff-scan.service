@@ -1,0 +1,20 @@
+[Unit]
+Description=Briff local stack scanner (uploads lockfile summaries to Briff)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/code/briff
+# BRIFF_API_URL, BRIFF_TOKEN (or the deprecated SCANNER_TOKEN) and optionally BRIFF_SCAN_ROOT.
+EnvironmentFile=%h/.config/briff/scanner.env
+# Keep the scanner current: an image deploy renews the web and worker containers only, not this clone.
+# '-' lets an offline pull fail without skipping the scan; a failed install must
+# fail the unit, since npm ci empties node_modules before installing.
+ExecStartPre=-/bin/sh -lc 'git pull --ff-only --quiet'
+ExecStartPre=/bin/sh -lc 'npm ci --silent'
+# Login shell so the user's Node/npm PATH is available.
+ExecStart=/bin/sh -lc 'exec npm run --silent scan:local'
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=15min

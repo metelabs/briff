@@ -1,0 +1,54 @@
+lockfileVersion: "9.0"
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+  .:
+    devDependencies:
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
+
+  packages/web:
+    dependencies:
+      next:
+        specifier: 16.4.1
+        version: 16.4.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react:
+        specifier: 19.3.0
+        version: 19.3.0
+      "@scope/shared":
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/shared:
+    dependencies:
+      "@sentry/node":
+        specifier: ^10.0.0
+        version: 10.66.0
+
+packages:
+  "@sentry/node@10.66.0":
+    resolution: { integrity: sha512-x }
+
+  next@16.4.1:
+    resolution: { integrity: sha512-x }
+
+  react@19.3.0:
+    resolution: { integrity: sha512-x }
+
+  react-dom@19.3.0:
+    resolution: { integrity: sha512-x }
+
+  scheduler@0.27.0:
+    resolution: { integrity: sha512-x }
+
+  typescript@5.9.3:
+    resolution: { integrity: sha512-x }
+
+snapshots:
+  next@16.4.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
+    dependencies:
+      react: 19.3.0

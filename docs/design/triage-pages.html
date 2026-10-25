@@ -1,0 +1,708 @@
+<title>Briff Triage Pages</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --ui-bg:#fafaf9;--ui-fg:#18181b;--ui-muted:#6b6b70;--ui-line:#e4e4e1;--ui-chip:#efefec;--ui-on:#18181b;--ui-on-fg:#ffffff;
+  --bg:#f2f5f7;--surface:#ffffff;--surface-2:#f2f5f7;--line:#dde4e9;--line-strong:#b9c5ce;
+  --fg:#0d1b24;--fg-muted:#566874;--fg-subtle:#8a99a3;
+  --brand:#0b6b67;--brand-soft:#d9eeec;--on-brand:#ffffff;
+  --sec:#b93522;--sec-soft:#fde6e0;--read:#3659b8;--read-soft:#e3eafb;--upgrade:#8a560a;--upgrade-soft:#fbefd9;
+  --wait:#5a6973;--wait-soft:#e8edf0;--ok:#1a6b43;--ok-soft:#dcf1e4;--code:#ffffff;
+  --shadow:rgba(13,27,36,.07);--scrim:rgba(10,17,21,.45);--barbg:rgba(242,245,247,.85);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ui-bg:#111113;--ui-fg:#ededee;--ui-muted:#9a9aa1;--ui-line:#27272b;--ui-chip:#1c1c1f;--ui-on:#ededee;--ui-on-fg:#111113;
+    --bg:#0a1115;--surface:#111a20;--surface-2:#0d161b;--line:#21303a;--line-strong:#34495a;
+    --fg:#e5edf1;--fg-muted:#8d9faa;--fg-subtle:#5d6f7a;
+    --brand:#3ccfc2;--brand-soft:#0e2e2d;--on-brand:#04201e;
+    --sec:#ff7b64;--sec-soft:#3a1912;--read:#8eaaff;--read-soft:#192343;--upgrade:#f1b85b;--upgrade-soft:#32260f;
+    --wait:#93a3ad;--wait-soft:#1b252c;--ok:#4cc98a;--ok-soft:#10291c;--code:#0d161b;
+    --shadow:rgba(0,0,0,.35);--scrim:rgba(0,0,0,.6);--barbg:rgba(10,17,21,.85);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ui-bg:#111113;--ui-fg:#ededee;--ui-muted:#9a9aa1;--ui-line:#27272b;--ui-chip:#1c1c1f;--ui-on:#ededee;--ui-on-fg:#111113;
+  --bg:#0a1115;--surface:#111a20;--surface-2:#0d161b;--line:#21303a;--line-strong:#34495a;
+  --fg:#e5edf1;--fg-muted:#8d9faa;--fg-subtle:#5d6f7a;
+  --brand:#3ccfc2;--brand-soft:#0e2e2d;--on-brand:#04201e;
+  --sec:#ff7b64;--sec-soft:#3a1912;--read:#8eaaff;--read-soft:#192343;--upgrade:#f1b85b;--upgrade-soft:#32260f;
+  --wait:#93a3ad;--wait-soft:#1b252c;--ok:#4cc98a;--ok-soft:#10291c;--code:#0d161b;
+  --shadow:rgba(0,0,0,.35);--scrim:rgba(0,0,0,.6);--barbg:rgba(10,17,21,.85);
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Geist",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer}
+a{color:var(--brand)}
+code,.mono{font-family:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+html.theming *,html.theming *::before,html.theming *::after{transition:background-color .3s ease,color .3s ease,border-color .3s ease!important}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.98)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes flash{0%,100%{box-shadow:none}25%{box-shadow:0 0 0 3px var(--brand)}}
+.in{animation:rise .45s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i,0) * 55ms)}
+
+/* mock switch bar */
+.sw{background:var(--ui-bg);border-bottom:1px solid var(--ui-line);font-size:13px;color:var(--ui-fg)}
+.sw-in{max-width:1320px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding-top:9px;padding-bottom:9px}
+.sw b{font-weight:600}
+.seg{display:inline-flex;background:var(--ui-chip);border-radius:9px;padding:3px;gap:2px;max-width:100%;overflow-x:auto;scrollbar-width:none}
+.seg button{padding:5px 10px;border-radius:7px;color:var(--ui-muted);font-weight:500;white-space:nowrap;transition:color .15s,background-color .2s}
+.seg button:hover{color:var(--ui-fg)}
+.seg button[aria-pressed="true"]{background:var(--ui-on);color:var(--ui-on-fg)}
+.sw .sp{flex:1}
+
+/* app bar */
+.bar{position:sticky;top:0;z-index:30;background:var(--barbg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid transparent;transition:border-color .2s}
+.bar.scrolled{border-bottom-color:var(--line)}
+.bar-in{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:16px;min-height:64px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:8px;font-family:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;font-weight:700;font-size:20px;letter-spacing:-.03em;color:var(--fg);text-decoration:none}
+.logo svg{color:var(--brand)}
+.pills{display:flex;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px;overflow-x:auto;scrollbar-width:none;min-width:0}
+.pills a{position:relative;padding:6px 13px;border-radius:999px;color:var(--fg-muted);text-decoration:none;font-weight:500;white-space:nowrap;transition:background-color .15s,color .15s}
+.pills a:hover{color:var(--fg);background:var(--bg)}
+.pills a[aria-current]{background:var(--fg);color:var(--surface)}
+.pills a .dot{position:absolute;top:5px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--sec)}
+.bar-r{margin-left:auto;display:flex;align-items:center;gap:10px;position:relative}
+.sp-btn{display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-weight:500;transition:border-color .15s}
+.sp-btn:hover{border-color:var(--brand)}
+.sp-btn i{width:8px;height:8px;border-radius:50%;background:var(--brand)}
+.av{width:32px;height:32px;border-radius:50%;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;font-weight:600;font-size:12px}
+.pop{position:absolute;right:42px;top:44px;width:250px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 28px var(--shadow);padding:6px;animation:pop .18s ease-out;z-index:40}
+.pop button{display:flex;width:100%;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;text-align:left;transition:background-color .12s}
+.pop button:hover{background:var(--surface-2)}
+.pop small{margin-left:auto;color:var(--fg-muted)}
+.pop hr{border:0;border-top:1px solid var(--line);margin:6px 0}
+.pop a{display:block;padding:8px 10px;font-size:13px;text-decoration:none;font-weight:500}
+
+/* page */
+.wrap{max-width:1200px;margin:0 auto;padding-bottom:64px}
+.wrap.wide{max-width:1440px}
+.ph{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:28px 0 22px}
+.eyebrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:var(--fg-muted);font-size:13px}
+.wk{background:var(--brand-soft);color:var(--brand);border-radius:999px;padding:3px 10px;font-weight:600;font-family:"Geist Mono",monospace;font-size:12px}
+h1,h2,h3,.disp{font-family:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;letter-spacing:-.02em}
+.ph h1{font-weight:600;font-size:clamp(28px,3.6vw,40px);line-height:1.05;letter-spacing:-.03em;margin:8px 0 6px}
+.ph p{margin:0;color:var(--fg-muted);max-width:60ch}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.h2{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:19px;font-weight:600;line-height:1.2}
+.badge{font-family:"Geist",sans-serif;font-size:12px;font-weight:500;color:var(--fg-muted);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:1px 8px;letter-spacing:0}
+.h2 .more{margin-left:auto;font-family:"Geist",sans-serif;font-size:13px;font-weight:500;letter-spacing:0;text-decoration:none}
+.sect{margin-top:32px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px}
+.pad{padding:18px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:36px;padding:0 14px;border-radius:10px;font-weight:500;font-size:13.5px;white-space:nowrap;text-decoration:none;transition:filter .15s,transform .1s,border-color .15s,background-color .15s,color .15s}
+.btn:active{transform:scale(.97)}
+.btn-p{background:var(--brand);color:var(--on-brand)}.btn-p:hover{filter:brightness(1.08)}
+.btn-s{background:var(--surface);border:1px solid var(--line);color:var(--fg)}.btn-s:hover{border-color:var(--line-strong)}
+.btn-g{color:var(--fg-muted)}.btn-g:hover{color:var(--fg);background:var(--surface-2)}
+.btn-d{color:var(--sec);border:1px solid var(--sec);background:var(--surface)}
+.btn-df{background:var(--sec);color:var(--surface)}
+.btn-sm{height:30px;padding:0 11px;font-size:12.5px;border-radius:8px}
+.btn-lg{height:44px;padding:0 18px;font-size:14.5px}
+.btn[disabled]{opacity:.45;pointer-events:none}
+
+/* labels, chips */
+.lbl{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border-radius:6px;padding:3px 8px;white-space:nowrap;line-height:1.2}
+.lbl::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.l-security,.l-critical,.l-high,.l-eol{background:var(--sec-soft);color:var(--sec)}
+.l-upgrade,.l-moderate{background:var(--upgrade-soft);color:var(--upgrade)}
+.l-read{background:var(--read-soft);color:var(--read)}
+.l-wait,.l-low,.l-transitive{background:var(--wait-soft);color:var(--wait)}
+.l-ok{background:var(--ok-soft);color:var(--ok)}
+.l-direct{background:var(--brand-soft);color:var(--brand)}
+.l-transitive::before,.l-direct::before{display:none}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-family:"Geist Mono",monospace;font-size:12px;border-radius:7px;padding:3px 8px;background:var(--surface-2);border:1px solid var(--line);white-space:nowrap;transition:border-color .15s,background-color .15s}
+button.chip:hover{border-color:var(--brand);background:var(--brand-soft)}
+.chip.eol{background:var(--sec-soft);color:var(--sec);border-color:transparent}
+.chip.eol b{font-weight:600;margin-left:4px;font-family:"Geist",sans-serif;font-size:11px}
+.chip .src{color:var(--fg-muted)}
+.chip.eol .src{color:inherit;opacity:.85}
+
+/* filters & inputs */
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.fchip{display:inline-flex;gap:6px;align-items:center;padding:6px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:500;font-size:13px;color:var(--fg-muted);transition:all .15s}
+.fchip:hover{color:var(--fg);border-color:var(--line-strong)}
+.fchip[aria-pressed="true"]{background:var(--brand-soft);color:var(--brand);border-color:var(--brand)}
+.fchip span{font-family:"Geist Mono",monospace;font-size:11.5px;opacity:.8}
+.search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:0 10px;height:36px;min-width:0;flex:0 1 260px;transition:border-color .15s,box-shadow .15s}
+.search:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+.search input{border:0;background:none;outline:0;min-width:0;flex:1;font-size:13.5px}
+.search svg{color:var(--fg-muted);flex:none}
+.search kbd{font-family:"Geist Mono",monospace;font-size:11px;color:var(--fg-muted);border:1px solid var(--line);border-radius:4px;padding:0 5px}
+.field{display:grid;gap:6px;margin-bottom:16px}
+.field label,.flabel{font-size:13px;font-weight:500}
+.field .help{font-size:12.5px;color:var(--fg-muted)}
+.input,.select,textarea.input{height:40px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:0 12px;width:100%;transition:border-color .15s,box-shadow .15s}
+textarea.input{height:auto;padding:10px 12px;line-height:1.5;resize:vertical}
+.input:focus,.select:focus{outline:0;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+.toggle{position:relative;width:36px;height:20px;border-radius:999px;background:var(--line-strong);flex:none;transition:background-color .2s}
+.toggle::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--surface);transition:transform .2s cubic-bezier(.3,.8,.2,1)}
+.toggle[aria-checked="true"]{background:var(--brand)}
+.toggle[aria-checked="true"]::after{transform:translateX(16px)}
+.check{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;transition:background-color .12s}
+.check:hover{background:var(--surface-2)}
+.check input{accent-color:var(--brand);width:16px;height:16px;margin:0}
+.check .mono{font-size:13px}
+.check small{margin-left:auto;color:var(--fg-muted);font-size:12px}
+
+/* list rows */
+.list{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.lrow{display:grid;gap:6px 16px;padding:14px 18px;border-top:1px solid var(--line);transition:background-color .15s;text-decoration:none;color:inherit}
+.lrow:first-child{border-top:0}
+a.lrow:hover,button.lrow:hover{background:var(--surface-2)}
+.meta{color:var(--fg-muted);font-size:12.5px}
+.cnt{display:flex;gap:14px;align-items:baseline;font-size:12.5px;color:var(--fg-muted);white-space:nowrap}
+.cnt b{font-family:"Bricolage Grotesque",sans-serif;font-size:20px;font-weight:600;color:var(--fg);letter-spacing:-.02em;margin-right:3px;font-variant-numeric:tabular-nums}
+.cnt .s b{color:var(--sec)}
+
+/* bulletin list */
+.brow{grid-template-columns:auto minmax(0,1fr) auto}
+.brow .sum{font-size:15px;font-weight:500;line-height:1.4;margin:0}
+.brow .top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+.brow .st{font-size:13px;font-weight:600}
+
+/* bulletin */
+.hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px;align-items:end;padding:28px 0 26px}
+.hero h1{font-weight:600;font-size:clamp(34px,5vw,56px);line-height:1;letter-spacing:-.035em;margin:14px 0}
+.hero h1 span{color:var(--sec)}
+.hero p{margin:0;font-size:16px;color:var(--fg-muted);max-width:56ch}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 14px 12px;text-align:left;transition:transform .2s cubic-bezier(.2,.7,.2,1),box-shadow .2s,border-color .2s}
+.tile:hover{transform:translateY(-2px);box-shadow:0 8px 20px var(--shadow);border-color:var(--line-strong)}
+.tile b{display:block;font-family:"Bricolage Grotesque",sans-serif;font-size:34px;font-weight:600;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.tile span{display:block;margin-top:8px;font-size:12px;color:var(--fg-muted);line-height:1.3}
+.tile.s b{color:var(--sec)}
+.tbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.tabs{position:relative;display:inline-grid;grid-template-columns:1fr 1fr;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px}
+.tabs button{position:relative;z-index:1;padding:7px 16px;font-weight:500;color:var(--fg-muted);transition:color .2s}
+.tabs button[aria-pressed="true"]{color:var(--on-brand)}
+.tabs .ind{position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 3px);border-radius:7px;background:var(--brand);transition:transform .3s cubic-bezier(.3,.8,.2,1)}
+.tabs[data-v="repo"] .ind{transform:translateX(100%)}
+.hint{color:var(--fg-muted);font-size:13px}
+.cols{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px;align-items:start}
+.scard{background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--sec);border-radius:16px;padding:18px;margin-bottom:12px;transition:box-shadow .25s,transform .25s cubic-bezier(.2,.7,.2,1)}
+.scard:hover{box-shadow:0 10px 28px var(--shadow);transform:translateY(-1px)}
+.scard h3{font-size:21px;font-weight:600;line-height:1.2;margin:10px 0 12px;text-wrap:balance}
+.ctx{color:var(--fg-muted);font-size:13px;margin:10px 0 0}
+.fix{margin-top:14px;border-radius:12px;background:var(--surface-2);padding:12px 12px 12px 14px;display:grid;gap:8px}
+.fix small{font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--brand)}
+.fix p{margin:0}
+.fix p code,.inl{background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:0 5px;font-size:12.5px}
+.cmd{display:flex;align-items:center;gap:8px;background:var(--code);border:1px solid var(--line);border-radius:9px;padding:6px 6px 6px 12px;min-width:0}
+.cmd code{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;font-size:13px;scrollbar-width:none}
+.cmd button{background:var(--brand);color:var(--on-brand);border-radius:7px;padding:5px 11px;font-size:12.5px;font-weight:600;white-space:nowrap;transition:transform .15s,filter .15s}
+.cmd button:hover{filter:brightness(1.08)}.cmd button:active{transform:scale(.96)}
+.cmd button.done{background:var(--fg);color:var(--surface)}
+.foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:14px;font-size:12.5px;color:var(--fg-muted)}
+.fb{display:flex;gap:4px;flex-wrap:wrap}
+.fb button{padding:4px 10px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--fg-muted);transition:all .15s}
+.fb button:hover{color:var(--fg);border-color:var(--line-strong)}
+.fb button[aria-pressed="true"]{background:var(--brand-soft);color:var(--brand);border-color:var(--brand)}
+.know .ki{padding:14px 16px;border-top:1px solid var(--line);display:grid;gap:8px;transition:background-color .15s}
+.know .ki:first-child{border-top:0}
+.know .ki:hover{background:var(--surface-2)}
+.ki h4{margin:0;font-size:15px;font-weight:500;line-height:1.35}
+.ki .row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.ki .rr{font-family:"Geist Mono",monospace;font-size:12px;color:var(--fg-muted)}
+.ki .fb{opacity:.5;transition:opacity .2s}
+.ki:hover .fb,.ki:focus-within .fb{opacity:1}
+.advr{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.advr b{font-family:"Geist Mono",monospace;font-weight:500}
+.advr span{color:var(--fg-muted);font-size:12.5px}
+.folded{display:flex;align-items:center;gap:12px;border:1px dashed var(--line-strong);border-radius:16px;padding:14px 16px;color:var(--fg-muted);width:100%;text-align:left;transition:border-color .2s,color .2s}
+.folded:hover{border-color:var(--brand);color:var(--fg)}
+.folded b{font-family:"Bricolage Grotesque",sans-serif;font-size:22px;color:var(--fg)}
+.folded span:last-child{margin-left:auto;font-weight:500;color:var(--brand)}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.rc{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;transition:box-shadow .25s,transform .25s}
+.rc:hover{box-shadow:0 10px 28px var(--shadow);transform:translateY(-2px)}
+.rc.hot{border-color:color-mix(in srgb,var(--sec) 45%,var(--line))}
+.rc header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.rc header b{font-family:"Geist Mono",monospace;font-size:14px;font-weight:500}
+.rc header span{font-size:12px;color:var(--fg-muted)}
+.rc header span.s{color:var(--sec);font-weight:600}
+.rc ul{list-style:none;margin:0;padding:0;display:grid;gap:7px}
+.rc li{display:grid;grid-template-columns:8px 1fr;gap:9px;align-items:baseline;font-size:13px;line-height:1.35}
+.rc li i{width:8px;height:8px;border-radius:50%}
+.d-security{background:var(--sec)}.d-upgrade{background:var(--upgrade)}.d-read{background:var(--read)}.d-wait{background:var(--wait)}
+.rc .cmd{margin-top:8px}.rc ul+.cmd{margin-top:12px}
+.flash{animation:flash 1.2s ease}
+.gen{margin-top:28px;color:var(--fg-muted);font-family:"Geist Mono",monospace;font-size:11.5px;text-align:right}
+
+/* alerts */
+.arow{grid-template-columns:190px minmax(0,1fr) 230px;align-items:start}
+.arow .sevs{justify-content:flex-end}
+.arow .pk{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.arow .pk b{font-family:"Geist Mono",monospace;font-weight:500;font-size:14.5px}
+.sevs{display:flex;gap:4px;flex-wrap:wrap}
+.fixl{display:grid;gap:6px}
+.fixl div{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;align-items:baseline;font-size:13px}
+.fixl div>span:last-child{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;min-width:0}
+.fixl .r{font-family:"Geist Mono",monospace;font-size:12px;color:var(--fg-muted)}
+.fixl code{background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:2px 7px;font-size:12px;max-width:100%;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+.fixl span.t{color:var(--fg)}
+.ids{font-family:"Geist Mono",monospace;font-size:11.5px;color:var(--fg-muted)}
+.showmore{display:block;width:100%;padding:13px;border-top:1px solid var(--line);color:var(--brand);font-weight:500;transition:background-color .15s}
+.showmore:hover{background:var(--surface-2)}
+
+/* stack */
+.tw{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow-x:auto}
+table.drift{border-collapse:separate;border-spacing:0;width:100%;min-width:900px;font-size:13px}
+.drift th,.drift td{padding:10px 14px;border-top:1px solid var(--line);text-align:left;white-space:nowrap;vertical-align:middle}
+.drift thead th{border-top:0;background:var(--surface-2);font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--fg-muted)}
+.drift thead th small{display:block;text-transform:none;letter-spacing:0;font-family:"Geist Mono",monospace;font-weight:400;font-size:11.5px;color:var(--fg)}
+.drift th:first-child,.drift td:first-child{position:sticky;left:0;background:var(--surface);z-index:1;border-right:1px solid var(--line)}
+.drift thead th:first-child{background:var(--surface-2)}
+.drift td:first-child{font-family:"Geist Mono",monospace;font-weight:500}
+.drift tbody tr{transition:background-color .12s}
+.drift tbody tr:hover td{background:var(--surface-2)}
+.v{font-family:"Geist Mono",monospace;display:inline-flex;align-items:center;gap:6px;padding:2px 7px;border-radius:6px}
+.v small{font-family:"Geist",sans-serif;font-size:11px;font-weight:600}
+.v-ok{color:var(--ok)}
+.v-minor,.v-lts{color:var(--fg)}
+.v-lts small{color:var(--fg-muted);font-weight:500}
+.v-major{background:var(--upgrade-soft);color:var(--upgrade)}
+.v-eol{background:var(--sec-soft);color:var(--sec)}
+.v-none{color:var(--fg-subtle)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--fg-muted);align-items:center}
+.behind{font-family:"Bricolage Grotesque",sans-serif;font-size:17px;font-weight:600}
+
+/* repos */
+.rrow{grid-template-columns:minmax(170px,1fr) minmax(0,2fr) 110px 140px;align-items:center}
+.rrow .nm b{font-family:"Geist Mono",monospace;font-weight:500;font-size:14px;display:block}
+.open-s{color:var(--sec);font-weight:600;font-size:13px}
+.open-ok{color:var(--ok);font-weight:500;font-size:13px}
+
+/* streams */
+.sgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px;align-items:start}
+.stc{padding:18px;margin-bottom:12px;transition:border-color .2s,box-shadow .2s;cursor:pointer;text-align:left;width:100%;display:block}
+.stc:hover{box-shadow:0 10px 28px var(--shadow)}
+.stc.sel{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+.stc h3{margin:0;font-size:21px;font-weight:600;display:flex;align-items:center;gap:8px}
+.stc h3 i{width:9px;height:9px;border-radius:50%;background:var(--brand)}
+.stc dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:14px 0 0;font-size:13px}
+.stc dt{color:var(--fg-muted)}.stc dd{margin:0}
+.edit-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.edit-h h3{margin:0;font-size:19px;font-weight:600}
+.cl{padding:8px;display:grid;grid-template-columns:1fr 1fr;gap:2px;max-height:520px;overflow:auto}
+.edit-f{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 18px;border-top:1px solid var(--line);flex-wrap:wrap}
+
+/* settings */
+.sett{display:grid;grid-template-columns:200px minmax(0,640px);gap:32px;align-items:start}
+.sidx{position:sticky;top:84px;display:grid;gap:2px}
+.sidx a{padding:8px 12px;border-radius:9px;color:var(--fg-muted);text-decoration:none;font-weight:500;transition:background-color .12s,color .12s;white-space:nowrap}
+.sidx a:hover{color:var(--fg);background:var(--surface)}
+.sidx a[aria-current]{background:var(--surface);color:var(--fg);box-shadow:inset 2px 0 0 var(--brand)}
+.sblock{padding:20px;margin-bottom:16px;scroll-margin-top:84px}
+.sblock h2{margin:0 0 4px;font-size:19px;font-weight:600}
+.sblock>p{margin:0 0 16px;color:var(--fg-muted);font-size:13.5px}
+.wrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.wrow:first-of-type{border-top:0}
+.wrow b{font-weight:500}
+.wrow small{display:block;color:var(--fg-muted);font-size:12.5px}
+.mseg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:2px}
+.mseg button{padding:4px 10px;border-radius:7px;font-size:12.5px;font-weight:500;color:var(--fg-muted);transition:all .15s}
+.mseg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px var(--shadow)}
+.lock{font-size:12.5px;color:var(--fg-muted);display:flex;align-items:center;gap:6px}
+.trow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+.trow small{display:block;color:var(--fg-muted);font-size:12.5px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.savebar{display:flex;justify-content:flex-end;gap:8px}
+
+/* auth & onboarding */
+.solo{max-width:432px;margin:0 auto;padding-top:64px;padding-bottom:80px}
+.solo.w{max-width:652px;padding-top:40px}
+.solo h1{font-size:clamp(28px,6vw,36px);font-weight:600;letter-spacing:-.03em;line-height:1.05;margin:20px 0 8px}
+.solo .lead{color:var(--fg-muted);font-size:15px;margin:0 0 24px}
+.or{display:flex;align-items:center;gap:12px;color:var(--fg-muted);font-size:12.5px;margin:18px 0}
+.or::before,.or::after{content:"";flex:1;border-top:1px solid var(--line)}
+.fine{font-size:12.5px;color:var(--fg-muted);text-align:center;margin-top:18px}
+.steps{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--fg-muted)}
+.steps span{display:inline-flex;align-items:center;gap:6px}
+.steps i{width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;font-style:normal;font-size:12px;font-weight:600;border:1px solid var(--line);background:var(--surface)}
+.steps .done i{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.steps .cur{color:var(--fg);font-weight:500}
+.steps .cur i{background:var(--brand);color:var(--on-brand);border-color:transparent}
+.steps .ln{width:24px;border-top:1px solid var(--line-strong)}
+.ostep{display:grid;grid-template-columns:26px minmax(0,1fr);gap:12px;padding:16px 0;border-top:1px solid var(--line)}
+.ostep:first-child{border-top:0;padding-top:4px}
+.ostep>i{width:26px;height:26px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line);display:grid;place-items:center;font-style:normal;font-weight:600;font-size:12.5px}
+.ostep h4{margin:2px 0 6px;font-size:15px;font-weight:600}
+.ostep p{margin:0 0 10px;color:var(--fg-muted);font-size:13.5px}
+pre.code{position:relative;margin:0;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:14px;font-family:"Geist Mono",monospace;font-size:12.5px;line-height:1.6;overflow-x:auto}
+pre.code .k{color:var(--brand)}pre.code .c{color:var(--fg-muted)}
+.cpy{position:absolute;top:8px;right:8px}
+.wait{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);font-size:13.5px}
+.wait i{width:10px;height:10px;border-radius:50%;border:2px solid var(--brand);flex:none}
+.ofoot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:20px;flex-wrap:wrap}
+
+/* empty, toast, dialog */
+.empty{text-align:center;padding:48px 20px}
+.empty svg{color:var(--fg-subtle)}
+.empty h3{font-size:19px;font-weight:600;margin:12px 0 6px}
+.empty p{color:var(--fg-muted);margin:0 auto 18px;max-width:44ch}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 28px var(--shadow);padding:10px 14px;font-size:13px;z-index:60;animation:rise .2s ease-out}
+.toast svg{color:var(--ok)}
+@media (min-width:768px){.toast{left:auto;right:24px;transform:none}}
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:70;display:grid;place-items:center;padding:16px;animation:fadeIn .18s ease-out}
+.dlg{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 28px var(--shadow);max-width:440px;width:100%;padding:20px;animation:pop .18s ease-out}
+.dlg h3{margin:0 0 6px;font-size:19px;font-weight:600}
+.dlg p{margin:0 0 16px;color:var(--fg-muted)}
+.dlg .acts{justify-content:flex-end;margin-top:4px}
+
+@media (max-width:980px){.hero{grid-template-columns:1fr;align-items:start}.cols,.sgrid{grid-template-columns:1fr}.rrow{grid-template-columns:minmax(0,1fr) auto}.rrow .rt{grid-column:1/-1}.rrow .sc{display:none}}
+@media (max-width:768px){
+  .bar-r{margin-left:auto}.pills{order:3;flex-basis:100%;margin-bottom:10px}
+  .bar-in{min-height:56px;gap:10px 12px;padding-top:8px}
+  .sett{grid-template-columns:1fr;gap:12px}.sidx{position:static;display:flex;overflow-x:auto;scrollbar-width:none}
+  .arow{grid-template-columns:1fr}.arow .sevs{justify-content:flex-start}.brow{grid-template-columns:minmax(0,1fr)}.brow .cnt{grid-row:3}
+  .cl{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.scard{padding:15px}.scard h3{font-size:19px}
+  .ki .fb{opacity:1}.hint{display:none}.two{grid-template-columns:1fr}
+  .fixl div{grid-template-columns:1fr;gap:4px}
+  .wrow{flex-direction:column;align-items:flex-start;gap:8px}
+  .sw .lbl2{display:none}
+  .search{flex-basis:100%}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="mark" viewBox="0 0 20 20"><rect x="2" y="3" width="16" height="3" rx="1.5" fill="currentColor"/><rect x="2" y="8.5" width="11" height="3" rx="1.5" fill="currentColor" opacity=".65"/><rect x="2" y="14" width="6" height="3" rx="1.5" fill="currentColor" opacity=".35"/></symbol>
+  <symbol id="chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="srch" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="ok" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5 8.2l2 2 4-4.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="gh" viewBox="0 0 16 16"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.88.87 2.34.66.07-.52.28-.87.5-1.07-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.6 7.6 0 0 1 8 3.87c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></symbol>
+  <symbol id="e-inbox" viewBox="0 0 40 40"><path d="M6 22l5-13h18l5 13v9H6z M6 22h9l2 4h6l2-4h9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  <symbol id="e-shield" viewBox="0 0 40 40"><path d="M20 5l12 5v9c0 8-5 13-12 16C13 32 8 27 8 19v-9z M15 20l4 4 7-8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+  <symbol id="e-layers" viewBox="0 0 40 40"><path d="M20 6l14 7-14 7-14-7z M6 20l14 7 14-7 M6 27l14 7 14-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  <symbol id="e-repo" viewBox="0 0 40 40"><path d="M10 6h20v22H12a3 3 0 0 0 0 6h18 M10 6v25" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="sw"><div class="sw-in gut">
+  <b class="lbl2">Briff · Triage pages</b>
+  <div class="seg" role="group" aria-label="Page" id="pageSeg"></div>
+  <span class="sp"></span>
+  <div class="seg" role="group" aria-label="Data" id="dataSeg"><button data-state="full">Populated</button><button data-state="empty">New org</button></div>
+  <div class="seg" role="group" aria-label="Theme" id="themeSeg"><button data-t="system">System</button><button data-t="light">Light</button><button data-t="dark">Dark</button></div>
+</div></div>
+<div id="app"></div>
+<div id="layer" aria-live="polite"></div>
+
+<script>
+(function(){
+const PAGES=[["bulletins","Bulletins list"],["bulletin","Bulletin"],["alerts","Alerts"],["stack","Stack"],["repos","Repos"],["streams","Streams"],["settings","Settings"],["login","Login"],["onboarding","Onboarding"]];
+const NAV=[["bulletins","Bulletins"],["alerts","Alerts"],["stack","Stack"],["repos","Repos"],["streams","Streams"],["settings","Settings"]];
+const KIND={security:"Security",upgrade:"Upgrade",read:"Read",wait:"Wait"};
+const B={stream:"Acme",week:"2026-W43",sent:"Mon 20 Oct",
+  summary:"A security fix in undici affects several of your repos, and better-auth 1.7.12 fixes JWT and OAuth checks used by briff.",
+  attention:[
+    {id:"a1",kind:"security",title:"undici 8.12.2 fixes TLS validation bypass and cache poisoning",repos:["briff","clinic.example","garden.example","mint-app","orchid-hotel","pixel-studio","yard","yard-mobile"],action:'undici is a transitive dependency: update the packages that pull it in (<code>npm ls undici</code> shows which)',cmd:"npm ls undici",source:"nodejs/undici releases",also:"also v7.30.1, v6.29.1"},
+    {id:"a2",kind:"security",title:"better-auth 1.7.12 fixes JWT, OAuth and ID token checks",repos:["briff"],ctx:"briff is on 1.7.9",cmd:"npm i better-auth@1.7.12"},
+    {id:"a3",kind:"security",title:"Payload 3.91.0 resolves nodemailer security advisories",repos:["garden.example","west.garden.example","bakery.example"],ctx:"garden.example, west.garden.example run nodemailer 9.0.3; bakery.example on payload 2.32.3",cmd:"npm i nodemailer@10.1.7",scope:["garden.example","west.garden.example"]}],
+  know:[
+    {id:"k1",kind:"read",title:"msw 3.0.0 is ESM-only and drops Node 18 and 20",repos:["briff","briff-reader"]},
+    {id:"k2",kind:"upgrade",title:"cn 0.5.0 requires Node 22 and changes the CSS build",repos:["briff"]},
+    {id:"k3",kind:"read",title:"shadcn 4.22.0 moves its schemas to Zod 4",repos:["briff","briff-reader"]},
+    {id:"k4",kind:"upgrade",title:"puppeteer-core 25.15.0; browsers 3.2.5 fixes path traversal",repos:["pixel-studio"]},
+    {id:"k5",kind:"wait",title:"TypeScript 7.1 Beta is on npm",repos:null,count:14}],
+  adv:[{pkg:"vite",dep:"transitive",sev:"HIGH",n:3,repo:"garden.example"},{pkg:"markdown-it",dep:"transitive",sev:"HIGH",n:2,repo:"mint-app"}],
+  older:340,folded:332,meta:"claude-haiku-5-5 · synthesis-v6 · 2026-10-20 04:00 UTC"};
+
+/* Stack: illustrative versions; latest as of the mock date */
+const COLS=[
+  {k:"node",n:"Node",latest:"24.11",note:"LTS",eol:[18,20],lts:[22]},
+  {k:"postgres",n:"Postgres",latest:"18.0",eol:[13]},
+  {k:"next",n:"Next.js",latest:"16.2"},
+  {k:"react",n:"React",latest:"19.2"},
+  {k:"typescript",n:"TypeScript",latest:"7.0"},
+  {k:"payload",n:"Payload",latest:"3.91",eol:[2]}];
+const R=[
+  ["briff","GitHub Action",{node:["22.21","Dockerfile"],postgres:["17.6","docker-compose.yml"],next:"16.2",react:"19.2",typescript:"5.9"},2],
+  ["briff-reader","GitHub Action",{node:["22.21","Dockerfile"],typescript:"5.9"},0],
+  ["mint-app","Local scanner",{node:["22.21",".nvmrc"],react:"19.1",typescript:"5.9"},1],
+  ["yard","GitHub Action",{node:["20.19","Dockerfile"],postgres:["16.10","docker-compose.yml"],next:"15.5",react:"19.1",typescript:"5.8"},1],
+  ["yard-mobile","Local scanner",{node:["22.21",".nvmrc"],react:"19.1",typescript:"5.9"},1],
+  ["grove-mobile","Local scanner",{node:["22.21",".nvmrc"],react:"19.2",typescript:"5.9"},0],
+  ["grove-web","GitHub Action",{node:["22.21","Dockerfile"],next:"16.1",react:"19.2",typescript:"5.9"},0],
+  ["grove-admin","GitHub Action",{node:["22.21","Dockerfile"],next:"15.5",react:"19.1",typescript:"5.9"},0],
+  ["marketing.example","GitHub Action",{node:["22.21","Dockerfile"],next:"16.2",react:"19.2",typescript:"5.9"},0],
+  ["clinic.example","GitHub Action",{node:["20.19","Dockerfile"],postgres:["16.10","docker-compose.yml"],next:"15.4",react:"19.1",typescript:"5.8",payload:"3.62"},1],
+  ["garden.example","GitHub Action",{node:["22.21","Dockerfile"],postgres:["16.10","docker-compose.yml"],next:"15.5",react:"19.1",typescript:"5.9",payload:"3.80"},2],
+  ["west.garden.example","GitHub Action",{node:["22.21","Dockerfile"],postgres:["16.10","docker-compose.yml"],next:"15.5",react:"19.1",typescript:"5.9",payload:"3.80"},1],
+  ["orchid-hotel","GitHub Action",{node:["18.20","Dockerfile"],postgres:["15.14","docker-compose.yml"],next:"14.2",react:"18.3",typescript:"5.4",payload:"2.30"},1],
+  ["pixel-studio","GitHub Action",{node:["22.21","Dockerfile"],postgres:["16.10","docker-compose.yml"],next:"15.5",react:"19.1",typescript:"5.9",payload:"3.85"},1],
+  ["bakery.example","GitHub Action",{node:["18.20","Dockerfile"],postgres:["13.22","docker-compose.yml"],next:"14.2",react:"18.3",typescript:"5.4",payload:"2.32.3"},1]];
+const CLIENT=["forms-web","tracker","pantheon","pantheon-dashboard","budget","mailer"];
+
+const st={page:"bulletin",state:"full",view:"item",sel:"Acme",filter:"all",sev:"all",fb:{}};
+const app=document.getElementById("app"),layer=document.getElementById("layer"),root=document.documentElement;
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const reduce=()=>window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+const pl=(n,w,p)=>`${n} ${n===1?w:(p||w+"s")}`;
+const empty=()=>st.state==="empty";
+const fbTrio=id=>`<div class="fb" role="group" aria-label="Feedback">${["Useful","Not useful","Less of this"].map(l=>`<button data-fb aria-pressed="false">${l}</button>`).join("")}</div>`;
+const cmdBox=c=>`<div class="cmd"><code>${c}</code><button data-copy="${c}">Copy</button></div>`;
+const emptyState=(ic,t,p,btn)=>`<div class="card in"><div class="empty"><svg width="40" height="40"><use href="#${ic}"/></svg><h3>${t}</h3><p>${p}</p>${btn||""}</div></div>`;
+const ph=(eyebrow,title,sub,acts)=>`<header class="ph in"><div>${eyebrow?`<div class="eyebrow">${eyebrow}</div>`:""}<h1>${title}</h1>${sub?`<p>${sub}</p>`:""}</div>${acts?`<div class="acts">${acts}</div>`:""}</header>`;
+const parse=v=>{const [a,b]=String(v).split(".");return [+a,+(b||0)]};
+function status(col,v){if(v==null)return"none";const [M,m]=parse(v),[LM,Lm]=parse(col.latest);if(col.eol&&col.eol.includes(M))return"eol";if(col.lts&&col.lts.includes(M))return"lts";if(M<LM)return"major";if(m<Lm)return"minor";return"ok"}
+
+function shell(inner,wide){
+  return `<header class="bar"><div class="bar-in gut" style="max-width:${wide?1440:1200}px">
+    <a class="logo" href="#" data-go="bulletin"><svg width="22" height="22"><use href="#mark"/></svg>briff</a>
+    <nav class="pills" aria-label="Main">${NAV.map(([k,n])=>`<a href="#" data-go="${k}"${(st.page===k||(k==="bulletins"&&st.page==="bulletin"))?' aria-current="page"':""}>${n}${k==="alerts"&&!empty()?'<span class="dot" aria-label="new"></span>':""}</a>`).join("")}</nav>
+    <div class="bar-r"><button class="sp-btn" data-pop aria-haspopup="true"><i></i>${empty()?"My stream":st.sel}<svg width="12" height="12"><use href="#chev"/></svg></button><span class="av">FY</span></div>
+  </div></header><main class="wrap${wide?" wide":""} gut">${inner}</main>`;
+}
+
+/* ---------- pages ---------- */
+const P={};
+P.bulletins=()=>{
+  if(empty())return ph("","Bulletins","Every Monday, one bulletin per stream.")+emptyState("e-inbox","No bulletin yet","Your first bulletin arrives Monday, once at least one repo has been scanned. Connect repos to get started.",`<a class="btn btn-p" href="#" data-go="onboarding">Connect repos</a>`);
+  const rows=[
+    ["2026-W43","Acme","Mon 20 Oct",B.summary,3,5,332,true],
+    ["2026-W43","Client work","Mon 20 Oct","Quiet week: no security fixes. Prisma 7.2 changes the default migration lock used by tracker and pantheon.",0,2,141],
+    ["2026-W42","Acme","Mon 13 Oct","Node 20 is end-of-life in yard and clinic.example, and Expo SDK 58 is out for mint-app, yard-mobile and grove-mobile.",1,4,296],
+    ["2026-W42","Client work","Mon 13 Oct","A path-to-regexp fix reaches forms-web and tracker through express.",1,3,120],
+    ["2026-W41","Acme","Mon 6 Oct","Next.js 16.2 changes the caching default; the Payload sites on 3.8x can wait.",0,5,310],
+    ["2026-W41","Client work","Mon 6 Oct","Postgres 18.0 is out; pantheon and budget run 16 and need nothing yet.",0,3,98]];
+  const f=st.filter, list=rows.filter(r=>f==="all"||r[1]===f);
+  return ph("","Bulletins","Every Monday, one bulletin per stream. Open one to see what needs you.")+
+  `<div class="filters in" style="--i:1">${[["all","All streams",rows.length],["Acme","Acme",3],["Client work","Client work",3]].map(([k,n,c])=>`<button class="fchip" data-filter="${k}" aria-pressed="${f===k}">${n} <span>${c}</span></button>`).join("")}</div>
+  <div class="list in" style="--i:2">${list.map(r=>`<a class="lrow brow" href="#" data-go="bulletin">
+    <span class="wk" style="align-self:start">${r[0].slice(5)}</span>
+    <div><div class="top"><span class="st">${r[1]}</span><span class="meta">Emailed ${r[2]}</span>${r[7]?'<span class="lbl l-security">Latest</span>':""}</div><p class="sum">${r[3]}</p></div>
+    <div class="cnt"><span class="${r[4]?"s":""}"><b>${r[4]}</b>attention</span><span><b>${r[5]}</b>to know</span><span><b>${r[6]}</b>folded</span></div></a>`).join("")}</div>`;
+};
+P.bulletin=()=>{
+  if(empty())return ph(`<span class="wk">2026-W43</span>`,"Your first bulletin","")+emptyState("e-inbox","Nothing to report yet","Once your repos are scanned, this page shows what needs your attention, what is good to know, and every repo at a glance.",`<a class="btn btn-p" href="#" data-go="onboarding">Connect repos</a>`);
+  const card=(a,i)=>`<article class="scard in" style="--i:${i+4}"><span class="lbl l-${a.kind}">${KIND[a.kind]}</span><h3>${a.title}</h3>
+    <div class="chips">${a.repos.map(r=>`<button class="chip" data-gorepo="${r}">${r}</button>`).join("")}</div>
+    ${a.ctx?`<p class="ctx">${a.ctx}</p>`:""}
+    <div class="fix"><small>Fix</small>${a.action?`<p>${a.action}</p>`:""}${cmdBox(a.cmd)}${a.scope?`<span class="meta">Run in ${a.scope.join(" and ")}</span>`:""}</div>
+    <div class="foot"><span>${a.source?`${a.source} · ${a.also}`:""}</span>${fbTrio(a.id)}</div></article>`;
+  const byItem=`<div class="cols">
+    <div><h2 class="h2">Needs your attention <span class="badge">${B.attention.length}</span></h2>${B.attention.map(card).join("")}</div>
+    <div><h2 class="h2">Good to know <span class="badge">${B.know.length}</span></h2>
+      <div class="card know in" style="--i:5;overflow:hidden;margin-bottom:12px">${B.know.map(k=>`<div class="ki"><div class="row"><span class="lbl l-${k.kind}">${KIND[k.kind]}</span><span class="rr">${k.repos?k.repos.join(", "):pl(k.count,"repo")}</span></div><h4>${k.title}</h4>${fbTrio(k.id)}</div>`).join("")}</div>
+      <div class="card pad in" style="--i:6;margin-bottom:12px;padding:16px"><h4 style="margin:0 0 10px;font-size:13px;font-weight:600">New security advisories this week</h4>${B.adv.map(a=>`<div class="advr"><b>${a.pkg}</b><span>${a.dep} · ${a.n} advisories · ${a.repo}</span><span class="lbl l-high">${a.sev}</span></div>`).join("")}<p class="meta" style="margin:10px 0 0">${B.older} older advisories from the first scan · <a href="#" data-go="alerts">Alerts</a></p></div>
+      <button class="folded in" style="--i:7" data-go="stack"><b>${B.folded}</b><span>updates folded away</span><span>Open Stack →</span></button></div></div>`;
+  const repos={};const add=(r,it)=>{(repos[r]=repos[r]||[]).push(it)};
+  B.attention.forEach(a=>a.repos.forEach(r=>add(r,a)));B.know.forEach(k=>k.repos&&k.repos.forEach(r=>add(r,k)));
+  B.adv.forEach(a=>add(a.repo,{kind:"security",title:`${a.pkg}: ${a.n} new ${a.sev} advisories (${a.dep})`}));
+  const sc=n=>repos[n].filter(t=>t.kind==="security").length;
+  const names=Object.keys(repos).sort((x,y)=>sc(y)-sc(x)||repos[y].length-repos[x].length||x.localeCompare(y));
+  const byRepo=`<div class="rgrid">${names.map((n,i)=>{const its=repos[n],s=sc(n),cmds=its.filter(t=>t.cmd&&(!t.scope||t.scope.includes(n))).map(t=>t.cmd);
+    return `<article class="rc${s?" hot":""} in" style="--i:${Math.min(i,10)}" data-repo="${n}"><header><b>${n}</b><span class="${s?"s":""}">${s?pl(s,"security item"):pl(its.length,"item")}</span></header><ul>${its.map(t=>`<li><i class="d-${t.kind}"></i><span>${t.title}</span></li>`).join("")}</ul>${cmds.map(cmdBox).join("")}</article>`}).join("")}
+    <article class="rc in" style="--i:10"><header><b>14 repos</b><span>wait</span></header><ul><li><i class="d-wait"></i><span>TypeScript 7.1 Beta is on npm</span></li></ul></article></div>`;
+  return `<section class="hero"><div class="in"><div class="eyebrow"><span class="wk">${B.week}</span><span>Emailed ${B.sent}</span><span>·</span><a href="#" data-go="bulletins" style="color:inherit">All bulletins</a></div>
+    <h1><span>3 fixes</span> to ship this week.</h1><p>${B.summary}</p></div>
+    <div class="tiles in" style="--i:1">
+      <button class="tile s" data-view="item"><b data-count="3">3</b><span>need your attention</span></button>
+      <button class="tile" data-view="item"><b data-count="5">5</b><span>good to know</span></button>
+      <button class="tile s" data-go="alerts"><b data-count="2">2</b><span>new advisories</span></button>
+      <button class="tile" data-go="stack"><b data-count="332">332</b><span>folded away</span></button></div></section>
+  <div class="tbar in" style="--i:2"><div class="tabs" data-v="${st.view}" role="group" aria-label="Group by"><span class="ind"></span><button data-view="item" aria-pressed="${st.view==="item"}">By item</button><button data-view="repo" aria-pressed="${st.view==="repo"}">By repo</button></div><span class="hint">Click a repo name to see everything for that repo</span></div>
+  ${st.view==="item"?byItem:byRepo}<p class="gen">${B.meta}</p>`;
+};
+P.alerts=()=>{
+  const head=ph("","Alerts","Same-day emails when a new advisory hits a package you run, plus the backlog from your first scan.",`<button class="btn btn-s" data-go="settings">Alert settings</button>`);
+  if(empty())return head+emptyState("e-shield","No advisories","When a package in one of your repos gets a security advisory, it shows up here and in your inbox the same day.",`<a class="btn btn-p" href="#" data-go="onboarding">Connect repos</a>`);
+  const NEW=[
+    {p:"vite",dep:"transitive",sev:[["high",3]],ids:"GHSA-x7c2-…, GHSA-9m4q-…, GHSA-p3vh-…",fx:[["garden.example","update the package that pulls it in","npm ls vite"]]},
+    {p:"markdown-it",dep:"transitive",sev:[["high",2]],ids:"GHSA-6vfc-…, GHSA-r8j2-…",fx:[["mint-app","update the package that pulls it in","npm ls markdown-it"]]}];
+  const BACK=[
+    {p:"next",dep:"direct",sev:[["critical",1],["high",3]],fx:[["orchid-hotel","","npm i next@14.2.35"],["bakery.example","","npm i next@14.2.35"]]},
+    {p:"payload",dep:"direct",sev:[["high",2],["moderate",1]],fx:[["orchid-hotel","Payload 2.x gets no more fixes: plan the move to 3.x",""],["bakery.example","Payload 2.x gets no more fixes: plan the move to 3.x",""]]},
+    {p:"path-to-regexp",dep:"transitive",sev:[["high",2]],fx:[["6 repos","comes in via express and next","npm ls path-to-regexp"]]},
+    {p:"axios",dep:"direct",sev:[["moderate",2]],fx:[["yard","","npm i axios@1.13.2"],["grove-admin","","npm i axios@1.13.2"]]},
+    {p:"ws",dep:"transitive",sev:[["high",1]],fx:[["4 repos","comes in via puppeteer-core and next","npm ls ws"]]},
+    {p:"esbuild",dep:"transitive",sev:[["moderate",1]],fx:[["11 repos","dev server only; update vite or tsx","npm ls esbuild"]]},
+    {p:"tar",dep:"transitive",sev:[["moderate",2]],fx:[["3 repos","comes in via node-gyp","npm ls tar"]]},
+    {p:"cookie",dep:"transitive",sev:[["low",1]],fx:[["9 repos","comes in via next and express","npm ls cookie"]]}];
+  const sev=st.sev, list=BACK.filter(b=>sev==="all"||b.sev.some(s=>s[0]===sev));
+  const row=(a,i)=>`<div class="lrow arow in" style="--i:${i}"><div class="pk"><b>${a.p}</b><span class="lbl l-${a.dep}">${a.dep}</span></div>
+    <div class="fixl">${a.fx.map(([r,t,c])=>`<div><span class="r">${r}</span><span>${t?`<span class="t">${t}</span>`:""}${c?`<code>${c}</code>`:""}</span></div>`).join("")}${a.ids?`<span class="ids">${a.ids}</span>`:""}</div>
+    <div class="sevs">${a.sev.map(([s,n])=>`<span class="lbl l-${s}">${n} ${s}</span>`).join("")}</div></div>`;
+  return head+`<section><h2 class="h2">New this week <span class="badge">2 packages</span></h2><div class="list">${NEW.map(row).join("")}</div></section>
+  <section class="sect"><h2 class="h2">First-scan backlog <span class="badge">340 advisories · 47 packages</span></h2>
+    <div class="filters">${[["all","All",340],["critical","Critical",12],["high","High",118],["moderate","Moderate",151],["low","Low",59]].map(([k,n,c])=>`<button class="fchip" data-sev="${k}" aria-pressed="${sev===k}">${n} <span>${c}</span></button>`).join("")}<label class="search" style="margin-left:auto"><svg width="15" height="15"><use href="#srch"/></svg><input placeholder="Filter packages or repos" aria-label="Filter packages or repos"><kbd>/</kbd></label></div>
+    <div class="list">${list.map(row).join("")}<button class="showmore">Show ${47-list.length} more packages</button></div></section>`;
+};
+P.stack=()=>{
+  const head=ph(`${R.length} repos · Acme`,"Stack","What every repo runs, next to what is current. Versions come from package files, Dockerfiles and docker-compose.yml.");
+  if(empty())return head+emptyState("e-layers","Nothing scanned yet","After the first scan, every repo appears here with its runtimes and key packages against the latest release.",`<a class="btn btn-p" href="#" data-go="onboarding">Connect repos</a>`);
+  const rows=R.map(([n,,v])=>{const cells=COLS.map(c=>{const raw=v[c.k];const ver=Array.isArray(raw)?raw[0]:raw;return {c,ver,s:status(c,ver)}});
+    const majors=cells.reduce((a,x)=>a+(x.ver&&(x.s==="major"||x.s==="eol")?parse(x.c.latest)[0]-parse(x.ver)[0]:0),0);
+    return {n,cells,majors,eol:cells.some(x=>x.s==="eol"),drift:cells.some(x=>x.s!=="ok"&&x.s!=="none")}});
+  const cnt={all:rows.length,drift:rows.filter(r=>r.drift).length,major:rows.filter(r=>r.majors>0).length,eol:rows.filter(r=>r.eol).length};
+  const f=["all","drift","major","eol"].includes(st.filter)?st.filter:"all";
+  const vis=rows.filter(r=>f==="all"||(f==="drift"&&r.drift)||(f==="major"&&r.majors>0)||(f==="eol"&&r.eol)).sort((a,b)=>b.eol-a.eol||b.majors-a.majors||a.n.localeCompare(b.n));
+  const cell=x=>`<td>${x.s==="none"?`<span class="v v-none">–</span>`:`<span class="v v-${x.s}"${x.s==="lts"?' title="Supported LTS line"':""}>${x.ver}${x.s==="eol"?"<small>EOL</small>":x.s==="major"?`<small>−${parse(x.c.latest)[0]-parse(x.ver)[0]}</small>`:x.s==="lts"?"<small>LTS</small>":""}</span>`}</td>`;
+  return head+`<div class="filters in" style="--i:1">${[["all","All repos"],["drift","Any drift"],["major","Majors behind"],["eol","End of life"]].map(([k,n])=>`<button class="fchip" data-filter="${k}" aria-pressed="${f===k}">${n} <span>${cnt[k]}</span></button>`).join("")}<label class="search" style="margin-left:auto"><svg width="15" height="15"><use href="#srch"/></svg><input placeholder="Repo or package" aria-label="Filter repos or packages"><kbd>/</kbd></label></div>
+  <div class="tw in" style="--i:2"><table class="drift"><thead><tr><th>Repo</th>${COLS.map(c=>`<th>${c.n}<small>latest ${c.latest}${c.note?" "+c.note:""}</small></th>`).join("")}<th>Majors behind</th></tr></thead>
+  <tbody>${vis.map(r=>`<tr><td>${r.n}</td>${r.cells.map(cell).join("")}<td><span class="behind" style="color:${r.eol?"var(--sec)":r.majors?"var(--upgrade)":"var(--ok)"}">${r.majors}</span></td></tr>`).join("")}</tbody></table></div>
+  <div class="legend"><span class="v v-ok">current</span><span class="v v-minor">minor behind</span><span class="v v-lts">22<small>LTS</small></span><span>older but supported</span><span class="v v-major">major behind <small>−n</small></span><span class="v v-eol">end of life <small>EOL</small></span><span>Versions shown are illustrative for this mock.</span></div>`;
+};
+P.repos=()=>{
+  const head=ph("","Repos",empty()?"Repos you connect appear here with what they run.":`${R.length} repos in Acme · last scan Mon 20 Oct 03:41 UTC`,`<a class="btn btn-p" href="#" data-go="onboarding">Connect repos</a>`);
+  if(empty())return head+emptyState("e-repo","No repos yet","Add the Briff GitHub Action to a repo, or run the local scanner once. Each repo shows up here after its first scan.",`<a class="btn btn-p" href="#" data-go="onboarding">Connect your first repo</a>`);
+  const chip=(k,v)=>{const c=COLS.find(x=>x.k===k);const [M]=parse(v[0]);const eol=c.eol&&c.eol.includes(M);return `<span class="chip${eol?" eol":""}">${k} ${M} <span class="src">· ${v[1]}</span>${eol?"<b>EOL</b>":""}</span>`};
+  return head+`<div class="filters in" style="--i:1"><label class="search"><svg width="15" height="15"><use href="#srch"/></svg><input placeholder="Search repos" aria-label="Search repos"><kbd>/</kbd></label></div>
+  <div class="list in" style="--i:2">${R.map(([n,src,v,open])=>`<div class="lrow rrow"><div class="nm"><b>${n}</b><span class="meta">${src}</span></div>
+    <div class="chips rt">${["node","postgres"].filter(k=>v[k]).map(k=>chip(k,v[k])).join("")}</div>
+    <div>${open?`<span class="open-s">${pl(open,"security item")}</span>`:`<span class="open-ok">Up to date</span>`}</div>
+    <div class="meta sc">${src==="Local scanner"?"Sun 19 Oct 22:10":"Mon 20 Oct 03:41"}</div></div>`).join("")}</div>`;
+};
+P.streams=()=>{
+  const all=[...R.map(r=>r[0]),...CLIENT];
+  const S=empty()?[{n:"My stream",repos:[],who:"you",day:"Monday 07:00"}]:[{n:"Acme",repos:R.map(r=>r[0]),who:"you@example.com",day:"Monday 07:00",last:"W43 · 3 attention"},{n:"Client work",repos:CLIENT,who:"you@example.com",day:"Monday 07:00",last:"W43 · quiet week"}];
+  const cur=S.find(s=>s.n===st.sel)||S[0];
+  return ph("","Streams","A stream is a named set of repos with its own weekly bulletin. A repo can be in more than one stream.",`<button class="btn btn-p" data-dialog="new">New stream</button>`)+
+  `<div class="sgrid"><div>${S.map((s,i)=>`<button class="card stc in${s===cur?" sel":""}" style="--i:${i}" data-stream="${s.n}"><h3><i></i>${s.n}</h3>
+    <dl><dt>Repos</dt><dd>${s.repos.length?pl(s.repos.length,"repo"):"none yet"}</dd><dt>Sends</dt><dd>${s.day} to ${s.who}</dd>${s.last?`<dt>Last</dt><dd>${s.last}</dd>`:""}</dl></button>`).join("")}</div>
+  <div class="card in" style="--i:2"><div class="edit-h"><h3>Repos in ${cur.n}</h3>${empty()?"":`<label class="search" style="flex-basis:200px"><svg width="15" height="15"><use href="#srch"/></svg><input placeholder="Filter" aria-label="Filter repos"></label>`}</div>
+    ${all.length&&!empty()?`<div class="cl">${all.map(r=>`<label class="check"><input type="checkbox"${cur.repos.includes(r)?" checked":""}><span class="mono">${r}</span></label>`).join("")}</div>`:`<div class="empty" style="padding:32px 20px"><h3>No repos to pick from</h3><p>Connected repos are listed here so you can group them.</p><a class="btn btn-p" href="#" data-go="onboarding">Connect repos</a></div>`}
+    ${empty()?"":`<div class="edit-f"><span class="meta">${cur.repos.length} of ${all.length} selected</span><div class="acts"><button class="btn btn-g">Cancel</button><button class="btn btn-p" data-toast="Stream saved">Save</button></div></div>`}</div></div>`;
+};
+P.settings=()=>{
+  const W=[["Security fixes","Always shown, never folded",null],["Breaking changes","Majors, ESM-only, dropped runtimes",2],["Runtime end of life","Node, Postgres, PHP",2],["Framework upgrades","Next.js, Payload, Expo",1],["Dev tooling","Linters, bundlers, test runners",0],["Betas and RCs","Pre-releases of what you run",0],["Type packages","@types/*",0]];
+  return ph("","Settings","")+`<div class="sett"><nav class="sidx">${["Profile","Weights","Delivery","Account"].map((s,i)=>`<a href="#s-${s.toLowerCase()}"${i===0?' aria-current="true"':""}>${s}</a>`).join("")}</nav><div>
+  <section class="card sblock in" id="s-profile"><h2>Profile</h2><p>Briff reads this when it writes your bulletin. Plain words are fine.</p>
+    <div class="field"><label for="pf">About your work</label><textarea id="pf" class="input" rows="4">${empty()?"":"Solo developer and small agency. Next.js + Payload sites for clients on Hetzner, Expo apps on both stores. I care most about security and anything that breaks a deploy; betas can wait."}</textarea><span class="help">${empty()?"Example: “Freelancer, mostly Laravel and Vue for clients; PHP upgrades matter, frontend betas don't.”":"Used as context, never shared."}</span></div></section>
+  <section class="card sblock in" style="--i:1" id="s-weights"><h2>Weights</h2><p>How much room each kind of change gets in “Good to know”. Low items are folded away.</p>
+    ${W.map(([t,s,v])=>`<div class="wrow"><div><b>${t}</b><small>${s}</small></div>${v===null?`<span class="lock"><svg width="14" height="14"><use href="#ok"/></svg>Always</span>`:`<div class="mseg" role="group" aria-label="${t}">${["Low","Normal","High"].map((l,i)=>`<button data-ms aria-pressed="${i===v}">${l}</button>`).join("")}</div>`}</div>`).join("")}</section>
+  <section class="card sblock in" style="--i:2" id="s-delivery"><h2>Delivery</h2><p>Where and when bulletins and alerts arrive.</p>
+    <div class="two"><div class="field"><label for="em">Email</label><input id="em" class="input" value="you@example.com"></div>
+    <div class="field"><label for="dt">Weekly bulletin</label><select id="dt" class="input select"><option>Monday 07:00 · Europe/Istanbul</option><option>Monday 09:00 · Europe/Istanbul</option></select></div></div>
+    <div class="trow"><div>Same-day security alerts<small>Email as soon as a new advisory hits a package you run</small></div><button class="toggle" role="switch" aria-checked="true" aria-label="Same-day security alerts" data-tg></button></div>
+    <div class="flabel" style="margin:14px 0 4px">Stream subscriptions</div>
+    ${(empty()?[["My stream","0 repos"]]:[["Acme","15 repos"],["Client work","6 repos"]]).map(([n,c])=>`<label class="check" style="padding-left:0"><input type="checkbox" checked><span>${n}</span><small>${c}</small></label>`).join("")}</section>
+  <section class="card sblock in" style="--i:3" id="s-account"><h2>Account</h2><p>Sign-in and data.</p>
+    <div class="trow"><div style="display:flex;gap:10px;align-items:center"><svg width="18" height="18"><use href="#gh"/></svg><div>GitHub<small>Connected as fyunusyildiz</small></div></div><span class="lbl l-ok">Connected</span></div>
+    <div class="trow"><div>Theme<small>Follows the switch in the top bar of this mock</small></div><span class="meta">System</span></div>
+    <div class="trow"><div>Delete account<small>Removes repos, scans and bulletins. This can't be undone.</small></div><button class="btn btn-d btn-sm" data-dialog="delete">Delete account</button></div></section>
+  <div class="savebar"><button class="btn btn-g">Discard</button><button class="btn btn-p" data-toast="Settings saved">Save changes</button></div></div></div>`;
+};
+P.login=()=>`<main class="solo gut"><a class="logo" href="#"><svg width="24" height="24"><use href="#mark"/></svg>briff</a>
+  <h1 class="in">Sign in to Briff</h1><p class="lead in" style="--i:1">A weekly bulletin built from your own stack: what to fix, what to know, and nothing else.</p>
+  <div class="in" style="--i:2"><button class="btn btn-s btn-lg" style="width:100%"><svg width="18" height="18"><use href="#gh"/></svg>Continue with GitHub</button>
+  <div class="or">or</div>
+  <div class="field"><label for="le">Work email</label><input id="le" class="input" type="email" placeholder="you@studio.dev"></div>
+  <button class="btn btn-p btn-lg" style="width:100%" data-toast="Check your inbox for a sign-in link">Email me a sign-in link</button>
+  <p class="fine">No password. New here? The same link creates your account.</p></div></main>`;
+P.onboarding=()=>{
+  const yaml=`<span class="k">name</span>: briff
+<span class="k">on</span>:
+  <span class="k">push</span>: { branches: [main] }
+  <span class="k">schedule</span>:
+    - cron: "0 3 * * 1"   <span class="c"># Mondays 03:00 UTC, before your bulletin</span>
+<span class="k">jobs</span>:
+  <span class="k">scan</span>:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: briff-dev/scan-action@v1
+        with:
+          token: \${{ secrets.BRIFF_TOKEN }}`;
+  const gha=`<div class="ostep"><i>1</i><div><h4>Add your token as a repo secret</h4><p>GitHub → your repo → Settings → Secrets and variables → Actions → New repository secret. Name it <code class="inl">BRIFF_TOKEN</code>.</p>${cmdBox("brf_live_7Qm2••••••••••••••••Xc")}</div></div>
+    <div class="ostep"><i>2</i><div><h4>Add the workflow</h4><p>Save as <code class="inl">.github/workflows/briff.yml</code>. It only reads lockfiles, Dockerfiles and compose files.</p><pre class="code"><button class="btn btn-s btn-sm cpy" data-copy="briff.yml">Copy</button>${yaml}</pre></div></div>
+    <div class="ostep"><i>3</i><div><h4>Push, and the repo appears here</h4><div class="wait"><i></i><div><b style="font-weight:500">Waiting for the first scan</b><div class="meta">Nothing received yet. This updates by itself.</div></div></div></div></div>`;
+  const local=`<div class="ostep"><i>1</i><div><h4>Run the scanner over your code folder</h4><p>Needs Node 20 or newer. It reads each repo's lockfiles, Dockerfiles and compose files, and sends only package names and versions.</p>${cmdBox("npx @briff/scan ~/code --token brf_live_7Qm2••••Xc")}</div></div>
+    <div class="ostep"><i>2</i><div><h4>Check what it found</h4><p>It lists every repo first and asks before sending. Use <code class="inl">--exclude</code> to skip folders.</p></div></div>
+    <div class="ostep"><i>3</i><div><h4>Run it again whenever you like</h4><p>Add it to cron for weekly freshness, or switch a repo to the GitHub Action later.</p><div class="wait"><i></i><div><b style="font-weight:500">Waiting for the first scan</b><div class="meta">Nothing received yet.</div></div></div></div></div>`;
+  return `<header class="bar"><div class="bar-in gut" style="max-width:620px"><a class="logo" href="#"><svg width="22" height="22"><use href="#mark"/></svg>briff</a><div class="bar-r"><a href="#" data-go="login" class="btn btn-g btn-sm">Sign out</a></div></div></header>
+  <main class="solo w gut"><div class="steps in"><span class="done"><i>✓</i>Stream</span><span class="ln"></span><span class="cur"><i>2</i>Connect repos</span><span class="ln"></span><span><i>3</i>First bulletin</span></div>
+  <h1 class="in" style="--i:1">Connect your repos</h1><p class="lead in" style="--i:2">Briff never needs write access. Pick one way now; you can mix both later.</p>
+  <div class="tbar in" style="--i:3"><div class="tabs" data-v="${st.view==="repo"?"repo":"item"}" role="group" aria-label="Method"><span class="ind"></span><button data-view="item" aria-pressed="${st.view!=="repo"}">GitHub Action</button><button data-view="repo" aria-pressed="${st.view==="repo"}">Local scanner</button></div><span class="hint">${st.view==="repo"?"Good for private or non-GitHub repos":"Recommended: keeps every repo fresh"}</span></div>
+  <div class="card pad in" style="--i:4">${st.view==="repo"?local:gha}</div>
+  <div class="ofoot"><a href="#" class="btn btn-g" data-go="bulletin">Skip for now</a><button class="btn btn-p" disabled>Continue</button></div>
+  <p class="fine">Token, action and CLI names are placeholders in this mock.</p></main>`;
+};
+
+/* ---------- shell plumbing ---------- */
+function render(){
+  const p=st.page;
+  const solo=p==="login"||p==="onboarding";
+  app.innerHTML=solo?P[p]():shell(P[p](),p==="stack");
+  root.setAttribute("data-page",p);
+  document.querySelectorAll("#pageSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.p===p)));
+  document.querySelectorAll("#dataSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.state===st.state)));
+  if(p==="bulletin"&&!empty()&&st.view==="item"&&!reduce()&&!render.counted){render.counted=true;countUp()}
+}
+function go(p){if(p!==st.page){st.page=p;st.filter="all";if(p!=="onboarding"&&p!=="bulletin")st.view="item";if(p==="onboarding")st.view="item";store.set("briff-pages-page",p);render();window.scrollTo(0,0)}}
+function countUp(){app.querySelectorAll("[data-count]").forEach(el=>{const to=+el.dataset.count,t0=performance.now(),d=to>20?900:500;el.textContent="0";const s=n=>{const q=Math.min(1,(n-t0)/d);el.textContent=Math.round(to*(1-Math.pow(1-q,3)));if(q<1)requestAnimationFrame(s)};requestAnimationFrame(s)})}
+function setTheme(t,anim){
+  if(anim&&!reduce()){root.classList.add("theming");clearTimeout(setTheme.t);setTheme.t=setTimeout(()=>root.classList.remove("theming"),350)}
+  if(t==="light"||t==="dark")root.setAttribute("data-theme",t);else root.removeAttribute("data-theme");
+  document.querySelectorAll("#themeSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.t===(t||"system"))));
+}
+let toastT;
+function toast(msg){layer.querySelectorAll(".toast").forEach(t=>t.remove());const d=document.createElement("div");d.className="toast";d.setAttribute("role","status");d.innerHTML=`<svg width="16" height="16"><use href="#ok"/></svg>${msg}`;layer.appendChild(d);clearTimeout(toastT);toastT=setTimeout(()=>d.remove(),2500)}
+let lastFocus;
+function dialog(kind){
+  lastFocus=document.activeElement;
+  const D=kind==="delete"?{t:"Delete your account?",b:"This removes your repos, scans, streams and every bulletin. Same-day alerts stop at once. This can't be undone.",a:`<button class="btn btn-s" data-close>Cancel</button><button class="btn btn-df" data-close data-toast="Account deletion scheduled">Delete account</button>`}
+   :{t:"New stream",b:"A stream gets its own bulletin. You pick its repos next.",f:`<div class="field"><label for="sn">Name</label><input id="sn" class="input" placeholder="e.g. Client sites"></div>`,a:`<button class="btn btn-s" data-close>Cancel</button><button class="btn btn-p" data-close data-toast="Stream created">Create stream</button>`};
+  layer.insertAdjacentHTML("beforeend",`<div class="scrim" data-scrim><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgT"><h3 id="dlgT">${D.t}</h3><p>${D.b}</p>${D.f||""}<div class="acts">${D.a}</div></div></div>`);
+  const f=layer.querySelector(".dlg input,.dlg button");f&&f.focus();
+}
+function closeDialog(){const s=layer.querySelector("[data-scrim]");if(s){s.remove();lastFocus&&lastFocus.focus()}}
+function copy(btn){const t=btn.dataset.copy,l=btn.textContent;try{navigator.clipboard&&navigator.clipboard.writeText(t).catch(()=>{})}catch(e){}btn.classList.add("done");btn.textContent="Copied";toast("Copied to clipboard");setTimeout(()=>{btn.classList.remove("done");btn.textContent=l},1400)}
+
+document.getElementById("pageSeg").innerHTML=PAGES.map(([k,n])=>`<button data-p="${k}">${n}</button>`).join("");
+document.getElementById("pageSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(b)go(b.dataset.p)});
+document.getElementById("dataSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(b){st.state=b.dataset.state;st.sel=b.dataset.state==="empty"?"My stream":"Acme";store.set("briff-pages-state",st.state);render()}});
+document.getElementById("themeSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(b){setTheme(b.dataset.t,true);store.set("briff-pages-theme",b.dataset.t)}});
+document.addEventListener("click",e=>{
+  const t=e.target;
+  if(t.closest("[data-scrim]")&&!t.closest(".dlg")){closeDialog();return}
+  const c=t.closest("[data-copy]");if(c){copy(c);return}
+  const ts=t.closest("[data-toast]");if(ts){toast(ts.dataset.toast);if(ts.hasAttribute("data-close"))closeDialog();return}
+  if(t.closest("[data-close]")){closeDialog();return}
+  const pop=layer.querySelector(".pop")||app.querySelector(".pop");
+  if(t.closest("[data-pop]")){if(pop){pop.remove()}else{t.closest(".bar-r").insertAdjacentHTML("beforeend",`<div class="pop" role="menu">${(empty()?[["My stream",0]]:[["Acme",15],["Client work",6]]).map(([n,c])=>`<button role="menuitem" data-stream="${n}">${n===st.sel?"✓":"&nbsp;&nbsp;"} ${n}<small>${c} repos</small></button>`).join("")}<hr><a href="#" data-go="streams">Manage streams</a></div>`)}return}
+  if(pop&&!t.closest(".pop"))pop.remove();
+  const f=t.closest("[data-fb]");if(f){const on=f.getAttribute("aria-pressed")!=="true";f.parentElement.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed","false"));f.setAttribute("aria-pressed",String(on));return}
+  const ms=t.closest("[data-ms]");if(ms){ms.parentElement.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b===ms)));return}
+  const tg=t.closest("[data-tg]");if(tg){tg.setAttribute("aria-checked",String(tg.getAttribute("aria-checked")!=="true"));return}
+  const dl=t.closest("[data-dialog]");if(dl){dialog(dl.dataset.dialog);return}
+  const s=t.closest("[data-stream]");if(s){st.sel=s.dataset.stream;if(st.page==="streams"||t.closest(".pop"))render();return}
+  const g=t.closest("[data-go]");if(g){e.preventDefault();go(g.dataset.go);return}
+  const v=t.closest("[data-view]");if(v){st.view=v.dataset.view;render();return}
+  const fl=t.closest("[data-filter]");if(fl){st.filter=fl.dataset.filter;render();return}
+  const sv=t.closest("[data-sev]");if(sv){st.sev=sv.dataset.sev;render();return}
+  const gr=t.closest("[data-gorepo]");if(gr){st.view="repo";render();const card=app.querySelector(`[data-repo="${gr.dataset.gorepo}"]`);if(card){card.scrollIntoView({block:"center",behavior:reduce()?"auto":"smooth"});card.classList.add("flash")}return}
+  const a=t.closest('a[href^="#"]');if(a&&a.getAttribute("href")==="#")e.preventDefault();
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){closeDialog();const p=document.querySelector(".pop");p&&p.remove()}
+  if(e.key==="/"&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){const s=app.querySelector(".search input");if(s){e.preventDefault();s.focus()}}
+});
+window.addEventListener("scroll",()=>{const b=app.querySelector(".bar");b&&b.classList.toggle("scrolled",window.scrollY>8)},{passive:true});
+
+/* Attributes already on the root element win over stored preferences. */
+const pg=root.getAttribute("data-page")||store.get("briff-pages-page")||"bulletin";
+st.page=PAGES.some(p=>p[0]===pg)?pg:"bulletin";
+st.state=root.getAttribute("data-state")||store.get("briff-pages-state")||"full";
+if(st.state==="empty")st.sel="My stream";
+setTheme(root.getAttribute("data-theme")||store.get("briff-pages-theme")||"system",false);
+render();
+})();
+</script>

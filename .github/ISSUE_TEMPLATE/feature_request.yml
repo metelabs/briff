@@ -1,0 +1,21 @@
+name: Feature request
+description: Something Briff should do that it does not.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What you are trying to do and why the current behaviour does not cover it.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What you would like Briff to do. Mock output (an email line, a page) helps.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: What you use today instead, if anything.

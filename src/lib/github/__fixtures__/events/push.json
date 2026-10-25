@@ -1,0 +1,26 @@
+{
+  "ref": "refs/heads/main",
+  "before": "6113728f27ae82c7b1a177c8d03f9e96e0adf246",
+  "after": "59b20b8d5c6ff8d09518454d4dd8b7b30f095ab5",
+  "created": false,
+  "deleted": false,
+  "forced": false,
+  "compare": "https://github.com/acme/site/compare/6113728f27ae...59b20b8d5c6f",
+  "commits": [
+    {
+      "id": "59b20b8d5c6ff8d09518454d4dd8b7b30f095ab5",
+      "message": "Bump next",
+      "added": [],
+      "removed": [],
+      "modified": ["src/app/page.tsx", "package-lock.json"]
+    }
+  ],
+  "repository": {
+    "id": 186853002,
+    "full_name": "acme/site",
+    "private": true,
+    "default_branch": "main"
+  },
+  "installation": { "id": 2311213, "node_id": "MDIzOkludGVncmF0aW9uSW5zdGFsbGF0aW9uMjMxMTIxMw==" },
+  "sender": { "login": "octocat", "id": 1 }
+}

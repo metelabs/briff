@@ -1,0 +1,23 @@
+name: briff-dev
+
+# Local development database. The app and worker run on the host:
+#   docker compose up -d && npm run db:migrate && npm run dev
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: briff
+      POSTGRES_PASSWORD: briff
+      POSTGRES_DB: briff
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - briff-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U briff -d briff"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  briff-pg:

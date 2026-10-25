@@ -1,0 +1,14 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+acme-web = "~=5.0"
+acme-local = { path = ".", editable = true }
+
+[dev-packages]
+acme_test = "*"
+
+[requires]
+python_version = "3.11"

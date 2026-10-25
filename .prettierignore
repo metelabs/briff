@@ -1,0 +1,9 @@
+node_modules
+.next
+dist
+src/generated
+prisma/migrations
+package-lock.json
+docs/replay
+docs/design
+CHANGELOG.md

@@ -1,0 +1,16 @@
+.git
+.github
+node_modules
+.next
+dist
+coverage
+src/generated
+.env
+.env.*
+!.env.example
+docs
+deploy
+*.md
+!README.md
+!src/llm/prompts/*.md
+npm-debug.log*

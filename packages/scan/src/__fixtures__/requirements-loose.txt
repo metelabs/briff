@@ -1,0 +1,11 @@
+# Loose requirements, as people write them.
+-r base.txt
+--index-url https://pypi.org/simple
+-e ./libs/acme-local
+Acme_Web>=5.0,<6 ; python_version >= "3.10"
+acme-orm ~= 2.0
+acme-cli
+acme-wild==2.*
+acme-pinned===1.4.2
+acme-git @ git+https://github.com/acme/git@main
+./wheels/acme_local-1.0-py3-none-any.whl

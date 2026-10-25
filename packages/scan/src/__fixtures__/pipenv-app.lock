@@ -1,0 +1,30 @@
+{
+    "_meta": {
+        "hash": { "sha256": "0000000000000000000000000000000000000000000000000000000000000007" },
+        "pipfile-spec": 6,
+        "requires": { "python_version": "3.11" },
+        "sources": [{ "name": "pypi", "url": "https://pypi.org/simple", "verify_ssl": true }]
+    },
+    "default": {
+        "acme-web": {
+            "hashes": ["sha256:0000000000000000000000000000000000000000000000000000000000000008"],
+            "index": "pypi",
+            "markers": "python_version >= '3.10'",
+            "version": "==5.0.6"
+        },
+        "acme-sql": {
+            "hashes": [],
+            "version": "==0.5.0"
+        },
+        "acme-local": {
+            "editable": true,
+            "path": "."
+        }
+    },
+    "develop": {
+        "acme-test": {
+            "hashes": [],
+            "version": "==8.2.2"
+        }
+    }
+}

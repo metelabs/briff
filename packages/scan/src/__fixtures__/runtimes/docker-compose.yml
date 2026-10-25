@@ -1,0 +1,13 @@
+services:
+  db:
+    image: postgres:16.4
+  cache:
+    image: "valkey/valkey:8-alpine"
+  legacy-db:
+    image: mariadb:11.4
+  search:
+    image: ${SEARCH_IMAGE:-opensearchproject/opensearch:2}
+  web:
+    build: .
+  proxy:
+    image: nginx

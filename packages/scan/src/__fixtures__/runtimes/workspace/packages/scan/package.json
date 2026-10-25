@@ -1,0 +1,6 @@
+{
+  "name": "app-scan",
+  "engines": {
+    "node": ">=20"
+  }
+}

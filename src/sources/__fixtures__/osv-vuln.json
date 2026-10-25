@@ -1,0 +1,115 @@
+{
+  "id": "GHSA-9qr9-h5gf-34mp",
+  "summary": "Next.js is vulnerable to RCE in React flight protocol",
+  "modified": "2026-09-10T03:50:31.796397588Z",
+  "published": "2025-12-03T19:07:11Z",
+  "database_specific": {
+    "cwe_ids": ["CWE-502"],
+    "severity": "CRITICAL",
+    "github_reviewed": true,
+    "github_reviewed_at": "2025-12-03T19:07:11Z",
+    "nvd_published_at": "2025-12-03T18:15:47Z"
+  },
+  "severity": [
+    {
+      "type": "CVSS_V3",
+      "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H"
+    }
+  ],
+  "details": "A vulnerability affects certain React packages<sup>1</sup> for versions 19.0.0, 19.1.0, 19.1.1, and 19.2.0 and frameworks that use the affected packages, including Next.js 15.x and 16.x using the App ",
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://github.com/facebook/react/security/advisories/GHSA-fv66-9v8q-g76r"
+    },
+    {
+      "type": "WEB",
+      "url": "https://github.com/vercel/next.js/security/advisories/GHSA-9qr9-h5gf-34mp"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-55182"
+    }
+  ],
+  "affected": [
+    {
+      "package": {
+        "name": "next",
+        "ecosystem": "npm",
+        "purl": "pkg:npm/next"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "14.3.0-canary.77"
+            },
+            {
+              "fixed": "15.0.5"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": {
+        "name": "next",
+        "ecosystem": "npm",
+        "purl": "pkg:npm/next"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "15.1.0-canary.0"
+            },
+            {
+              "fixed": "15.1.9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": {
+        "name": "next",
+        "ecosystem": "npm",
+        "purl": "pkg:npm/next"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "15.2.0-canary.0"
+            },
+            {
+              "fixed": "15.2.6"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": {
+        "name": "other-pkg",
+        "ecosystem": "npm"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            },
+            {
+              "fixed": "9.9.9"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "acme/shop",
+  "type": "project",
+  "require": {
+    "php": "^8.2",
+    "ext-json": "*",
+    "acme/http-kernel": "^6.4",
+    "acme/mixed-case": "^2.1",
+    "acme/forked-widget": "dev-main"
+  },
+  "require-dev": {
+    "acme/test-runner": "^10.5"
+  }
+}

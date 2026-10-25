@@ -1,0 +1,12 @@
+[project]
+name = "acme-service"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "acme-async>=4.4",
+    "acme-models[email]>=2.8",
+    "acme-forked @ git+https://github.com/acme/forked@main",
+]
+
+[dependency-groups]
+dev = ["acme-lint>=0.6"]

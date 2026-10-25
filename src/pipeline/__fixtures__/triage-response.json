@@ -1,0 +1,56 @@
+{
+  "results": [
+    {
+      "ref": 1,
+      "bucket": "security",
+      "reason": "Fixes CVE-2026-1234 in the middleware matcher",
+      "packages": ["next"],
+      "deadline": null
+    },
+    {
+      "ref": 2,
+      "bucket": "deadline",
+      "reason": "Play requires target API 36 from a stated date",
+      "packages": [],
+      "deadline": {
+        "due_date": "2026-08-31",
+        "what": "Target Android API level 36 for new app updates."
+      }
+    },
+    {
+      "ref": 3,
+      "bucket": "deadline",
+      "reason": "Mentions an upcoming change without a date",
+      "packages": [],
+      "deadline": null
+    },
+    {
+      "ref": 4,
+      "bucket": "minor",
+      "reason": "Patch release with small bug fixes",
+      "packages": ["expo-router", " expo-router ", ""],
+      "deadline": null
+    },
+    {
+      "ref": 4,
+      "bucket": "security",
+      "reason": "duplicate ref, must be ignored",
+      "packages": [],
+      "deadline": null
+    },
+    {
+      "ref": 99,
+      "bucket": "model_or_pricing",
+      "reason": "unknown ref, must be ignored",
+      "packages": [],
+      "deadline": null
+    },
+    {
+      "ref": 5,
+      "bucket": "deadline",
+      "reason": "Impossible date",
+      "packages": [],
+      "deadline": { "due_date": "2026-02-31", "what": "Something." }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "GHSA-acme-0000-0001",
+  "summary": "acme/http-kernel leaks the session cookie on redirects",
+  "aliases": ["CVE-2026-00001"],
+  "modified": "2026-10-20T08:00:00Z",
+  "published": "2026-10-19T12:00:00Z",
+  "database_specific": { "severity": "HIGH" },
+  "references": [
+    { "type": "ADVISORY", "url": "https://github.com/advisories/GHSA-acme-0000-0001" }
+  ],
+  "affected": [
+    {
+      "package": { "ecosystem": "Packagist", "name": "acme/http-kernel" },
+      "ranges": [
+        { "type": "ECOSYSTEM", "events": [{ "introduced": "0" }, { "fixed": "5.4.46" }] },
+        { "type": "ECOSYSTEM", "events": [{ "introduced": "6.0.0" }, { "fixed": "v6.4.4" }] },
+        { "type": "ECOSYSTEM", "events": [{ "introduced": "7.0" }, { "fixed": "7.1.2" }] }
+      ]
+    },
+    {
+      "package": { "ecosystem": "npm", "name": "acme/http-kernel" },
+      "ranges": [{ "type": "SEMVER", "events": [{ "introduced": "0" }, { "fixed": "9.9.9" }] }]
+    }
+  ]
+}

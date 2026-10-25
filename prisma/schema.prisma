@@ -1,0 +1,752 @@
+// Briff data model (plan §6). Multi-tenant from day one: every tenant-scoped
+// table carries `orgId` and must be queried through `withOrg()` (src/lib/db/with-org.ts).
+// Global tables (packages, sources, items, advisories, jobs) are shared catalog data.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Auth (Better Auth core schema)
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String      @id
+  name          String
+  email         String      @unique
+  emailVerified Boolean     @default(false)
+  image         String?
+  // Bulletin language (en; tr strings are kept but unused) and an optional delivery
+  // address (defaults to email).
+  language      String      @default("en")
+  deliveryEmail String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  memberships   OrgMember[]
+  feedback      Feedback[]
+  scanTokens    ScanToken[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// ---------------------------------------------------------------------------
+// Tenancy
+// ---------------------------------------------------------------------------
+
+model Org {
+  id                  String               @id @default(cuid())
+  name                String
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  members             OrgMember[]
+  repos               Repo[]
+  dependencies        Dependency[]
+  itemMatches         ItemMatch[]
+  alerts              Alert[]
+  bulletins           Bulletin[]
+  bulletinItems       BulletinItem[]
+  feedback            Feedback[]
+  interestProfile     InterestProfile?
+  deadlines           Deadline[]
+  streams             BulletinStream[]
+  streamRepos         StreamRepo[]
+  repoRuntimes        RepoRuntime[]
+  scanTokens          ScanToken[]
+  githubInstallations GithubInstallation[]
+
+  @@map("org")
+}
+
+enum OrgRole {
+  owner
+  member
+}
+
+model OrgMember {
+  id           String    @id @default(cuid())
+  orgId        String
+  org          Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role         OrgRole   @default(owner)
+  createdAt    DateTime  @default(now())
+  // Onboarding is shown once: set when the member finishes or skips it.
+  onboardedAt  DateTime?
+  // Last visit to /alerts: the top bar's alerts dot counts new alerts created after it.
+  alertsSeenAt DateTime?
+
+  @@unique([orgId, userId])
+  @@index([userId])
+  @@map("org_member")
+}
+
+// Bearer secret a scanner sends to POST /api/scan; the token decides the org. Only the
+// sha256 of the secret is stored (it is shown once, at creation). Revoked rows are kept
+// so the list still shows what was cut off.
+model ScanToken {
+  id              String    @id @default(cuid())
+  orgId           String
+  org             Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name            String
+  tokenHash       String    @unique
+  // First 8 characters of the secret (`brf_` + 4), for display only.
+  prefix          String
+  createdAt       DateTime  @default(now())
+  lastUsedAt      DateTime?
+  revokedAt       DateTime?
+  createdByUserId String?
+  createdBy       User?     @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([orgId])
+  @@map("scan_token")
+}
+
+// An installation of the Briff GitHub App on a user or organisation account, linked to
+// exactly one org by the setup flow (src/app/api/github/*). Webhooks and scan jobs find it
+// by `installationId` before the org is known (the only tenant read outside withOrg here).
+model GithubInstallation {
+  id             String    @id @default(cuid())
+  orgId          String
+  org            Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  // GitHub's numeric id, kept as text (ids grow past 2^31).
+  installationId String    @unique
+  accountLogin   String
+  // "User" or "Organization".
+  accountType    String
+  suspendedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  repos          Repo[]
+
+  @@index([orgId])
+  @@map("github_installation")
+}
+
+// ---------------------------------------------------------------------------
+// Stack: repos and their installed dependencies
+// ---------------------------------------------------------------------------
+
+enum RepoSource {
+  local
+  github
+}
+
+model Repo {
+  id                   String              @id @default(cuid())
+  orgId                String
+  org                  Org                 @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name                 String
+  source               RepoSource
+  path                 String?
+  ecosystem            String              @default("npm")
+  // In at least one bulletin stream (kept in sync by src/lib/streams.ts); gates triage
+  // and security alerts. New repos stay out until the user adds them to a stream.
+  included             Boolean             @default(false)
+  // Set when `included` flips; a repo never toggled and seen recently is "new".
+  includedChangedAt    DateTime?
+  firstSeenAt          DateTime            @default(now())
+  lastScannedAt        DateTime?
+  // Start of the last security-scan run that checked this repo's dependencies while it
+  // was included. Alerts found before that (first scan, or re-added) are backlog.
+  securityScannedAt    DateTime?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  dependencies         Dependency[]
+  runtimes             RepoRuntime[]
+  alerts               Alert[]
+  streams              StreamRepo[]
+  // Set when the repo was scanned through the Briff GitHub App (docs/GITHUB-APP.md); the
+  // same `owner/repo` uploaded by the Action is the same row. Null when the app is gone.
+  githubInstallationId String?
+  githubInstallation   GithubInstallation? @relation(fields: [githubInstallationId], references: [id], onDelete: SetNull)
+  // Default-branch head commit of the last app scan; an unchanged head is not fetched again.
+  githubHeadSha        String?
+
+  @@unique([orgId, source, name])
+  @@map("repo")
+}
+
+model Dependency {
+  id               String   @id @default(cuid())
+  orgId            String
+  org              Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  repoId           String
+  repo             Repo     @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  packageId        String
+  package          Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  installedVersion String
+  direct           Boolean  @default(false)
+  // Declared only for development (Composer `require-dev`): the fix command keeps it there.
+  dev              Boolean  @default(false)
+  // The Python tool whose lockfile listed it (pip, poetry, uv, pipenv): the fix command speaks
+  // it. Null for npm and Composer, which have one tool each.
+  manager          String?
+  // A development-only Python package's dependency group (`dev`, `test`): the command targets
+  // it (`uv add --group test`). Null otherwise.
+  group            String?
+  // A Python requirement as the manifest declares it (extras, markers): the fix command keeps
+  // them and replaces only the version.
+  requirement      String?
+  // The uv workspace member that declares it (`uv add --package`); null for the root project.
+  project          String?
+  // `installedVersion` is a requirement as written (`>=2.0`), not an installed version: an
+  // unpinned requirements.txt line. Kept for matching; never sent to OSV, never compared.
+  unresolved       Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  @@unique([repoId, packageId, installedVersion])
+  @@index([orgId])
+  @@index([packageId])
+  @@map("dependency")
+}
+
+// A runtime (node, php, postgres, ...) a repo declares in a version file, manifest,
+// Dockerfile or compose file. `name` is a canonical id from packages/scan/src/runtimes.ts,
+// or "image" for a container image the scanner cannot map yet (version = full ref).
+// A scan that carries runtimes replaces the repo's rows.
+model RepoRuntime {
+  id         String   @id @default(cuid())
+  orgId      String
+  org        Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  repoId     String
+  repo       Repo     @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  name       String
+  // Raw text: exact version, range, major or image tag.
+  version    String
+  // major[.minor[.patch]] when derivable from `version`.
+  normalized String?
+  // File relative to the repo root, plus the field when needed ("package.json engines.node").
+  source     String
+  // Version is a variable the scanner did not resolve (FROM php:${PHP_VERSION}).
+  unresolved Boolean  @default(false)
+  // Image repository for Dockerfile/compose rows (`php`, `mcr.microsoft.com/dotnet/aspnet`).
+  image      String?
+  // A constraint (`engines.node >=20`), not the version that runs: shown, never judged
+  // end-of-life, and outweighed by concrete rows (runtimeEvidence, packages/scan). Null on
+  // rows stored before the field: readers derive it from `version` (isConstraintRow).
+  constraint Boolean? @map("isConstraint")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Version is in the key: one Dockerfile can use node:20 and node:22 in two stages.
+  @@unique([repoId, name, source, version])
+  @@index([orgId, name])
+  @@map("repo_runtime")
+}
+
+model Package {
+  id              String       @id @default(cuid())
+  ecosystem       String
+  name            String
+  latestVersion   String?
+  deprecated      String?
+  repoUrl         String?
+  releaseFeedUrl  String?
+  eolDate         DateTime?
+  eolInfo         Json?
+  serviceId       String?
+  service         Service?     @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  lastRefreshedAt DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  dependencies    Dependency[]
+  sources         Source[]
+  advisories      Advisory[]
+  itemMatches     ItemMatch[]
+
+  @@unique([ecosystem, name])
+  @@map("package")
+}
+
+// A vendor/service derived from packages (react-native-purchases -> RevenueCat).
+// The mapping lives in code (src/lib/services.ts); this table is its materialisation.
+model Service {
+  id          String      @id @default(cuid())
+  key         String      @unique
+  name        String
+  homepage    String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  packages    Package[]
+  sources     Source[]
+  itemMatches ItemMatch[]
+
+  @@map("service")
+}
+
+// ---------------------------------------------------------------------------
+// Sources and collected items
+// ---------------------------------------------------------------------------
+
+enum SourceKind {
+  github_releases
+  rss
+  // Markdown CHANGELOG served raw (e.g. Claude Code); one item per version heading.
+  changelog_md
+  npm
+  osv
+  // GitHub repository security advisories (`/repos/{owner}/{repo}/security-advisories`).
+  github_advisories
+}
+
+// Fetch cadence and urgency: `security` sources are fetched every hour and their
+// runtime security items are emailed without the LLM; the rest every 6 hours.
+enum SourceClass {
+  security
+  releases
+  news
+}
+
+model Source {
+  id            String      @id @default(cuid())
+  kind          SourceKind
+  url           String      @unique
+  name          String
+  packageId     String?
+  package       Package?    @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  serviceId     String?
+  service       Service?    @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  // Ecosystem keywords used by the deterministic matcher (e.g. ["ios", "app store"]).
+  keywords      String[]    @default([])
+  // Runtime id this source is about ("php"); its items match orgs whose repos declare it.
+  runtime       String?
+  class         SourceClass @default(news)
+  enabled       Boolean     @default(true)
+  etag          String?
+  lastModified  String?
+  lastFetchedAt DateTime?
+  lastStatus    Int?
+  lastError     String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  items         Item[]
+
+  @@index([kind])
+  @@map("source")
+}
+
+model Item {
+  id            String         @id @default(cuid())
+  sourceId      String
+  source        Source         @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  guid          String?
+  title         String
+  url           String
+  publishedAt   DateTime?
+  rawText       String         @default("")
+  contentHash   String         @unique
+  // Date an announced change takes effect, extracted later by triage.
+  effectiveDate DateTime?
+  // Structured facts for runtime security items (CVE ids, severity, fixed versions);
+  // shape in src/lib/runtime-security.ts. Null for every other item.
+  metadata      Json?
+  createdAt     DateTime       @default(now())
+  matches       ItemMatch[]
+  bulletinItems BulletinItem[]
+  feedback      Feedback[]
+  deadlines     Deadline[]
+  triage        ItemTriage?
+
+  @@index([sourceId, publishedAt])
+  @@index([createdAt])
+  @@map("item")
+}
+
+model ItemMatch {
+  id            String    @id @default(cuid())
+  orgId         String
+  org           Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  itemId        String
+  item          Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  packageId     String?
+  package       Package?  @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  serviceId     String?
+  service       Service?  @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  // Repo ids (strings) that pulled this item in.
+  repoIds       Json      @default("[]")
+  reason        String
+  score         Float
+  // Set once the deterministic runtime urgent path handled this match: emailed, or
+  // not for this org (moderate severity, another release line). Null = still pending.
+  urgentAt      DateTime?
+  // Repo ids an urgent email (or a handled skip) already covered. A rematch that adds
+  // repos to a handled match leaves them out of this list: they get one "also affects"
+  // follow-up. Null on pending matches.
+  urgentRepoIds Json?
+  // Set once the "fix is out" follow-up of an announcement went out (or was handled),
+  // or when the first email already carried the fixed versions.
+  fixNotifiedAt DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@unique([orgId, itemId])
+  @@index([orgId, score])
+  @@map("item_match")
+}
+
+// LLM classification of an item (plan §7.5). Global: an item is triaged once,
+// whichever org matched it; org-specific consequences (Deadline) are separate rows.
+model ItemTriage {
+  id            String         @id @default(cuid())
+  itemId        String         @unique
+  item          Item           @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  bucket        BulletinBucket
+  reason        String         @default("")
+  packages      String[]       @default([])
+  dueAt         DateTime?
+  dueWhat       String?
+  model         String
+  promptVersion String
+  createdAt     DateTime       @default(now())
+
+  @@index([createdAt])
+  @@index([bucket, createdAt])
+  @@map("item_triage")
+}
+
+// ---------------------------------------------------------------------------
+// Security
+// ---------------------------------------------------------------------------
+
+model Advisory {
+  id           String    @id @default(cuid())
+  osvId        String    @unique
+  packageId    String
+  package      Package   @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  summary      String?
+  affected     Json
+  severity     String?
+  fixedVersion String?
+  url          String?
+  publishedAt  DateTime?
+  modifiedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  alerts       Alert[]
+
+  @@index([packageId])
+  @@map("advisory")
+}
+
+// backlog: found by a repo's first security scan (or the first one after it was re-added);
+// new: found later, so the advisory or the installed version changed since the previous scan.
+enum AlertKind {
+  backlog
+  new
+}
+
+model Alert {
+  id          String    @id @default(cuid())
+  orgId       String
+  org         Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  advisoryId  String
+  advisory    Advisory  @relation(fields: [advisoryId], references: [id], onDelete: Cascade)
+  repoId      String
+  repo        Repo      @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  kind        AlertKind @default(new)
+  // Set once an email covered the alert (same-day alert, or counted in the first-scan email).
+  // Moderate/low new alerts stay null: they wait for the bulletin, or for OSV to raise severity.
+  deliveredAt DateTime?
+  // Set when a member marked a first-scan backlog alert as reviewed (src/pipeline/alert-review.ts):
+  // hidden from the default Alerts view and the home counts. Never set on `new` alerts;
+  // delivery (deliveredAt, urgent emails) does not read it.
+  reviewedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([advisoryId, repoId])
+  @@index([orgId])
+  @@map("alert")
+}
+
+// ---------------------------------------------------------------------------
+// Bulletins, feedback, learning
+// ---------------------------------------------------------------------------
+
+enum DeliveryStatus {
+  pending
+  sent
+  failed
+  skipped
+}
+
+// A named bulletin over a subset of the org's repos ("work", "personal"). The
+// weekly job writes one Bulletin per stream and week.
+model BulletinStream {
+  id        String       @id @default(cuid())
+  orgId     String
+  org       Org          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name      String
+  slug      String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  repos     StreamRepo[]
+  bulletins Bulletin[]
+
+  @@unique([orgId, slug])
+  @@map("bulletin_stream")
+}
+
+model StreamRepo {
+  id        String         @id @default(cuid())
+  orgId     String
+  org       Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  streamId  String
+  stream    BulletinStream @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  repoId    String
+  repo      Repo           @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+
+  @@unique([streamId, repoId])
+  @@index([orgId])
+  @@index([repoId])
+  @@map("stream_repo")
+}
+
+model Bulletin {
+  id            String          @id @default(cuid())
+  orgId         String
+  org           Org             @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  // Null on bulletins whose stream was deleted (bulletins are never deleted with it).
+  streamId      String?
+  stream        BulletinStream? @relation(fields: [streamId], references: [id], onDelete: SetNull)
+  weekStart     DateTime        @db.Date
+  // Items triaged in [periodStart, periodEnd) feed this bulletin.
+  periodStart   DateTime        @default(now())
+  periodEnd     DateTime        @default(now())
+  language      String          @default("en")
+  model         String
+  promptVersion String
+  subject       String          @default("")
+  summary       String
+  minorCount    Int             @default(0)
+  emailStatus   DeliveryStatus  @default(pending)
+  emailError    String?
+  emailSentAt   DateTime?
+  // Same input never regenerates a bulletin.
+  inputHash     String
+  // Admin "Preview synthesis": never emailed, never the week's bulletin. previewKey is ""
+  // for the week's bulletin and the requested model for a preview, so each model gets
+  // its own preview slot next to the real one.
+  preview       Boolean         @default(false)
+  previewKey    String          @default("")
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  items         BulletinItem[]
+
+  @@unique([orgId, streamId, weekStart, previewKey])
+  @@index([streamId])
+  @@map("bulletin")
+}
+
+enum BulletinBucket {
+  security
+  breaking_or_feature
+  model_or_pricing
+  deadline
+  minor
+}
+
+enum BulletinSection {
+  act
+  know
+  rest
+}
+
+enum TodoKind {
+  upgrade
+  read
+  wait
+  ignore
+}
+
+model BulletinItem {
+  id            String           @id @default(cuid())
+  orgId         String
+  org           Org              @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  bulletinId    String
+  bulletin      Bulletin         @relation(fields: [bulletinId], references: [id], onDelete: Cascade)
+  itemId        String
+  item          Item             @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  bucket        BulletinBucket
+  order         Int
+  headline      String           @default("")
+  line          String
+  // Repo names at generation time (derived from ItemMatch, included repos only).
+  affectedRepos Json             @default("[]")
+  // null on bulletins written before synthesis-v2; the view derives it from the bucket.
+  section       BulletinSection?
+  // act: the command or step to take; know: a short phrase after `todo`.
+  action        String           @default("")
+  todo          TodoKind?
+  // Other releases of the same package folded into this row (newest is itemId).
+  foldedItemIds Json             @default("[]")
+  // Per repo: installed version(s) -> the version the action moves it to (pipeline/upgrades.ts).
+  upgrades      Json             @default("[]")
+
+  @@unique([bulletinId, itemId])
+  @@index([orgId])
+  @@map("bulletin_item")
+}
+
+enum FeedbackKind {
+  up
+  down
+  less
+}
+
+model Feedback {
+  id        String       @id @default(cuid())
+  orgId     String
+  org       Org          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId    String
+  item      Item         @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  kind      FeedbackKind
+  tag       String?
+  createdAt DateTime     @default(now())
+
+  @@unique([userId, itemId])
+  @@index([orgId])
+  @@map("feedback")
+}
+
+model InterestProfile {
+  id            String    @id @default(cuid())
+  orgId         String    @unique
+  org           Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  text          String    @default("")
+  weights       Json      @default("{}")
+  // Set by the Haiku refresh; feedback after this point triggers the next refresh.
+  refreshedAt   DateTime?
+  model         String?
+  promptVersion String?
+  updatedAt     DateTime  @updatedAt
+
+  @@map("interest_profile")
+}
+
+model Deadline {
+  id            String   @id @default(cuid())
+  orgId         String
+  org           Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  itemId        String
+  item          Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  what          String
+  dueAt         DateTime
+  affectedRepos Json     @default("[]")
+  // LLM-extracted dates are a guess until the user confirms.
+  confirmed     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([orgId, dueAt])
+  @@map("deadline")
+}
+
+// ---------------------------------------------------------------------------
+// Worker queue and observability
+// ---------------------------------------------------------------------------
+
+enum JobStatus {
+  pending
+  running
+  succeeded
+  failed
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  type        String
+  // Enqueue is idempotent per dedupeKey while a job is pending.
+  dedupeKey   String
+  payload     Json      @default("{}")
+  status      JobStatus @default(pending)
+  runAfter    DateTime  @default(now())
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  lockedAt    DateTime?
+  lockedBy    String?
+  lastError   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  runs        Run[]
+
+  @@index([status, runAfter])
+  @@index([dedupeKey, status])
+  @@map("job")
+}
+
+enum RunStatus {
+  running
+  succeeded
+  failed
+}
+
+model Run {
+  id         String    @id @default(cuid())
+  jobId      String?
+  job        Job?      @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  jobType    String
+  status     RunStatus @default(running)
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  counts     Json      @default("{}")
+  tokens     Json      @default("{}")
+  error      String?
+
+  @@index([jobType, startedAt])
+  @@map("run")
+}

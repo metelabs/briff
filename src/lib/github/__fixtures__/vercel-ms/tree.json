@@ -1,0 +1,226 @@
+{
+  "sha": "97b2713a417f56c08721d88cfd339d652bc48c98",
+  "url": "https://api.github.com/repos/vercel/ms/git/trees/97b2713a417f56c08721d88cfd339d652bc48c98",
+  "tree": [
+    {
+      "path": ".github",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "98a5c78f937ca8c484f59fc2c69fdf9f71dea2a0",
+      "url": "https://api.github.com/repos/vercel/ms/git/trees/98a5c78f937ca8c484f59fc2c69fdf9f71dea2a0"
+    },
+    {
+      "path": ".github/workflows",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "36cabdd9f5f8291760188d934992127ede048a46",
+      "url": "https://api.github.com/repos/vercel/ms/git/trees/36cabdd9f5f8291760188d934992127ede048a46"
+    },
+    {
+      "path": ".github/workflows/quality.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9cbf820d2394dc4a239c500a86892f32cb59bad7",
+      "size": 718,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/9cbf820d2394dc4a239c500a86892f32cb59bad7"
+    },
+    {
+      "path": ".github/workflows/release.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "210ebe163113e13848e48e78f27b5aed6fc809d6",
+      "size": 1167,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/210ebe163113e13848e48e78f27b5aed6fc809d6"
+    },
+    {
+      "path": ".github/workflows/test.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "71140640b21e6e7fcb09dd533f2fcd5333668480",
+      "size": 712,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/71140640b21e6e7fcb09dd533f2fcd5333668480"
+    },
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "28426f8ca48e091eed3407a9d1ffe27a4d68ad51",
+      "size": 84,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/28426f8ca48e091eed3407a9d1ffe27a4d68ad51"
+    },
+    {
+      "path": ".husky",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "10eaa6176a4a7c775c37a71b777021bf285bcc75",
+      "url": "https://api.github.com/repos/vercel/ms/git/trees/10eaa6176a4a7c775c37a71b777021bf285bcc75"
+    },
+    {
+      "path": ".husky/pre-commit",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "3b40167c5049770791495e04e9af9ab93006c949",
+      "size": 25,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/3b40167c5049770791495e04e9af9ab93006c949"
+    },
+    {
+      "path": ".npmrc",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1dab4ed4c30209bd7fbead04a2965c6b022db49f",
+      "size": 18,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/1dab4ed4c30209bd7fbead04a2965c6b022db49f"
+    },
+    {
+      "path": "LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5948ee9bd0de5064423688a2967ab3111c2658ed",
+      "size": 1079,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/5948ee9bd0de5064423688a2967ab3111c2658ed"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d752132d96db763cec0bec984de4b1844fbd3cc4",
+      "size": 6444,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/d752132d96db763cec0bec984de4b1844fbd3cc4"
+    },
+    {
+      "path": "assets",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "6499e373e38c97a076b91a15a7ba7b841d64c396",
+      "url": "https://api.github.com/repos/vercel/ms/git/trees/6499e373e38c97a076b91a15a7ba7b841d64c396"
+    },
+    {
+      "path": "assets/ms-banner.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c2489529cd8a8e8551d8397774f98ee5501868b8",
+      "size": 1430,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/c2489529cd8a8e8551d8397774f98ee5501868b8"
+    },
+    {
+      "path": "assets/ms-dark.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fb10f02ad517adefba03de035d6436146ee51f07",
+      "size": 1404,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/fb10f02ad517adefba03de035d6436146ee51f07"
+    },
+    {
+      "path": "biome.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "915595fb5d02f51da067ceeff79443ead3c2ca8e",
+      "size": 500,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/915595fb5d02f51da067ceeff79443ead3c2ca8e"
+    },
+    {
+      "path": "jest.config.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "354d34743628bc0a9726ed825ef8b16689be36f0",
+      "size": 465,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/354d34743628bc0a9726ed825ef8b16689be36f0"
+    },
+    {
+      "path": "lint-staged.config.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c107b1b432eafc513ef0ad23d892bd0e51c9594f",
+      "size": 146,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/c107b1b432eafc513ef0ad23d892bd0e51c9594f"
+    },
+    {
+      "path": "package.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3be40102a287258fd4c5ecc63ebd30b87801fad8",
+      "size": 1474,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/3be40102a287258fd4c5ecc63ebd30b87801fad8"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f16f67ba316ff7e858c14e6f07a7ac0234b0c3af",
+      "size": 136804,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/f16f67ba316ff7e858c14e6f07a7ac0234b0c3af"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "51c7c0bc72e072522a02a575f069676b09b1824d",
+      "size": 66,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/51c7c0bc72e072522a02a575f069676b09b1824d"
+    },
+    {
+      "path": "src",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "9a0ff362c1a319a770f66c47f50f77c924af50a6",
+      "url": "https://api.github.com/repos/vercel/ms/git/trees/9a0ff362c1a319a770f66c47f50f77c924af50a6"
+    },
+    {
+      "path": "src/format.test.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cdabb0f652d6325ec2c2f09fc0c93c69f0d9f379",
+      "size": 8058,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/cdabb0f652d6325ec2c2f09fc0c93c69f0d9f379"
+    },
+    {
+      "path": "src/index.test.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5035ab9034dfb6efeb70399f1502a1e4a7fc6777",
+      "size": 10774,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/5035ab9034dfb6efeb70399f1502a1e4a7fc6777"
+    },
+    {
+      "path": "src/index.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d50e3c777f5a122d571df002be0747734d39df1c",
+      "size": 5864,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/d50e3c777f5a122d571df002be0747734d39df1c"
+    },
+    {
+      "path": "src/parse-strict.test.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9c30a5e9aeb3ffa3876c478642c84fceea72f583",
+      "size": 6329,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/9c30a5e9aeb3ffa3876c478642c84fceea72f583"
+    },
+    {
+      "path": "src/parse.test.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "918241109aacd84557773446b8d7566db3a817a8",
+      "size": 5086,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/918241109aacd84557773446b8d7566db3a817a8"
+    },
+    {
+      "path": "tsconfig.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c1511c4ebdc1824e01031330b340d0772cac2b68",
+      "size": 411,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/c1511c4ebdc1824e01031330b340d0772cac2b68"
+    },
+    {
+      "path": "tsdown.config.ts",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5fec9e2f412a7e47f89d6ab0bf752b6e6dde3cab",
+      "size": 148,
+      "url": "https://api.github.com/repos/vercel/ms/git/blobs/5fec9e2f412a7e47f89d6ab0bf752b6e6dde3cab"
+    }
+  ],
+  "truncated": false
+}

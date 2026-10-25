@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Briff replay: Node.js security releases, October 2026</title>
+<meta name="description" content="What Briff would have sent during Node.js security releases, October 2026: the real dated items, sample repos, the real email templates.">
+<style>
+:root{color-scheme:light dark;--bg:#fafaf9;--fg:#1c1917;--muted:#57534e;--line:#e7e5e4;--card:#ffffff;--world:#0f766e;--world-bg:#f0fdfa;--briff:#b91c1c;--briff-bg:#fef2f2;--link:#1d4ed8;--code:#f5f5f4}
+@media (prefers-color-scheme:dark){:root{--bg:#0c0a09;--fg:#e7e5e4;--muted:#a8a29e;--line:#292524;--card:#1c1917;--world:#5eead4;--world-bg:#042f2e;--briff:#fca5a5;--briff-bg:#450a0a;--link:#93c5fd;--code:#292524}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+a{color:var(--link)}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 16px 48px}
+.kicker{font-size:13px;letter-spacing:.02em;color:var(--muted);margin:0 0 6px}
+h1{font-size:28px;line-height:1.2;margin:0 0 10px}
+.summary{max-width:760px;margin:0 0 18px;color:var(--fg)}
+details.repos-box{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:10px 14px;margin:0 0 28px;max-width:760px}
+details.repos-box summary{cursor:pointer;font-weight:600}
+.repos{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:10px}
+.repos pre{margin:4px 0;padding:8px 10px;background:var(--code);border-radius:6px;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+.runs{font-size:13px;color:var(--muted)}
+.cols{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:24px;position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 0;margin:0 0 8px}
+.cols h2{font-size:13px;letter-spacing:.06em;margin:0}
+.cols .c-world{color:var(--world)}.cols .c-briff{color:var(--briff)}
+.day-label{font-size:15px;margin:26px 0 10px;padding:0 0 6px;border-bottom:1px dashed var(--line);color:var(--muted);font-weight:600}
+.rows{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.row{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:24px}
+.row-world .card{grid-column:1}
+.row-briff .card{grid-column:2}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.world{border-left:4px solid var(--world)}
+.briff{border-left:4px solid var(--briff)}
+.meta{display:flex;gap:10px;align-items:center;margin:0 0 6px;font-size:13px;color:var(--muted)}
+.meta time{font-variant-numeric:tabular-nums;font-weight:600;color:var(--fg)}
+.tag{display:none;font-size:11px;letter-spacing:.04em;font-weight:700;border-radius:4px;padding:1px 6px}
+.tag-world{background:var(--world-bg);color:var(--world)}.tag-briff{background:var(--briff-bg);color:var(--briff)}
+.card h3{font-size:16px;line-height:1.35;margin:0}
+.detail{margin:6px 0 0;font-size:14px;color:var(--muted)}
+.sources{margin:8px 0 0;font-size:13px}
+.timing{margin:0 0 10px;font-size:14px}
+.delay{font-weight:700;color:var(--briff)}
+.mail{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.mail-head{font-size:13px;line-height:1.5;padding:8px 12px;background:#f5f5f4;color:#1c1917;border-bottom:1px solid #e7e5e4;word-break:break-word}
+.mail-head .k{display:inline-block;min-width:4.2em;color:#78716c}
+.mail-frame{display:block;width:100%;height:560px;border:0;background:#fff}
+footer{margin:40px 0 0;padding:18px 0 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted);max-width:760px}
+footer pre{background:var(--code);color:var(--fg);padding:10px 12px;border-radius:6px;overflow-x:auto;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+@media (max-width:760px){
+.cols{display:none}
+.row{grid-template-columns:minmax(0,1fr);gap:0}
+.row-world .card,.row-briff .card{grid-column:1}
+.tag{display:inline-block}
+h1{font-size:23px}
+.card{padding:12px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<p class="kicker">Replay · real items, sample repos, no LLM involved</p>
+<h1>Node.js security releases, October 2026: what Briff would have sent</h1>
+<p class="summary">Node.js pre-announced security releases for the 26.x, 24.x and 22.x lines a week ahead, then rewrote the same post on release day with 22.23.4, 24.22.1 and 26.12.1. Six repos from a real stack: floating and pinned images, an engines range, and two end-of-life lines (node 18, node 14). Below are the 3 emails Briff would have sent, each rendered by the production template.</p>
+<details class="repos-box"><summary>Sample repos (6)</summary>
+<ul class="repos">
+<li><strong>briff</strong><pre>Dockerfile: FROM node:22-alpine
+package.json: {&quot;engines&quot;:{&quot;node&quot;:&quot;&gt;=22.12&quot;}}</pre><span class="runs">Scanned: node 22 (Dockerfile), node 22.12+ (package.json engines.node)</span></li>
+<li><strong>garden.example</strong><pre>Dockerfile: FROM node:22.17.0-alpine</pre><span class="runs">Scanned: node 22.17.0 (Dockerfile)</span></li>
+<li><strong>sigma/forms-web</strong><pre>Dockerfile: FROM node:24.15.0-alpine</pre><span class="runs">Scanned: node 24.15.0 (Dockerfile)</span></li>
+<li><strong>sigma/budget</strong><pre>Dockerfile: FROM node:24-slim</pre><span class="runs">Scanned: node 24 (Dockerfile)</span></li>
+<li><strong>bakery.example</strong><pre>Dockerfile: FROM node:18-alpine</pre><span class="runs">Scanned: node 18 (Dockerfile)</span></li>
+<li><strong>orchid-hotel.example</strong><pre>.nvmrc: v14.15.0</pre><span class="runs">Scanned: node 14.15.0 (.nvmrc)</span></li>
+</ul>
+</details>
+</header>
+<div class="cols" aria-hidden="true"><h2 class="c-world">WHAT HAPPENED</h2><h2 class="c-briff">WHAT BRIFF SENT</h2></div>
+<main>
+<section class="day">
+<h2 class="day-label">Wed 14 Oct 2026</h2>
+<ol class="rows">
+<li class="row row-world"><article class="card world">
+<p class="meta"><span class="tag tag-world">What happened</span><time datetime="2026-10-14T14:05:20.000Z">14:05 UTC</time></p>
+<h3>Node.js pre-announces security releases for 26.x, 24.x and 22.x</h3>
+<p class="detail">Highest severity HIGH on every line, release on or shortly after Wednesday 21 October. End-of-life lines are always affected.</p>
+<p class="sources"><a href="https://nodejs.org/en/blog/vulnerability/october-2026-security-releases" rel="noopener">nodejs.org</a><span aria-hidden="true"> · </span><a href="https://github.com/nodejs/nodejs.org/commit/98eab92" rel="noopener">commit 98eab92</a></p>
+</article></li>
+<li class="row row-briff"><article class="card briff">
+<p class="meta"><span class="tag tag-briff">What Briff sent</span><time datetime="2026-10-14T15:00:00.000Z">15:00 UTC</time></p>
+<p class="timing">Urgent email · <span class="delay">+55 min</span> after “Wednesday, October 21, 2026 Security Releases” appeared</p>
+<div class="mail">
+<div class="mail-head">
+<div><span class="k">From</span> Briff</div>
+<div><span class="k">Subject</span> <strong>Briff · urgent: Wednesday, October 21, 2026 Security Releases</strong></div>
+</div>
+<iframe class="mail-frame" title="Briff · urgent: Wednesday, October 21, 2026 Security Releases" loading="lazy" sandbox="allow-same-origin allow-popups" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light dark&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;light dark&quot;&gt;
+&lt;title&gt;Briff · urgent: Wednesday, October 21, 2026 Security Releases&lt;/title&gt;
+&lt;style&gt;
+:root{color-scheme:light dark;supported-color-schemes:light dark}
+@media (prefers-color-scheme: dark){
+  .b-page{background:#0a1115 !important}
+  .b-card{background:#111a20 !important;border-color:#21303a !important}
+  .b-inset{background:#0d161b !important;border-color:#21303a !important}
+  .b-line{border-color:#21303a !important}
+  .b-text{color:#e5edf1 !important}
+  .b-muted{color:#8d9faa !important}
+  .b-link{color:#3ccfc2 !important}
+  .b-sec{color:#ff7b64 !important}
+  .b-sec-top{border-top-color:#ff7b64 !important}
+  .b-up-top{border-top-color:#f1b85b !important}
+  .t-sec{background:#3a1912 !important;color:#ff7b64 !important}
+  .t-upgrade{background:#32260f !important;color:#f1b85b !important}
+  .t-read{background:#192343 !important;color:#8eaaff !important}
+  .t-wait{background:#1b252c !important;color:#93a3ad !important}
+  .t-brand{background:#0e2e2d !important;color:#3ccfc2 !important}
+}
+[data-ogsb] .b-page{background:#0a1115 !important}
+[data-ogsb] .b-card{background:#111a20 !important;border-color:#21303a !important}
+[data-ogsb] .b-inset{background:#0d161b !important;border-color:#21303a !important}
+[data-ogsb] .b-line{border-color:#21303a !important}
+[data-ogsb] .b-sec-top{border-top-color:#ff7b64 !important}
+[data-ogsb] .b-up-top{border-top-color:#f1b85b !important}
+[data-ogsb] .t-sec{background:#3a1912 !important}
+[data-ogsb] .t-upgrade{background:#32260f !important}
+[data-ogsb] .t-read{background:#192343 !important}
+[data-ogsb] .t-wait{background:#1b252c !important}
+[data-ogsb] .t-brand{background:#0e2e2d !important}
+[data-ogsc] .b-text{color:#e5edf1 !important}
+[data-ogsc] .b-muted{color:#8d9faa !important}
+[data-ogsc] .b-link{color:#3ccfc2 !important}
+[data-ogsc] .b-sec{color:#ff7b64 !important}
+[data-ogsc] .t-sec{color:#ff7b64 !important}
+[data-ogsc] .t-upgrade{color:#f1b85b !important}
+[data-ogsc] .t-read{color:#8eaaff !important}
+[data-ogsc] .t-wait{color:#93a3ad !important}
+[data-ogsc] .t-brand{color:#3ccfc2 !important}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;margin:0;padding:0;background:#f2f5f7;color:#0d1b24;font-family:Geist,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;background:#f2f5f7;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;max-width:600px;background:#f2f5f7;&quot;&gt;
+&lt;tr&gt;&lt;td class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:2px 4px 18px;background:#f2f5f7;&quot;&gt;&lt;img src=&quot;https://app.briff.dev/brand/lockup-email-tile.png&quot; width=&quot;88&quot; height=&quot;40&quot; alt=&quot;Briff&quot; style=&quot;display:block;border:0;outline:none;width:88px;height:40px;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class=&quot;b-card b-text&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;&quot;&gt;
+&lt;div style=&quot;margin:0 0 10px;&quot;&gt;&lt;span class=&quot;t-sec&quot; style=&quot;display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;&quot;&gt;SECURITY&lt;/span&gt;&lt;/div&gt;
+&lt;p class=&quot;b-text&quot; style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:21px;line-height:1.3;letter-spacing:-0.01em;margin:0 0 10px;font-weight:600;color:#0d1b24;&quot;&gt;Announcements about your stack that should not wait for the weekly briefing.&lt;/p&gt;
+&lt;div class=&quot;b-line&quot; style=&quot;padding:16px 0;border-top:1px solid #dde4e9;&quot;&gt;
+&lt;div style=&quot;margin:0 0 8px;&quot;&gt;&lt;span class=&quot;t-sec&quot; style=&quot;display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;&quot;&gt;SECURITY&lt;/span&gt;&lt;/div&gt;
+&lt;div style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:19px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;&quot;&gt;&lt;a class=&quot;b-text&quot; href=&quot;https://nodejs.org/en/blog/vulnerability/october-2026-security-releases&quot; style=&quot;color:#0d1b24;text-decoration:none;&quot;&gt;Wednesday, October 21, 2026 Security Releases&lt;/a&gt;&lt;/div&gt;
+&lt;div class=&quot;b-sec&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#b93522;font-weight:600;margin:6px 0 0;&quot;&gt;HIGH&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:15px;line-height:1.5;color:#0d1b24;margin:8px 0 0;&quot;&gt;Node.js announced a security release for 21 Oct 2026.&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;bakery.example runs node 18 (Dockerfile).&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;briff runs node 22 (Dockerfile), node 22.12+ (package.json engines.node).&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;garden.example runs node 22.17.0 (Dockerfile).&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;orchid-hotel.example runs node 14.15.0 (.nvmrc).&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;sigma/budget runs node 24 (Dockerfile).&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;sigma/forms-web runs node 24.15.0 (Dockerfile).&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-inset&quot; style=&quot;margin:12px 0 0;background:#f2f5f7;border-radius:12px;&quot;&gt;&lt;tr&gt;&lt;td class=&quot;b-inset b-text&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;background:#f2f5f7;border-radius:12px;padding:10px 14px 12px;color:#0d1b24;&quot;&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: Update Node.js in briff, garden.example, sigma/budget, sigma/forms-web as soon as the fixed release is out (announced for 21 Oct 2026). · bakery.example: node 18 is end-of-life and will not get this fix; move to 22 or later · orchid-hotel.example: node 14 is end-of-life and will not get this fix; move to 22 or later&lt;/div&gt;
+&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;div style=&quot;font-size:13px;margin:10px 0 0;&quot;&gt;&lt;a class=&quot;b-link&quot; href=&quot;https://nodejs.org/en/blog/vulnerability/october-2026-security-releases&quot; style=&quot;color:#0b6b67;text-decoration:none;&quot;&gt;Source: Node.js vulnerability blog&lt;/a&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class=&quot;b-page b-muted&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:16px 6px 0;font-size:12px;line-height:1.5;background:#f2f5f7;color:#566874;&quot;&gt;They will also appear in the weekly briefing.&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+</div>
+</article></li>
+</ol>
+</section>
+<section class="day">
+<h2 class="day-label">Mon 19 Oct 2026</h2>
+<ol class="rows">
+<li class="row row-briff"><article class="card briff">
+<p class="meta"><span class="tag tag-briff">What Briff sent</span><time datetime="2026-10-19T04:00:00.000Z">04:00 UTC</time></p>
+<p class="timing">Weekly bulletin · scheduled run, Monday 04:00 UTC</p>
+<div class="mail">
+<div class="mail-head">
+<div><span class="k">From</span> Briff</div>
+<div><span class="k">Subject</span> <strong>Briff · Weekly · W43: Node.js</strong></div>
+</div>
+<iframe class="mail-frame" title="Briff · Weekly · W43: Node.js" loading="lazy" sandbox="allow-same-origin allow-popups" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light dark&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;light dark&quot;&gt;
+&lt;title&gt;Briff · Weekly · W43: Node.js&lt;/title&gt;
+&lt;style&gt;
+:root{color-scheme:light dark;supported-color-schemes:light dark}
+@media (prefers-color-scheme: dark){
+  .b-page{background:#0a1115 !important}
+  .b-card{background:#111a20 !important;border-color:#21303a !important}
+  .b-inset{background:#0d161b !important;border-color:#21303a !important}
+  .b-line{border-color:#21303a !important}
+  .b-text{color:#e5edf1 !important}
+  .b-muted{color:#8d9faa !important}
+  .b-link{color:#3ccfc2 !important}
+  .b-sec{color:#ff7b64 !important}
+  .b-sec-top{border-top-color:#ff7b64 !important}
+  .b-up-top{border-top-color:#f1b85b !important}
+  .t-sec{background:#3a1912 !important;color:#ff7b64 !important}
+  .t-upgrade{background:#32260f !important;color:#f1b85b !important}
+  .t-read{background:#192343 !important;color:#8eaaff !important}
+  .t-wait{background:#1b252c !important;color:#93a3ad !important}
+  .t-brand{background:#0e2e2d !important;color:#3ccfc2 !important}
+}
+[data-ogsb] .b-page{background:#0a1115 !important}
+[data-ogsb] .b-card{background:#111a20 !important;border-color:#21303a !important}
+[data-ogsb] .b-inset{background:#0d161b !important;border-color:#21303a !important}
+[data-ogsb] .b-line{border-color:#21303a !important}
+[data-ogsb] .b-sec-top{border-top-color:#ff7b64 !important}
+[data-ogsb] .b-up-top{border-top-color:#f1b85b !important}
+[data-ogsb] .t-sec{background:#3a1912 !important}
+[data-ogsb] .t-upgrade{background:#32260f !important}
+[data-ogsb] .t-read{background:#192343 !important}
+[data-ogsb] .t-wait{background:#1b252c !important}
+[data-ogsb] .t-brand{background:#0e2e2d !important}
+[data-ogsc] .b-text{color:#e5edf1 !important}
+[data-ogsc] .b-muted{color:#8d9faa !important}
+[data-ogsc] .b-link{color:#3ccfc2 !important}
+[data-ogsc] .b-sec{color:#ff7b64 !important}
+[data-ogsc] .t-sec{color:#ff7b64 !important}
+[data-ogsc] .t-upgrade{color:#f1b85b !important}
+[data-ogsc] .t-read{color:#8eaaff !important}
+[data-ogsc] .t-wait{color:#93a3ad !important}
+[data-ogsc] .t-brand{color:#3ccfc2 !important}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;margin:0;padding:0;background:#f2f5f7;color:#0d1b24;font-family:Geist,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;background:#f2f5f7;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;max-width:600px;background:#f2f5f7;&quot;&gt;
+&lt;tr&gt;&lt;td class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:2px 4px 18px;background:#f2f5f7;&quot;&gt;&lt;img src=&quot;https://app.briff.dev/brand/lockup-email-tile.png&quot; width=&quot;88&quot; height=&quot;40&quot; alt=&quot;Briff&quot; style=&quot;display:block;border:0;outline:none;width:88px;height:40px;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class=&quot;b-card b-text&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;&quot;&gt;
+&lt;div class=&quot;b-muted&quot; style=&quot;font-size:13px;color:#566874;margin:0 0 8px;&quot;&gt;Briff · Weekly · Week 2026-W43&lt;/div&gt;
+
+&lt;h2 class=&quot;b-text&quot; style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:19px;line-height:1.25;font-weight:600;letter-spacing:-0.02em;color:#0d1b24;margin:28px 0 12px;&quot;&gt;Needs your attention &lt;span class=&quot;b-muted&quot; style=&quot;font-family:Geist,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:500;letter-spacing:0;color:#566874;border:1px solid #dde4e9;border-radius:999px;padding:1px 8px;vertical-align:3px;&quot;&gt;1&lt;/span&gt;&lt;/h2&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#fbfcfd&quot; class=&quot;b-card b-sec-top&quot; style=&quot;border-collapse:separate;margin:0 0 12px;background:#fbfcfd;border:1px solid #dde4e9;border-top:3px solid #b93522;border-radius:14px;&quot;&gt;
+&lt;tr&gt;&lt;td class=&quot;b-card b-text&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;padding:16px 16px 14px;background:#fbfcfd;color:#0d1b24;border-radius:14px;&quot;&gt;
+&lt;div style=&quot;margin:0 0 8px;&quot;&gt;&lt;span class=&quot;t-sec&quot; style=&quot;display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;&quot;&gt;SECURITY&lt;/span&gt;&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:19px;line-height:1.25;font-weight:600;letter-spacing:-0.01em;color:#0d1b24;margin:0;&quot;&gt;Wednesday, October 21, 2026 Security Releases&lt;/div&gt;
+
+&lt;div style=&quot;margin:10px 0 0;line-height:1.6;&quot;&gt;&lt;span class=&quot;b-inset b-text&quot; style=&quot;display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12px;color:#0d1b24;&quot;&gt;bakery.example&lt;/span&gt; &lt;span class=&quot;b-inset b-text&quot; style=&quot;display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12px;color:#0d1b24;&quot;&gt;briff&lt;/span&gt; &lt;span class=&quot;b-inset b-text&quot; style=&quot;display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12px;color:#0d1b24;&quot;&gt;garden.example&lt;/span&gt; &lt;span class=&quot;b-inset b-text&quot; style=&quot;display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12px;color:#0d1b24;&quot;&gt;orchid-hotel.example&lt;/span&gt; &lt;span class=&quot;b-inset b-text&quot; style=&quot;display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12px;color:#0d1b24;&quot;&gt;sigma/budget&lt;/span&gt; &lt;span class=&quot;b-inset b-text&quot; style=&quot;display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12px;color:#0d1b24;&quot;&gt;sigma/forms-web&lt;/span&gt;&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-inset&quot; style=&quot;margin:14px 0 0;background:#f2f5f7;border-radius:12px;&quot;&gt;&lt;tr&gt;&lt;td class=&quot;b-inset b-text&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;background:#f2f5f7;border-radius:12px;padding:12px 14px;color:#0d1b24;&quot;&gt;
+&lt;div class=&quot;b-link&quot; style=&quot;font-size:11px;letter-spacing:.06em;font-weight:600;color:#0b6b67;margin:0 0 8px;&quot;&gt;TO DO&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:15px;line-height:1.5;font-weight:600;color:#0d1b24;&quot;&gt;Update Node.js in briff, garden.example, sigma/budget, sigma/forms-web as soon as the fixed release is out (announced for 21 Oct 2026). · bakery.example: node 18 is end-of-life and will not get this fix; move to 22 or later · orchid-hotel.example: node 14 is end-of-life and will not get this fix; move to 22 or later&lt;/div&gt;&lt;div style=&quot;margin:8px 0 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12.5px;line-height:1.5;word-break:break-word;&quot;&gt;&lt;div class=&quot;b-muted&quot; style=&quot;color:#566874;&quot;&gt;bakery.example runs node 18 (Dockerfile) → 22&lt;/div&gt;&lt;div class=&quot;b-muted&quot; style=&quot;color:#566874;&quot;&gt;briff runs node 22 (Dockerfile)&lt;/div&gt;&lt;div class=&quot;b-muted&quot; style=&quot;color:#566874;&quot;&gt;garden.example runs node 22.17.0 (Dockerfile)&lt;/div&gt;&lt;div class=&quot;b-muted&quot; style=&quot;color:#566874;&quot;&gt;orchid-hotel.example runs node 14.15.0 (.nvmrc) → 22&lt;/div&gt;&lt;div class=&quot;b-muted&quot; style=&quot;color:#566874;&quot;&gt;sigma/budget runs node 24 (Dockerfile)&lt;/div&gt;&lt;div class=&quot;b-muted&quot; style=&quot;color:#566874;&quot;&gt;sigma/forms-web runs node 24.15.0 (Dockerfile)&lt;/div&gt;&lt;/div&gt;
+&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+
+&lt;div style=&quot;font-size:14px;margin:12px 0 0;&quot;&gt;&lt;a class=&quot;b-link&quot; href=&quot;https://app.briff.dev/b/replay-node-oct-2026?t=replay#item-308200129c1fe4bc&quot; style=&quot;color:#0b6b67;text-decoration:none;font-weight:600;&quot;&gt;Details &amp;rarr;&lt;/a&gt;&lt;/div&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+
+&lt;p style=&quot;font-size:14px;margin:28px 0 0;&quot;&gt;&lt;a class=&quot;b-link&quot; href=&quot;https://app.briff.dev/b/replay-node-oct-2026?t=replay&quot; style=&quot;color:#0b6b67;text-decoration:none;font-weight:600;&quot;&gt;Open in Briff &amp;rarr;&lt;/a&gt;&lt;/p&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class=&quot;b-page b-muted&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:16px 6px 0;font-size:12px;line-height:1.5;background:#f2f5f7;color:#566874;&quot;&gt;This briefing is built from the repos you scan. Choose which repos go into each bulletin in Briff.&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+</div>
+</article></li>
+</ol>
+</section>
+<section class="day">
+<h2 class="day-label">Wed 21 Oct 2026</h2>
+<ol class="rows">
+<li class="row row-world"><article class="card world">
+<p class="meta"><span class="tag tag-world">What happened</span><time datetime="2026-10-21T12:07:59.000Z">12:07 UTC</time></p>
+<h3>Node.js 22.23.4, 24.22.1 and 26.12.1 are out</h3>
+<p class="detail">Ten CVEs, four rated high, among them a Brotli decoder out-of-bounds write (CVE-2026-111497) and TLS hostname bypasses. The announcement post is rewritten in place.</p>
+<p class="sources"><a href="https://nodejs.org/en/blog/vulnerability/october-2026-security-releases" rel="noopener">nodejs.org</a><span aria-hidden="true"> · </span><a href="https://github.com/nodejs/nodejs.org/commit/b58692e" rel="noopener">commit b58692e</a></p>
+</article></li>
+<li class="row row-briff"><article class="card briff">
+<p class="meta"><span class="tag tag-briff">What Briff sent</span><time datetime="2026-10-21T13:00:00.000Z">13:00 UTC</time></p>
+<p class="timing">Urgent email · <span class="delay">+52 min</span> after “Wednesday, October 21, 2026 Security Releases” appeared</p>
+<div class="mail">
+<div class="mail-head">
+<div><span class="k">From</span> Briff</div>
+<div><span class="k">Subject</span> <strong>Briff · urgent · fix released: Wednesday, October 21, 2026 Security Releases</strong></div>
+</div>
+<iframe class="mail-frame" title="Briff · urgent · fix released: Wednesday, October 21, 2026 Security Releases" loading="lazy" sandbox="allow-same-origin allow-popups" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light dark&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;light dark&quot;&gt;
+&lt;title&gt;Briff · urgent · fix released: Wednesday, October 21, 2026 Security Releases&lt;/title&gt;
+&lt;style&gt;
+:root{color-scheme:light dark;supported-color-schemes:light dark}
+@media (prefers-color-scheme: dark){
+  .b-page{background:#0a1115 !important}
+  .b-card{background:#111a20 !important;border-color:#21303a !important}
+  .b-inset{background:#0d161b !important;border-color:#21303a !important}
+  .b-line{border-color:#21303a !important}
+  .b-text{color:#e5edf1 !important}
+  .b-muted{color:#8d9faa !important}
+  .b-link{color:#3ccfc2 !important}
+  .b-sec{color:#ff7b64 !important}
+  .b-sec-top{border-top-color:#ff7b64 !important}
+  .b-up-top{border-top-color:#f1b85b !important}
+  .t-sec{background:#3a1912 !important;color:#ff7b64 !important}
+  .t-upgrade{background:#32260f !important;color:#f1b85b !important}
+  .t-read{background:#192343 !important;color:#8eaaff !important}
+  .t-wait{background:#1b252c !important;color:#93a3ad !important}
+  .t-brand{background:#0e2e2d !important;color:#3ccfc2 !important}
+}
+[data-ogsb] .b-page{background:#0a1115 !important}
+[data-ogsb] .b-card{background:#111a20 !important;border-color:#21303a !important}
+[data-ogsb] .b-inset{background:#0d161b !important;border-color:#21303a !important}
+[data-ogsb] .b-line{border-color:#21303a !important}
+[data-ogsb] .b-sec-top{border-top-color:#ff7b64 !important}
+[data-ogsb] .b-up-top{border-top-color:#f1b85b !important}
+[data-ogsb] .t-sec{background:#3a1912 !important}
+[data-ogsb] .t-upgrade{background:#32260f !important}
+[data-ogsb] .t-read{background:#192343 !important}
+[data-ogsb] .t-wait{background:#1b252c !important}
+[data-ogsb] .t-brand{background:#0e2e2d !important}
+[data-ogsc] .b-text{color:#e5edf1 !important}
+[data-ogsc] .b-muted{color:#8d9faa !important}
+[data-ogsc] .b-link{color:#3ccfc2 !important}
+[data-ogsc] .b-sec{color:#ff7b64 !important}
+[data-ogsc] .t-sec{color:#ff7b64 !important}
+[data-ogsc] .t-upgrade{color:#f1b85b !important}
+[data-ogsc] .t-read{color:#8eaaff !important}
+[data-ogsc] .t-wait{color:#93a3ad !important}
+[data-ogsc] .t-brand{color:#3ccfc2 !important}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;margin:0;padding:0;background:#f2f5f7;color:#0d1b24;font-family:Geist,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;background:#f2f5f7;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;max-width:600px;background:#f2f5f7;&quot;&gt;
+&lt;tr&gt;&lt;td class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:2px 4px 18px;background:#f2f5f7;&quot;&gt;&lt;img src=&quot;https://app.briff.dev/brand/lockup-email-tile.png&quot; width=&quot;88&quot; height=&quot;40&quot; alt=&quot;Briff&quot; style=&quot;display:block;border:0;outline:none;width:88px;height:40px;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class=&quot;b-card b-text&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;&quot;&gt;
+&lt;div style=&quot;margin:0 0 10px;&quot;&gt;&lt;span class=&quot;t-sec&quot; style=&quot;display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;&quot;&gt;SECURITY&lt;/span&gt;&lt;/div&gt;
+&lt;p class=&quot;b-text&quot; style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:21px;line-height:1.3;letter-spacing:-0.01em;margin:0 0 10px;font-weight:600;color:#0d1b24;&quot;&gt;Announcements about your stack that should not wait for the weekly briefing.&lt;/p&gt;
+&lt;div class=&quot;b-line&quot; style=&quot;padding:16px 0;border-top:1px solid #dde4e9;&quot;&gt;
+&lt;div style=&quot;margin:0 0 8px;&quot;&gt;&lt;span class=&quot;t-sec&quot; style=&quot;display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;&quot;&gt;SECURITY&lt;/span&gt;&lt;/div&gt;
+&lt;div style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:19px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;&quot;&gt;&lt;a class=&quot;b-text&quot; href=&quot;https://nodejs.org/en/blog/vulnerability/october-2026-security-releases&quot; style=&quot;color:#0d1b24;text-decoration:none;&quot;&gt;Wednesday, October 21, 2026 Security Releases&lt;/a&gt;&lt;/div&gt;
+&lt;div class=&quot;b-sec&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#b93522;font-weight:600;margin:6px 0 0;&quot;&gt;HIGH · CVE-2026-105482 · CVE-2026-105483 · CVE-2026-106069 · CVE-2026-111497 · CVE-2026-105481 · CVE-2026-106072 · CVE-2026-106074 · CVE-2026-106070 · CVE-2026-106071 · CVE-2026-106073&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:15px;line-height:1.5;color:#0d1b24;margin:8px 0 0;&quot;&gt;The fixed Node.js releases are out: 22.23.4, 24.22.1, 26.12.1.&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;bakery.example runs node 18 (Dockerfile).&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;briff runs node 22 (Dockerfile), node 22.12+ (package.json engines.node).&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;garden.example runs node 22.17.0 (Dockerfile).&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;orchid-hotel.example runs node 14.15.0 (.nvmrc).&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;sigma/budget runs node 24 (Dockerfile).&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;sigma/forms-web runs node 24.15.0 (Dockerfile).&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-inset&quot; style=&quot;margin:12px 0 0;background:#f2f5f7;border-radius:12px;&quot;&gt;&lt;tr&gt;&lt;td class=&quot;b-inset b-text&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;background:#f2f5f7;border-radius:12px;padding:10px 14px 12px;color:#0d1b24;&quot;&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: bakery.example: node 18 is end-of-life and will not get this fix; move to 22.23.4 or later&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: briff: rebuild to pick up Node.js 22.23.4; the node:22-alpine tag already points to it&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: garden.example: move Dockerfile to node:22.23.4-alpine&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: orchid-hotel.example: node 14 is end-of-life and will not get this fix; move to 22.23.4 or later&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: sigma/budget: rebuild to pick up Node.js 24.22.1; the node:24-slim tag already points to it&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: sigma/forms-web: move Dockerfile to node:24.22.1-alpine&lt;/div&gt;
+&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;div style=&quot;font-size:13px;margin:10px 0 0;&quot;&gt;&lt;a class=&quot;b-link&quot; href=&quot;https://nodejs.org/en/blog/vulnerability/october-2026-security-releases&quot; style=&quot;color:#0b6b67;text-decoration:none;&quot;&gt;Source: Node.js vulnerability blog&lt;/a&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class=&quot;b-page b-muted&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:16px 6px 0;font-size:12px;line-height:1.5;background:#f2f5f7;color:#566874;&quot;&gt;They will also appear in the weekly briefing.&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+</div>
+</article></li>
+</ol>
+</section>
+</main>
+<footer>
+<p>The items are the ones the sources published, with their dates, read by the same parsers and extractors Briff runs in production. The worker's hourly collect is replayed with a fake clock: an item is collected by the first run after it appeared, matched to the sample repos by runtime, and the urgent pass and the weekly assembly run unchanged. Urgent emails never use a model. In the weekly bulletin the model writes the headline and one line; here the item title stands in, and the action is the deterministic one in both cases.</p>
+<p>Run it yourself:</p>
+<pre>npm run replay -- node-oct-2026 --out docs/replay/node-oct-2026.html</pre>
+<p>Scenario: <code>src/replay/scenarios/node-oct-2026.ts</code> · engine: <code>src/replay/engine.ts</code></p>
+</footer>
+</div>
+<script>
+function fit(f){try{var d=f.contentDocument;if(d&&d.body){f.style.height=Math.max(d.documentElement.scrollHeight,d.body.scrollHeight)+2+"px";}}catch(e){}}
+document.querySelectorAll("iframe.mail-frame").forEach(function(f){f.addEventListener("load",function(){fit(f);});fit(f);});
+window.addEventListener("resize",function(){document.querySelectorAll("iframe.mail-frame").forEach(fit);});
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "id": "GO-2026-0001",
+  "summary": "Unbounded allocation when parsing acme frames",
+  "aliases": ["CVE-2026-00201", "GHSA-acme-0000-0201"],
+  "modified": "2026-10-21T08:00:00Z",
+  "published": "2026-10-20T12:00:00Z",
+  "affected": [
+    {
+      "package": { "ecosystem": "Go", "name": "golang.org/x/net" },
+      "ranges": [{ "type": "SEMVER", "events": [{ "introduced": "0" }, { "fixed": "0.33.0" }] }],
+      "ecosystem_specific": {
+        "imports": [{ "path": "golang.org/x/net/html", "symbols": ["Parse"] }]
+      }
+    },
+    {
+      "package": { "ecosystem": "Go", "name": "stdlib" },
+      "ranges": [{ "type": "SEMVER", "events": [{ "introduced": "0" }, { "fixed": "1.23.5" }] }]
+    }
+  ]
+}

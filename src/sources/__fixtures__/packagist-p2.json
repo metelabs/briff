@@ -1,0 +1,46 @@
+{
+  "packages": {
+    "acme/http-kernel": [
+      {
+        "name": "acme/http-kernel",
+        "description": "Turns requests into responses",
+        "keywords": [],
+        "homepage": "https://acme.example/http-kernel",
+        "version": "v7.2.0-RC1",
+        "version_normalized": "7.2.0.0-RC1",
+        "license": ["MIT"],
+        "source": {
+          "url": "https://github.com/acme/http-kernel.git",
+          "type": "git",
+          "reference": "1111111111111111111111111111111111111111"
+        },
+        "dist": {
+          "url": "https://api.github.com/repos/acme/http-kernel/zipball/1111111111111111111111111111111111111111",
+          "type": "zip",
+          "shasum": "",
+          "reference": "1111111111111111111111111111111111111111"
+        },
+        "type": "library",
+        "time": "2026-10-01T08:00:00+00:00",
+        "require": { "php": ">=8.2" }
+      },
+      {
+        "version": "v7.1.3",
+        "version_normalized": "7.1.3.0",
+        "source": {
+          "url": "https://github.com/acme/http-kernel.git",
+          "type": "git",
+          "reference": "2222222222222222222222222222222222222222"
+        },
+        "time": "2026-09-15T08:00:00+00:00"
+      },
+      {
+        "version": "v6.4.4",
+        "version_normalized": "6.4.4.0",
+        "homepage": "__unset",
+        "time": "2026-09-15T08:00:00+00:00"
+      }
+    ]
+  },
+  "minified": "composer/2.0"
+}
