@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.2](https://github.com/metelabs/briff/compare/0.6.1...0.6.2) (2026-10-25)
+
+
+### Bug Fixes
+
+* **db:** make feedback unique per org, user and item ([#3](https://github.com/metelabs/briff/issues/3)) ([da317aa](https://github.com/metelabs/briff/commit/da317aa7122e106b00ecda23d5d891ea55562187))
+* **email:** give text the width back on phones ([#1](https://github.com/metelabs/briff/issues/1)) ([0bf0081](https://github.com/metelabs/briff/commit/0bf008185b9114419b520fdf8f8844da256eb327))
+* **github:** scan added repos once, from the webhook only ([#4](https://github.com/metelabs/briff/issues/4)) ([216ad5c](https://github.com/metelabs/briff/commit/216ad5c2e6a552d35bb282b22a20ab65b9ae439f))
+
 ## [0.6.1](https://github.com/fyunusyildiz/briff/compare/0.6.0...0.6.1) (2026-10-25)
 
 
