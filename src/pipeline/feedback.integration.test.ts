@@ -14,6 +14,7 @@ describe.skipIf(!url)("recordFeedback against Postgres", () => {
   const suffix = Date.now().toString(36);
   let orgA = "";
   let orgB = "";
+  let orgC = "";
   let userId = "";
   let itemId = "";
   let sourceId = "";
@@ -27,7 +28,9 @@ describe.skipIf(!url)("recordFeedback against Postgres", () => {
         data: { id: `u-${suffix}`, name: "u", email: `u-${suffix}@example.com` },
       })
     ).id;
+    orgC = (await db.org.create({ data: { name: `c-${suffix}` } })).id;
     await db.orgMember.create({ data: { orgId: orgA, userId } });
+    await db.orgMember.create({ data: { orgId: orgC, userId } });
     packageId = (await db.package.create({ data: { ecosystem: "npm", name: `pkg-${suffix}` } })).id;
     sourceId = (
       await db.source.create({
@@ -39,13 +42,15 @@ describe.skipIf(!url)("recordFeedback against Postgres", () => {
         data: { sourceId, title: "t", url: "https://example.com/i", contentHash: `h-${suffix}` },
       })
     ).id;
-    await db.itemMatch.create({
-      data: { orgId: orgA, itemId, packageId, reason: "release", score: 1 },
-    });
+    for (const orgId of [orgA, orgC]) {
+      await db.itemMatch.create({
+        data: { orgId, itemId, packageId, reason: "release", score: 1 },
+      });
+    }
   });
 
   afterAll(async () => {
-    await db.org.deleteMany({ where: { id: { in: [orgA, orgB] } } });
+    await db.org.deleteMany({ where: { id: { in: [orgA, orgB, orgC] } } });
     await db.user.deleteMany({ where: { id: userId } });
     await db.source.deleteMany({ where: { id: sourceId } });
     await db.package.deleteMany({ where: { id: packageId } });
@@ -80,5 +85,35 @@ describe.skipIf(!url)("recordFeedback against Postgres", () => {
     expect(
       (await recordFeedback(db, { orgId: orgB, userId, itemId, kind: "up", toggle: false })).ok
     ).toBe(false);
+  });
+
+  it("keeps one rating per org when the same user rates the same item in two orgs", async () => {
+    const rows = (orgId: string) => db.feedback.findMany({ where: { orgId, userId, itemId } });
+    const weight = async (orgId: string) =>
+      (
+        ((await db.interestProfile.findUnique({ where: { orgId } }))?.weights ?? {}) as Record<
+          string,
+          number
+        >
+      )[`package:pkg-${suffix}`];
+
+    expect(
+      await recordFeedback(db, { orgId: orgA, userId, itemId, kind: "up", toggle: false })
+    ).toEqual({ ok: true, kind: "up" });
+    expect(
+      await recordFeedback(db, { orgId: orgC, userId, itemId, kind: "less", toggle: false })
+    ).toEqual({ ok: true, kind: "less" });
+    expect((await rows(orgA)).map((f) => f.kind)).toEqual(["up"]);
+    expect((await rows(orgC)).map((f) => f.kind)).toEqual(["less"]);
+    expect(await weight(orgA)).toBe(1);
+    expect(await weight(orgC)).toBe(-1);
+
+    // Clearing it in one org leaves the other org's rating and weights alone.
+    expect(
+      await recordFeedback(db, { orgId: orgC, userId, itemId, kind: "less", toggle: true })
+    ).toEqual({ ok: true, kind: null });
+    expect(await rows(orgC)).toHaveLength(0);
+    expect((await rows(orgA)).map((f) => f.kind)).toEqual(["up"]);
+    expect(await weight(orgA)).toBe(1);
   });
 });
