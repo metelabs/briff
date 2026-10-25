@@ -5,7 +5,8 @@ import { enqueueJob, JobLockLostError } from "@/lib/jobs/queue";
 import { matchItem, type MatchSource } from "@/lib/match/matcher";
 import { reconcileRuntimeMatches } from "@/lib/match/rematch";
 import { loadOrgStacks } from "@/lib/match/stack";
-import { ruleTriageRows, runtimeMetaFor, sendRuntimeUrgent } from "@/pipeline/runtime-urgent";
+import { sendRuntimeUrgent } from "@/pipeline/runtime-urgent";
+import { ruleTriageRows, runtimeMetaFor } from "@/pipeline/runtime-urgent-plan";
 import type { JobContext, JobResult } from "@/worker/types";
 
 import { reconcileAdvisories } from "./advisory-reconcile";

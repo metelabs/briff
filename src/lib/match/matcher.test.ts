@@ -4,13 +4,13 @@ import { parseDockerfile } from "@scan/runtimes";
 
 import {
   matchItem,
+  runtimesOf,
   type MatchSource,
   type OrgStack,
   SCORES,
   stackPackageKey,
   tokenize,
 } from "./matcher";
-import { runtimesOf } from "./stack";
 
 function stack(): OrgStack {
   const pkg = (name: string, direct: boolean, repo: string, serviceKey: string | null = null) => ({

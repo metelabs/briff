@@ -4,7 +4,7 @@ import {
   runtimeMetaFromText,
   type RuntimeItemMeta,
 } from "@/lib/runtime-security";
-import { RULE_TRIAGE_MAX_AGE_DAYS } from "@/pipeline/runtime-urgent";
+import { RULE_TRIAGE_MAX_AGE_DAYS } from "@/pipeline/runtime-urgent-plan";
 
 import type { CollectedItem } from "./fetch-source";
 import { fetchPostBody, postBodyUrl, type PostBodyFetcher } from "./post-body";
