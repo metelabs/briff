@@ -283,7 +283,7 @@ function runtimeHtml(language: Language, i: UrgentItem, r: UrgentRuntime): strin
     `<div class="${cls}" style="font-size:13.5px;line-height:1.5;${style}margin:6px 0 0;">${esc(text)}</div>`;
   const actions =
     l.actions.length > 0
-      ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.inset}" class="b-inset" style="margin:12px 0 0;background:${C.inset};border-radius:12px;"><tr><td class="b-inset b-text" bgcolor="${C.inset}" style="background:${C.inset};border-radius:12px;padding:10px 14px 12px;color:${C.text};">
+      ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.inset}" class="b-inset" style="margin:12px 0 0;background:${C.inset};border-radius:12px;"><tr><td class="b-inset b-text m-inset" bgcolor="${C.inset}" style="background:${C.inset};border-radius:12px;padding:10px 14px 12px;color:${C.text};">
 ${l.actions.map((a) => line(a, "b-text", `color:${C.text};font-weight:600;`)).join("\n")}
 </td></tr></table>`
       : "";

@@ -103,99 +103,15 @@ package.json: {&quot;engines&quot;:{&quot;node&quot;:&quot;&gt;=22.12&quot;}}</p
 &lt;meta name=&quot;supported-color-schemes&quot; content=&quot;light dark&quot;&gt;
 &lt;title&gt;Briff · urgent: Wednesday, October 21, 2026 Security Releases&lt;/title&gt;
 &lt;style&gt;
-:root{color-scheme:light dark;supported-color-schemes:light dark}
-@media (prefers-color-scheme: dark){
-  .b-page{background:#0a1115 !important}
-  .b-card{background:#111a20 !important;border-color:#21303a !important}
-  .b-inset{background:#0d161b !important;border-color:#21303a !important}
-  .b-line{border-color:#21303a !important}
-  .b-text{color:#e5edf1 !important}
-  .b-muted{color:#8d9faa !important}
-  .b-link{color:#3ccfc2 !important}
-  .b-sec{color:#ff7b64 !important}
-  .b-sec-top{border-top-color:#ff7b64 !important}
-  .b-up-top{border-top-color:#f1b85b !important}
-  .t-sec{background:#3a1912 !important;color:#ff7b64 !important}
-  .t-upgrade{background:#32260f !important;color:#f1b85b !important}
-  .t-read{background:#192343 !important;color:#8eaaff !important}
-  .t-wait{background:#1b252c !important;color:#93a3ad !important}
-  .t-brand{background:#0e2e2d !important;color:#3ccfc2 !important}
-}
-[data-ogsb] .b-page{background:#0a1115 !important}
-[data-ogsb] .b-card{background:#111a20 !important;border-color:#21303a !important}
-[data-ogsb] .b-inset{background:#0d161b !important;border-color:#21303a !important}
-[data-ogsb] .b-line{border-color:#21303a !important}
-[data-ogsb] .b-sec-top{border-top-color:#ff7b64 !important}
-[data-ogsb] .b-up-top{border-top-color:#f1b85b !important}
-[data-ogsb] .t-sec{background:#3a1912 !important}
-[data-ogsb] .t-upgrade{background:#32260f !important}
-[data-ogsb] .t-read{background:#192343 !important}
-[data-ogsb] .t-wait{background:#1b252c !important}
-[data-ogsb] .t-brand{background:#0e2e2d !important}
-[data-ogsc] .b-text{color:#e5edf1 !important}
-[data-ogsc] .b-muted{color:#8d9faa !important}
-[data-ogsc] .b-link{color:#3ccfc2 !important}
-[data-ogsc] .b-sec{color:#ff7b64 !important}
-[data-ogsc] .t-sec{color:#ff7b64 !important}
-[data-ogsc] .t-upgrade{color:#f1b85b !important}
-[data-ogsc] .t-read{color:#8eaaff !important}
-[data-ogsc] .t-wait{color:#93a3ad !important}
-[data-ogsc] .t-brand{color:#3ccfc2 !important}&lt;/style&gt;
-&lt;/head&gt;
-&lt;body class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;margin:0;padding:0;background:#f2f5f7;color:#0d1b24;font-family:Geist,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;&quot;&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;background:#f2f5f7;&quot;&gt;
-&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;&quot;&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;max-width:600px;background:#f2f5f7;&quot;&gt;
-&lt;tr&gt;&lt;td class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:2px 4px 18px;background:#f2f5f7;&quot;&gt;&lt;img src=&quot;https://app.briff.dev/brand/lockup-email-tile.png&quot; width=&quot;88&quot; height=&quot;40&quot; alt=&quot;Briff&quot; style=&quot;display:block;border:0;outline:none;width:88px;height:40px;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;
-&lt;tr&gt;&lt;td class=&quot;b-card b-text&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;&quot;&gt;
-&lt;div style=&quot;margin:0 0 10px;&quot;&gt;&lt;span class=&quot;t-sec&quot; style=&quot;display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;&quot;&gt;SECURITY&lt;/span&gt;&lt;/div&gt;
-&lt;p class=&quot;b-text&quot; style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:21px;line-height:1.3;letter-spacing:-0.01em;margin:0 0 10px;font-weight:600;color:#0d1b24;&quot;&gt;Announcements about your stack that should not wait for the weekly briefing.&lt;/p&gt;
-&lt;div class=&quot;b-line&quot; style=&quot;padding:16px 0;border-top:1px solid #dde4e9;&quot;&gt;
-&lt;div style=&quot;margin:0 0 8px;&quot;&gt;&lt;span class=&quot;t-sec&quot; style=&quot;display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;&quot;&gt;SECURITY&lt;/span&gt;&lt;/div&gt;
-&lt;div style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:19px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;&quot;&gt;&lt;a class=&quot;b-text&quot; href=&quot;https://nodejs.org/en/blog/vulnerability/october-2026-security-releases&quot; style=&quot;color:#0d1b24;text-decoration:none;&quot;&gt;Wednesday, October 21, 2026 Security Releases&lt;/a&gt;&lt;/div&gt;
-&lt;div class=&quot;b-sec&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#b93522;font-weight:600;margin:6px 0 0;&quot;&gt;HIGH&lt;/div&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:15px;line-height:1.5;color:#0d1b24;margin:8px 0 0;&quot;&gt;Node.js announced a security release for 21 Oct 2026.&lt;/div&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;bakery.example runs node 18 (Dockerfile).&lt;/div&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;briff runs node 22 (Dockerfile), node 22.12+ (package.json engines.node).&lt;/div&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;garden.example runs node 22.17.0 (Dockerfile).&lt;/div&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;orchid-hotel.example runs node 14.15.0 (.nvmrc).&lt;/div&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;sigma/budget runs node 24 (Dockerfile).&lt;/div&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;sigma/forms-web runs node 24.15.0 (Dockerfile).&lt;/div&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-inset&quot; style=&quot;margin:12px 0 0;background:#f2f5f7;border-radius:12px;&quot;&gt;&lt;tr&gt;&lt;td class=&quot;b-inset b-text&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;background:#f2f5f7;border-radius:12px;padding:10px 14px 12px;color:#0d1b24;&quot;&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: Update Node.js in briff, garden.example, sigma/budget, sigma/forms-web as soon as the fixed release is out (announced for 21 Oct 2026). · bakery.example: node 18 is end-of-life and will not get this fix; move to 22 or later · orchid-hotel.example: node 14 is end-of-life and will not get this fix; move to 22 or later&lt;/div&gt;
-&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;div style=&quot;font-size:13px;margin:10px 0 0;&quot;&gt;&lt;a class=&quot;b-link&quot; href=&quot;https://nodejs.org/en/blog/vulnerability/october-2026-security-releases&quot; style=&quot;color:#0b6b67;text-decoration:none;&quot;&gt;Source: Node.js vulnerability blog&lt;/a&gt;&lt;/div&gt;
-&lt;/div&gt;
-&lt;/td&gt;&lt;/tr&gt;
-&lt;tr&gt;&lt;td class=&quot;b-page b-muted&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:16px 6px 0;font-size:12px;line-height:1.5;background:#f2f5f7;color:#566874;&quot;&gt;They will also appear in the weekly briefing.&lt;/td&gt;&lt;/tr&gt;
-&lt;/table&gt;
-&lt;/td&gt;&lt;/tr&gt;
-&lt;/table&gt;
-&lt;/body&gt;
-&lt;/html&gt;"></iframe>
-</div>
-</article></li>
-</ol>
-</section>
-<section class="day">
-<h2 class="day-label">Mon 19 Oct 2026</h2>
-<ol class="rows">
-<li class="row row-briff"><article class="card briff">
-<p class="meta"><span class="tag tag-briff">What Briff sent</span><time datetime="2026-10-19T04:00:00.000Z">04:00 UTC</time></p>
-<p class="timing">Weekly bulletin · scheduled run, Monday 04:00 UTC</p>
-<div class="mail">
-<div class="mail-head">
-<div><span class="k">From</span> Briff</div>
-<div><span class="k">Subject</span> <strong>Briff · Weekly · W43: Node.js</strong></div>
-</div>
-<iframe class="mail-frame" title="Briff · Weekly · W43: Node.js" loading="lazy" sandbox="allow-same-origin allow-popups" srcdoc="&lt;!doctype html&gt;
-&lt;html lang=&quot;en&quot;&gt;
-&lt;head&gt;
-&lt;meta charset=&quot;utf-8&quot;&gt;
-&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
-&lt;meta name=&quot;color-scheme&quot; content=&quot;light dark&quot;&gt;
-&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;light dark&quot;&gt;
-&lt;title&gt;Briff · Weekly · W43: Node.js&lt;/title&gt;
+@media only screen and (max-width: 480px){
+  .m-fixed{table-layout:fixed !important}
+  .m-page{padding:16px 8px 32px !important}
+  .m-frame{padding:18px 12px !important}
+  .m-flat{border-left-width:0 !important;border-right-width:0 !important;border-bottom-width:0 !important;border-radius:0 !important;margin:0 !important}
+  .m-flat-cell{padding:14px 0 16px !important;border-radius:0 !important}
+  .m-inset{padding:8px !important}
+  .m-cmd{padding:8px !important;white-space:pre !important;overflow-x:auto !important;word-break:normal !important;overflow-wrap:normal !important}
+}&lt;/style&gt;
 &lt;style&gt;
 :root{color-scheme:light dark;supported-color-schemes:light dark}
 @media (prefers-color-scheme: dark){
@@ -237,21 +153,125 @@ package.json: {&quot;engines&quot;:{&quot;node&quot;:&quot;&gt;=22.12&quot;}}</p
 [data-ogsc] .t-brand{color:#3ccfc2 !important}&lt;/style&gt;
 &lt;/head&gt;
 &lt;body class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;margin:0;padding:0;background:#f2f5f7;color:#0d1b24;font-family:Geist,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;&quot;&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;background:#f2f5f7;&quot;&gt;
-&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;&quot;&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;max-width:600px;background:#f2f5f7;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-fixed&quot; style=&quot;background:#f2f5f7;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-page&quot; style=&quot;padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-fixed&quot; style=&quot;max-width:600px;background:#f2f5f7;&quot;&gt;
 &lt;tr&gt;&lt;td class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:2px 4px 18px;background:#f2f5f7;&quot;&gt;&lt;img src=&quot;https://app.briff.dev/brand/lockup-email-tile.png&quot; width=&quot;88&quot; height=&quot;40&quot; alt=&quot;Briff&quot; style=&quot;display:block;border:0;outline:none;width:88px;height:40px;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;
-&lt;tr&gt;&lt;td class=&quot;b-card b-text&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;&quot;&gt;
+&lt;tr&gt;&lt;td class=&quot;b-card b-text m-frame&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;&quot;&gt;
+&lt;div style=&quot;margin:0 0 10px;&quot;&gt;&lt;span class=&quot;t-sec&quot; style=&quot;display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;&quot;&gt;SECURITY&lt;/span&gt;&lt;/div&gt;
+&lt;p class=&quot;b-text&quot; style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:21px;line-height:1.3;letter-spacing:-0.01em;margin:0 0 10px;font-weight:600;color:#0d1b24;&quot;&gt;Announcements about your stack that should not wait for the weekly briefing.&lt;/p&gt;
+&lt;div class=&quot;b-line&quot; style=&quot;padding:16px 0;border-top:1px solid #dde4e9;&quot;&gt;
+&lt;div style=&quot;margin:0 0 8px;&quot;&gt;&lt;span class=&quot;t-sec&quot; style=&quot;display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;&quot;&gt;SECURITY&lt;/span&gt;&lt;/div&gt;
+&lt;div style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:19px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;&quot;&gt;&lt;a class=&quot;b-text&quot; href=&quot;https://nodejs.org/en/blog/vulnerability/october-2026-security-releases&quot; style=&quot;color:#0d1b24;text-decoration:none;&quot;&gt;Wednesday, October 21, 2026 Security Releases&lt;/a&gt;&lt;/div&gt;
+&lt;div class=&quot;b-sec&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#b93522;font-weight:600;margin:6px 0 0;&quot;&gt;HIGH&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:15px;line-height:1.5;color:#0d1b24;margin:8px 0 0;&quot;&gt;Node.js announced a security release for 21 Oct 2026.&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;bakery.example runs node 18 (Dockerfile).&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;briff runs node 22 (Dockerfile), node 22.12+ (package.json engines.node).&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;garden.example runs node 22.17.0 (Dockerfile).&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;orchid-hotel.example runs node 14.15.0 (.nvmrc).&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;sigma/budget runs node 24 (Dockerfile).&lt;/div&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;sigma/forms-web runs node 24.15.0 (Dockerfile).&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-inset&quot; style=&quot;margin:12px 0 0;background:#f2f5f7;border-radius:12px;&quot;&gt;&lt;tr&gt;&lt;td class=&quot;b-inset b-text m-inset&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;background:#f2f5f7;border-radius:12px;padding:10px 14px 12px;color:#0d1b24;&quot;&gt;
+&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: Update Node.js in briff, garden.example, sigma/budget, sigma/forms-web as soon as the fixed release is out (announced for 21 Oct 2026). · bakery.example: node 18 is end-of-life and will not get this fix; move to 22 or later · orchid-hotel.example: node 14 is end-of-life and will not get this fix; move to 22 or later&lt;/div&gt;
+&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;div style=&quot;font-size:13px;margin:10px 0 0;&quot;&gt;&lt;a class=&quot;b-link&quot; href=&quot;https://nodejs.org/en/blog/vulnerability/october-2026-security-releases&quot; style=&quot;color:#0b6b67;text-decoration:none;&quot;&gt;Source: Node.js vulnerability blog&lt;/a&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class=&quot;b-page b-muted&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:16px 6px 0;font-size:12px;line-height:1.5;background:#f2f5f7;color:#566874;&quot;&gt;They will also appear in the weekly briefing.&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;"></iframe>
+</div>
+</article></li>
+</ol>
+</section>
+<section class="day">
+<h2 class="day-label">Mon 19 Oct 2026</h2>
+<ol class="rows">
+<li class="row row-briff"><article class="card briff">
+<p class="meta"><span class="tag tag-briff">What Briff sent</span><time datetime="2026-10-19T04:00:00.000Z">04:00 UTC</time></p>
+<p class="timing">Weekly bulletin · scheduled run, Monday 04:00 UTC</p>
+<div class="mail">
+<div class="mail-head">
+<div><span class="k">From</span> Briff</div>
+<div><span class="k">Subject</span> <strong>Briff · Weekly · W43: Node.js</strong></div>
+</div>
+<iframe class="mail-frame" title="Briff · Weekly · W43: Node.js" loading="lazy" sandbox="allow-same-origin allow-popups" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light dark&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;light dark&quot;&gt;
+&lt;title&gt;Briff · Weekly · W43: Node.js&lt;/title&gt;
+&lt;style&gt;
+@media only screen and (max-width: 480px){
+  .m-fixed{table-layout:fixed !important}
+  .m-page{padding:16px 8px 32px !important}
+  .m-frame{padding:18px 12px !important}
+  .m-flat{border-left-width:0 !important;border-right-width:0 !important;border-bottom-width:0 !important;border-radius:0 !important;margin:0 !important}
+  .m-flat-cell{padding:14px 0 16px !important;border-radius:0 !important}
+  .m-inset{padding:8px !important}
+  .m-cmd{padding:8px !important;white-space:pre !important;overflow-x:auto !important;word-break:normal !important;overflow-wrap:normal !important}
+}&lt;/style&gt;
+&lt;style&gt;
+:root{color-scheme:light dark;supported-color-schemes:light dark}
+@media (prefers-color-scheme: dark){
+  .b-page{background:#0a1115 !important}
+  .b-card{background:#111a20 !important;border-color:#21303a !important}
+  .b-inset{background:#0d161b !important;border-color:#21303a !important}
+  .b-line{border-color:#21303a !important}
+  .b-text{color:#e5edf1 !important}
+  .b-muted{color:#8d9faa !important}
+  .b-link{color:#3ccfc2 !important}
+  .b-sec{color:#ff7b64 !important}
+  .b-sec-top{border-top-color:#ff7b64 !important}
+  .b-up-top{border-top-color:#f1b85b !important}
+  .t-sec{background:#3a1912 !important;color:#ff7b64 !important}
+  .t-upgrade{background:#32260f !important;color:#f1b85b !important}
+  .t-read{background:#192343 !important;color:#8eaaff !important}
+  .t-wait{background:#1b252c !important;color:#93a3ad !important}
+  .t-brand{background:#0e2e2d !important;color:#3ccfc2 !important}
+}
+[data-ogsb] .b-page{background:#0a1115 !important}
+[data-ogsb] .b-card{background:#111a20 !important;border-color:#21303a !important}
+[data-ogsb] .b-inset{background:#0d161b !important;border-color:#21303a !important}
+[data-ogsb] .b-line{border-color:#21303a !important}
+[data-ogsb] .b-sec-top{border-top-color:#ff7b64 !important}
+[data-ogsb] .b-up-top{border-top-color:#f1b85b !important}
+[data-ogsb] .t-sec{background:#3a1912 !important}
+[data-ogsb] .t-upgrade{background:#32260f !important}
+[data-ogsb] .t-read{background:#192343 !important}
+[data-ogsb] .t-wait{background:#1b252c !important}
+[data-ogsb] .t-brand{background:#0e2e2d !important}
+[data-ogsc] .b-text{color:#e5edf1 !important}
+[data-ogsc] .b-muted{color:#8d9faa !important}
+[data-ogsc] .b-link{color:#3ccfc2 !important}
+[data-ogsc] .b-sec{color:#ff7b64 !important}
+[data-ogsc] .t-sec{color:#ff7b64 !important}
+[data-ogsc] .t-upgrade{color:#f1b85b !important}
+[data-ogsc] .t-read{color:#8eaaff !important}
+[data-ogsc] .t-wait{color:#93a3ad !important}
+[data-ogsc] .t-brand{color:#3ccfc2 !important}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;margin:0;padding:0;background:#f2f5f7;color:#0d1b24;font-family:Geist,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-fixed&quot; style=&quot;background:#f2f5f7;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-page&quot; style=&quot;padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-fixed&quot; style=&quot;max-width:600px;background:#f2f5f7;&quot;&gt;
+&lt;tr&gt;&lt;td class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:2px 4px 18px;background:#f2f5f7;&quot;&gt;&lt;img src=&quot;https://app.briff.dev/brand/lockup-email-tile.png&quot; width=&quot;88&quot; height=&quot;40&quot; alt=&quot;Briff&quot; style=&quot;display:block;border:0;outline:none;width:88px;height:40px;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td class=&quot;b-card b-text m-frame&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;&quot;&gt;
 &lt;div class=&quot;b-muted&quot; style=&quot;font-size:13px;color:#566874;margin:0 0 8px;&quot;&gt;Briff · Weekly · Week 2026-W43&lt;/div&gt;
 
 &lt;h2 class=&quot;b-text&quot; style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:19px;line-height:1.25;font-weight:600;letter-spacing:-0.02em;color:#0d1b24;margin:28px 0 12px;&quot;&gt;Needs your attention &lt;span class=&quot;b-muted&quot; style=&quot;font-family:Geist,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:500;letter-spacing:0;color:#566874;border:1px solid #dde4e9;border-radius:999px;padding:1px 8px;vertical-align:3px;&quot;&gt;1&lt;/span&gt;&lt;/h2&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#fbfcfd&quot; class=&quot;b-card b-sec-top&quot; style=&quot;border-collapse:separate;margin:0 0 12px;background:#fbfcfd;border:1px solid #dde4e9;border-top:3px solid #b93522;border-radius:14px;&quot;&gt;
-&lt;tr&gt;&lt;td class=&quot;b-card b-text&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;padding:16px 16px 14px;background:#fbfcfd;color:#0d1b24;border-radius:14px;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#fbfcfd&quot; class=&quot;b-card m-flat m-fixed b-sec-top&quot; style=&quot;border-collapse:separate;margin:0 0 12px;background:#fbfcfd;border:1px solid #dde4e9;border-top:3px solid #b93522;border-radius:14px;&quot;&gt;
+&lt;tr&gt;&lt;td class=&quot;b-card b-text m-flat-cell&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;padding:16px 16px 14px;background:#fbfcfd;color:#0d1b24;border-radius:14px;&quot;&gt;
 &lt;div style=&quot;margin:0 0 8px;&quot;&gt;&lt;span class=&quot;t-sec&quot; style=&quot;display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;&quot;&gt;SECURITY&lt;/span&gt;&lt;/div&gt;
 &lt;div class=&quot;b-text&quot; style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:19px;line-height:1.25;font-weight:600;letter-spacing:-0.01em;color:#0d1b24;margin:0;&quot;&gt;Wednesday, October 21, 2026 Security Releases&lt;/div&gt;
 
 &lt;div style=&quot;margin:10px 0 0;line-height:1.6;&quot;&gt;&lt;span class=&quot;b-inset b-text&quot; style=&quot;display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12px;color:#0d1b24;&quot;&gt;bakery.example&lt;/span&gt; &lt;span class=&quot;b-inset b-text&quot; style=&quot;display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12px;color:#0d1b24;&quot;&gt;briff&lt;/span&gt; &lt;span class=&quot;b-inset b-text&quot; style=&quot;display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12px;color:#0d1b24;&quot;&gt;garden.example&lt;/span&gt; &lt;span class=&quot;b-inset b-text&quot; style=&quot;display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12px;color:#0d1b24;&quot;&gt;orchid-hotel.example&lt;/span&gt; &lt;span class=&quot;b-inset b-text&quot; style=&quot;display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12px;color:#0d1b24;&quot;&gt;sigma/budget&lt;/span&gt; &lt;span class=&quot;b-inset b-text&quot; style=&quot;display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12px;color:#0d1b24;&quot;&gt;sigma/forms-web&lt;/span&gt;&lt;/div&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-inset&quot; style=&quot;margin:14px 0 0;background:#f2f5f7;border-radius:12px;&quot;&gt;&lt;tr&gt;&lt;td class=&quot;b-inset b-text&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;background:#f2f5f7;border-radius:12px;padding:12px 14px;color:#0d1b24;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-inset m-fixed&quot; style=&quot;margin:14px 0 0;background:#f2f5f7;border-radius:12px;&quot;&gt;&lt;tr&gt;&lt;td class=&quot;b-inset b-text m-inset&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;background:#f2f5f7;border-radius:12px;padding:12px 14px;color:#0d1b24;&quot;&gt;
 &lt;div class=&quot;b-link&quot; style=&quot;font-size:11px;letter-spacing:.06em;font-weight:600;color:#0b6b67;margin:0 0 8px;&quot;&gt;TO DO&lt;/div&gt;
 &lt;div class=&quot;b-text&quot; style=&quot;font-size:15px;line-height:1.5;font-weight:600;color:#0d1b24;&quot;&gt;Update Node.js in briff, garden.example, sigma/budget, sigma/forms-web as soon as the fixed release is out (announced for 21 Oct 2026). · bakery.example: node 18 is end-of-life and will not get this fix; move to 22 or later · orchid-hotel.example: node 14 is end-of-life and will not get this fix; move to 22 or later&lt;/div&gt;&lt;div style=&quot;margin:8px 0 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12.5px;line-height:1.5;word-break:break-word;&quot;&gt;&lt;div class=&quot;b-muted&quot; style=&quot;color:#566874;&quot;&gt;bakery.example runs node 18 (Dockerfile) → 22&lt;/div&gt;&lt;div class=&quot;b-muted&quot; style=&quot;color:#566874;&quot;&gt;briff runs node 22 (Dockerfile)&lt;/div&gt;&lt;div class=&quot;b-muted&quot; style=&quot;color:#566874;&quot;&gt;garden.example runs node 22.17.0 (Dockerfile)&lt;/div&gt;&lt;div class=&quot;b-muted&quot; style=&quot;color:#566874;&quot;&gt;orchid-hotel.example runs node 14.15.0 (.nvmrc) → 22&lt;/div&gt;&lt;div class=&quot;b-muted&quot; style=&quot;color:#566874;&quot;&gt;sigma/budget runs node 24 (Dockerfile)&lt;/div&gt;&lt;div class=&quot;b-muted&quot; style=&quot;color:#566874;&quot;&gt;sigma/forms-web runs node 24.15.0 (Dockerfile)&lt;/div&gt;&lt;/div&gt;
 &lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
@@ -298,6 +318,16 @@ package.json: {&quot;engines&quot;:{&quot;node&quot;:&quot;&gt;=22.12&quot;}}</p
 &lt;meta name=&quot;supported-color-schemes&quot; content=&quot;light dark&quot;&gt;
 &lt;title&gt;Briff · urgent · fix released: Wednesday, October 21, 2026 Security Releases&lt;/title&gt;
 &lt;style&gt;
+@media only screen and (max-width: 480px){
+  .m-fixed{table-layout:fixed !important}
+  .m-page{padding:16px 8px 32px !important}
+  .m-frame{padding:18px 12px !important}
+  .m-flat{border-left-width:0 !important;border-right-width:0 !important;border-bottom-width:0 !important;border-radius:0 !important;margin:0 !important}
+  .m-flat-cell{padding:14px 0 16px !important;border-radius:0 !important}
+  .m-inset{padding:8px !important}
+  .m-cmd{padding:8px !important;white-space:pre !important;overflow-x:auto !important;word-break:normal !important;overflow-wrap:normal !important}
+}&lt;/style&gt;
+&lt;style&gt;
 :root{color-scheme:light dark;supported-color-schemes:light dark}
 @media (prefers-color-scheme: dark){
   .b-page{background:#0a1115 !important}
@@ -338,11 +368,11 @@ package.json: {&quot;engines&quot;:{&quot;node&quot;:&quot;&gt;=22.12&quot;}}</p
 [data-ogsc] .t-brand{color:#3ccfc2 !important}&lt;/style&gt;
 &lt;/head&gt;
 &lt;body class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;margin:0;padding:0;background:#f2f5f7;color:#0d1b24;font-family:Geist,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;&quot;&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;background:#f2f5f7;&quot;&gt;
-&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;&quot;&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;max-width:600px;background:#f2f5f7;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-fixed&quot; style=&quot;background:#f2f5f7;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-page&quot; style=&quot;padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-fixed&quot; style=&quot;max-width:600px;background:#f2f5f7;&quot;&gt;
 &lt;tr&gt;&lt;td class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:2px 4px 18px;background:#f2f5f7;&quot;&gt;&lt;img src=&quot;https://app.briff.dev/brand/lockup-email-tile.png&quot; width=&quot;88&quot; height=&quot;40&quot; alt=&quot;Briff&quot; style=&quot;display:block;border:0;outline:none;width:88px;height:40px;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;
-&lt;tr&gt;&lt;td class=&quot;b-card b-text&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;&quot;&gt;
+&lt;tr&gt;&lt;td class=&quot;b-card b-text m-frame&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;&quot;&gt;
 &lt;div style=&quot;margin:0 0 10px;&quot;&gt;&lt;span class=&quot;t-sec&quot; style=&quot;display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;&quot;&gt;SECURITY&lt;/span&gt;&lt;/div&gt;
 &lt;p class=&quot;b-text&quot; style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:21px;line-height:1.3;letter-spacing:-0.01em;margin:0 0 10px;font-weight:600;color:#0d1b24;&quot;&gt;Announcements about your stack that should not wait for the weekly briefing.&lt;/p&gt;
 &lt;div class=&quot;b-line&quot; style=&quot;padding:16px 0;border-top:1px solid #dde4e9;&quot;&gt;
@@ -356,7 +386,7 @@ package.json: {&quot;engines&quot;:{&quot;node&quot;:&quot;&gt;=22.12&quot;}}</p
 &lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;orchid-hotel.example runs node 14.15.0 (.nvmrc).&lt;/div&gt;
 &lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;sigma/budget runs node 24 (Dockerfile).&lt;/div&gt;
 &lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;sigma/forms-web runs node 24.15.0 (Dockerfile).&lt;/div&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-inset&quot; style=&quot;margin:12px 0 0;background:#f2f5f7;border-radius:12px;&quot;&gt;&lt;tr&gt;&lt;td class=&quot;b-inset b-text&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;background:#f2f5f7;border-radius:12px;padding:10px 14px 12px;color:#0d1b24;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-inset&quot; style=&quot;margin:12px 0 0;background:#f2f5f7;border-radius:12px;&quot;&gt;&lt;tr&gt;&lt;td class=&quot;b-inset b-text m-inset&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;background:#f2f5f7;border-radius:12px;padding:10px 14px 12px;color:#0d1b24;&quot;&gt;
 &lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: bakery.example: node 18 is end-of-life and will not get this fix; move to 22.23.4 or later&lt;/div&gt;
 &lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: briff: rebuild to pick up Node.js 22.23.4; the node:22-alpine tag already points to it&lt;/div&gt;
 &lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: garden.example: move Dockerfile to node:22.23.4-alpine&lt;/div&gt;

@@ -123,6 +123,16 @@ composer.json: {&quot;require&quot;:{&quot;php&quot;:&quot;^8.3&quot;}}</pre><sp
 &lt;meta name=&quot;supported-color-schemes&quot; content=&quot;light dark&quot;&gt;
 &lt;title&gt;Briff · urgent: Upcoming Critical PHP Security Release&lt;/title&gt;
 &lt;style&gt;
+@media only screen and (max-width: 480px){
+  .m-fixed{table-layout:fixed !important}
+  .m-page{padding:16px 8px 32px !important}
+  .m-frame{padding:18px 12px !important}
+  .m-flat{border-left-width:0 !important;border-right-width:0 !important;border-bottom-width:0 !important;border-radius:0 !important;margin:0 !important}
+  .m-flat-cell{padding:14px 0 16px !important;border-radius:0 !important}
+  .m-inset{padding:8px !important}
+  .m-cmd{padding:8px !important;white-space:pre !important;overflow-x:auto !important;word-break:normal !important;overflow-wrap:normal !important}
+}&lt;/style&gt;
+&lt;style&gt;
 :root{color-scheme:light dark;supported-color-schemes:light dark}
 @media (prefers-color-scheme: dark){
   .b-page{background:#0a1115 !important}
@@ -163,11 +173,11 @@ composer.json: {&quot;require&quot;:{&quot;php&quot;:&quot;^8.3&quot;}}</pre><sp
 [data-ogsc] .t-brand{color:#3ccfc2 !important}&lt;/style&gt;
 &lt;/head&gt;
 &lt;body class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;margin:0;padding:0;background:#f2f5f7;color:#0d1b24;font-family:Geist,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;&quot;&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;background:#f2f5f7;&quot;&gt;
-&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;&quot;&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;max-width:600px;background:#f2f5f7;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-fixed&quot; style=&quot;background:#f2f5f7;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-page&quot; style=&quot;padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-fixed&quot; style=&quot;max-width:600px;background:#f2f5f7;&quot;&gt;
 &lt;tr&gt;&lt;td class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:2px 4px 18px;background:#f2f5f7;&quot;&gt;&lt;img src=&quot;https://app.briff.dev/brand/lockup-email-tile.png&quot; width=&quot;88&quot; height=&quot;40&quot; alt=&quot;Briff&quot; style=&quot;display:block;border:0;outline:none;width:88px;height:40px;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;
-&lt;tr&gt;&lt;td class=&quot;b-card b-text&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;&quot;&gt;
+&lt;tr&gt;&lt;td class=&quot;b-card b-text m-frame&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;&quot;&gt;
 &lt;div style=&quot;margin:0 0 10px;&quot;&gt;&lt;span class=&quot;t-sec&quot; style=&quot;display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;&quot;&gt;SECURITY&lt;/span&gt;&lt;/div&gt;
 &lt;p class=&quot;b-text&quot; style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:21px;line-height:1.3;letter-spacing:-0.01em;margin:0 0 10px;font-weight:600;color:#0d1b24;&quot;&gt;Announcements about your stack that should not wait for the weekly briefing.&lt;/p&gt;
 &lt;div class=&quot;b-line&quot; style=&quot;padding:16px 0;border-top:1px solid #dde4e9;&quot;&gt;
@@ -178,7 +188,7 @@ composer.json: {&quot;require&quot;:{&quot;php&quot;:&quot;^8.3&quot;}}</pre><sp
 &lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;api runs php 8.4.26 (.tool-versions).&lt;/div&gt;
 &lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;garden.example runs php 8.3+ (composer.json require.php), php 8.3 (Dockerfile).&lt;/div&gt;
 &lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;legacy-shop runs php 8.1.31 (Dockerfile).&lt;/div&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-inset&quot; style=&quot;margin:12px 0 0;background:#f2f5f7;border-radius:12px;&quot;&gt;&lt;tr&gt;&lt;td class=&quot;b-inset b-text&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;background:#f2f5f7;border-radius:12px;padding:10px 14px 12px;color:#0d1b24;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-inset&quot; style=&quot;margin:12px 0 0;background:#f2f5f7;border-radius:12px;&quot;&gt;&lt;tr&gt;&lt;td class=&quot;b-inset b-text m-inset&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;background:#f2f5f7;border-radius:12px;padding:10px 14px 12px;color:#0d1b24;&quot;&gt;
 &lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: Update PHP in api, garden.example as soon as the fixed release is out (announced for 21 Oct 2026, 14:00 UTC). · legacy-shop: php 8.1 is end-of-life and will not get this fix; move to 8.2 or later&lt;/div&gt;
 &lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;div style=&quot;font-size:13px;margin:10px 0 0;&quot;&gt;&lt;a class=&quot;b-link&quot; href=&quot;https://www.php.net/index.php#2026-10-20-1&quot; style=&quot;color:#0b6b67;text-decoration:none;&quot;&gt;Source: PHP news&lt;/a&gt;&lt;/div&gt;
@@ -232,6 +242,16 @@ composer.json: {&quot;require&quot;:{&quot;php&quot;:&quot;^8.3&quot;}}</pre><sp
 &lt;meta name=&quot;supported-color-schemes&quot; content=&quot;light dark&quot;&gt;
 &lt;title&gt;Briff · urgent: Security advisory: Critical remote code execution vulnerabilities, update now&lt;/title&gt;
 &lt;style&gt;
+@media only screen and (max-width: 480px){
+  .m-fixed{table-layout:fixed !important}
+  .m-page{padding:16px 8px 32px !important}
+  .m-frame{padding:18px 12px !important}
+  .m-flat{border-left-width:0 !important;border-right-width:0 !important;border-bottom-width:0 !important;border-radius:0 !important;margin:0 !important}
+  .m-flat-cell{padding:14px 0 16px !important;border-radius:0 !important}
+  .m-inset{padding:8px !important}
+  .m-cmd{padding:8px !important;white-space:pre !important;overflow-x:auto !important;word-break:normal !important;overflow-wrap:normal !important}
+}&lt;/style&gt;
+&lt;style&gt;
 :root{color-scheme:light dark;supported-color-schemes:light dark}
 @media (prefers-color-scheme: dark){
   .b-page{background:#0a1115 !important}
@@ -272,11 +292,11 @@ composer.json: {&quot;require&quot;:{&quot;php&quot;:&quot;^8.3&quot;}}</pre><sp
 [data-ogsc] .t-brand{color:#3ccfc2 !important}&lt;/style&gt;
 &lt;/head&gt;
 &lt;body class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;margin:0;padding:0;background:#f2f5f7;color:#0d1b24;font-family:Geist,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;&quot;&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;background:#f2f5f7;&quot;&gt;
-&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;&quot;&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;max-width:600px;background:#f2f5f7;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-fixed&quot; style=&quot;background:#f2f5f7;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-page&quot; style=&quot;padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-fixed&quot; style=&quot;max-width:600px;background:#f2f5f7;&quot;&gt;
 &lt;tr&gt;&lt;td class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:2px 4px 18px;background:#f2f5f7;&quot;&gt;&lt;img src=&quot;https://app.briff.dev/brand/lockup-email-tile.png&quot; width=&quot;88&quot; height=&quot;40&quot; alt=&quot;Briff&quot; style=&quot;display:block;border:0;outline:none;width:88px;height:40px;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;
-&lt;tr&gt;&lt;td class=&quot;b-card b-text&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;&quot;&gt;
+&lt;tr&gt;&lt;td class=&quot;b-card b-text m-frame&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;&quot;&gt;
 &lt;div style=&quot;margin:0 0 10px;&quot;&gt;&lt;span class=&quot;t-sec&quot; style=&quot;display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;&quot;&gt;SECURITY&lt;/span&gt;&lt;/div&gt;
 &lt;p class=&quot;b-text&quot; style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:21px;line-height:1.3;letter-spacing:-0.01em;margin:0 0 10px;font-weight:600;color:#0d1b24;&quot;&gt;Announcements about your stack that should not wait for the weekly briefing.&lt;/p&gt;
 &lt;div class=&quot;b-line&quot; style=&quot;padding:16px 0;border-top:1px solid #dde4e9;&quot;&gt;
@@ -287,7 +307,7 @@ composer.json: {&quot;require&quot;:{&quot;php&quot;:&quot;^8.3&quot;}}</pre><sp
 &lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;garden.example runs php 8.3+ (composer.json require.php), php 8.3 (Dockerfile).&lt;/div&gt;
 &lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;legacy-shop runs php 8.1.31 (Dockerfile).&lt;/div&gt;
 &lt;div class=&quot;b-muted&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#566874;margin:6px 0 0;&quot;&gt;Fixed in: 8.5.12, 8.4.27, 8.3.36, 8.2.35&lt;/div&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-inset&quot; style=&quot;margin:12px 0 0;background:#f2f5f7;border-radius:12px;&quot;&gt;&lt;tr&gt;&lt;td class=&quot;b-inset b-text&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;background:#f2f5f7;border-radius:12px;padding:10px 14px 12px;color:#0d1b24;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-inset&quot; style=&quot;margin:12px 0 0;background:#f2f5f7;border-radius:12px;&quot;&gt;&lt;tr&gt;&lt;td class=&quot;b-inset b-text m-inset&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;background:#f2f5f7;border-radius:12px;padding:10px 14px 12px;color:#0d1b24;&quot;&gt;
 &lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: api: set php 8.4.27 in .tool-versions&lt;/div&gt;
 &lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: garden.example: rebuild to pick up PHP 8.3.36; the php:8.3-fpm tag already points to it&lt;/div&gt;
 &lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: legacy-shop: php 8.1 is end-of-life and will not get this fix; move to 8.2.35 or later&lt;/div&gt;
@@ -331,6 +351,16 @@ composer.json: {&quot;require&quot;:{&quot;php&quot;:&quot;^8.3&quot;}}</pre><sp
 &lt;meta name=&quot;supported-color-schemes&quot; content=&quot;light dark&quot;&gt;
 &lt;title&gt;Briff · Weekly · W44: PHP&lt;/title&gt;
 &lt;style&gt;
+@media only screen and (max-width: 480px){
+  .m-fixed{table-layout:fixed !important}
+  .m-page{padding:16px 8px 32px !important}
+  .m-frame{padding:18px 12px !important}
+  .m-flat{border-left-width:0 !important;border-right-width:0 !important;border-bottom-width:0 !important;border-radius:0 !important;margin:0 !important}
+  .m-flat-cell{padding:14px 0 16px !important;border-radius:0 !important}
+  .m-inset{padding:8px !important}
+  .m-cmd{padding:8px !important;white-space:pre !important;overflow-x:auto !important;word-break:normal !important;overflow-wrap:normal !important}
+}&lt;/style&gt;
+&lt;style&gt;
 :root{color-scheme:light dark;supported-color-schemes:light dark}
 @media (prefers-color-scheme: dark){
   .b-page{background:#0a1115 !important}
@@ -371,21 +401,21 @@ composer.json: {&quot;require&quot;:{&quot;php&quot;:&quot;^8.3&quot;}}</pre><sp
 [data-ogsc] .t-brand{color:#3ccfc2 !important}&lt;/style&gt;
 &lt;/head&gt;
 &lt;body class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;margin:0;padding:0;background:#f2f5f7;color:#0d1b24;font-family:Geist,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;&quot;&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;background:#f2f5f7;&quot;&gt;
-&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;&quot;&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page&quot; style=&quot;max-width:600px;background:#f2f5f7;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-fixed&quot; style=&quot;background:#f2f5f7;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-page&quot; style=&quot;padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-fixed&quot; style=&quot;max-width:600px;background:#f2f5f7;&quot;&gt;
 &lt;tr&gt;&lt;td class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:2px 4px 18px;background:#f2f5f7;&quot;&gt;&lt;img src=&quot;https://app.briff.dev/brand/lockup-email-tile.png&quot; width=&quot;88&quot; height=&quot;40&quot; alt=&quot;Briff&quot; style=&quot;display:block;border:0;outline:none;width:88px;height:40px;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;
-&lt;tr&gt;&lt;td class=&quot;b-card b-text&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;&quot;&gt;
+&lt;tr&gt;&lt;td class=&quot;b-card b-text m-frame&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;&quot;&gt;
 &lt;div class=&quot;b-muted&quot; style=&quot;font-size:13px;color:#566874;margin:0 0 8px;&quot;&gt;Briff · Weekly · Week 2026-W44&lt;/div&gt;
 
 &lt;h2 class=&quot;b-text&quot; style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:19px;line-height:1.25;font-weight:600;letter-spacing:-0.02em;color:#0d1b24;margin:28px 0 12px;&quot;&gt;Needs your attention &lt;span class=&quot;b-muted&quot; style=&quot;font-family:Geist,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:500;letter-spacing:0;color:#566874;border:1px solid #dde4e9;border-radius:999px;padding:1px 8px;vertical-align:3px;&quot;&gt;1&lt;/span&gt;&lt;/h2&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#fbfcfd&quot; class=&quot;b-card b-sec-top&quot; style=&quot;border-collapse:separate;margin:0 0 12px;background:#fbfcfd;border:1px solid #dde4e9;border-top:3px solid #b93522;border-radius:14px;&quot;&gt;
-&lt;tr&gt;&lt;td class=&quot;b-card b-text&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;padding:16px 16px 14px;background:#fbfcfd;color:#0d1b24;border-radius:14px;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#fbfcfd&quot; class=&quot;b-card m-flat m-fixed b-sec-top&quot; style=&quot;border-collapse:separate;margin:0 0 12px;background:#fbfcfd;border:1px solid #dde4e9;border-top:3px solid #b93522;border-radius:14px;&quot;&gt;
+&lt;tr&gt;&lt;td class=&quot;b-card b-text m-flat-cell&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;padding:16px 16px 14px;background:#fbfcfd;color:#0d1b24;border-radius:14px;&quot;&gt;
 &lt;div style=&quot;margin:0 0 8px;&quot;&gt;&lt;span class=&quot;t-sec&quot; style=&quot;display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;&quot;&gt;SECURITY&lt;/span&gt;&lt;/div&gt;
 &lt;div class=&quot;b-text&quot; style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:19px;line-height:1.25;font-weight:600;letter-spacing:-0.01em;color:#0d1b24;margin:0;&quot;&gt;Security advisory: Critical remote code execution vulnerabilities, update now&lt;/div&gt;
 
 &lt;div style=&quot;margin:10px 0 0;line-height:1.6;&quot;&gt;&lt;span class=&quot;b-inset b-text&quot; style=&quot;display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12px;color:#0d1b24;&quot;&gt;api&lt;/span&gt; &lt;span class=&quot;b-inset b-text&quot; style=&quot;display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12px;color:#0d1b24;&quot;&gt;garden.example&lt;/span&gt; &lt;span class=&quot;b-inset b-text&quot; style=&quot;display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12px;color:#0d1b24;&quot;&gt;legacy-shop&lt;/span&gt;&lt;/div&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-inset&quot; style=&quot;margin:14px 0 0;background:#f2f5f7;border-radius:12px;&quot;&gt;&lt;tr&gt;&lt;td class=&quot;b-inset b-text&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;background:#f2f5f7;border-radius:12px;padding:12px 14px;color:#0d1b24;&quot;&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-inset m-fixed&quot; style=&quot;margin:14px 0 0;background:#f2f5f7;border-radius:12px;&quot;&gt;&lt;tr&gt;&lt;td class=&quot;b-inset b-text m-inset&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;background:#f2f5f7;border-radius:12px;padding:12px 14px;color:#0d1b24;&quot;&gt;
 &lt;div class=&quot;b-link&quot; style=&quot;font-size:11px;letter-spacing:.06em;font-weight:600;color:#0b6b67;margin:0 0 8px;&quot;&gt;TO DO&lt;/div&gt;
 &lt;div class=&quot;b-text&quot; style=&quot;font-size:15px;line-height:1.5;font-weight:600;color:#0d1b24;&quot;&gt;api: set php 8.4.27 in .tool-versions · garden.example: rebuild to pick up PHP 8.3.36; the php:8.3-fpm tag already points to it · legacy-shop: php 8.1 is end-of-life and will not get this fix; move to 8.2.35 or later&lt;/div&gt;&lt;div style=&quot;margin:8px 0 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12.5px;line-height:1.5;word-break:break-word;&quot;&gt;&lt;div class=&quot;b-muted&quot; style=&quot;color:#566874;&quot;&gt;api runs php 8.4.26 (.tool-versions) → 8.4.27&lt;/div&gt;&lt;div class=&quot;b-muted&quot; style=&quot;color:#566874;&quot;&gt;garden.example runs php 8.3 (Dockerfile) → 8.3.36&lt;/div&gt;&lt;div class=&quot;b-muted&quot; style=&quot;color:#566874;&quot;&gt;legacy-shop runs php 8.1.31 (Dockerfile) → 8.2.35&lt;/div&gt;&lt;/div&gt;
 &lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
