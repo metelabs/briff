@@ -51,16 +51,17 @@ export async function publicActionsForScan(
         err instanceof ActionVisibilityDeferred
           ? err.retryAt
           : new Date(now.getTime() + 15 * 60_000);
+      const rateLimited = err instanceof ActionVisibilityDeferred;
       await db.package.updateMany({
         where: {
-          id: { in: rows.map((r) => r.id) },
+          id: { in: rateLimited ? rows.map((r) => r.id) : [row.id] },
           OR: [{ actionVisibilityCheckedAt: null }, { actionVisibilityCheckedAt: { lte: cutoff } }],
         },
         data: { actionVisibilityRetryAt: retryAt },
       });
-      deferredAt = retryAt;
+      if (rateLimited || !deferredAt || retryAt < deferredAt) deferredAt = retryAt;
       log.warn({ retryAt }, "security: action visibility checks deferred");
-      break;
+      if (rateLimited) break;
     }
   }
   if (deferredAt) {

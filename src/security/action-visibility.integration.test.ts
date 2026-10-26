@@ -15,8 +15,25 @@ describe.skipIf(!url)("Actions visibility progress", () => {
   const dedupeKey = `security-scan:action-visibility:${reset.toISOString()}`;
   afterAll(async () => {
     vi.unstubAllGlobals();
+    const deferred = await db.package.findMany({
+      where: { name: { in: names } },
+      select: { actionVisibilityRetryAt: true },
+    });
     await db.package.deleteMany({ where: { name: { in: names } } });
-    await db.job.deleteMany({ where: { dedupeKey } });
+    await db.job.deleteMany({
+      where: {
+        dedupeKey: {
+          in: [
+            dedupeKey,
+            ...deferred.flatMap((r) =>
+              r.actionVisibilityRetryAt
+                ? [`security-scan:action-visibility:${r.actionVisibilityRetryAt.toISOString()}`]
+                : []
+            ),
+          ],
+        },
+      },
+    });
     await db.$disconnect();
   });
 
@@ -55,5 +72,29 @@ describe.skipIf(!url)("Actions visibility progress", () => {
     expect((await publicActionsForScan(context, names)).size).toBe(62);
     expect(requests).toBe(63);
     expect(context.heartbeat).toHaveBeenCalledTimes(63);
+  });
+  it("retries one unavailable repository without blocking unrelated visibility checks", async () => {
+    const batch = names.slice(0, 3).sort();
+    await db.package.updateMany({
+      where: { name: { in: batch } },
+      data: {
+        actionPublic: null,
+        actionVisibilityCheckedAt: null,
+        actionVisibilityRetryAt: null,
+      },
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL) => {
+        if (String(input).endsWith(batch[0])) throw new Error("Synthetic network failure");
+        return Response.json({ private: false });
+      })
+    );
+    const result = await publicActionsForScan({ db, log, heartbeat: async () => undefined }, batch);
+    expect([...result].sort()).toEqual(batch.slice(1));
+    expect(await db.package.findFirst({ where: { name: batch[0] } })).toMatchObject({
+      actionPublic: null,
+      actionVisibilityRetryAt: expect.any(Date),
+    });
   });
 });
