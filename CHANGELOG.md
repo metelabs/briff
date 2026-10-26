@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.3](https://github.com/metelabs/briff/compare/0.6.2...0.6.3) (2026-10-26)
+
+
+### Bug Fixes
+
+* **security:** one advisory per vulnerability, a severity level, release fixes only ([#6](https://github.com/metelabs/briff/issues/6)) ([99bf281](https://github.com/metelabs/briff/commit/99bf281f2bed07f94088826f5f02f6649794fd6c))
+
 ## [0.6.2](https://github.com/metelabs/briff/compare/0.6.1...0.6.2) (2026-10-25)
 
 
