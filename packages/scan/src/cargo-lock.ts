@@ -1,3 +1,4 @@
+import { posix } from "node:path";
 import { parse } from "smol-toml";
 
 import type { LockedDependency } from "./types";
@@ -26,14 +27,43 @@ export function parseCargoLock(
   const members = patterns(workspace.members);
   const excludes = patterns(workspace.exclude);
   const inherited = table(workspace.dependencies);
+  const selected = new Set([
+    "Cargo.toml",
+    ...Object.keys(manifests).filter(
+      (file) => members.some((p) => matches(p, file)) && !excludes.some((p) => matches(p, file))
+    ),
+  ]);
+  // Cargo includes in-tree path dependencies as members, including their path dependencies.
+  if (root.workspace) {
+    for (const file of selected) {
+      const manifest = table(parse(manifests[file] ?? ""));
+      for (const section of [manifest, ...Object.values(table(manifest.target)).map(table)]) {
+        for (const key of ["dependencies", "dev-dependencies", "build-dependencies"]) {
+          for (const [alias, value] of Object.entries(table(section[key]))) {
+            const declared = table(value);
+            const inheritedSpec = declared.workspace === true;
+            const spec = inheritedSpec ? table(inherited[alias]) : declared;
+            if (typeof spec.path !== "string") continue;
+            const member = posix.join(
+              inheritedSpec ? "." : posix.dirname(file),
+              spec.path,
+              "Cargo.toml"
+            );
+            if (
+              !member.startsWith("../") &&
+              manifests[member] !== undefined &&
+              !excludes.some((p) => matches(p, member))
+            )
+              selected.add(member);
+          }
+        }
+      }
+    }
+  }
   const direct = new Map<string, boolean>();
   const projects = new Set<string>();
   for (const [file, text] of Object.entries(manifests)) {
-    if (
-      file !== "Cargo.toml" &&
-      (!members.some((p) => matches(p, file)) || excludes.some((p) => matches(p, file)))
-    )
-      continue;
+    if (!selected.has(file)) continue;
     const manifest = table(parse(text));
     const projectName = table(manifest.package).name;
     if (typeof projectName === "string") projects.add(projectName);

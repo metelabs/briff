@@ -10,6 +10,24 @@ const files = Object.fromEntries(
 );
 
 describe("Cargo", () => {
+  it("includes recursive implicit path members while respecting exclusions", () => {
+    const manifests = Object.fromEntries(
+      ["Cargo.toml", "shared/Cargo.toml", "shared/nested/Cargo.toml", "excluded/Cargo.toml"].map(
+        (name) => [name, fixture(`../cargo-implicit/${name}`)]
+      )
+    );
+    expect(
+      parseCargoLock(fixture("../cargo-implicit/Cargo.lock"), manifests).map((p) => [
+        p.name,
+        p.direct,
+        p.dev,
+      ])
+    ).toEqual([
+      ["tokio", true, true],
+      ["time", true, undefined],
+      ["smallvec", false, undefined],
+    ]);
+  });
   it.each([3, 4])("reads v%i pins and workspace inherited/renamed declarations", (version) => {
     const rows = parseCargoLock(
       files["Cargo.lock"].replace("version = 4", `version = ${version}`),
