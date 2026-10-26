@@ -428,3 +428,25 @@ set and falls back to `SCANNER_TOKEN`.
 | `npm: not found` in the journal         | Node is not on the login-shell PATH               | Check `sh -lc 'which npm'`; adjust `ExecStart`          |
 | A repo is missing                       | No lockfile or runtime file, or it is a worktree  | `npm run scan:local -- --dry-run` shows what was found  |
 | A runtime shows as `image ...`          | The image is not in `IMAGE_RUNTIMES`              | Add it in `packages/scan/src/runtimes.ts` with a test   |
+
+### RubyGems (Bundler)
+
+`Gemfile.lock` GEM specs supply installed RubyGems versions; DEPENDENCIES supplies the
+direct set. Platform builds of one version collapse into one pin. Git and path sources
+are excluded. Literal `gem` declarations in `Gemfile` inside development/test groups
+(or with `group:` / `groups:`) mark direct gems as development-only; a production
+declaration wins. Gemfiles are inspected as text, never evaluated, so computed Ruby
+declarations and imported Gemfiles cannot supply group information.
+
+OSV queries use `RubyGems`. Fixes keep the existing declaration and its groups: set its
+version requirement to `"~> X.Y.Z"`, then run `bundle update <gem> --conservative`. The
+bounded requirement prevents a major upgrade while allowing the patched release. Briff
+uses this instead of `bundle add`, which could change declaration groups, or an unbounded
+update, which could select another major. Transitive-only advice uses
+`bundle exec gem dependency <gem> --reverse-dependencies`.
+
+Registry refresh reads RubyGems.org `gems/<gem>.json` for repository/homepage links and
+`versions/<gem>/latest.json` for the latest available release (yanked releases are absent).
+RubyGems exposes no package deprecation status; Briff leaves it unset. Non-semver Ruby
+versions are retained as written; a version the fix rules cannot compare gets advisory
+reading advice rather than a guessed upgrade.

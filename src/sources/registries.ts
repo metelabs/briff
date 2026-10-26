@@ -1,5 +1,6 @@
 import type { Ecosystem } from "@scan/ecosystems";
 
+import { fetchRubyGemsPackage } from "./rubygems";
 import { fetchGoModule } from "./go-proxy";
 import { fetchNpmPackage, type NpmPackageInfo } from "./npm-registry";
 import { fetchPackagistPackage } from "./packagist";
@@ -15,6 +16,8 @@ export type RegistryLookup = { status: "ok"; info: RegistryInfo } | { status: "n
 
 export function fetchRegistryPackage(ecosystem: Ecosystem, name: string): Promise<RegistryLookup> {
   switch (ecosystem) {
+    case "RubyGems":
+      return fetchRubyGemsPackage(name);
     case "npm":
       return fetchNpmPackage(name);
     case "Packagist":

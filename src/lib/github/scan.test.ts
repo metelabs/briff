@@ -134,3 +134,19 @@ describe("githubScanKey", () => {
     );
   });
 });
+
+it("fetches Bundler lockfiles and Gemfiles, excluding vendored copies", () => {
+  const paths = ["Gemfile", "Gemfile.lock", "apps/api/Gemfile", "vendor/Gemfile.lock", "app.rb"];
+  expect(
+    scannedTreeEntries({
+      truncated: false,
+      tree: paths.map((path) => ({
+        path,
+        mode: "100644",
+        type: "blob",
+        sha: "0".repeat(40),
+        size: 30,
+      })),
+    }).map((e) => e.path)
+  ).toEqual(paths.slice(0, 3));
+});
