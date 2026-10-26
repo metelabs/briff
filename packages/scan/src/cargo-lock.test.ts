@@ -58,6 +58,16 @@ describe("Cargo", () => {
       },
     ]);
   });
+  it("normalizes workspace exclusions as well as member patterns", () => {
+    const manifests = {
+      ...files,
+      "Cargo.toml": files["Cargo.toml"].replace(
+        "[workspace]",
+        '[workspace]\nexclude = ["./crates/api/"]'
+      ),
+    };
+    expect(parseCargoLock(files["Cargo.lock"], manifests).every((p) => !p.direct)).toBe(true);
+  });
   it("uses member manifests in the shared GitHub collector", async () => {
     const payload = await collectFromFiles("acme/api", files, { warn: () => {} });
     expect(payload?.dependencies.find((d) => d.name === "tokio")?.direct).toBe(true);

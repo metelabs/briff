@@ -189,6 +189,25 @@ describe("runtimeUpgrades", () => {
 });
 
 describe("installTargets", () => {
+  it("reads Cargo's precise destination rather than its installed selector", () => {
+    expect(installTargets("cargo update -p tokio@1.24.1 --precise 1.24.2", "tokio")?.all).toBe(
+      "1.24.2"
+    );
+    expect(installTargets("cargo update -p tokio --precise 1.24.2 (acme/api)", "tokio")).toEqual({
+      all: null,
+      byRepo: new Map([["acme/api", "1.24.2"]]),
+    });
+    expect(
+      releaseUpgrades(
+        "tokio",
+        "cargo update -p tokio@1.24.1 --precise 1.24.2",
+        ["1.24.1", "1.24.2"],
+        ["acme/api"],
+        () => ["1.24.1"],
+        "crates.io"
+      )[0].target
+    ).toBe("1.24.2");
+  });
   it("reads one version for every repo, or one per listed repo set", () => {
     expect(installTargets("npm i next@16.3.8", "next")).toEqual({
       all: "16.3.8",

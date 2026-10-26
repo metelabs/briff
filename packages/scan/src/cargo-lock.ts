@@ -9,7 +9,8 @@ function table(value: unknown): Table {
 }
 
 function matches(pattern: string, name: string): boolean {
-  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*");
+  const normalized = posix.normalize(pattern).replace(/\/$/, "");
+  const escaped = normalized.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*");
   return new RegExp(`^${escaped}/Cargo\\.toml$`).test(name);
 }
 
