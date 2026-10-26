@@ -1,3 +1,5 @@
+import { fixCommand } from "@/pipeline/fixes";
+
 import { cvssLevel, type SeverityLevel } from "@/security/cvss";
 import { fixedVersionFor, severityLevelOf, type OsvRange } from "@/sources/osv";
 import type { Ecosystem } from "@scan/ecosystems";
@@ -13,6 +15,7 @@ export interface StackDependency {
   ecosystem: Ecosystem;
   name: string;
   version: string;
+  constraint?: boolean;
   direct: boolean;
 }
 
@@ -21,6 +24,7 @@ export interface PlannedQuery {
   ecosystem: Ecosystem;
   name: string;
   version: string;
+  constraint?: boolean;
   packageId: string;
   /** True when any repo depends on this package+version directly. */
   direct: boolean;
@@ -44,6 +48,7 @@ export function planQueries(deps: StackDependency[]): PlannedQuery[] {
       ecosystem: dep.ecosystem,
       name: dep.name,
       version: dep.version,
+      constraint: dep.constraint,
       packageId: dep.packageId,
       direct: false,
       dependents: [],
@@ -254,6 +259,8 @@ export interface AlertGroupRepo {
 }
 
 export interface AlertGroup {
+  ecosystem?: Ecosystem;
+  actionTags?: Record<string, string>;
   osvId: string;
   packageName: string;
   summary: string | null;
@@ -269,6 +276,22 @@ export function osvLink(osvId: string): string {
 
 /** Fixed version for the installed versions in this group, else the advisory's list. */
 export function fixedFor(group: AlertGroup): string | null {
+  if (group.ecosystem === "GitHub Actions") {
+    return (
+      fixCommand(
+        group.packageName,
+        null,
+        group.repos.map((repo) => ({
+          repo: repo.name,
+          installed: repo.installedVersion,
+          direct: repo.direct,
+          ecosystem: "GitHub Actions",
+          actionTags: group.actionTags,
+          fix: fixedVersionFor(group.affected, repo.installedVersion),
+        }))
+      ) ?? "read the advisory"
+    );
+  }
   const fixes = new Set<string>();
   for (const repo of group.repos) {
     const fix = fixedVersionFor(group.affected, repo.installedVersion);

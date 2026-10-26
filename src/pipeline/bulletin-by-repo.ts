@@ -168,6 +168,7 @@ export function upgradeActions(upgrades: readonly RepoUpgrade[]): RepoAction[] {
         group: u.group,
         requirement: u.requirement,
         project: u.project,
+        actionTags: u.actionTags,
       });
     }
     if (text && !out.some((a) => a.text === text)) {

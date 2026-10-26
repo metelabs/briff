@@ -27,6 +27,7 @@ export interface RepoFix {
   /** The uv workspace member that declares it (`uv add --package api`). */
   project?: string;
   /** The Python tool whose lockfile listed it in this repo (`uv lock`, `poetry add`, ...). */
+  actionTags?: Record<string, string>;
   manager?: PackageManager;
 }
 
@@ -38,6 +39,7 @@ function variantOf(f: RepoFix): InstallVariant {
     ...(f.group ? { group: f.group } : {}),
     ...(f.requirement ? { requirement: f.requirement } : {}),
     ...(f.project ? { project: f.project } : {}),
+    ...(f.actionTags ? { actionTags: f.actionTags } : {}),
     ...(f.manager ? { manager: f.manager } : {}),
   };
 }

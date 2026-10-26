@@ -1,0 +1,13 @@
+name: synthetic acme workflow
+on: push
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: tj-actions/changed-files@6cb76d07bee4c9772c6882c06c37837bf82a04d3 # v45.0.7
+      - uses: acme/tool/sub-action@v1.2.3
+      - uses: ./local-action
+      - uses: docker://alpine:3.20
+  reusable:
+    uses: acme/workflows/.github/workflows/check.yml@v2.3.4

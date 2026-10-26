@@ -9,6 +9,8 @@ import { fetchOsvVuln, queryOsvBatchHits, type OsvRange, type OsvVuln } from "@/
 import type { JobContext, JobResult } from "@/worker/types";
 import { ECOSYSTEMS, isEcosystem, type Ecosystem } from "@scan/ecosystems";
 
+import { storedActionTags } from "@/sources/github-actions";
+
 import { aliasGroups, byIdRank, idsOf, mergeAliasGroup } from "./aliases";
 import {
   alertKey,
@@ -337,6 +339,7 @@ export async function securityScan({ db, log, heartbeat }: JobContext): Promise<
       },
       select: {
         repoId: true,
+        constraint: true,
         installedVersion: true,
         direct: true,
         repo: { select: { name: true } },
@@ -352,6 +355,7 @@ export async function securityScan({ db, log, heartbeat }: JobContext): Promise<
         repoName: row.repo.name,
         packageId: row.package.id,
         name: row.package.name,
+        constraint: row.constraint,
         version: row.installedVersion,
         direct: row.direct,
       });
@@ -364,7 +368,13 @@ export async function securityScan({ db, log, heartbeat }: JobContext): Promise<
     queries.length === 0
       ? []
       : await queryOsvBatchHits(
-          queries.map((q) => ({ ecosystem: q.ecosystem, name: q.name, version: q.version }))
+          queries.map((q) => ({
+            ecosystem: q.ecosystem,
+            name: q.name,
+            version: q.version,
+            ...(q.constraint ? { constraint: true } : {}),
+          })),
+          heartbeat
         );
 
   // Every id OSV answered with, and the package it was first found for.
@@ -452,7 +462,7 @@ export async function securityScan({ db, log, heartbeat }: JobContext): Promise<
             severity: true,
             affected: true,
             fixedVersion: true,
-            package: { select: { name: true } },
+            package: { select: { name: true, ecosystem: true, actionTags: true } },
           },
         },
       },
@@ -480,6 +490,8 @@ export async function securityScan({ db, log, heartbeat }: JobContext): Promise<
     for (const alert of urgent) {
       const adv = alert.advisory;
       const group = groups.get(adv.osvId) ?? {
+        ecosystem: isEcosystem(adv.package.ecosystem) ? adv.package.ecosystem : undefined,
+        actionTags: storedActionTags(adv.package.actionTags),
         osvId: adv.osvId,
         packageName: adv.package.name,
         summary: adv.summary,

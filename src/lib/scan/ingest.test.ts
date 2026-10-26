@@ -33,6 +33,8 @@ describe("dedupeDependencies across ecosystems", () => {
         group: null,
         requirement: null,
         project: null,
+        constraint: false,
+        metadata: undefined,
         unresolved: false,
       }))
     );
@@ -55,6 +57,8 @@ describe("dedupeDependencies across ecosystems", () => {
           direct: true,
           ecosystem: "PyPI",
           manager: "pip",
+          constraint: false,
+          metadata: undefined,
           unresolved: true,
         },
       ])
@@ -69,6 +73,8 @@ describe("dedupeDependencies across ecosystems", () => {
         group: null,
         requirement: null,
         project: null,
+        constraint: false,
+        metadata: undefined,
         unresolved: false,
       },
       {
@@ -81,6 +87,8 @@ describe("dedupeDependencies across ecosystems", () => {
         group: null,
         requirement: null,
         project: null,
+        constraint: false,
+        metadata: undefined,
         unresolved: true,
       },
     ]);

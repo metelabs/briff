@@ -1,3 +1,5 @@
+import { WORKFLOW_PATH } from "./actions";
+
 import { LOCKFILES, lockfileKind, SKIP_DIRS } from "./discover";
 import { RUNTIME_FILE_NAMES, runtimeFileKind } from "./runtimes";
 
@@ -19,6 +21,7 @@ export function isScannedFileName(name: string): boolean {
  * (`node_modules`, `vendor`, `__fixtures__`, ...), and it is at most MAX_DEPTH levels down.
  */
 export function isScannedPath(relPath: string, maxDepth = MAX_DEPTH): boolean {
+  if (WORKFLOW_PATH.test(relPath)) return true;
   const parts = relPath.split("/");
   const name = parts.pop() ?? "";
   if (parts.length > maxDepth || !isScannedFileName(name)) return false;

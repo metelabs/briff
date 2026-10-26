@@ -34,6 +34,8 @@ export interface IngestDependency {
   group: string | null;
   requirement: string | null;
   project: string | null;
+  constraint: boolean;
+  metadata: ScanDependency["metadata"];
   unresolved: boolean;
 }
 
@@ -58,6 +60,8 @@ export function dedupeDependencies(deps: ScanDependency[]): IngestDependency[] {
       group: dep.group ?? null,
       requirement: dep.requirement ?? null,
       project: dep.project ?? null,
+      constraint: ecosystem === "GitHub Actions" && /^v?\d+(?:\.\d+)?$/.test(dep.version),
+      metadata: dep.metadata,
       unresolved: dep.unresolved ?? false,
     };
     const key = `${packageKey(ecosystem, row.name)}@${dep.version}`;
@@ -189,6 +193,8 @@ export async function ingestScan(
                 group: dep.group,
                 requirement: dep.requirement,
                 project: dep.project,
+                constraint: dep.constraint,
+                metadata: dep.metadata,
                 unresolved: dep.unresolved,
               },
             ]

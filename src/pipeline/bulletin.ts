@@ -666,6 +666,7 @@ export interface StackRepo {
     group?: string;
     requirement?: string;
     project?: string;
+    actionTags?: Record<string, string>;
     manager?: PackageManager;
     unresolved?: true;
   }[];
@@ -746,6 +747,7 @@ export interface PeriodAlert {
     group?: string;
     requirement?: string;
     project?: string;
+    actionTags?: Record<string, string>;
     manager?: PackageManager;
   }[];
 }
@@ -775,6 +777,7 @@ export function summariseAlerts(rows: readonly PeriodAlert[]): {
       ...(i.group ? { group: i.group } : {}),
       ...(i.requirement ? { requirement: i.requirement } : {}),
       ...(i.project ? { project: i.project } : {}),
+      ...(i.actionTags ? { actionTags: i.actionTags } : {}),
       ...(i.manager ? { manager: i.manager } : {}),
     }));
     if (entries.length > 0) repoFixes.set(pkg, [...(repoFixes.get(pkg) ?? []), ...entries]);

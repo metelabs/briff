@@ -245,6 +245,8 @@ model Dependency {
   project          String?
   // `installedVersion` is a requirement as written (`>=2.0`), not an installed version: an
   // unpinned requirements.txt line. Kept for matching; never sent to OSV, never compared.
+  constraint       Boolean  @default(false)
+  metadata         Json?
   unresolved       Boolean  @default(false)
   createdAt        DateTime @default(now())
 
@@ -292,6 +294,7 @@ model Package {
   id              String       @id @default(cuid())
   ecosystem       String
   name            String
+  actionTags      Json?
   latestVersion   String?
   deprecated      String?
   repoUrl         String?

@@ -1,3 +1,4 @@
+import { storedActionTags } from "@/sources/github-actions";
 import semver from "semver";
 
 import { lineFixes, releaseLine, type ReleaseVersions, type RepoFix } from "./fixes";
@@ -39,6 +40,7 @@ export interface RepoUpgrade {
   /** The uv workspace member that declares it (`uv add --package`). */
   project?: string;
   /** The Python tool this repo installs the package with (`uv lock`, `poetry add`, ...). */
+  actionTags?: Record<string, string>;
   manager?: PackageManager;
   /** Installed versions; empty when none is on record ("installed version unknown"). */
   installed: string[];
@@ -76,6 +78,7 @@ export interface RepoInstall {
   group?: string;
   requirement?: string;
   project?: string;
+  actionTags?: Record<string, string>;
   manager?: PackageManager;
 }
 
@@ -102,7 +105,10 @@ export function packageUpgrades(
   // it has only transitively gets its own entry without one.
   const entries = new Map<string, RepoUpgrade & { versions: Set<string> }>();
   /** How one installed version is declared; a repo with two declarations gets two lines. */
-  type Declared = Pick<RepoFix, "dev" | "group" | "requirement" | "project" | "manager">;
+  type Declared = Pick<
+    RepoFix,
+    "dev" | "group" | "requirement" | "project" | "manager" | "actionTags"
+  >;
   const declaredKey = (d: Declared) =>
     JSON.stringify([d.dev === true, d.group, d.requirement, d.project, d.manager]);
   const add = (
@@ -121,6 +127,7 @@ export function packageUpgrades(
       ...ecosystemField,
       ...(declared.dev ? { dev: true as const } : {}),
       ...(declared.group ? { group: declared.group } : {}),
+      ...(declared.actionTags ? { actionTags: declared.actionTags } : {}),
       ...(declared.requirement ? { requirement: declared.requirement } : {}),
       ...(declared.project ? { project: declared.project } : {}),
       ...(declared.manager ? { manager: declared.manager } : {}),
@@ -405,6 +412,7 @@ export function parseUpgrades(value: unknown): RepoUpgrade[] {
         ...(typeof o.manager === "string" && asPackageManager(o.manager)
           ? { manager: asPackageManager(o.manager) }
           : {}),
+        ...(storedActionTags(o.actionTags) ? { actionTags: storedActionTags(o.actionTags) } : {}),
         installed,
         target: typeof o.target === "string" ? o.target : null,
         ...(typeof o.source === "string" ? { source: o.source } : {}),

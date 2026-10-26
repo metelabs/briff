@@ -1,6 +1,8 @@
 import type { Ecosystem, PackageManager } from "./ecosystems";
 
 export interface LockedDependency {
+  constraint?: boolean;
+  metadata?: { source: string; ref: string; subpath?: string; sha?: string };
   name: string;
   version: string;
   direct: boolean;

@@ -1,7 +1,7 @@
 // Package ecosystems, named as OSV names them (https://ossf.github.io/osv-schema/#affectedpackage-field):
 // the same string is `Package.ecosystem` in Briff and the `ecosystem` of an OSV query.
 
-export const ECOSYSTEMS = ["npm", "Packagist", "PyPI", "Go"] as const;
+export const ECOSYSTEMS = ["npm", "Packagist", "PyPI", "Go", "GitHub Actions"] as const;
 
 export type Ecosystem = (typeof ECOSYSTEMS)[number];
 
@@ -86,6 +86,8 @@ export function ecosystemLabel(ecosystem: string): string {
   switch (ecosystem) {
     case "Packagist":
       return "Composer";
+    case "GitHub Actions":
+      return "Actions";
     default:
       return ecosystem;
   }
@@ -100,6 +102,7 @@ export function normalizePackageName(ecosystem: Ecosystem, name: string): string
   const trimmed = name.trim();
   switch (ecosystem) {
     case "Packagist":
+    case "GitHub Actions":
       return trimmed.toLowerCase();
     case "PyPI":
       return trimmed.toLowerCase().replace(/[-_.]+/g, "-");
@@ -156,6 +159,7 @@ export function normalizeVersion(ecosystem: Ecosystem, version: string): string 
     case "Go":
       return raw.replace(/^v(?=\d)/, "");
     case "npm":
+    case "GitHub Actions":
       return raw;
   }
 }

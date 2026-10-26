@@ -288,3 +288,22 @@ describe("computeDrift with an unresolved requirement", () => {
     expect(rows[0].majorsBehind).toBe(0);
   });
 });
+
+it("labels an Actions-only stack", () => {
+  const result = computeDrift({
+    asOf,
+    repos: ["acme/web"],
+    runtimes: [],
+    dependencies: [
+      {
+        repo: "acme/web",
+        ecosystem: "GitHub Actions",
+        packageName: "actions/checkout",
+        installedVersion: "v4",
+        latestVersion: "5.0.0",
+      },
+    ],
+  });
+  expect(result.columns[0]).toMatchObject({ ecosystem: "Actions" });
+  expect(result.rows[0].majorsBehind).toBe(0);
+});

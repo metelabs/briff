@@ -149,7 +149,9 @@ function packageColumns(
     kind: "package" as const,
     label: p.name,
     latest: p.latest,
-    ...(mixed ? { ecosystem: ecosystemLabel(p.ecosystem) } : {}),
+    ...(mixed || p.ecosystem === "GitHub Actions"
+      ? { ecosystem: ecosystemLabel(p.ecosystem) }
+      : {}),
   }));
 }
 

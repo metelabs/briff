@@ -1,5 +1,7 @@
 import type { Ecosystem } from "@scan/ecosystems";
 
+import { fetchAction } from "./github-actions";
+
 import { fetchGoModule } from "./go-proxy";
 import { fetchNpmPackage, type NpmPackageInfo } from "./npm-registry";
 import { fetchPackagistPackage } from "./packagist";
@@ -15,6 +17,8 @@ export type RegistryLookup = { status: "ok"; info: RegistryInfo } | { status: "n
 
 export function fetchRegistryPackage(ecosystem: Ecosystem, name: string): Promise<RegistryLookup> {
   switch (ecosystem) {
+    case "GitHub Actions":
+      return fetchAction(name);
     case "npm":
       return fetchNpmPackage(name);
     case "Packagist":

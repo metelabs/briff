@@ -17,7 +17,7 @@ const STALE_AFTER_MS = 20 * 60 * 60_000;
  * service links for every package; one GitHub Releases source per repo that a direct
  * dependency publishes from.
  */
-export async function refreshPackages({ db, log }: JobContext): Promise<JobResult> {
+export async function refreshPackages({ db, log, heartbeat }: JobContext): Promise<JobResult> {
   const serviceIds = await syncServices(db);
   const counts = {
     refreshed: 0,
@@ -55,7 +55,9 @@ export async function refreshPackages({ db, log }: JobContext): Promise<JobResul
     take: BATCH_LIMIT,
   });
 
+  let processed = 0;
   await mapLimit(stale, CONCURRENCY, async (pkg) => {
+    if (++processed % 50 === 0) await heartbeat();
     try {
       if (!isEcosystem(pkg.ecosystem)) return;
       const lookup = await fetchRegistryPackage(pkg.ecosystem, pkg.name);
@@ -70,6 +72,7 @@ export async function refreshPackages({ db, log }: JobContext): Promise<JobResul
       await db.package.update({
         where: { id: pkg.id },
         data: {
+          actionTags: info.actionTags,
           latestVersion: info.latestVersion,
           deprecated: info.deprecated,
           repoUrl: repo ? githubRepoUrl(repo) : info.repositoryUrl,

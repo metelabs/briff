@@ -1,3 +1,4 @@
+import { storedActionTags } from "@/sources/github-actions";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
 import { getEnv } from "@/lib/env";
@@ -256,7 +257,7 @@ async function loadAlerts(
             project: true,
             manager: true,
             repo: { select: { name: true } },
-            package: { select: { name: true, ecosystem: true } },
+            package: { select: { name: true, ecosystem: true, actionTags: true } },
           },
         })
       : [];
@@ -265,6 +266,7 @@ async function loadAlerts(
   for (const d of deps) {
     const manager = asPackageManager(d.manager);
     const install = {
+      actionTags: storedActionTags(d.package.actionTags),
       version: d.installedVersion,
       direct: d.direct,
       ...(d.dev ? { dev: true } : {}),

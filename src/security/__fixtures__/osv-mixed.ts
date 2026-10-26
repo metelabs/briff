@@ -16,7 +16,7 @@ const recorded = JSON.parse(
   readFileSync(path.join(__dirname, "osv-mixed-ecosystems.json"), "utf8")
 ) as Recorded;
 
-export const mixedQueries: Required<OsvQuery>[] = recorded.queries.map((q) => ({
+export const mixedQueries: Required<Omit<OsvQuery, "constraint">>[] = recorded.queries.map((q) => ({
   ecosystem: q.package.ecosystem,
   name: q.package.name,
   version: q.version,

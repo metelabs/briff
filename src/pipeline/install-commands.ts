@@ -14,6 +14,7 @@ import { shapesFor, type Ecosystem, type PackageManager } from "@scan/ecosystems
  */
 export interface InstallVariant {
   dev?: boolean;
+  actionTags?: Record<string, string>;
   manager?: PackageManager;
   /**
    * Where a Python package is declared when not only in the main list: its sections,
@@ -179,6 +180,8 @@ export function installCommand(
   variant: InstallVariant = {}
 ): string {
   switch (ecosystem ?? "npm") {
+    case "GitHub Actions":
+      return `pin ${pkg} to v${version.replace(/^v/, "")}${variant.actionTags?.[version.replace(/^v/, "")] ? ` (sha ${variant.actionTags[version.replace(/^v/, "")]})` : ""}`;
     case "Packagist":
       return `composer require${variant.dev ? " --dev" : ""} ${pkg}:^${version}`;
     case "PyPI":
@@ -207,6 +210,8 @@ export function whyCommand(
   manager?: PackageManager
 ): string {
   switch (ecosystem ?? "npm") {
+    case "GitHub Actions":
+      return `inspect uses: ${pkg} in .github/workflows`;
     case "Packagist":
       return `composer why ${pkg}`;
     case "PyPI":

@@ -63,6 +63,7 @@ export type OsvRange = z.infer<typeof rangeSchema>;
 export interface OsvQuery {
   name: string;
   version: string;
+  constraint?: boolean;
   /** OSV ecosystem of the package; npm when absent. */
   ecosystem?: Ecosystem;
 }
@@ -81,15 +82,25 @@ export async function queryOsvBatch(queries: OsvQuery[]): Promise<string[][]> {
 /** The querybatch body entry for one query: the package's own ecosystem, never a run-wide one. */
 export function osvQueryOf(q: OsvQuery): {
   package: { ecosystem: Ecosystem; name: string };
-  version: string;
+  version?: string;
+  commit?: string;
 } {
+  const pkg = { ecosystem: q.ecosystem ?? "npm", name: q.name };
+  if (q.ecosystem === "GitHub Actions") {
+    if (q.constraint) return { package: pkg };
+    if (/^[a-f0-9]{40}$/i.test(q.version)) return { package: pkg, commit: q.version };
+  }
   return { package: { ecosystem: q.ecosystem ?? "npm", name: q.name }, version: q.version };
 }
 
 /** Like queryOsvBatch, with each record's `modified` timestamp (to skip unchanged refetches). */
-export async function queryOsvBatchHits(queries: OsvQuery[]): Promise<OsvHit[][]> {
+export async function queryOsvBatchHits(
+  queries: OsvQuery[],
+  heartbeat: () => Promise<void> = async () => undefined
+): Promise<OsvHit[][]> {
   const out: OsvHit[][] = [];
   for (let i = 0; i < queries.length; i += OSV_BATCH_LIMIT) {
+    await heartbeat();
     const slice = queries.slice(i, i + OSV_BATCH_LIMIT);
     const res = await fetchJson("osv:querybatch", `${OSV_API}/querybatch`, batchResponseSchema, {
       method: "POST",
@@ -97,8 +108,37 @@ export async function queryOsvBatchHits(queries: OsvQuery[]): Promise<OsvHit[][]
       body: JSON.stringify({ queries: slice.map(osvQueryOf) }),
       timeoutMs: 30_000,
     });
-    for (const result of res.results) {
-      out.push((result.vulns ?? []).map((v) => ({ id: v.id, modified: v.modified ?? null })));
+    for (const [index, result] of res.results.entries()) {
+      const records = [...(result.vulns ?? [])];
+      let token = result.next_page_token;
+      while (token) {
+        await heartbeat();
+        const page = await fetchJson(
+          "osv:query-page",
+          `${OSV_API}/query`,
+          batchResponseSchema.shape.results.element,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...osvQueryOf(slice[index]), page_token: token }),
+            timeoutMs: 30_000,
+          }
+        );
+        records.push(...(page.vulns ?? []));
+        token = page.next_page_token;
+      }
+      const hits = records.map((v) => ({ id: v.id, modified: v.modified ?? null }));
+      const query = slice[index];
+      if (query.ecosystem === "GitHub Actions" && query.constraint) {
+        const accepted: OsvHit[] = [];
+        for (const hit of hits) {
+          await heartbeat();
+          const vuln = await fetchOsvVuln(hit.id);
+          if (!vuln.withdrawn && actionConstraintAffected(vuln, query.name, query.version))
+            accepted.push(hit);
+        }
+        out.push(accepted);
+      } else out.push(hits);
     }
   }
   return out;
@@ -288,4 +328,35 @@ export function affectedInstalls<T>(
     const version = versionOf(install);
     return !semver.valid(version) || isAffected(ranges, version);
   });
+}
+
+/** A floating ref is affected only if an advisory covers its entire release interval. */
+export function actionConstraintAffected(vuln: OsvVuln, name: string, ref: string): boolean {
+  const match = /^v?(\d+)(?:\.(\d+))?$/.exec(ref);
+  if (!match) return false;
+  const major = Number(match[1]);
+  const minor = match[2] === undefined ? null : Number(match[2]);
+  const lower = `${major}.${minor ?? 0}.0`;
+  const upper = minor === null ? `${major + 1}.0.0` : `${major}.${minor + 1}.0`;
+  const ranges = rangesFor(vuln, name, "GitHub Actions");
+  for (const range of ranges) {
+    if (range.type !== "SEMVER") continue;
+    let start: string | null = null;
+    for (const event of range.events) {
+      if (event.introduced !== undefined)
+        start = event.introduced === "0" ? "0.0.0" : event.introduced;
+      const end = event.fixed ?? event.limit ?? event.last_affected;
+      if (end !== undefined && start !== null) {
+        if (
+          semver.valid(start) &&
+          semver.lte(start, lower) &&
+          (end === "*" || (semver.valid(end) && semver.gte(end, upper)))
+        )
+          return true;
+        start = null;
+      }
+    }
+    if (start && semver.valid(start) && semver.lte(start, lower)) return true;
+  }
+  return false;
 }
