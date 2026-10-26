@@ -327,6 +327,25 @@ describe("fixCommand for Go", () => {
   });
 });
 
+it("bounds Cargo fixes to the installed release line", () => {
+  expect(
+    fixCommand("tokio", "2.0.0", [
+      {
+        repo: "acme/api",
+        installed: "1.24.1",
+        fix: "1.24.2",
+        ecosystem: "crates.io",
+        requirement: "1.24.1",
+      },
+    ])
+  ).toBe("cargo update -p tokio@1.24.1 --precise 1.24.2");
+  expect(
+    fixCommand("tokio", "2.0.0", [
+      { repo: "acme/api", installed: "1.24.1", fix: "2.0.0", ecosystem: "crates.io" },
+    ])
+  ).toBeNull();
+});
+
 it("bounds RubyGems fixes to the installed major", () => {
   expect(
     fixCommand("rack", "3.1.0", [
