@@ -2,6 +2,7 @@ import semver from "semver";
 import { z } from "zod";
 
 import { fetchJson } from "@/lib/platforms/fetch-with-retry";
+import { cvssLevel, type SeverityLevel } from "@/security/cvss";
 import { normalizePackageName, normalizeVersion, type Ecosystem } from "@scan/ecosystems";
 
 // OSV.dev adapter (plan §7.4): query by ecosystem + name + INSTALLED version in
@@ -160,14 +161,45 @@ function rangesFor(vuln: OsvVuln, packageName: string, ecosystem: Ecosystem): Os
         a.package.ecosystem.toLowerCase() === ecosystem.toLowerCase() &&
         normalizePackageName(ecosystem, a.package.name) === wanted
     )
-    .flatMap((a) => a.ranges ?? []);
+    .flatMap((a) => a.ranges ?? [])
+    // A GIT range's events are commit hashes, not releases (PYSEC records carry one next to
+    // the ECOSYSTEM range); only release ranges place an install or name a fix.
+    .filter((range) => range.type === "ECOSYSTEM" || range.type === "SEMVER");
   const converted = ranges.map((range) => comparableRange(range, ecosystem));
   return converted.some((range) => range.type === "ECOSYSTEM") ? ranges : converted;
 }
 
-/** GitHub's label (CRITICAL/HIGH/…) when present, else the first CVSS vector. */
-export function severityOf(vuln: OsvVuln): string | null {
-  return vuln.database_specific?.severity ?? vuln.severity?.[0]?.score ?? null;
+/** LOW/MODERATE/HIGH/CRITICAL for a label (GitHub's, or MEDIUM); null for anything else. */
+export function severityLevelOf(label: string | null | undefined): SeverityLevel | null {
+  const word = label?.trim().toUpperCase();
+  if (word === "MEDIUM") return "MODERATE";
+  return word === "LOW" || word === "MODERATE" || word === "HIGH" || word === "CRITICAL"
+    ? word
+    : null;
+}
+
+// GitHub rates by the CVSS 4.0 vector when a record has one (GHSA-gmj6-6f8f-6699: v3 8.8,
+// v4 5.4, rated moderate), so it is scored first.
+const VECTOR_ORDER = ["CVSS_V4", "CVSS_V3"];
+
+/**
+ * The record's level: GitHub's label (`database_specific.severity`) when present, else the
+ * score of its CVSS 4.0 or 3.x vector in GitHub's bands, else null (an alias may know it).
+ */
+export function severityOf(vuln: OsvVuln): SeverityLevel | null {
+  const label = severityLevelOf(vuln.database_specific?.severity);
+  if (label) return label;
+  const vectors = [...(vuln.severity ?? [])].sort((a, b) => rank(a.type) - rank(b.type));
+  for (const { score } of vectors) {
+    const level = cvssLevel(score);
+    if (level) return level;
+  }
+  return null;
+}
+
+function rank(type: string): number {
+  const i = VECTOR_ORDER.indexOf(type);
+  return i < 0 ? VECTOR_ORDER.length : i;
 }
 
 /** Projects an OSV record onto one package, as stored in the Advisory table. */

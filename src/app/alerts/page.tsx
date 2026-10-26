@@ -54,6 +54,7 @@ export default async function AlertsPage({
             osvId: true,
             severity: true,
             summary: true,
+            aliases: true,
             affected: true,
             fixedVersion: true,
             package: { select: { id: true, name: true, ecosystem: true } },

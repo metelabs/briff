@@ -12,7 +12,9 @@ import {
   emailsImmediately,
   fixedFor,
   newAlertCandidates,
+  planAlertMerge,
   planQueries,
+  severityLabel,
   sortGroups,
   splitPending,
   splitTransitive,
@@ -167,6 +169,25 @@ describe("same-day email threshold", () => {
     expect(emailsImmediately("LOW")).toBe(false);
   });
 
+  it("compares normalised levels: a stored CVSS vector counts by its score", () => {
+    // 5.5 moderate: held for the bulletin like a MODERATE label.
+    expect(emailsImmediately("CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N")).toBe(false);
+    expect(
+      emailsImmediately("CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N")
+    ).toBe(true);
+    // A vector that cannot be scored is unknown, which still emails.
+    expect(emailsImmediately("CVSS:2.0/AV:N")).toBe(true);
+  });
+
+  it("labels every severity with a level or UNKNOWN, never an empty string", () => {
+    expect(severityLabel("MEDIUM")).toBe("MODERATE");
+    expect(severityLabel("high")).toBe("HIGH");
+    expect(severityLabel("CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H")).toBe("CRITICAL");
+    expect(severityLabel("")).toBe("UNKNOWN");
+    expect(severityLabel(null)).toBe("UNKNOWN");
+    expect(severityLabel("CVSS:2.0/AV:N")).toBe("UNKNOWN");
+  });
+
   const pending = (
     kind: "new" | "backlog",
     severity: string | null,
@@ -244,5 +265,68 @@ describe("splitTransitive", () => {
         ],
       },
     ]);
+  });
+});
+
+describe("planAlertMerge (duplicate advisories)", () => {
+  const at = (day: number) => new Date(Date.UTC(2026, 9, day));
+  const alert = (
+    id: string,
+    advisoryId: string,
+    over: Partial<Parameters<typeof planAlertMerge>[0][number]> = {}
+  ) => ({
+    id,
+    advisoryId,
+    repoId: "r1",
+    kind: "backlog" as const,
+    deliveredAt: null,
+    reviewedAt: null,
+    createdAt: at(20),
+    ...over,
+  });
+  const targetOf = new Map([["adv-go", "adv-ghsa"]]);
+
+  it("moves a duplicate's alert onto the canonical advisory, keeping its delivery", () => {
+    const plan = planAlertMerge([alert("a1", "adv-go", { deliveredAt: at(20) })], targetOf);
+    expect(plan).toEqual({
+      deleteIds: [],
+      updates: [{ id: "a1", advisoryId: "adv-ghsa", deliveredAt: at(20), reviewedAt: null }],
+    });
+  });
+
+  it("keeps the oldest alert of a pair and never loses a delivery or review", () => {
+    const plan = planAlertMerge(
+      [
+        alert("a-ghsa", "adv-ghsa", { createdAt: at(21), kind: "new" }),
+        alert("a-go", "adv-go", { createdAt: at(20), deliveredAt: at(20), reviewedAt: at(22) }),
+        alert("a-other-repo", "adv-ghsa", { repoId: "r2" }),
+      ],
+      targetOf
+    );
+    expect(plan).toEqual({
+      deleteIds: ["a-ghsa"],
+      updates: [{ id: "a-go", advisoryId: "adv-ghsa", deliveredAt: at(20), reviewedAt: at(22) }],
+    });
+  });
+
+  it("marks the kept alert delivered when only the folded one was", () => {
+    const plan = planAlertMerge(
+      [
+        alert("a-ghsa", "adv-ghsa", { createdAt: at(19), kind: "new" }),
+        alert("a-go", "adv-go", { deliveredAt: at(20) }),
+      ],
+      targetOf
+    );
+    expect(plan.deleteIds).toEqual(["a-go"]);
+    expect(plan.updates).toEqual([
+      { id: "a-ghsa", advisoryId: "adv-ghsa", deliveredAt: at(20), reviewedAt: null },
+    ]);
+  });
+
+  it("leaves alerts of advisories that were not merged alone", () => {
+    expect(planAlertMerge([alert("a1", "adv-ghsa"), alert("a2", "adv-x")], targetOf)).toEqual({
+      deleteIds: [],
+      updates: [],
+    });
   });
 });

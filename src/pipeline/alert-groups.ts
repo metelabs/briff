@@ -21,6 +21,8 @@ export interface AlertGroupAdvisory {
   osvId: string;
   severity: string | null;
   summary: string | null;
+  /** The vulnerability's other OSV records (GO-*, PYSEC-*), merged into this one. */
+  aliases: string[];
 }
 
 export interface AlertFixLine {
@@ -47,7 +49,7 @@ export interface AlertPackageGroup {
 }
 
 export interface AlertGroupRow extends AlertRow {
-  advisory: AlertRow["advisory"] & { summary?: string | null };
+  advisory: AlertRow["advisory"] & { summary?: string | null; aliases?: unknown };
   /**
    * Installed versions the repo has as a direct dependency (attachInstalls). Absent: all of
    * `installedVersions` when `direct`, none otherwise.
@@ -59,6 +61,15 @@ export interface FixWording {
   noLineFix: string;
   fixedIn: string;
   transitive: string;
+}
+
+// Ecosystem databases OSV merges records from; their ids are the duplicates a reader saw.
+const OSV_DATABASE_ID = /^(GHSA|GO|PYSEC|RUSTSEC|GMS)-/;
+
+/** The aliases named next to the id (GO-*, PYSEC-*); CVE and vendor ids stay on osv.dev. */
+function shownAliases(aliases: unknown): string[] {
+  if (!Array.isArray(aliases)) return [];
+  return aliases.filter((a): a is string => typeof a === "string" && OSV_DATABASE_ID.test(a));
 }
 
 function sameLine(a: string, b: string): boolean {
@@ -206,6 +217,7 @@ export function alertGroupsOf(
       osvId: r.advisory.osvId,
       severity: r.advisory.severity,
       summary: r.advisory.summary ?? null,
+      aliases: shownAliases(r.advisory.aliases),
       fallback: r.advisory.fixedVersion,
     });
     g.allRepos.add(r.repo.name);
@@ -305,10 +317,11 @@ export function alertGroupsOf(
         ...(g.ecosystem && g.ecosystem !== "npm" ? { ecosystem: g.ecosystem } : {}),
         direct: direct.length > 0,
         severities: [...severities.entries()],
-        advisories: advisories.map(({ osvId, severity, summary }) => ({
+        advisories: advisories.map(({ osvId, severity, summary, aliases }) => ({
           osvId,
           severity,
           summary,
+          aliases,
         })),
         repos: [...g.allRepos].sort(),
         fixes,

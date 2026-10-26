@@ -17,14 +17,12 @@ import { ecosystemLabel } from "@scan/ecosystems";
 
 import { markBacklogReviewedAction, markPackageReviewedAction, type ReviewState } from "./actions";
 
-const SEVERITY_ORDER = ["CRITICAL", "HIGH", "MODERATE", "MEDIUM", "LOW", "CVSS", "UNKNOWN"];
+const SEVERITY_ORDER = ["CRITICAL", "HIGH", "MODERATE", "LOW", "UNKNOWN"];
 const SEVERITY_NAME: Record<string, string> = {
   CRITICAL: "Critical",
   HIGH: "High",
   MODERATE: "Moderate",
-  MEDIUM: "Medium",
   LOW: "Low",
-  CVSS: "CVSS only",
   UNKNOWN: "Unknown",
 };
 const OSV = "https://osv.dev/vulnerability/";
@@ -205,6 +203,7 @@ function AlertRow({ group: g, review }: { group: AlertPackageGroup; review: bool
                   {a.osvId}
                 </a>
               </Tooltip>
+              {a.aliases.length > 0 && ` (also ${a.aliases.join(", ")})`}
             </span>
           ))}
           {g.advisories.length > ids.length && ` +${g.advisories.length - ids.length} more`}
@@ -213,10 +212,7 @@ function AlertRow({ group: g, review }: { group: AlertPackageGroup; review: bool
       <div className="flex flex-col items-start gap-2 md:items-end">
         <div className="flex flex-wrap gap-1 md:justify-end">
           {g.severities.map(([label, n]) => (
-            <Tag
-              key={label}
-              kind={severityKind(label === "UNKNOWN" || label === "CVSS" ? null : label)}
-            >
+            <Tag key={label} kind={severityKind(label === "UNKNOWN" ? null : label)}>
               {`${n} ${label.toLowerCase()}`}
             </Tag>
           ))}
