@@ -259,3 +259,10 @@ it("queries RubyGems by its OSV ecosystem name", () => {
     version: "2.2.3",
   });
 });
+
+it("queries crates.io by its OSV ecosystem name", () => {
+  expect(osvQueryOf({ name: "tokio", version: "1.24.1", ecosystem: "crates.io" })).toEqual({
+    package: { name: "tokio", ecosystem: "crates.io" },
+    version: "1.24.1",
+  });
+});

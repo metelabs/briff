@@ -1,0 +1,10 @@
+[package]
+name = "acme-root"
+version = "0.1.0"
+
+[workspace]
+exclude = ["excluded"]
+
+[dependencies]
+shared = { path = "shared" }
+excluded = { path = "excluded" }

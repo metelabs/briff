@@ -179,6 +179,8 @@ export function installCommand(
   variant: InstallVariant = {}
 ): string {
   switch (ecosystem ?? "npm") {
+    case "crates.io":
+      return `cargo update -p ${shellWord(`${pkg}${variant.requirement ? `@${variant.requirement}` : ""}`)} --precise ${shellWord(version)}`;
     case "RubyGems":
       return `set ${pkg} in Gemfile to "~> ${version}", then run bundle update ${shellWord(pkg)} --conservative`;
     case "Packagist":
@@ -209,6 +211,8 @@ export function whyCommand(
   manager?: PackageManager
 ): string {
   switch (ecosystem ?? "npm") {
+    case "crates.io":
+      return `cargo tree -i ${shellWord(pkg)}`;
     case "RubyGems":
       return `bundle exec gem dependency ${shellWord(pkg)} --reverse-dependencies`;
     case "Packagist":

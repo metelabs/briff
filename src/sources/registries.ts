@@ -1,4 +1,5 @@
 import type { Ecosystem } from "@scan/ecosystems";
+import { fetchCrate } from "./crates";
 
 import { fetchRubyGemsPackage } from "./rubygems";
 import { fetchGoModule } from "./go-proxy";
@@ -10,12 +11,14 @@ import { fetchPypiPackage } from "./pypi";
 // treats every package alike (latest version, deprecation, repository link). Each adapter
 // talks to one fixed host through fetchWithRetry (timeout, backoff on 429/5xx).
 
-export type RegistryInfo = NpmPackageInfo;
+export type RegistryInfo = Omit<NpmPackageInfo, "latestVersion"> & { latestVersion: string | null };
 
 export type RegistryLookup = { status: "ok"; info: RegistryInfo } | { status: "not_found" };
 
 export function fetchRegistryPackage(ecosystem: Ecosystem, name: string): Promise<RegistryLookup> {
   switch (ecosystem) {
+    case "crates.io":
+      return fetchCrate(name);
     case "RubyGems":
       return fetchRubyGemsPackage(name);
     case "npm":

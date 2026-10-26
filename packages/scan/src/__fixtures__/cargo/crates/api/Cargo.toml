@@ -1,0 +1,9 @@
+[package]
+name = "acme-api"
+version = "0.1.0"
+
+[dependencies]
+tokio = { workspace = true }
+
+[dev-dependencies]
+clock = { package = "time", version = "0.3" }

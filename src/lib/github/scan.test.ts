@@ -150,3 +150,19 @@ it("fetches Bundler lockfiles and Gemfiles, excluding vendored copies", () => {
     }).map((e) => e.path)
   ).toEqual(paths.slice(0, 3));
 });
+
+it("fetches Cargo lockfiles and workspace manifests, excluding vendored copies", () => {
+  const paths = ["Cargo.toml", "Cargo.lock", "apps/api/Cargo.toml", "vendor/Cargo.lock", "app.rs"];
+  expect(
+    scannedTreeEntries({
+      truncated: false,
+      tree: paths.map((path) => ({
+        path,
+        mode: "100644",
+        type: "blob",
+        sha: "0".repeat(40),
+        size: 30,
+      })),
+    }).map((e) => e.path)
+  ).toEqual(paths.slice(0, 3));
+});
