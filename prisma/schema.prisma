@@ -468,16 +468,24 @@ model Advisory {
   package      Package   @relation(fields: [packageId], references: [id], onDelete: Cascade)
   summary      String?
   affected     Json
+  // LOW / MODERATE / HIGH / CRITICAL (GitHub's label, else scored from the CVSS vector, else
+  // an alias's); null when unknown.
   severity     String?
   fixedVersion String?
   url          String?
+  // The other ids of the same vulnerability (OSV aliases of the merged records: GO-*, PYSEC-*,
+  // CVE-*), osvId being the canonical one. Null on rows stored before aliases were collapsed;
+  // the next security scan refetches those.
+  aliases      Json?
   publishedAt  DateTime?
+  // The newest `modified` of the merged OSV records.
   modifiedAt   DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   alerts       Alert[]
 
   @@index([packageId])
+  @@index([aliases], type: Gin)
   @@map("advisory")
 }
 

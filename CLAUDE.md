@@ -310,12 +310,25 @@ Checks before a PR: `npm run typecheck && npm run lint && npm test`. DB-backed t
 - security-scan: OSV querybatch with installed versions of **included** repos (direct + transitive,
   direct first), Advisory upsert (refetch only when OSV `modified` moved), one Alert per
   (advisory × repo) ever, one email per org per run.
+  - One Advisory per vulnerability (`src/security/aliases.ts`): OSV returns the GHSA next to the
+    GO-_/PYSEC-_ entry; records linked through `aliases` (not `related`) are merged under the
+    GHSA id, else the CVE, else the native id, the others kept in `Advisory.aliases` (shown on
+    Alerts as "also GO-2023-1737"). A row with `aliases` null (stored before this) is refetched,
+    and rows that turn out to be one vulnerability are merged: alerts move to the canonical row,
+    the oldest per repo kept, delivered/reviewed if any of them was (`planAlertMerge`), so nothing
+    is emailed again.
+  - `Advisory.severity` is a level (LOW/MODERATE/HIGH/CRITICAL) or null: GitHub's
+    `database_specific.severity`, else the CVSS 4.0 / 3.x base score (`src/security/cvss.ts`,
+    FIRST formulas) in GitHub's bands, else an alias's level. Readers go through
+    `severityLevel`/`severityLabel` ("UNKNOWN", never empty).
+  - Only `ECOSYSTEM`/`SEMVER` ranges place installs and name fixes; `GIT` ranges (commit hashes) are
+    dropped in `rangesFor`.
   - `Alert.kind`: `backlog` when the repo had no security scan since it was (re-)added
     (`Repo.securityScannedAt` null or older than `includedChangedAt`; set to the run start for every
     repo whose dependencies the run checked), else `new` (by construction the advisory or the installed
     version changed since the previous scan). `alertKindFor` in `src/security/plan.ts`.
   - Same-day email threshold (`emailsImmediately`): new **critical/high** alerts, unknown severity
-    (none, or only a CVSS vector) counts as high. New moderate/low alerts are not emailed and keep
+    (none, or a vector that cannot be scored) counts as high. New moderate/low alerts are not emailed and keep
     `deliveredAt = null` (bulletin only; emailed later if OSV raises them). Backlog alerts are never
     emailed one by one: one first-scan summary (count, critical/high count, repos, link to
     `/bulletins`) in the same run's email, then they are marked delivered (`splitPending`,

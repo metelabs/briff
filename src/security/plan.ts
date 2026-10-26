@@ -1,4 +1,5 @@
-import { fixedVersionFor, type OsvRange } from "@/sources/osv";
+import { cvssLevel, type SeverityLevel } from "@/security/cvss";
+import { fixedVersionFor, severityLevelOf, type OsvRange } from "@/sources/osv";
 import type { Ecosystem } from "@scan/ecosystems";
 
 // Pure parts of the security line (plan §7.4): query planning, alert dedupe and
@@ -110,22 +111,94 @@ export function newAlertCandidates(
   return [...out.values()];
 }
 
-const SEVERITY_RANK: Record<string, number> = {
+export interface StoredAlert {
+  id: string;
+  advisoryId: string;
+  repoId: string;
+  kind: AlertKind;
+  deliveredAt: Date | null;
+  reviewedAt: Date | null;
+  createdAt: Date;
+}
+
+export interface AlertMergePlan {
+  /** Alerts folded into another one of the same (vulnerability × repo); deleted first. */
+  deleteIds: string[];
+  /** The kept alert of each pair: moved onto the canonical advisory, delivery state merged. */
+  updates: { id: string; advisoryId: string; deliveredAt: Date | null; reviewedAt: Date | null }[];
+}
+
+const earliest = (dates: readonly (Date | null)[]): Date | null =>
+  dates.reduce<Date | null>((min, d) => (d && (!min || d < min) ? d : min), null);
+
+/**
+ * Alerts of duplicate advisories (`targetOf`: duplicate advisory id -> canonical id) folded
+ * onto the canonical advisory, one alert per (advisory × repo) as before. The oldest alert of
+ * a pair is kept, so its kind and age stay; it counts as delivered (and a backlog one as
+ * reviewed) when any alert of the pair was, so a merge never emails anything again.
+ */
+export function planAlertMerge(
+  alerts: readonly StoredAlert[],
+  targetOf: ReadonlyMap<string, string>
+): AlertMergePlan {
+  const pairs = new Map<string, { target: string; alerts: StoredAlert[] }>();
+  for (const alert of alerts) {
+    const target = targetOf.get(alert.advisoryId) ?? alert.advisoryId;
+    const key = alertKey(target, alert.repoId);
+    const pair = pairs.get(key) ?? { target, alerts: [] };
+    pair.alerts.push(alert);
+    pairs.set(key, pair);
+  }
+  const plan: AlertMergePlan = { deleteIds: [], updates: [] };
+  for (const { target, alerts: list } of pairs.values()) {
+    if (list.every((a) => a.advisoryId === target)) continue;
+    const [keep, ...rest] = [...list].sort(
+      (a, b) =>
+        a.createdAt.getTime() - b.createdAt.getTime() ||
+        Number(b.advisoryId === target) - Number(a.advisoryId === target) ||
+        a.id.localeCompare(b.id)
+    );
+    plan.deleteIds.push(...rest.map((a) => a.id));
+    plan.updates.push({
+      id: keep.id,
+      advisoryId: target,
+      deliveredAt: earliest(list.map((a) => a.deliveredAt)),
+      reviewedAt:
+        keep.kind === "backlog"
+          ? earliest(list.filter((a) => a.kind === "backlog").map((a) => a.reviewedAt))
+          : keep.reviewedAt,
+    });
+  }
+  return plan;
+}
+
+const SEVERITY_RANK: Record<SeverityLevel, number> = {
   CRITICAL: 4,
   HIGH: 3,
   MODERATE: 2,
-  MEDIUM: 2,
   LOW: 1,
 };
 
-export function severityRank(severity: string | null): number {
-  if (!severity) return 0;
-  return SEVERITY_RANK[severity.toUpperCase()] ?? 0;
+/**
+ * The stored severity as a level. Advisories hold a level since the OSV adapter normalises
+ * it; a raw CVSS vector (rows stored before that, until the next scan refetches them) is
+ * scored here, so every reader compares levels.
+ */
+export function severityLevel(severity: string | null | undefined): SeverityLevel | null {
+  if (!severity) return null;
+  if (severity.startsWith("CVSS:")) return cvssLevel(severity);
+  return severityLevelOf(severity);
+}
+
+export function severityRank(severity: string | null | undefined): number {
+  const level = severityLevel(severity);
+  return level ? SEVERITY_RANK[level] : 0;
 }
 
 /**
- * Same-day email threshold: critical and high. Unknown severity (none, or only a CVSS
- * vector we do not score) counts as high; moderate and low wait for the weekly bulletin.
+ * Same-day email threshold on the normalised level: critical and high. Unknown severity
+ * (none, or a vector that cannot be scored) counts as high; moderate and low wait for the
+ * weekly bulletin.
  */
 export function emailsImmediately(severity: string | null): boolean {
   const rank = severityRank(severity);
@@ -169,11 +242,9 @@ export function backlogSummary(
   };
 }
 
-/** Short label: GitHub's word, or "CVSS" when only a vector is known. */
-export function severityLabel(severity: string | null): string {
-  if (!severity) return "UNKNOWN";
-  if (severity.startsWith("CVSS:")) return "CVSS";
-  return severity.toUpperCase();
+/** Short label: the level, or UNKNOWN (never empty) when there is none. */
+export function severityLabel(severity: string | null | undefined): string {
+  return severityLevel(severity) ?? "UNKNOWN";
 }
 
 export interface AlertGroupRepo {

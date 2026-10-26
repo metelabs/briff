@@ -3,6 +3,8 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { mixedVuln } from "@/security/__fixtures__/osv-mixed";
+
 import {
   affectedInstalls,
   comparableRange,
@@ -10,6 +12,7 @@ import {
   isAffected,
   osvQueryOf,
   osvVulnSchema,
+  severityOf,
   toAdvisoryFields,
 } from "./osv";
 
@@ -220,5 +223,32 @@ describe("toAdvisoryFields for Go", () => {
       package: { ecosystem: "Go", name: "golang.org/x/net" },
       version: "0.30.0",
     });
+  });
+});
+
+describe("toAdvisoryFields on recorded PyPI and Go records", () => {
+  it("takes fixed versions from release ranges only, never a GIT range's commit", () => {
+    // PYSEC records carry a GIT range (commit hashes) next to the ECOSYSTEM one.
+    expect(toAdvisoryFields(mixedVuln("PYSEC-2024-230"), "certifi", "PyPI")).toMatchObject({
+      fixedVersion: "2024.7.4",
+      affected: [{ type: "SEMVER", events: [{ introduced: "2021.5.30" }, { fixed: "2024.7.4" }] }],
+    });
+    expect(toAdvisoryFields(mixedVuln("PYSEC-2023-74"), "requests", "PyPI").fixedVersion).toBe(
+      "2.31.0"
+    );
+    expect(toAdvisoryFields(mixedVuln("PYSEC-2023-192"), "urllib3", "PyPI").fixedVersion).toBe(
+      "2.0.6, 1.26.17"
+    );
+  });
+
+  it("stores a level: GitHub's label, else the CVSS vector's score, else none", () => {
+    // GHSA: database_specific.severity.
+    expect(severityOf(mixedVuln("GHSA-f2wf-25xc-69c9"))).toBe("HIGH");
+    // PYSEC: only CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N (7.5).
+    expect(toAdvisoryFields(mixedVuln("PYSEC-2024-230"), "certifi", "PyPI").severity).toBe("HIGH");
+    // PYSEC with v3 (8.8) and v4 (5.4): the v4 score, as GitHub rates it.
+    expect(severityOf(mixedVuln("PYSEC-2026-1472"))).toBe("MODERATE");
+    // GO-*: no severity at all.
+    expect(severityOf(mixedVuln("GO-2023-1737"))).toBeNull();
   });
 });

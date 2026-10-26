@@ -5,15 +5,17 @@ import { renderSecurityAlertEmail, type FirstScanSummary } from "@/lib/email/ale
 import { sendMail, smtpConfig } from "@/lib/email/mailer";
 import { orgRecipients } from "@/lib/email/recipients";
 import { getEnv } from "@/lib/env";
-import { fetchOsvVuln, queryOsvBatchHits, toAdvisoryFields, type OsvRange } from "@/sources/osv";
+import { fetchOsvVuln, queryOsvBatchHits, type OsvRange, type OsvVuln } from "@/sources/osv";
 import type { JobContext, JobResult } from "@/worker/types";
 import { ECOSYSTEMS, isEcosystem, type Ecosystem } from "@scan/ecosystems";
 
+import { aliasGroups, byIdRank, mergeAliasGroup } from "./aliases";
 import {
   alertKey,
   alertKindFor,
   backlogSummary,
   newAlertCandidates,
+  planAlertMerge,
   planQueries,
   splitPending,
   type AlertGroup,
@@ -22,9 +24,189 @@ import {
 
 const FETCH_CONCURRENCY = 8;
 
-interface AdvisoryRef {
+interface Wanted {
+  modified: string | null;
+  packageId: string;
+  packageName: string;
+  ecosystem: Ecosystem;
+}
+
+interface StoredAdvisory {
   id: string;
-  affected: OsvRange[];
+  osvId: string;
+  aliases: string[] | null;
+  modifiedAt: Date | null;
+}
+
+type ScanCounts = Record<
+  "advisoriesFetched" | "advisoryFetchErrors" | "advisoriesMerged" | "alertsMerged",
+  number
+>;
+
+function stringList(value: unknown): string[] | null {
+  return Array.isArray(value) && value.every((v) => typeof v === "string") ? value : null;
+}
+
+/**
+ * Brings the Advisory table up to date for the ids OSV answered with and says which row
+ * each id belongs to. Ids of one vulnerability (GHSA, GO- or PYSEC- record, CVE) share one row,
+ * under the canonical id (aliases.ts). A row is refetched, together with every id that
+ * points to it, when OSV moved `modified` past the stored one, or when it was stored before
+ * aliases were collapsed (`aliases` null). Rows that turn out to hold the same vulnerability
+ * as another are returned in `merges` (duplicate row id -> canonical row id).
+ */
+async function storeAdvisories(
+  { db, log, heartbeat }: Pick<JobContext, "db" | "log" | "heartbeat">,
+  wanted: ReadonlyMap<string, Wanted>,
+  counts: ScanCounts
+): Promise<{ advisoryOf: (osvId: string) => string | undefined; merges: Map<string, string> }> {
+  const hitIds = [...wanted.keys()];
+  // Advisory is a global catalog table (no tenant data), read raw for the jsonb `?|` match.
+  const rows =
+    hitIds.length === 0
+      ? []
+      : await db.$queryRaw<
+          { id: string; osvId: string; aliases: unknown; modifiedAt: Date | null }[]
+        >`
+          SELECT "id", "osvId", "aliases", "modifiedAt" FROM "advisory"
+          WHERE "osvId" = ANY(${hitIds}::text[]) OR "aliases" ?| ${hitIds}::text[]`;
+  const stored: StoredAdvisory[] = rows.map((r) => ({ ...r, aliases: stringList(r.aliases) }));
+  const rowOf = new Map<string, StoredAdvisory>();
+  for (const row of stored) rowOf.set(row.osvId, row);
+  for (const row of stored) {
+    for (const alias of row.aliases ?? []) if (!rowOf.has(alias)) rowOf.set(alias, row);
+  }
+
+  const stale = (id: string, hit: Wanted): boolean => {
+    const row = rowOf.get(id);
+    if (!row || row.aliases === null) return true;
+    return (
+      hit.modified !== null && (row.modifiedAt === null || new Date(hit.modified) > row.modifiedAt)
+    );
+  };
+  const refresh = new Set<StoredAdvisory>();
+  const toFetch = new Set<string>();
+  for (const [id, hit] of wanted) {
+    if (!stale(id, hit)) continue;
+    toFetch.add(id);
+    const row = rowOf.get(id);
+    if (row) refresh.add(row);
+  }
+  // A refreshed row is refetched whole: its own record and every id that points to it.
+  for (const row of refresh) toFetch.add(row.osvId);
+  for (const id of wanted.keys()) {
+    const row = rowOf.get(id);
+    if (row && refresh.has(row)) toFetch.add(id);
+  }
+
+  const fetched: OsvVuln[] = [];
+  const withdrawn = new Set<string>();
+  let done = 0;
+  await mapLimit([...toFetch], FETCH_CONCURRENCY, async (osvId) => {
+    try {
+      const vuln = await fetchOsvVuln(osvId);
+      if (vuln.withdrawn) withdrawn.add(osvId);
+      else fetched.push(vuln);
+      counts.advisoriesFetched++;
+    } catch (err) {
+      counts.advisoryFetchErrors++;
+      log.warn({ err, osvId }, "security: advisory fetch failed");
+    }
+    // The first scan after the aliases migration refetches every stored advisory.
+    if (++done % 100 === 0) await heartbeat();
+  });
+  fetched.sort((a, b) => a.id.localeCompare(b.id));
+
+  const resolved = new Map<string, string>();
+  const merges = new Map<string, string>();
+  const claimed = new Set<StoredAdvisory>();
+  for (const group of aliasGroups(fetched)) {
+    const hit = group.map((v) => wanted.get(v.id)).find((h) => h !== undefined);
+    if (!hit) continue;
+    const { aliases, ...fields } = mergeAliasGroup(group, hit.packageName, hit.ecosystem);
+    const ids = [fields.osvId, ...aliases];
+    const touched = [
+      ...new Set(
+        ids.flatMap((id) => {
+          const row = rowOf.get(id);
+          return row && !claimed.has(row) ? [row] : [];
+        })
+      ),
+    ].sort((a, b) => byIdRank(a.osvId, b.osvId));
+    // The row already under the canonical id, else the best one, renamed: its alerts stay.
+    const target = touched.find((r) => r.osvId === fields.osvId) ?? touched[0];
+    const data = {
+      ...fields,
+      affected: fields.affected as unknown as Prisma.InputJsonValue,
+      aliases,
+    };
+    try {
+      const row = target
+        ? await db.advisory.update({ where: { id: target.id }, data, select: { id: true } })
+        : await db.advisory.create({
+            data: { ...data, packageId: hit.packageId },
+            select: { id: true },
+          });
+      for (const dup of touched) {
+        claimed.add(dup);
+        if (dup !== target) merges.set(dup.id, row.id);
+      }
+      for (const id of ids) resolved.set(id, row.id);
+    } catch (err) {
+      counts.advisoryFetchErrors++;
+      log.warn({ err, osvId: fields.osvId }, "security: advisory store failed");
+    }
+  }
+
+  const advisoryOf = (osvId: string): string | undefined => {
+    const id = resolved.get(osvId);
+    if (id) return id;
+    if (withdrawn.has(osvId)) return undefined;
+    // Not refetched (unchanged, or the fetch failed): the stored row it points to.
+    const row = rowOf.get(osvId);
+    return row ? (merges.get(row.id) ?? row.id) : undefined;
+  };
+  return { advisoryOf, merges };
+}
+
+/**
+ * Folds the alerts of duplicate advisories onto the canonical one, per org, then deletes the
+ * duplicates. Delivery state carries over (planAlertMerge), so nothing is emailed again.
+ */
+async function mergeDuplicates(
+  db: JobContext["db"],
+  orgs: readonly { id: string }[],
+  merges: ReadonlyMap<string, string>,
+  counts: ScanCounts
+): Promise<void> {
+  const advisoryIds = [...new Set([...merges.keys(), ...merges.values()])];
+  for (const org of orgs) {
+    await withOrg(db, org.id).$transaction(async (tx) => {
+      const alerts = await tx.alert.findMany({
+        where: { advisoryId: { in: advisoryIds } },
+        select: {
+          id: true,
+          advisoryId: true,
+          repoId: true,
+          kind: true,
+          deliveredAt: true,
+          reviewedAt: true,
+          createdAt: true,
+        },
+      });
+      const plan = planAlertMerge(alerts, merges);
+      if (plan.deleteIds.length > 0) {
+        await tx.alert.deleteMany({ where: { id: { in: plan.deleteIds } } });
+      }
+      for (const { id, ...data } of plan.updates) {
+        await tx.alert.updateMany({ where: { id }, data });
+      }
+      counts.alertsMerged += plan.deleteIds.length;
+    });
+  }
+  // Every alert has left them; the cascade has nothing left to delete.
+  const removed = await db.advisory.deleteMany({ where: { id: { in: [...merges.keys()] } } });
+  counts.advisoriesMerged += removed.count;
 }
 
 /**
@@ -34,7 +216,7 @@ interface AdvisoryRef {
  * org (per recipient) per run carries the new critical/high alerts and, after a first
  * scan, one summary of the backlog. Moderate and low alerts wait for the bulletin.
  */
-export async function securityScan({ db, log }: JobContext): Promise<JobResult> {
+export async function securityScan({ db, log, heartbeat }: JobContext): Promise<JobResult> {
   const startedAt = new Date();
   const counts = {
     orgs: 0,
@@ -44,6 +226,8 @@ export async function securityScan({ db, log }: JobContext): Promise<JobResult> 
     vulnerableQueries: 0,
     advisoriesFetched: 0,
     advisoryFetchErrors: 0,
+    advisoriesMerged: 0,
+    alertsMerged: 0,
     alertsNew: 0,
     alertsBacklog: 0,
     alertsDelivered: 0,
@@ -113,11 +297,8 @@ export async function securityScan({ db, log }: JobContext): Promise<JobResult> 
           queries.map((q) => ({ ecosystem: q.ecosystem, name: q.name, version: q.version }))
         );
 
-  // Fetch full records only for advisories that are new or changed since stored.
-  const wanted = new Map<
-    string,
-    { modified: string | null; packageId: string; packageName: string; ecosystem: Ecosystem }
-  >();
+  // Every id OSV answered with, and the package it was first found for.
+  const wanted = new Map<string, Wanted>();
   hits.forEach((list, i) => {
     const query = queries[i];
     if (list.length > 0) counts.vulnerableQueries++;
@@ -132,49 +313,19 @@ export async function securityScan({ db, log }: JobContext): Promise<JobResult> 
       }
     }
   });
-  const stored = await db.advisory.findMany({
-    where: { osvId: { in: [...wanted.keys()] } },
-    select: { id: true, osvId: true, modifiedAt: true, affected: true },
-  });
-  const advisories = new Map<string, AdvisoryRef>(
-    stored.map((a) => [a.osvId, { id: a.id, affected: a.affected as unknown as OsvRange[] }])
-  );
-  const storedModified = new Map(stored.map((a) => [a.osvId, a.modifiedAt]));
-  const toFetch = [...wanted.entries()].filter(([osvId, hit]) => {
-    const known = storedModified.get(osvId);
-    if (known === undefined) return true;
-    return hit.modified !== null && (known === null || new Date(hit.modified) > known);
-  });
-
-  await mapLimit(toFetch, FETCH_CONCURRENCY, async ([osvId, hit]) => {
-    try {
-      const vuln = await fetchOsvVuln(osvId);
-      if (vuln.withdrawn) {
-        advisories.delete(osvId);
-        return;
-      }
-      const fields = toAdvisoryFields(vuln, hit.packageName, hit.ecosystem);
-      const data = { ...fields, affected: fields.affected as unknown as Prisma.InputJsonValue };
-      const row = await db.advisory.upsert({
-        where: { osvId },
-        create: { ...data, packageId: hit.packageId },
-        update: data,
-        select: { id: true },
-      });
-      advisories.set(osvId, { id: row.id, affected: fields.affected });
-      counts.advisoriesFetched++;
-    } catch (err) {
-      counts.advisoryFetchErrors++;
-      log.warn({ err, osvId }, "security: advisory fetch failed");
-    }
-  });
+  const { advisoryOf, merges } = await storeAdvisories({ db, log, heartbeat }, wanted, counts);
+  if (merges.size > 0) await mergeDuplicates(db, orgs, merges, counts);
 
   const matches = queries.map((query, i) => ({
     query,
-    advisoryIds: (hits[i] ?? []).flatMap((h) => {
-      const ref = advisories.get(h.id);
-      return ref ? [ref.id] : [];
-    }),
+    advisoryIds: [
+      ...new Set(
+        (hits[i] ?? []).flatMap((h) => {
+          const id = advisoryOf(h.id);
+          return id ? [id] : [];
+        })
+      ),
+    ],
   }));
 
   const smtp = smtpConfig();

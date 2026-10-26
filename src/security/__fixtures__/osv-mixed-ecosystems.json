@@ -1,0 +1,3810 @@
+{
+  "_note": "Recorded from api.osv.dev on 2026-10-26 (querybatch + GET /v1/vulns/{id}), trimmed to the fields src/sources/osv.ts reads.",
+  "queries": [
+    {
+      "package": {
+        "ecosystem": "Packagist",
+        "name": "guzzlehttp/guzzle"
+      },
+      "version": "7.4.0"
+    },
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "requests"
+      },
+      "version": "2.25.1"
+    },
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "jinja2"
+      },
+      "version": "3.1.2"
+    },
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "urllib3"
+      },
+      "version": "1.26.5"
+    },
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "certifi"
+      },
+      "version": "2021.5.30"
+    },
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "idna"
+      },
+      "version": "2.10"
+    },
+    {
+      "package": {
+        "ecosystem": "Go",
+        "name": "github.com/gin-gonic/gin"
+      },
+      "version": "1.6.3"
+    },
+    {
+      "package": {
+        "ecosystem": "Go",
+        "name": "golang.org/x/text"
+      },
+      "version": "0.3.0"
+    }
+  ],
+  "results": [
+    {
+      "vulns": [
+        {
+          "id": "GHSA-25mq-v84q-4j7r",
+          "modified": "2024-02-16T08:21:48.242166Z"
+        },
+        {
+          "id": "GHSA-94pj-82f3-465w",
+          "modified": "2026-09-10T03:51:11.108946Z"
+        },
+        {
+          "id": "GHSA-cwmx-hcrq-mhc3",
+          "modified": "2025-12-10T23:41:02.272273Z"
+        },
+        {
+          "id": "GHSA-cwxw-98qj-8qjx",
+          "modified": "2026-09-10T03:50:49.287156Z"
+        },
+        {
+          "id": "GHSA-f283-ghqc-fg79",
+          "modified": "2026-09-10T03:50:51.710471Z"
+        },
+        {
+          "id": "GHSA-f2wf-25xc-69c9",
+          "modified": "2025-12-10T23:40:57.755467Z"
+        },
+        {
+          "id": "GHSA-f7vp-7xgx-4w4r",
+          "modified": "2026-09-10T03:51:13.889147Z"
+        },
+        {
+          "id": "GHSA-g446-98w2-8p5w",
+          "modified": "2026-09-10T03:50:51.915343Z"
+        },
+        {
+          "id": "GHSA-h95v-h523-3mw8",
+          "modified": "2026-09-10T03:50:52.523072Z"
+        },
+        {
+          "id": "GHSA-q559-8m2m-g699",
+          "modified": "2023-11-08T04:09:25.594961Z"
+        },
+        {
+          "id": "GHSA-v5mv-p594-2x33",
+          "modified": "2026-09-10T03:51:14.592158Z"
+        },
+        {
+          "id": "GHSA-w248-ffj2-4v5q",
+          "modified": "2025-12-10T23:40:57.755467Z"
+        },
+        {
+          "id": "GHSA-wm3w-8rrp-j577",
+          "modified": "2026-09-10T03:51:12.418606Z"
+        },
+        {
+          "id": "GHSA-wpwq-4j6v-78m3",
+          "modified": "2026-09-10T03:50:50.904385Z"
+        }
+      ]
+    },
+    {
+      "vulns": [
+        {
+          "id": "GHSA-9hjg-9r4m-mvj7",
+          "modified": "2026-10-19T20:00:04.716114Z"
+        },
+        {
+          "id": "GHSA-9wx4-h78v-vm56",
+          "modified": "2026-09-10T03:50:13.740879Z"
+        },
+        {
+          "id": "GHSA-gc5v-m9x4-r6x2",
+          "modified": "2026-09-10T03:50:39.207922Z"
+        },
+        {
+          "id": "GHSA-j8r2-6x86-q33q",
+          "modified": "2026-09-10T03:50:01.756149Z"
+        },
+        {
+          "id": "PYSEC-2023-74",
+          "modified": "2023-11-08T04:12:35.436175Z"
+        },
+        {
+          "id": "PYSEC-2026-1872",
+          "modified": "2026-07-07T17:47:00.332079Z"
+        },
+        {
+          "id": "PYSEC-2026-1873",
+          "modified": "2026-07-07T17:46:36.762141Z"
+        },
+        {
+          "id": "PYSEC-2026-2275",
+          "modified": "2026-07-13T07:15:43.964902Z"
+        }
+      ]
+    },
+    {
+      "vulns": [
+        {
+          "id": "GHSA-cpwx-vrp4-4pq7",
+          "modified": "2026-09-10T03:49:48.526758Z"
+        },
+        {
+          "id": "GHSA-gmj6-6f8f-6699",
+          "modified": "2026-09-10T03:50:56.152882Z"
+        },
+        {
+          "id": "GHSA-h5c8-rqwp-cp95",
+          "modified": "2026-09-10T03:50:00.236017Z"
+        },
+        {
+          "id": "GHSA-h75v-3vvj-5mfj",
+          "modified": "2026-09-10T03:50:13.786450Z"
+        },
+        {
+          "id": "GHSA-q2x7-8rv6-6q7h",
+          "modified": "2026-09-10T03:50:21.662855Z"
+        },
+        {
+          "id": "PYSEC-2026-1471",
+          "modified": "2026-07-07T17:46:43.358335Z"
+        },
+        {
+          "id": "PYSEC-2026-1472",
+          "modified": "2026-07-07T17:46:46.013371Z"
+        },
+        {
+          "id": "PYSEC-2026-1473",
+          "modified": "2026-07-07T17:46:13.853151Z"
+        },
+        {
+          "id": "PYSEC-2026-1474",
+          "modified": "2026-07-07T17:46:13.832160Z"
+        },
+        {
+          "id": "PYSEC-2026-1475",
+          "modified": "2026-07-07T17:46:13.842466Z"
+        }
+      ]
+    },
+    {
+      "vulns": [
+        {
+          "id": "GHSA-2xpw-w6gg-jr37",
+          "modified": "2026-09-25T17:15:05.968189Z"
+        },
+        {
+          "id": "GHSA-34jh-p97f-mpxf",
+          "modified": "2026-09-10T03:50:14.811193Z"
+        },
+        {
+          "id": "GHSA-38jv-5279-wg99",
+          "modified": "2026-09-10T03:50:32.562010Z"
+        },
+        {
+          "id": "GHSA-8988-9cw3-xx77",
+          "modified": "2026-10-01T17:55:53.793608Z"
+        },
+        {
+          "id": "GHSA-g4mx-q9vg-27p4",
+          "modified": "2026-09-10T03:50:03.706889Z"
+        },
+        {
+          "id": "GHSA-gm62-xv2j-4w53",
+          "modified": "2026-09-10T03:50:58.741847Z"
+        },
+        {
+          "id": "GHSA-pq67-6m6q-mj2v",
+          "modified": "2026-09-10T03:50:25.299291Z"
+        },
+        {
+          "id": "GHSA-qccp-gfcp-xxvc",
+          "modified": "2026-09-10T03:50:47.272765Z"
+        },
+        {
+          "id": "GHSA-v845-jxx5-vc9f",
+          "modified": "2026-09-10T03:49:24.753610Z"
+        },
+        {
+          "id": "GHSA-vxq7-64xx-v4gw",
+          "modified": "2026-10-01T17:55:57.514829Z"
+        },
+        {
+          "id": "PYSEC-2023-192",
+          "modified": "2023-11-08T04:13:33.452167Z"
+        },
+        {
+          "id": "PYSEC-2023-212",
+          "modified": "2023-11-08T04:13:39.165450Z"
+        },
+        {
+          "id": "PYSEC-2026-141",
+          "modified": "2026-05-20T09:19:20.983812Z"
+        },
+        {
+          "id": "PYSEC-2026-1994",
+          "modified": "2026-07-07T17:48:15.379954Z"
+        },
+        {
+          "id": "PYSEC-2026-1995",
+          "modified": "2026-07-07T17:48:15.400192Z"
+        },
+        {
+          "id": "PYSEC-2026-1996",
+          "modified": "2026-07-07T17:48:15.382053Z"
+        },
+        {
+          "id": "PYSEC-2026-1998",
+          "modified": "2026-07-07T17:47:54.140852Z"
+        },
+        {
+          "id": "PYSEC-2026-1999",
+          "modified": "2026-07-07T17:47:54.161376Z"
+        },
+        {
+          "id": "PYSEC-2026-4175",
+          "modified": "2026-10-01T17:45:18.542387Z"
+        },
+        {
+          "id": "PYSEC-2026-4177",
+          "modified": "2026-10-01T17:45:18.336090Z"
+        }
+      ]
+    },
+    {
+      "vulns": [
+        {
+          "id": "GHSA-248v-346w-9cwc",
+          "modified": "2026-09-10T03:50:15.994602Z"
+        },
+        {
+          "id": "GHSA-43fp-rhv2-5gv8",
+          "modified": "2025-02-12T18:53:14.421067Z"
+        },
+        {
+          "id": "GHSA-6q48-6c7w-9gw2",
+          "modified": "2026-10-20T22:11:14.336568Z"
+        },
+        {
+          "id": "GHSA-xqr8-7jwr-rhp7",
+          "modified": "2026-09-10T03:50:08.653753Z"
+        },
+        {
+          "id": "PYSEC-2022-42986",
+          "modified": "2023-11-08T04:08:19.066843Z"
+        },
+        {
+          "id": "PYSEC-2023-135",
+          "modified": "2023-11-08T04:13:04.801823Z"
+        },
+        {
+          "id": "PYSEC-2024-230",
+          "modified": "2026-06-10T17:14:18.786020Z"
+        },
+        {
+          "id": "PYSEC-2026-4320",
+          "modified": "2026-10-20T22:00:02.600723Z"
+        }
+      ]
+    },
+    {
+      "vulns": [
+        {
+          "id": "GHSA-65pc-fj4g-8rjx",
+          "modified": "2026-09-10T03:50:45.700124Z"
+        },
+        {
+          "id": "GHSA-jjg7-2v4v-x38h",
+          "modified": "2026-09-10T03:50:12.774088Z"
+        },
+        {
+          "id": "PYSEC-2024-60",
+          "modified": "2026-06-10T17:01:21.102419Z"
+        },
+        {
+          "id": "PYSEC-2026-215",
+          "modified": "2026-06-16T16:15:04.639265Z"
+        }
+      ]
+    },
+    {
+      "vulns": [
+        {
+          "id": "GHSA-2c4m-59x9-fr2g",
+          "modified": "2023-11-08T04:12:18.674169Z"
+        },
+        {
+          "id": "GHSA-3vp4-m3rf-835h",
+          "modified": "2023-11-08T04:11:58.943766Z"
+        },
+        {
+          "id": "GHSA-h395-qcrw-5vmq",
+          "modified": "2026-09-10T03:49:05.801847Z"
+        },
+        {
+          "id": "GO-2021-0052",
+          "modified": "2026-07-08T05:56:36.895132Z"
+        },
+        {
+          "id": "GO-2023-1737",
+          "modified": "2024-05-20T16:03:47Z"
+        }
+      ]
+    },
+    {
+      "vulns": [
+        {
+          "id": "GHSA-5rcv-m4m3-hfh7",
+          "modified": "2026-09-10T03:49:04.603920Z"
+        },
+        {
+          "id": "GHSA-69ch-w2m2-3vjp",
+          "modified": "2026-09-10T03:49:46.240531Z"
+        },
+        {
+          "id": "GHSA-ppp9-7jff-5vj2",
+          "modified": "2026-09-10T03:49:50.331764Z"
+        },
+        {
+          "id": "GO-2020-0015",
+          "modified": "2026-02-04T03:02:32.031255Z"
+        },
+        {
+          "id": "GO-2021-0113",
+          "modified": "2026-02-04T02:31:07.297346Z"
+        },
+        {
+          "id": "GO-2022-1059",
+          "modified": "2026-02-04T03:39:03.311488Z"
+        },
+        {
+          "id": "GO-2026-5970",
+          "modified": "2026-09-23T10:41:39.386264Z"
+        },
+        {
+          "id": "GO-2026-6629",
+          "modified": "2026-10-20T10:42:24.514593Z"
+        }
+      ]
+    }
+  ],
+  "vulns": {
+    "GHSA-248v-346w-9cwc": {
+      "id": "GHSA-248v-346w-9cwc",
+      "summary": "Certifi removes GLOBALTRUST root certificate",
+      "aliases": ["CVE-2024-39689", "PYSEC-2024-230"],
+      "modified": "2026-09-10T03:50:15.994602411Z",
+      "published": "2024-07-05T20:06:40Z",
+      "database_specific": {
+        "severity": "LOW"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-39689"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "certifi"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "2021.5.30"
+                },
+                {
+                  "fixed": "2024.7.4"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-25mq-v84q-4j7r": {
+      "id": "GHSA-25mq-v84q-4j7r",
+      "summary": "CURLOPT_HTTPAUTH option not cleared on change of origin",
+      "aliases": ["CVE-2022-31090"],
+      "modified": "2024-02-16T08:21:48.242166Z",
+      "published": "2022-06-21T16:57:10Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "HIGH"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-31090"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "6.5.8"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "7.0.0"
+                },
+                {
+                  "fixed": "7.4.5"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-2c4m-59x9-fr2g": {
+      "id": "GHSA-2c4m-59x9-fr2g",
+      "summary": "Gin Web Framework does not properly sanitize filename parameter of Context.FileAttachment function",
+      "aliases": ["CVE-2023-29401", "GO-2023-1737"],
+      "modified": "2023-11-08T04:12:18.674169Z",
+      "published": "2023-05-12T20:19:25Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-29401"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Go",
+            "name": "github.com/gin-gonic/gin"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "1.3.1-0.20190301021747-ccb9e902956d"
+                },
+                {
+                  "fixed": "1.9.1"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-2xpw-w6gg-jr37": {
+      "id": "GHSA-2xpw-w6gg-jr37",
+      "summary": "urllib3 streaming API improperly handles highly compressed data",
+      "aliases": ["CVE-2025-66471", "PYSEC-2026-1994"],
+      "modified": "2026-09-25T17:15:05.968189421Z",
+      "published": "2025-12-05T18:15:54Z",
+      "severity": [
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:H"
+        }
+      ],
+      "database_specific": {
+        "severity": "HIGH"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-66471"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "1.0"
+                },
+                {
+                  "fixed": "2.6.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-34jh-p97f-mpxf": {
+      "id": "GHSA-34jh-p97f-mpxf",
+      "summary": "urllib3's Proxy-Authorization request header isn't stripped during cross-origin redirects",
+      "aliases": ["CVE-2024-37891", "PYSEC-2026-1995"],
+      "modified": "2026-09-10T03:50:14.811193644Z",
+      "published": "2024-06-17T21:37:20Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-37891"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.26.19"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "2.0.0"
+                },
+                {
+                  "fixed": "2.2.2"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-38jv-5279-wg99": {
+      "id": "GHSA-38jv-5279-wg99",
+      "summary": "Decompression-bomb safeguards bypassed when following HTTP redirects (streaming API)",
+      "aliases": ["CVE-2026-21441", "PYSEC-2026-1996"],
+      "modified": "2026-09-10T03:50:32.562010895Z",
+      "published": "2026-01-07T19:18:14Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:H"
+        }
+      ],
+      "database_specific": {
+        "severity": "HIGH"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-21441"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "1.22"
+                },
+                {
+                  "fixed": "2.6.3"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-3vp4-m3rf-835h": {
+      "id": "GHSA-3vp4-m3rf-835h",
+      "summary": "Improper input validation in github.com/gin-gonic/gin",
+      "aliases": ["CVE-2023-26125"],
+      "modified": "2023-11-08T04:11:58.943766Z",
+      "published": "2023-05-04T06:30:12Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-26125"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Go",
+            "name": "github.com/gin-gonic/gin"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.9.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-43fp-rhv2-5gv8": {
+      "id": "GHSA-43fp-rhv2-5gv8",
+      "summary": "Certifi removing TrustCor root certificate",
+      "aliases": ["CVE-2022-23491", "PYSEC-2022-42986"],
+      "modified": "2025-02-12T18:53:14.421067Z",
+      "published": "2022-12-07T23:05:18Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:N/I:H/A:N"
+        },
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:H/UI:N/VC:N/VI:H/VA:N/SC:N/SI:N/SA:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-23491"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "certifi"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "2017.11.05"
+                },
+                {
+                  "fixed": "2022.12.07"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-5rcv-m4m3-hfh7": {
+      "id": "GHSA-5rcv-m4m3-hfh7",
+      "summary": "golang.org/x/text Infinite loop",
+      "aliases": ["CVE-2020-14040", "GO-2020-0015"],
+      "modified": "2026-09-10T03:49:04.603920760Z",
+      "published": "2021-05-18T18:34:35Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H/E:P/RL:O/RC:C"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2020-14040"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Go",
+            "name": "golang.org/x/text"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "0.3.3"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-65pc-fj4g-8rjx": {
+      "id": "GHSA-65pc-fj4g-8rjx",
+      "summary": "Internationalized Domain Names in Applications (IDNA): Specially crafted inputs to idna.encode() can bypass CVE-2024-3651 fix",
+      "aliases": ["CVE-2026-45409", "PYSEC-2026-215"],
+      "modified": "2026-09-10T03:50:45.700124422Z",
+      "published": "2026-05-19T14:34:32Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+        },
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-45409"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "idna"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "3.15"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-69ch-w2m2-3vjp": {
+      "id": "GHSA-69ch-w2m2-3vjp",
+      "summary": "golang.org/x/text/language Denial of service via crafted Accept-Language header",
+      "aliases": ["CVE-2022-32149", "GO-2022-1059"],
+      "modified": "2026-09-10T03:49:46.240531909Z",
+      "published": "2022-10-14T19:00:40Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        }
+      ],
+      "database_specific": {
+        "severity": "HIGH"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-32149"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Go",
+            "name": "golang.org/x/text"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "0.3.8"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-6q48-6c7w-9gw2": {
+      "id": "GHSA-6q48-6c7w-9gw2",
+      "summary": "certifi bundles emSign root CAs with compromised intermediate CA keys",
+      "aliases": ["PYSEC-2026-4320"],
+      "modified": "2026-10-20T22:11:14.336568839Z",
+      "published": "2026-10-20T19:35:05Z",
+      "severity": [
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:N/AC:H/AT:P/PR:N/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "CRITICAL"
+      },
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "certifi"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "2019.03.09"
+                },
+                {
+                  "fixed": "2026.10.19"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-8988-9cw3-xx77": {
+      "id": "GHSA-8988-9cw3-xx77",
+      "summary": "urllib3: HTTPS proxy TLS configuration may be ignored or overridden",
+      "aliases": ["CVE-2026-97687", "PYSEC-2026-4175"],
+      "modified": "2026-10-01T17:55:53.793608550Z",
+      "published": "2026-09-30T14:46:04Z",
+      "severity": [
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:P/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "HIGH"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-97687"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "1.26.0"
+                },
+                {
+                  "fixed": "2.8.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-94pj-82f3-465w": {
+      "id": "GHSA-94pj-82f3-465w",
+      "summary": "Guzzle: Proxy-Authorization headers can be sent to origin servers",
+      "aliases": ["CVE-2026-67339"],
+      "modified": "2026-09-10T03:51:11.108946231Z",
+      "published": "2026-07-20T21:46:02Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-67339"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "7.14.2"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-9hjg-9r4m-mvj7": {
+      "id": "GHSA-9hjg-9r4m-mvj7",
+      "summary": "Requests vulnerable to .netrc credentials leak via malicious URLs",
+      "aliases": ["CVE-2024-47081", "PYSEC-2026-1872"],
+      "modified": "2026-10-19T20:00:04.716114530Z",
+      "published": "2025-06-09T19:06:08Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:N/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-47081"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "requests"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "2.32.4"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-9wx4-h78v-vm56": {
+      "id": "GHSA-9wx4-h78v-vm56",
+      "summary": "Requests `Session` object does not verify requests after making first request with verify=False",
+      "aliases": ["CVE-2024-35195", "PYSEC-2026-1873"],
+      "modified": "2026-09-10T03:50:13.740879755Z",
+      "published": "2024-05-20T20:15:00Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:L/AC:H/PR:H/UI:R/S:U/C:H/I:H/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-35195"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "requests"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "2.32.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-cpwx-vrp4-4pq7": {
+      "id": "GHSA-cpwx-vrp4-4pq7",
+      "summary": "Jinja2 vulnerable to sandbox breakout through attr filter selecting format method",
+      "aliases": ["CVE-2025-27516", "PYSEC-2026-1471"],
+      "modified": "2026-09-10T03:49:48.526758681Z",
+      "published": "2025-03-05T20:40:14Z",
+      "severity": [
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:L/AC:L/AT:P/PR:L/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-27516"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "jinja2"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "3.1.6"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-cwmx-hcrq-mhc3": {
+      "id": "GHSA-cwmx-hcrq-mhc3",
+      "summary": "Cross-domain cookie leakage in Guzzle",
+      "aliases": ["BIT-drupal-2022-29248", "CVE-2022-29248", "DRUPAL-CORE-2022-010"],
+      "modified": "2025-12-10T23:41:02.272273Z",
+      "published": "2022-05-25T18:09:55Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:C/C:H/I:H/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "HIGH"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-29248"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "6.5.6"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "7.0.0"
+                },
+                {
+                  "fixed": "7.4.3"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-cwxw-98qj-8qjx": {
+      "id": "GHSA-cwxw-98qj-8qjx",
+      "summary": "guzzlehttp/guzzle: Dot-Only Cookie Domains Match All Hosts",
+      "aliases": ["CVE-2026-55767"],
+      "modified": "2026-09-10T03:50:49.287156552Z",
+      "published": "2026-06-19T14:37:29Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:N/I:L/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-55767"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "7.12.1"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-f283-ghqc-fg79": {
+      "id": "GHSA-f283-ghqc-fg79",
+      "summary": "Guzzle: Unbounded response cookies risk denial of service",
+      "aliases": ["CVE-2026-67353"],
+      "modified": "2026-09-10T03:50:51.710471738Z",
+      "published": "2026-07-20T23:27:02Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-67353"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "7.15.1"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-f2wf-25xc-69c9": {
+      "id": "GHSA-f2wf-25xc-69c9",
+      "summary": "Failure to strip the Cookie header on change in host or HTTP downgrade",
+      "aliases": [
+        "BIT-drupal-2022-31042",
+        "BIT-drupal-2022-31043",
+        "CVE-2022-31042",
+        "CVE-2022-31043",
+        "DRUPAL-CORE-2022-011",
+        "GHSA-w248-ffj2-4v5q"
+      ],
+      "modified": "2025-12-10T23:40:57.755467Z",
+      "published": "2022-06-09T23:47:25Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "HIGH"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-31042"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "4.0.0"
+                },
+                {
+                  "fixed": "6.5.7"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "7.0.0"
+                },
+                {
+                  "fixed": "7.4.4"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-f7vp-7xgx-4w4r": {
+      "id": "GHSA-f7vp-7xgx-4w4r",
+      "summary": "Guzzle: Noncanonical cookie domain keeps subdomain scope",
+      "aliases": ["CVE-2026-69245"],
+      "modified": "2026-09-10T03:51:13.889147506Z",
+      "published": "2026-08-03T21:05:26Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "7.15.2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "8.0.0"
+                },
+                {
+                  "fixed": "8.0.1"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-g446-98w2-8p5w": {
+      "id": "GHSA-g446-98w2-8p5w",
+      "summary": "Guzzle: Cookie Disclosure and Injection via IP-Address Domains",
+      "aliases": ["CVE-2026-59883"],
+      "modified": "2026-09-10T03:50:51.915343345Z",
+      "published": "2026-07-20T22:00:09Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:C/C:L/I:L/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-59883"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "7.12.3"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-g4mx-q9vg-27p4": {
+      "id": "GHSA-g4mx-q9vg-27p4",
+      "summary": "urllib3's request body not stripped after redirect from 303 status changes request method to GET",
+      "aliases": ["CVE-2023-45803", "PYSEC-2023-212"],
+      "modified": "2026-09-10T03:50:03.706889410Z",
+      "published": "2023-10-17T20:15:25Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:A/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        },
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:A/AC:L/AT:P/PR:H/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-45803"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "2.0.0"
+                },
+                {
+                  "fixed": "2.0.7"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.26.18"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-gc5v-m9x4-r6x2": {
+      "id": "GHSA-gc5v-m9x4-r6x2",
+      "summary": "Requests has Insecure Temp File Reuse in its extract_zipped_paths() utility function",
+      "aliases": ["CVE-2026-25645", "PYSEC-2026-2275"],
+      "modified": "2026-09-10T03:50:39.207922076Z",
+      "published": "2026-03-25T16:56:28Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:N/I:H/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-25645"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "requests"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "2.33.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-gm62-xv2j-4w53": {
+      "id": "GHSA-gm62-xv2j-4w53",
+      "summary": "urllib3 allows an unbounded number of links in the decompression chain",
+      "aliases": ["CVE-2025-66418", "PYSEC-2026-1998"],
+      "modified": "2026-09-10T03:50:58.741847479Z",
+      "published": "2025-12-05T18:15:19Z",
+      "severity": [
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:H"
+        }
+      ],
+      "database_specific": {
+        "severity": "HIGH"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-66418"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "1.24"
+                },
+                {
+                  "fixed": "2.6.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-gmj6-6f8f-6699": {
+      "id": "GHSA-gmj6-6f8f-6699",
+      "summary": "Jinja has a sandbox breakout through malicious filenames",
+      "aliases": ["CVE-2024-56201", "PYSEC-2026-1472"],
+      "modified": "2026-09-10T03:50:56.152882717Z",
+      "published": "2024-12-23T17:54:12Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H"
+        },
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:L/AC:L/AT:P/PR:L/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-56201"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "jinja2"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "3.0.0"
+                },
+                {
+                  "fixed": "3.1.5"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-h395-qcrw-5vmq": {
+      "id": "GHSA-h395-qcrw-5vmq",
+      "summary": "Inconsistent Interpretation of HTTP Requests in github.com/gin-gonic/gin",
+      "aliases": ["CVE-2020-28483", "GO-2021-0052", "SNYK-GOLANG-GITHUBCOMGINGONICGIN-1041736"],
+      "modified": "2026-09-10T03:49:05.801847827Z",
+      "published": "2021-06-23T17:53:21Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:L/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "HIGH"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2020-28483"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Go",
+            "name": "github.com/gin-gonic/gin"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.7.7"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-h5c8-rqwp-cp95": {
+      "id": "GHSA-h5c8-rqwp-cp95",
+      "summary": "Jinja vulnerable to HTML attribute injection when passing user input as keys to xmlattr filter",
+      "aliases": ["CVE-2024-22195", "PYSEC-2026-1473"],
+      "modified": "2026-09-10T03:50:00.236017440Z",
+      "published": "2024-01-11T15:20:48Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-22195"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "jinja2"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "3.1.3"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-h75v-3vvj-5mfj": {
+      "id": "GHSA-h75v-3vvj-5mfj",
+      "summary": "Jinja vulnerable to HTML attribute injection when passing user input as keys to xmlattr filter",
+      "aliases": ["CVE-2024-34064", "PYSEC-2026-1474"],
+      "modified": "2026-09-10T03:50:13.786450101Z",
+      "published": "2024-05-06T14:20:59Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-34064"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "jinja2"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "3.1.4"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-h95v-h523-3mw8": {
+      "id": "GHSA-h95v-h523-3mw8",
+      "summary": "Guzzle: URI fragments disclosed in redirect Referer headers",
+      "aliases": ["CVE-2026-67354"],
+      "modified": "2026-09-10T03:50:52.523072195Z",
+      "published": "2026-07-20T23:28:36Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-67354"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "7.15.1"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-j8r2-6x86-q33q": {
+      "id": "GHSA-j8r2-6x86-q33q",
+      "summary": "Unintended leak of Proxy-Authorization header in requests",
+      "aliases": ["CVE-2023-32681", "PYSEC-2023-74"],
+      "modified": "2026-09-10T03:50:01.756149727Z",
+      "published": "2023-05-22T20:36:32Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:C/C:H/I:N/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-32681"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "requests"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "2.3.0"
+                },
+                {
+                  "fixed": "2.31.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-jjg7-2v4v-x38h": {
+      "id": "GHSA-jjg7-2v4v-x38h",
+      "summary": "Internationalized Domain Names in Applications (IDNA) vulnerable to denial of service from specially crafted inputs to idna.encode",
+      "aliases": ["CVE-2024-3651", "PYSEC-2024-60"],
+      "modified": "2026-09-10T03:50:12.774088619Z",
+      "published": "2024-04-11T21:32:40Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:L/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-3651"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "idna"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "3.7"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-ppp9-7jff-5vj2": {
+      "id": "GHSA-ppp9-7jff-5vj2",
+      "summary": "golang.org/x/text/language Out-of-bounds Read vulnerability",
+      "aliases": ["CVE-2021-38561", "GO-2021-0113"],
+      "modified": "2026-09-10T03:49:50.331764985Z",
+      "published": "2022-12-26T06:30:22Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        }
+      ],
+      "database_specific": {
+        "severity": "HIGH"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-38561"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Go",
+            "name": "golang.org/x/text"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "0.3.7"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-pq67-6m6q-mj2v": {
+      "id": "GHSA-pq67-6m6q-mj2v",
+      "summary": "urllib3 redirects are not disabled when retries are disabled on PoolManager instantiation",
+      "aliases": ["CVE-2025-50181", "PYSEC-2026-1999"],
+      "modified": "2026-09-10T03:50:25.299291456Z",
+      "published": "2025-06-18T17:50:00Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:N/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-50181"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "2.5.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-q2x7-8rv6-6q7h": {
+      "id": "GHSA-q2x7-8rv6-6q7h",
+      "summary": "Jinja has a sandbox breakout through indirect reference to format method",
+      "aliases": ["CVE-2024-56326", "PYSEC-2026-1475"],
+      "modified": "2026-09-10T03:50:21.662855250Z",
+      "published": "2024-12-23T17:56:08Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H"
+        },
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:L/AC:L/AT:P/PR:L/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-56326"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "jinja2"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "3.1.5"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-q559-8m2m-g699": {
+      "id": "GHSA-q559-8m2m-g699",
+      "summary": "Change in port should be considered a change in origin",
+      "aliases": ["CVE-2022-31091"],
+      "modified": "2023-11-08T04:09:25.594961Z",
+      "published": "2022-06-21T20:07:16Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "HIGH"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-31091"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "6.5.8"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "7.0.0"
+                },
+                {
+                  "fixed": "7.4.5"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-qccp-gfcp-xxvc": {
+      "id": "GHSA-qccp-gfcp-xxvc",
+      "summary": "urllib3: Sensitive headers forwarded across origins in proxied low-level redirects",
+      "aliases": ["CVE-2026-44431", "PYSEC-2026-141"],
+      "modified": "2026-09-10T03:50:47.272765640Z",
+      "published": "2026-05-11T14:51:20Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N"
+        },
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:N/AC:H/AT:P/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "HIGH"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-44431"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "1.23"
+                },
+                {
+                  "fixed": "2.7.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-v5mv-p594-2x33": {
+      "id": "GHSA-v5mv-p594-2x33",
+      "summary": "Guzzle: Noncanonical host can bypass host-based checks",
+      "aliases": ["CVE-2026-69246"],
+      "modified": "2026-09-10T03:51:14.592158153Z",
+      "published": "2026-08-03T21:07:26Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "HIGH"
+      },
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "7.15.2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "8.0.0"
+                },
+                {
+                  "fixed": "8.0.1"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-v845-jxx5-vc9f": {
+      "id": "GHSA-v845-jxx5-vc9f",
+      "summary": "`Cookie` HTTP header isn't stripped on cross-origin redirects",
+      "aliases": ["CVE-2023-43804", "PYSEC-2023-192"],
+      "modified": "2026-09-10T03:49:24.753610811Z",
+      "published": "2023-10-02T23:27:05Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:N"
+        },
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:H/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "HIGH"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-43804"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "2.0.0"
+                },
+                {
+                  "fixed": "2.0.6"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.26.17"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-vxq7-64xx-v4gw": {
+      "id": "GHSA-vxq7-64xx-v4gw",
+      "summary": "urllib3: HTTPResponse.stream()/read_chunked() buffers an unbounded chunk-size line into memory",
+      "aliases": ["CVE-2026-97689", "PYSEC-2026-4177"],
+      "modified": "2026-10-01T17:55:57.514829071Z",
+      "published": "2026-09-30T14:46:18Z",
+      "severity": [
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:H"
+        }
+      ],
+      "database_specific": {
+        "severity": "HIGH"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-97689"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "1.10.3"
+                },
+                {
+                  "fixed": "2.8.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-w248-ffj2-4v5q": {
+      "id": "GHSA-w248-ffj2-4v5q",
+      "summary": "Fix failure to strip Authorization header on HTTP downgrade",
+      "aliases": [
+        "BIT-drupal-2022-31042",
+        "BIT-drupal-2022-31043",
+        "CVE-2022-31042",
+        "CVE-2022-31043",
+        "DRUPAL-CORE-2022-011",
+        "GHSA-f2wf-25xc-69c9"
+      ],
+      "modified": "2025-12-10T23:40:57.755467Z",
+      "published": "2022-06-09T23:47:23Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "HIGH"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-31043"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "4.0.0"
+                },
+                {
+                  "fixed": "6.5.7"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "7.0.0"
+                },
+                {
+                  "fixed": "7.4.4"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-wm3w-8rrp-j577": {
+      "id": "GHSA-wm3w-8rrp-j577",
+      "summary": "Guzzle: Host-only cookie scope is not preserved",
+      "aliases": ["CVE-2026-67355"],
+      "modified": "2026-09-10T03:51:12.418606242Z",
+      "published": "2026-07-20T23:27:49Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-67355"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "7.15.1"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-wpwq-4j6v-78m3": {
+      "id": "GHSA-wpwq-4j6v-78m3",
+      "summary": "guzzlehttp/guzzle: Silent HTTPS-Proxy Downgrade to Cleartext",
+      "aliases": ["CVE-2026-55568"],
+      "modified": "2026-09-10T03:50:50.904385747Z",
+      "published": "2026-06-19T14:17:59Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "MODERATE"
+      },
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Packagist",
+            "name": "guzzlehttp/guzzle"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "7.12.1"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GHSA-xqr8-7jwr-rhp7": {
+      "id": "GHSA-xqr8-7jwr-rhp7",
+      "summary": "Removal of e-Tugra root certificate",
+      "aliases": ["CVE-2023-37920", "PYSEC-2023-135"],
+      "modified": "2026-09-10T03:50:08.653753752Z",
+      "published": "2023-07-25T14:43:53Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+        }
+      ],
+      "database_specific": {
+        "severity": "HIGH"
+      },
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-37920"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "certifi"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "2015.4.28"
+                },
+                {
+                  "fixed": "2023.7.22"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GO-2020-0015": {
+      "id": "GO-2020-0015",
+      "summary": "Infinite loop when decoding some inputs in golang.org/x/text",
+      "aliases": ["CVE-2020-14040", "GHSA-5rcv-m4m3-hfh7"],
+      "modified": "2026-02-04T03:02:32.031255Z",
+      "published": "2021-04-14T20:04:52Z",
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Go",
+            "name": "golang.org/x/text"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "0.3.3"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GO-2021-0052": {
+      "id": "GO-2021-0052",
+      "summary": "Inconsistent interpretation of HTTP Requests in github.com/gin-gonic/gin",
+      "aliases": [
+        "CVE-2020-28483",
+        "GHSA-h395-qcrw-5vmq",
+        "SNYK-GOLANG-GITHUBCOMGINGONICGIN-1041736"
+      ],
+      "modified": "2026-07-08T05:56:36.895132392Z",
+      "published": "2021-04-14T20:04:52Z",
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Go",
+            "name": "github.com/gin-gonic/gin"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.7.7"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GO-2021-0113": {
+      "id": "GO-2021-0113",
+      "summary": "Out-of-bounds read in golang.org/x/text/language",
+      "aliases": ["CVE-2021-38561", "GHSA-ppp9-7jff-5vj2"],
+      "modified": "2026-02-04T02:31:07.297346Z",
+      "published": "2021-10-06T17:51:21Z",
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Go",
+            "name": "golang.org/x/text"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "0.3.7"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GO-2022-1059": {
+      "id": "GO-2022-1059",
+      "summary": "Denial of service via crafted Accept-Language header in golang.org/x/text/language",
+      "aliases": ["CVE-2022-32149", "GHSA-69ch-w2m2-3vjp"],
+      "modified": "2026-02-04T03:39:03.311488Z",
+      "published": "2022-10-11T18:16:24Z",
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Go",
+            "name": "golang.org/x/text"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "0.3.8"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GO-2023-1737": {
+      "id": "GO-2023-1737",
+      "summary": "Improper handling of filenames in Content-Disposition HTTP header in github.com/gin-gonic/gin",
+      "aliases": ["CVE-2023-29401", "GHSA-2c4m-59x9-fr2g"],
+      "modified": "2024-05-20T16:03:47Z",
+      "published": "2023-05-11T18:59:56Z",
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Go",
+            "name": "github.com/gin-gonic/gin"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "1.3.1-0.20190301021747-ccb9e902956d"
+                },
+                {
+                  "fixed": "1.9.1"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GO-2026-5970": {
+      "id": "GO-2026-5970",
+      "summary": "Infinite loop on invalid input in golang.org/x/text",
+      "aliases": ["CVE-2026-56852"],
+      "modified": "2026-09-23T10:41:39.386264978Z",
+      "published": "2026-07-14T17:29:56Z",
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Go",
+            "name": "golang.org/x/text"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "0.39.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "GO-2026-6629": {
+      "id": "GO-2026-6629",
+      "summary": "Panic parsing crafted input in x/text/secure/precis in golang.org/x/text",
+      "aliases": ["CVE-2026-56851"],
+      "modified": "2026-10-20T10:42:24.514593111Z",
+      "published": "2026-10-07T14:09:43Z",
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "Go",
+            "name": "golang.org/x/text"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "0.41.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2022-42986": {
+      "id": "PYSEC-2022-42986",
+      "aliases": ["CVE-2022-23491", "GHSA-43fp-rhv2-5gv8"],
+      "modified": "2023-11-08T04:08:19.066843Z",
+      "published": "2022-12-07T22:15:00Z",
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://github.com/certifi/python-certifi/security/advisories/GHSA-43fp-rhv2-5gv8"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "certifi"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "2017.11.5"
+                },
+                {
+                  "fixed": "2022.12.7"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2023-135": {
+      "id": "PYSEC-2023-135",
+      "aliases": ["CVE-2023-37920", "GHSA-xqr8-7jwr-rhp7"],
+      "modified": "2023-11-08T04:13:04.801823Z",
+      "published": "2023-08-03T19:36:12Z",
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-37920"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "certifi"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "2015.4.28"
+                },
+                {
+                  "fixed": "2023.7.22"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2023-192": {
+      "id": "PYSEC-2023-192",
+      "aliases": ["CVE-2023-43804", "GHSA-v845-jxx5-vc9f"],
+      "modified": "2023-11-08T04:13:33.452167Z",
+      "published": "2023-10-04T17:15:00Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://github.com/urllib3/urllib3/security/advisories/GHSA-v845-jxx5-vc9f"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "GIT",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "644124ecd0b6e417c527191f866daa05a5a2056d"
+                },
+                {
+                  "fixed": "01220354d389cd05474713f8c982d05c9b17aafb"
+                }
+              ]
+            },
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "2.0.0"
+                },
+                {
+                  "fixed": "2.0.6"
+                },
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.26.17"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2023-212": {
+      "id": "PYSEC-2023-212",
+      "aliases": ["CVE-2023-45803", "GHSA-g4mx-q9vg-27p4"],
+      "modified": "2023-11-08T04:13:39.165450Z",
+      "published": "2023-10-17T20:15:00Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:A/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://github.com/urllib3/urllib3/security/advisories/GHSA-g4mx-q9vg-27p4"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "GIT",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "4e98d57809dacab1cbe625fddeec1a290c478ea9"
+                }
+              ]
+            },
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "2.0.0"
+                },
+                {
+                  "fixed": "2.0.7"
+                },
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.26.18"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2023-74": {
+      "id": "PYSEC-2023-74",
+      "aliases": ["CVE-2023-32681", "GHSA-j8r2-6x86-q33q"],
+      "modified": "2023-11-08T04:12:35.436175Z",
+      "published": "2023-05-26T18:15:00Z",
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://github.com/psf/requests/security/advisories/GHSA-j8r2-6x86-q33q"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "requests"
+          },
+          "ranges": [
+            {
+              "type": "GIT",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "74ea7cf7a6a27a4eeb2ae24e162bcc942a6706d5"
+                }
+              ]
+            },
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "2.3.0"
+                },
+                {
+                  "fixed": "2.31.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2024-230": {
+      "id": "PYSEC-2024-230",
+      "aliases": ["CVE-2024-39689", "GHSA-248v-346w-9cwc"],
+      "modified": "2026-06-10T17:14:18.786020835Z",
+      "published": "2024-07-05T19:15:10Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://github.com/certifi/python-certifi/security/advisories/GHSA-248v-346w-9cwc"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "certifi"
+          },
+          "ranges": [
+            {
+              "type": "GIT",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "bd8153872e9c6fc98f4023df9c2deaffea2fa463"
+                }
+              ]
+            },
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "2021.5.30"
+                },
+                {
+                  "fixed": "2024.7.4"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2024-60": {
+      "id": "PYSEC-2024-60",
+      "aliases": ["CVE-2024-3651", "GHSA-jjg7-2v4v-x38h"],
+      "modified": "2026-06-10T17:01:21.102419358Z",
+      "published": "2024-07-07T18:15:00Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://github.com/advisories/GHSA-jjg7-2v4v-x38h"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "idna"
+          },
+          "ranges": [
+            {
+              "type": "GIT",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1d365e17e10d72d0b7876316fc7b9ca0eebdd38d"
+                }
+              ]
+            },
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0.1"
+                },
+                {
+                  "fixed": "3.7"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2026-141": {
+      "id": "PYSEC-2026-141",
+      "aliases": ["CVE-2026-44431", "GHSA-qccp-gfcp-xxvc"],
+      "modified": "2026-05-20T09:19:20.983812Z",
+      "published": "2026-05-13T16:16:57.150Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://github.com/urllib3/urllib3/security/advisories/GHSA-qccp-gfcp-xxvc"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "1.23"
+                },
+                {
+                  "fixed": "2.7.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2026-1471": {
+      "id": "PYSEC-2026-1471",
+      "summary": "Jinja2 vulnerable to sandbox breakout through attr filter selecting format method",
+      "aliases": ["CVE-2025-27516", "GHSA-cpwx-vrp4-4pq7"],
+      "modified": "2026-07-07T17:46:43.358335981Z",
+      "published": "2026-07-07T14:34:50.446969Z",
+      "severity": [
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:L/AC:L/AT:P/PR:L/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-27516"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "jinja2"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "3.1.6"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2026-1472": {
+      "id": "PYSEC-2026-1472",
+      "summary": "Jinja has a sandbox breakout through malicious filenames",
+      "aliases": ["CVE-2024-56201", "GHSA-gmj6-6f8f-6699"],
+      "modified": "2026-07-07T17:46:46.013371684Z",
+      "published": "2026-07-07T14:34:47.677447Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H"
+        },
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:L/AC:L/AT:P/PR:L/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-56201"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "jinja2"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "3.0.0"
+                },
+                {
+                  "fixed": "3.1.5"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2026-1473": {
+      "id": "PYSEC-2026-1473",
+      "summary": "Jinja vulnerable to HTML attribute injection when passing user input as keys to xmlattr filter",
+      "aliases": ["CVE-2024-22195", "GHSA-h5c8-rqwp-cp95"],
+      "modified": "2026-07-07T17:46:13.853151947Z",
+      "published": "2026-07-07T11:45:29.949639Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:N"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-22195"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "jinja2"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "3.1.3"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2026-1474": {
+      "id": "PYSEC-2026-1474",
+      "summary": "Jinja vulnerable to HTML attribute injection when passing user input as keys to xmlattr filter",
+      "aliases": ["CVE-2024-34064", "GHSA-h75v-3vvj-5mfj"],
+      "modified": "2026-07-07T17:46:13.832160246Z",
+      "published": "2026-07-07T11:45:41.875280Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:N"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-34064"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "jinja2"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "3.1.4"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2026-1475": {
+      "id": "PYSEC-2026-1475",
+      "summary": "Jinja has a sandbox breakout through indirect reference to format method",
+      "aliases": ["CVE-2024-56326", "GHSA-q2x7-8rv6-6q7h"],
+      "modified": "2026-07-07T17:46:13.842466429Z",
+      "published": "2026-07-07T14:34:47.732576Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H"
+        },
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:L/AC:L/AT:P/PR:L/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-56326"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "jinja2"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "3.1.5"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2026-1872": {
+      "id": "PYSEC-2026-1872",
+      "summary": "Requests vulnerable to .netrc credentials leak via malicious URLs",
+      "aliases": ["CVE-2024-47081", "GHSA-9hjg-9r4m-mvj7"],
+      "modified": "2026-07-07T17:47:00.332079836Z",
+      "published": "2026-07-07T16:02:54.151964Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:N/A:N"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-47081"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "requests"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "2.32.4"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2026-1873": {
+      "id": "PYSEC-2026-1873",
+      "summary": "Requests `Session` object does not verify requests after making first request with verify=False",
+      "aliases": ["CVE-2024-35195", "GHSA-9wx4-h78v-vm56"],
+      "modified": "2026-07-07T17:46:36.762141019Z",
+      "published": "2026-07-07T11:45:42.890131Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:L/AC:H/PR:H/UI:R/S:U/C:H/I:H/A:N"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-35195"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "requests"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "2.32.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2026-1994": {
+      "id": "PYSEC-2026-1994",
+      "summary": "urllib3 streaming API improperly handles highly compressed data",
+      "aliases": ["CVE-2025-66471", "GHSA-2xpw-w6gg-jr37"],
+      "modified": "2026-07-07T17:48:15.379954669Z",
+      "published": "2026-07-07T16:03:12.332335Z",
+      "severity": [
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:H"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-66471"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "1.0"
+                },
+                {
+                  "fixed": "2.6.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2026-1995": {
+      "id": "PYSEC-2026-1995",
+      "summary": "urllib3's Proxy-Authorization request header isn't stripped during cross-origin redirects",
+      "aliases": ["CVE-2024-37891", "GHSA-34jh-p97f-mpxf"],
+      "modified": "2026-07-07T17:48:15.400192088Z",
+      "published": "2026-07-07T14:34:34.848392Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-37891"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.26.19"
+                },
+                {
+                  "introduced": "2.0.0"
+                },
+                {
+                  "fixed": "2.2.2"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2026-1996": {
+      "id": "PYSEC-2026-1996",
+      "summary": "Decompression-bomb safeguards bypassed when following HTTP redirects (streaming API)",
+      "aliases": ["CVE-2026-21441", "GHSA-38jv-5279-wg99"],
+      "modified": "2026-07-07T17:48:15.382053236Z",
+      "published": "2026-07-07T16:03:16.841533Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:H"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-21441"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "1.22"
+                },
+                {
+                  "fixed": "2.6.3"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2026-1998": {
+      "id": "PYSEC-2026-1998",
+      "summary": "urllib3 allows an unbounded number of links in the decompression chain",
+      "aliases": ["CVE-2025-66418", "GHSA-gm62-xv2j-4w53"],
+      "modified": "2026-07-07T17:47:54.140852492Z",
+      "published": "2026-07-07T16:03:12.278581Z",
+      "severity": [
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:H"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-66418"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "1.24"
+                },
+                {
+                  "fixed": "2.6.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2026-1999": {
+      "id": "PYSEC-2026-1999",
+      "summary": "urllib3 redirects are not disabled when retries are disabled on PoolManager instantiation",
+      "aliases": ["CVE-2025-50181", "GHSA-pq67-6m6q-mj2v"],
+      "modified": "2026-07-07T17:47:54.161376347Z",
+      "published": "2026-07-07T16:02:55.519678Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:N/A:N"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-50181"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "2.5.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2026-215": {
+      "id": "PYSEC-2026-215",
+      "aliases": ["CVE-2026-45409", "GHSA-65pc-fj4g-8rjx"],
+      "modified": "2026-06-16T16:15:04.639265054Z",
+      "published": "2026-06-05T23:16:43.343Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://github.com/kjd/idna/security/advisories/GHSA-65pc-fj4g-8rjx"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "idna"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "3.15"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2026-2275": {
+      "id": "PYSEC-2026-2275",
+      "aliases": ["CVE-2026-25645", "GHSA-gc5v-m9x4-r6x2"],
+      "modified": "2026-07-13T07:15:43.964902190Z",
+      "published": "2026-03-25T17:16:52.970Z",
+      "severity": [
+        {
+          "type": "CVSS_V3",
+          "score": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://github.com/psf/requests/releases/tag/v2.33.0"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "requests"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "2.33.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2026-4175": {
+      "id": "PYSEC-2026-4175",
+      "summary": "urllib3: HTTPS proxy TLS configuration may be ignored or overridden",
+      "aliases": ["CVE-2026-97687", "GHSA-8988-9cw3-xx77"],
+      "modified": "2026-10-01T17:45:18.542387510Z",
+      "published": "2026-10-01T16:38:40.937127Z",
+      "severity": [
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:P/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-97687"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "1.26.0"
+                },
+                {
+                  "fixed": "2.8.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2026-4177": {
+      "id": "PYSEC-2026-4177",
+      "summary": "urllib3: HTTPResponse.stream()/read_chunked() buffers an unbounded chunk-size line into memory",
+      "aliases": ["CVE-2026-97689", "GHSA-vxq7-64xx-v4gw"],
+      "modified": "2026-10-01T17:45:18.336090182Z",
+      "published": "2026-10-01T16:38:41.098900Z",
+      "severity": [
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:H"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-97689"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "urllib3"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "1.10.3"
+                },
+                {
+                  "fixed": "2.8.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PYSEC-2026-4320": {
+      "id": "PYSEC-2026-4320",
+      "summary": "certifi bundles emSign root CAs with compromised intermediate CA keys",
+      "aliases": ["GHSA-6q48-6c7w-9gw2"],
+      "modified": "2026-10-20T22:00:02.600723204Z",
+      "published": "2026-10-20T21:41:50.722083Z",
+      "severity": [
+        {
+          "type": "CVSS_V4",
+          "score": "CVSS:4.0/AV:N/AC:H/AT:P/PR:N/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://github.com/advisories/GHSA-6q48-6c7w-9gw2"
+        }
+      ],
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "PyPI",
+            "name": "certifi"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "2019.03.09"
+                },
+                {
+                  "fixed": "2026.10.19"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
