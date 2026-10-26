@@ -106,12 +106,18 @@ export function actionsForRepo(
       return;
     }
     const withRepos = COMMAND_WITH_REPOS.exec(clause);
-    if (withRepos && isCommand(withRepos[1])) {
+    if (
+      withRepos &&
+      (isCommand(withRepos[1]) || repoList(withRepos[2]).every((r) => affected.has(r)))
+    ) {
       structured = true;
       const repos = repoList(withRepos[2]);
       for (const r of repos) covered.add(r);
       if (repos.includes(repo))
-        own.push({ index, action: { kind: "command", text: withRepos[1] } });
+        own.push({
+          index,
+          action: { kind: isCommand(withRepos[1]) ? "command" : "text", text: withRepos[1] },
+        });
       return;
     }
     const perRepo = REPO_CLAUSE.exec(clause);
