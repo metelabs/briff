@@ -58,6 +58,8 @@ export function aliasGroups<T extends Pick<OsvVuln, "id" | "aliases">>(
 export interface MergedAdvisory extends AdvisoryFields {
   /** Every other id of the vulnerability, canonical rank order (GHSA, CVE, then native). */
   aliases: string[];
+  /** Each merged record's own OSV `modified`. */
+  recordsModified: Record<string, string>;
 }
 
 /**
@@ -90,5 +92,6 @@ export function mergeAliasGroup(
     fixedVersion: withRanges.fixedVersion,
     modifiedAt: modified.length > 0 ? new Date(Math.max(...modified)) : null,
     aliases,
+    recordsModified: Object.fromEntries(sorted.map((v) => [v.id, v.modified])),
   };
 }

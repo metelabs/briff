@@ -35,13 +35,17 @@ interface StoredAdvisory {
   id: string;
   osvId: string;
   aliases: string[] | null;
-  modifiedAt: Date | null;
+  recordsModified: Record<string, unknown> | null;
 }
 
 type ScanCounts = Record<
   "advisoriesFetched" | "advisoryFetchErrors" | "advisoriesMerged" | "alertsMerged",
   number
 >;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
 function stringList(value: unknown): string[] | null {
   return Array.isArray(value) && value.every((v) => typeof v === "string") ? value : null;
@@ -66,23 +70,29 @@ async function storeAdvisories(
     hitIds.length === 0
       ? []
       : await db.$queryRaw<
-          { id: string; osvId: string; aliases: unknown; modifiedAt: Date | null }[]
+          { id: string; osvId: string; aliases: unknown; recordsModified: unknown }[]
         >`
-          SELECT "id", "osvId", "aliases", "modifiedAt" FROM "advisory"
+          SELECT "id", "osvId", "aliases", "recordsModified" FROM "advisory"
           WHERE "osvId" = ANY(${hitIds}::text[]) OR "aliases" ?| ${hitIds}::text[]`;
-  const stored: StoredAdvisory[] = rows.map((r) => ({ ...r, aliases: stringList(r.aliases) }));
+  const stored: StoredAdvisory[] = rows.map((r) => ({
+    ...r,
+    aliases: stringList(r.aliases),
+    recordsModified: isRecord(r.recordsModified) ? r.recordsModified : null,
+  }));
   const rowOf = new Map<string, StoredAdvisory>();
   for (const row of stored) rowOf.set(row.osvId, row);
   for (const row of stored) {
     for (const alias of row.aliases ?? []) if (!rowOf.has(alias)) rowOf.set(alias, row);
   }
 
+  // Each record against its own stored `modified`: aliases change on their own schedules
+  // (GHSA-2c4m-59x9-fr2g last moved in 2023, its GO-2023-1737 in 2024).
   const stale = (id: string, hit: Wanted): boolean => {
     const row = rowOf.get(id);
-    if (!row || row.aliases === null) return true;
-    return (
-      hit.modified !== null && (row.modifiedAt === null || new Date(hit.modified) > row.modifiedAt)
-    );
+    if (!row || row.aliases === null || row.recordsModified === null) return true;
+    const known = row.recordsModified[id];
+    if (typeof known !== "string") return true;
+    return hit.modified !== null && new Date(hit.modified) > new Date(known);
   };
   const refresh = new Set<StoredAdvisory>();
   const toFetch = new Set<string>();
@@ -123,7 +133,11 @@ async function storeAdvisories(
   for (const group of aliasGroups(fetched)) {
     const hit = group.map((v) => wanted.get(v.id)).find((h) => h !== undefined);
     if (!hit) continue;
-    const { aliases, ...fields } = mergeAliasGroup(group, hit.packageName, hit.ecosystem);
+    const { aliases, recordsModified, ...fields } = mergeAliasGroup(
+      group,
+      hit.packageName,
+      hit.ecosystem
+    );
     const ids = [fields.osvId, ...aliases];
     const touched = [
       ...new Set(
@@ -139,6 +153,7 @@ async function storeAdvisories(
       ...fields,
       affected: fields.affected as unknown as Prisma.InputJsonValue,
       aliases,
+      recordsModified,
     };
     try {
       const row = target

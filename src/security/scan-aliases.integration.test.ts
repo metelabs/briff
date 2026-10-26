@@ -13,7 +13,12 @@ import { mixedHits, mixedQueries, mixedVuln, mixedVulnIds } from "./__fixtures__
 
 // OSV answers from the recording of a Composer, PyPI and Go stack (__fixtures__); SMTP is
 // stubbed and records every email.
-const osv = vi.hoisted(() => ({ fetched: [] as string[], hidden: new Set<string>() }));
+const osv = vi.hoisted(() => ({
+  fetched: [] as string[],
+  hidden: new Set<string>(),
+  // Overrides of the `modified` the batch answer reports, per id.
+  modified: new Map<string, string>(),
+}));
 const sent = vi.hoisted(() => [] as { to: string; subject: string; text: string }[]);
 
 vi.mock("@/sources/osv", async (importOriginal) => {
@@ -21,7 +26,11 @@ vi.mock("@/sources/osv", async (importOriginal) => {
   return {
     ...actual,
     queryOsvBatchHits: async (queries: OsvQuery[]): Promise<OsvHit[][]> =>
-      queries.map((q) => mixedHits(q).filter((h) => !osv.hidden.has(h.id))),
+      queries.map((q) =>
+        mixedHits(q)
+          .filter((h) => !osv.hidden.has(h.id))
+          .map((h) => ({ ...h, modified: osv.modified.get(h.id) ?? h.modified }))
+      ),
     fetchOsvVuln: async (id: string): Promise<OsvVuln> => {
       osv.fetched.push(id);
       return mixedVuln(id);
@@ -66,8 +75,8 @@ describe.skipIf(!url)("security-scan collapses OSV aliases", () => {
     const email = `alias-${suffix}@example.com`;
     emails.push(email);
     const user = await db.user.create({ data: { id: `alias-u-${suffix}`, name: "u", email } });
-    await db.orgMember.create({ data: { orgId, userId: user.id } });
     const scoped = withOrg(db, orgId);
+    await scoped.orgMember.create({ data: { orgId, userId: user.id } });
     const repo = await scoped.repo.create({
       data: {
         orgId,
@@ -168,6 +177,17 @@ describe.skipIf(!url)("security-scan collapses OSV aliases", () => {
     osv.fetched.length = 0;
     await run();
     expect(osv.fetched).toEqual([]);
+
+    // A record moving is refetched on its own timestamp, not the group's newest: the GHSA
+    // (2023) changes to a date before its GO twin's (2024), and the group is refetched.
+    const ghsaModified = mixedVuln("GHSA-2c4m-59x9-fr2g").modified;
+    const goModified = mixedVuln("GO-2023-1737").modified;
+    expect(new Date(ghsaModified) < new Date(goModified)).toBe(true);
+    osv.modified.set("GHSA-2c4m-59x9-fr2g", "2024-01-01T00:00:00Z");
+    await run();
+    osv.modified.clear();
+    expect(osv.fetched.sort()).toEqual(["GHSA-2c4m-59x9-fr2g", "GO-2023-1737"]);
+    osv.fetched.length = 0;
     expect(await alertsOf(orgId)).toHaveLength(46);
     expect(sent.filter((m) => m.to === email)).toHaveLength(1);
 
