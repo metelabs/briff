@@ -218,6 +218,32 @@ describe.skipIf(!url)("security-scan collapses OSV aliases", () => {
     expect(await alertsOf(orgId)).toHaveLength(46);
     expect(sent.filter((m) => m.to === email)).toHaveLength(1);
 
+    // A native record OSV starts returning, naming a stored GHSA that is unchanged and not in
+    // this answer (its row lists only the CVE): the GHSA is refetched too and stays canonical.
+    const ghsa = await db.advisory.findUniqueOrThrow({
+      where: { osvId: "GHSA-2c4m-59x9-fr2g" },
+    });
+    await db.advisory.update({
+      where: { id: ghsa.id },
+      data: {
+        aliases: ["CVE-2023-29401"],
+        recordsModified: { "GHSA-2c4m-59x9-fr2g": mixedVuln("GHSA-2c4m-59x9-fr2g").modified },
+      },
+    });
+    osv.hidden = new Set(["GHSA-2c4m-59x9-fr2g"]);
+    osv.fetched.length = 0;
+    await run();
+    osv.hidden = new Set();
+    expect(osv.fetched.sort()).toEqual(["GHSA-2c4m-59x9-fr2g", "GO-2023-1737"]);
+    expect(await db.advisory.findUniqueOrThrow({ where: { id: ghsa.id } })).toMatchObject({
+      osvId: "GHSA-2c4m-59x9-fr2g",
+      severity: "MODERATE",
+      aliases: ["CVE-2023-29401", "GO-2023-1737"],
+    });
+    expect(await db.advisory.count({ where: { osvId: "GO-2023-1737" } })).toBe(0);
+    expect(await alertsOf(orgId)).toHaveLength(46);
+    expect(sent.filter((m) => m.to === email)).toHaveLength(1);
+
     await db.org.deleteMany({ where: { id: orgId } });
     await removeFixtureAdvisories();
   });

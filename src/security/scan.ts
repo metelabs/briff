@@ -9,7 +9,7 @@ import { fetchOsvVuln, queryOsvBatchHits, type OsvRange, type OsvVuln } from "@/
 import type { JobContext, JobResult } from "@/worker/types";
 import { ECOSYSTEMS, isEcosystem, type Ecosystem } from "@scan/ecosystems";
 
-import { aliasGroups, byIdRank, mergeAliasGroup } from "./aliases";
+import { aliasGroups, byIdRank, idsOf, mergeAliasGroup } from "./aliases";
 import {
   alertKey,
   alertKindFor,
@@ -64,26 +64,35 @@ async function storeAdvisories(
   wanted: ReadonlyMap<string, Wanted>,
   counts: ScanCounts
 ): Promise<{ advisoryOf: (osvId: string) => string | undefined; merges: Map<string, string> }> {
-  const hitIds = [...wanted.keys()];
-  // Advisory is a global catalog table (no tenant data), read raw for the jsonb `?|` match.
-  const rows =
-    hitIds.length === 0
-      ? []
-      : await db.$queryRaw<
-          { id: string; osvId: string; aliases: unknown; recordsModified: unknown }[]
-        >`
-          SELECT "id", "osvId", "aliases", "recordsModified" FROM "advisory"
-          WHERE "osvId" = ANY(${hitIds}::text[]) OR "aliases" ?| ${hitIds}::text[]`;
-  const stored: StoredAdvisory[] = rows.map((r) => ({
-    ...r,
-    aliases: stringList(r.aliases),
-    recordsModified: isRecord(r.recordsModified) ? r.recordsModified : null,
-  }));
   const rowOf = new Map<string, StoredAdvisory>();
-  for (const row of stored) rowOf.set(row.osvId, row);
-  for (const row of stored) {
-    for (const alias of row.aliases ?? []) if (!rowOf.has(alias)) rowOf.set(alias, row);
-  }
+  const looked = new Set<string>();
+  /** Loads the stored rows holding any of `ids`, as their own id or as an alias. */
+  const loadRows = async (ids: readonly string[]): Promise<StoredAdvisory[]> => {
+    const fresh = [...new Set(ids)].filter((id) => !looked.has(id));
+    for (const id of fresh) looked.add(id);
+    if (fresh.length === 0) return [];
+    // Advisory is a global catalog table (no tenant data), read raw for the jsonb `?|` match.
+    const rows = await db.$queryRaw<
+      { id: string; osvId: string; aliases: unknown; recordsModified: unknown }[]
+    >`
+      SELECT "id", "osvId", "aliases", "recordsModified" FROM "advisory"
+      WHERE "osvId" = ANY(${fresh}::text[]) OR "aliases" ?| ${fresh}::text[]`;
+    const known = new Map([...rowOf.values()].map((r) => [r.id, r]));
+    const loaded = rows.map(
+      (r) =>
+        known.get(r.id) ?? {
+          ...r,
+          aliases: stringList(r.aliases),
+          recordsModified: isRecord(r.recordsModified) ? r.recordsModified : null,
+        }
+    );
+    for (const row of loaded) if (!rowOf.has(row.osvId)) rowOf.set(row.osvId, row);
+    for (const row of loaded) {
+      for (const alias of row.aliases ?? []) if (!rowOf.has(alias)) rowOf.set(alias, row);
+    }
+    return loaded;
+  };
+  await loadRows([...wanted.keys()]);
 
   // Each record against its own stored `modified`: aliases change on their own schedules
   // (GHSA-2c4m-59x9-fr2g last moved in 2023, its GO-2023-1737 in 2024).
@@ -95,38 +104,68 @@ async function storeAdvisories(
     return hit.modified !== null && new Date(hit.modified) > new Date(known);
   };
   const refresh = new Set<StoredAdvisory>();
-  const toFetch = new Set<string>();
+  let toFetch = new Set<string>();
   for (const [id, hit] of wanted) {
     if (!stale(id, hit)) continue;
     toFetch.add(id);
     const row = rowOf.get(id);
     if (row) refresh.add(row);
   }
-  // A refreshed row is refetched whole: its own record and every id that points to it.
-  for (const row of refresh) toFetch.add(row.osvId);
-  for (const id of wanted.keys()) {
-    const row = rowOf.get(id);
-    if (row && refresh.has(row)) toFetch.add(id);
-  }
+  /** A refreshed row is refetched whole: its own record and every id that points to it. */
+  const wholeRows = (rows: Iterable<StoredAdvisory>): string[] => {
+    const set = new Set(rows);
+    return [
+      ...[...set].map((r) => r.osvId),
+      ...[...wanted.keys()].filter((id) => {
+        const row = rowOf.get(id);
+        return row !== undefined && set.has(row);
+      }),
+    ];
+  };
+  for (const id of wholeRows(refresh)) toFetch.add(id);
 
   const fetched: OsvVuln[] = [];
   const withdrawn = new Set<string>();
   const failed = new Set<string>();
+  const attempted = new Set<string>();
   let done = 0;
-  await mapLimit([...toFetch], FETCH_CONCURRENCY, async (osvId) => {
-    try {
-      const vuln = await fetchOsvVuln(osvId);
-      if (vuln.withdrawn) withdrawn.add(osvId);
-      else fetched.push(vuln);
-      counts.advisoriesFetched++;
-    } catch (err) {
-      failed.add(osvId);
-      counts.advisoryFetchErrors++;
-      log.warn({ err, osvId }, "security: advisory fetch failed");
+  // A fetched record can point to stored rows nothing else refreshed (a new GO-* naming an
+  // unchanged GHSA): those are refetched too, so the group is merged from all its records.
+  // A few rounds cover any alias chain; ids still pending after them count as failed.
+  for (let round = 0; toFetch.size > 0; round++) {
+    const batch = [...toFetch].filter((id) => !attempted.has(id));
+    toFetch = new Set();
+    if (round === 3) {
+      for (const id of batch) failed.add(id);
+      break;
     }
-    // The first scan after the aliases migration refetches every stored advisory.
-    if (++done % 100 === 0) await heartbeat();
-  });
+    for (const id of batch) attempted.add(id);
+    const got: OsvVuln[] = [];
+    await mapLimit(batch, FETCH_CONCURRENCY, async (osvId) => {
+      try {
+        const vuln = await fetchOsvVuln(osvId);
+        if (vuln.withdrawn) withdrawn.add(osvId);
+        else got.push(vuln);
+        counts.advisoriesFetched++;
+      } catch (err) {
+        failed.add(osvId);
+        counts.advisoryFetchErrors++;
+        log.warn({ err, osvId }, "security: advisory fetch failed");
+      }
+      // The first scan after the aliases migration refetches every stored advisory.
+      if (++done % 100 === 0) await heartbeat();
+    });
+    fetched.push(...got);
+    await loadRows(got.flatMap(idsOf));
+    const reached = new Set(
+      got.flatMap(idsOf).flatMap((id) => {
+        const row = rowOf.get(id);
+        return row && !refresh.has(row) ? [row] : [];
+      })
+    );
+    for (const row of reached) refresh.add(row);
+    for (const id of wholeRows(reached)) if (!attempted.has(id)) toFetch.add(id);
+  }
   fetched.sort((a, b) => a.id.localeCompare(b.id));
 
   const resolved = new Map<string, string>();
