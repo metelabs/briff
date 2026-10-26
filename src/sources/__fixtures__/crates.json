@@ -1,0 +1,11 @@
+{
+  "crate": {
+    "max_stable_version": "1.2.4",
+    "repository": "https://github.com/acme/kit",
+    "homepage": null
+  },
+  "versions": [
+    { "num": "1.2.4", "yanked": false },
+    { "num": "1.2.3", "yanked": true }
+  ]
+}

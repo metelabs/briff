@@ -1,0 +1,6 @@
+[package]
+name = "acme-nested"
+version = "0.1.0"
+
+[dev-dependencies]
+tokio = "1"

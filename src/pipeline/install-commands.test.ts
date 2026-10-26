@@ -190,6 +190,13 @@ describe("installCommand for several Poetry alternatives", () => {
   });
 });
 
+it("keeps Cargo declarations while updating an exact lockfile pin", () => {
+  expect(installCommand("crates.io", "time", "0.3.36", { requirement: "0.3.17", dev: true })).toBe(
+    "cargo update -p time@0.3.17 --precise 0.3.36"
+  );
+  expect(whyCommand("crates.io", "time")).toBe("cargo tree -i time");
+});
+
 it("keeps Bundler declarations in their existing groups with a bounded constraint", () => {
   expect(installCommand("RubyGems", "rack", "2.2.9", { dev: true })).toBe(
     'set rack in Gemfile to "~> 2.2.9", then run bundle update rack --conservative'

@@ -4,6 +4,7 @@ import path from "node:path";
 import { mergeActionMetadata, parseActions } from "./actions";
 
 import { composerDeclared, parseComposerLock } from "./composer-lock";
+import { parseCargoLock } from "./cargo-lock";
 import { parseRubyLock } from "./ruby-lock";
 import { parseGoMod } from "./go-mod";
 import { parseNpmLock } from "./npm-lock";
@@ -33,7 +34,8 @@ export type LockfileKind =
   | "requirements"
   | "gomod"
   | "actions"
-  | "bundler";
+  | "bundler"
+  | "cargo";
 
 /** Reads a file's text; the CLI reads the disk, the GitHub App reads fetched blobs. */
 export type ReadText = (filePath: string) => Promise<string>;
@@ -52,6 +54,7 @@ export const LOCKFILES: Readonly<Record<string, LockfileKind>> = {
   "requirements.txt": "requirements",
   "go.mod": "gomod",
   "Gemfile.lock": "bundler",
+  "Cargo.lock": "cargo",
 };
 
 // `requirements-dev.txt`, `requirements_prod.txt`: the common split of requirements.txt.
@@ -229,7 +232,8 @@ async function readOptional(filePath: string, read: ReadText): Promise<string | 
  */
 export async function readLockfile(
   lockfile: DiscoveredLockfile,
-  read: ReadText = readDisk
+  read: ReadText = readDisk,
+  manifestPaths: readonly string[] = []
 ): Promise<LockedDependency[]> {
   const content = await read(lockfile.path);
   const dir = path.dirname(lockfile.path);
@@ -275,6 +279,16 @@ export async function readLockfile(
       return parseGoMod(content);
     case "bundler":
       return parseRubyLock(content, await readOptional(path.join(dir, "Gemfile"), read));
+    case "cargo": {
+      const manifests: Record<string, string> = {};
+      for (const file of new Set([path.join(dir, "Cargo.toml"), ...manifestPaths])) {
+        const relative = path.relative(dir, file);
+        if (relative.startsWith("..") || path.basename(file) !== "Cargo.toml") continue;
+        const text = await readOptional(file, read);
+        if (text !== null) manifests[relative.split(path.sep).join("/")] = text;
+      }
+      return parseCargoLock(content, manifests);
+    }
   }
   const ranges = await readDeclaredRanges(dir, read);
   switch (lockfile.kind) {

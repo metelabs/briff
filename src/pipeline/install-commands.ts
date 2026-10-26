@@ -191,6 +191,9 @@ export function installCommand(
         : `read the advisory for the ${pkg} ${version} release tag`;
     }
 
+    case "crates.io":
+      return `cargo update -p ${shellWord(`${pkg}${variant.requirement ? `@${variant.requirement}` : ""}`)} --precise ${shellWord(version)}`;
+
     case "RubyGems":
       return `set ${pkg} in Gemfile to "~> ${version}", then run bundle update ${shellWord(pkg)} --conservative`;
     case "Packagist":
@@ -223,6 +226,9 @@ export function whyCommand(
   switch (ecosystem ?? "npm") {
     case "GitHub Actions":
       return `inspect uses: ${pkg} in .github/workflows`;
+
+    case "crates.io":
+      return `cargo tree -i ${shellWord(pkg)}`;
 
     case "RubyGems":
       return `bundle exec gem dependency ${shellWord(pkg)} --reverse-dependencies`;

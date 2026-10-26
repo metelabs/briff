@@ -1,0 +1,36 @@
+version = 4
+
+[[package]]
+name = "acme-root"
+version = "0.1.0"
+dependencies = ["acme-shared", "acme-excluded"]
+
+[[package]]
+name = "tokio"
+version = "1.24.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "time"
+version = "0.3.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "smallvec"
+version = "1.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "acme-shared"
+version = "0.1.0"
+dependencies = ["time", "acme-nested"]
+
+[[package]]
+name = "acme-nested"
+version = "0.1.0"
+dependencies = ["tokio"]
+
+[[package]]
+name = "acme-excluded"
+version = "0.1.0"
+dependencies = ["smallvec"]

@@ -40,12 +40,13 @@ async function readGroup(
   group: FileGroup,
   root: string,
   warn: (message: string) => void,
-  read?: ReadText
+  read?: ReadText,
+  manifestPaths: readonly string[] = group.runtimeFiles.map((f) => f.path)
 ): Promise<ScanRepoPayload | null> {
   const lists: LockedDependency[][] = [];
   for (const lockfile of group.lockfiles) {
     try {
-      lists.push(await readLockfile(lockfile, read));
+      lists.push(await readLockfile(lockfile, read, manifestPaths));
     } catch (err) {
       warn(`skip ${path.relative(root, lockfile.path)}: ${(err as Error).message}`);
     }
@@ -107,8 +108,9 @@ export async function collectRepos(
     }
   }
   const payloads: ScanRepoPayload[] = [];
+  const manifestPaths = discovered.flatMap((r) => r.runtimeFiles.map((f) => f.path));
   for (const group of groups) {
-    const payload = await readGroup(group, root, options.warn);
+    const payload = await readGroup(group, root, options.warn, undefined, manifestPaths);
     if (payload) payloads.push(payload);
   }
   return payloads;

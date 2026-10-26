@@ -325,6 +325,10 @@ installed release line never becomes a command. Public action names and refs are
 OSV; action repository names are sent to the public GitHub tags API. No credentials or
 workflow `run` values are sent to either API.
 
+Cargo metadata uses `crates.io/api/v1/crates/<crate>` with an identifying User-Agent.
+`max_stable_version` supplies the latest stable version, yanked releases are excluded,
+and `repository` attaches GitHub releases. OSV uses ecosystem `crates.io`.
+
 RubyGems metadata uses the fixed rubygems.org JSON API: `gems/<gem>.json` supplies
 repository links and `versions/<gem>/latest.json` supplies the latest non-yanked release.
 There is no package deprecation field. RubyGems advisories use OSV ecosystem `RubyGems`;

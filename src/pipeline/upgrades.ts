@@ -240,8 +240,10 @@ export function installTargets(
   pkg: string
 ): { all: string | null; byRepo: Map<string, string> } | null {
   // `pkg@1.2.3` (npm, Poetry, Go `@v1.2.3`), `pkg:^1.2.3` (Composer), `pkg==1.2.3` (pip, uv).
+  const version = "(\\d+\\.\\d+\\.\\d+[\\w.+-]*)";
+  const cargo = `cargo update -p ${escapeRegExp(pkg)}(?:@[^\\s]+)? --precise ${version}`;
   const re = new RegExp(
-    `(?<![\\w@/.-])${escapeRegExp(pkg)}(?:@v?|:\\^?v?|==)(\\d+\\.\\d+\\.\\d+[\\w.+-]*)(?:\\s+\\(([^()]+)\\))?`,
+    `(?:${cargo}|(?<![\\w@/.-])${escapeRegExp(pkg)}(?:@v?|:\\^?v?|==)${version})(?:\\s+\\(([^()]+)\\))?`,
     "g"
   );
   const byRepo = new Map<string, string>();
@@ -249,8 +251,9 @@ export function installTargets(
   let found = false;
   for (const m of action.matchAll(re)) {
     found = true;
-    if (m[2]) for (const repo of m[2].split(",")) byRepo.set(repo.trim(), m[1]);
-    else all ??= m[1];
+    const target = m[1] ?? m[2];
+    if (m[3]) for (const repo of m[3].split(",")) byRepo.set(repo.trim(), target);
+    else all ??= target;
   }
   return found ? { all, byRepo } : null;
 }

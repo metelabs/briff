@@ -450,6 +450,24 @@ installed release line never becomes a command. Public action names and refs are
 OSV; action repository names are sent to the public GitHub tags API. No credentials or
 workflow `run` values are sent to either API.
 
+### Cargo (crates.io)
+
+`Cargo.lock` v3/v4 supplies crates.io pins. `Cargo.toml` dependencies, development and
+build dependencies (including target sections) identify direct crates. Workspace member
+manifests and inherited workspace dependencies are read through the same file filter in
+the CLI and GitHub App. Renamed dependencies keep their registry package names. Path,
+Git and alternate-registry pins are excluded. Workspace member patterns support `*` in
+one directory segment; manifests beyond the scanner's depth limit are not read.
+
+OSV uses `crates.io`. Fixes use `cargo update -p <crate>@<installed> --precise <fix>`
+to preserve manifest sections and disambiguate installed versions. Cargo may require a
+manual manifest constraint edit if the existing requirement excludes the fixed version.
+Transitive advice uses `cargo tree -i <crate>`; fixes never cross the installed release line.
+Registry refresh uses the crates.io API with a User-Agent, `max_stable_version`, yanked
+status and repository links. A package with no available stable release has no latest
+version; all-yanked packages are marked accordingly. Existing mixed-ecosystem tags apply
+to Stack, Repos and Alerts.
+
 ### RubyGems (Bundler)
 
 `Gemfile.lock` GEM specs supply installed RubyGems versions; DEPENDENCIES supplies the
