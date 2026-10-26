@@ -24,6 +24,21 @@ const recorded = (name: string): unknown =>
 const advisory = osvVulnSchema.parse(recorded("changed-files"));
 
 describe("GitHub Actions coverage", () => {
+  it.each([500, 502, 503])(
+    "retries transient HTTP %i through the deferred visibility path",
+    async (status) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => new Response(null, { status }))
+      );
+      try {
+        await expect(isPublicAction("acme/tool")).rejects.toThrow(`HTTP ${status}`);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    }
+  );
+
   it("preserves the reset time when visibility hits the unauthenticated limit", async () => {
     const reset = Math.ceil(Date.now() / 1000) + 3600;
     vi.stubGlobal(

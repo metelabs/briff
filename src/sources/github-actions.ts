@@ -51,6 +51,7 @@ export async function isPublicAction(name: string): Promise<boolean> {
       new Date(Math.max(Date.now() + 1000, reset || Date.now() + (after || 3_600_000)))
     );
   }
+  if (res.status >= 500) throw new Error(`GitHub Actions visibility: HTTP ${res.status}`);
   if (!res.ok) return false;
   const parsed = z.object({ private: z.boolean() }).safeParse(await res.json());
   return parsed.success && parsed.data.private === false;
