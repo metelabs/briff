@@ -1,0 +1,2 @@
+[libraries]
+kit = { module = "org.acme:kit" }

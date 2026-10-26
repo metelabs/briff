@@ -17,6 +17,18 @@ const files = Object.fromEntries(
 );
 
 describe("Maven and Gradle", () => {
+  it("keeps versionless catalog ownership and literals outside partial locks", () => {
+    const partial = Object.fromEntries(
+      ["build.gradle.kts", "gradle/libs.versions.toml", "gradle.lockfile"].map((file) => [
+        file,
+        readFileSync(new URL(`./__fixtures__/maven-partial/${file}`, import.meta.url), "utf8"),
+      ])
+    );
+    expect(parseMavenFiles(partial).map((d) => [d.name, d.version, d.direct, d.project])).toEqual([
+      ["org.acme:kit", "1.2.4", true, "gradle/libs.versions.toml"],
+      ["org.acme:unlocked", "1.2.3", true, "build.gradle.kts"],
+    ]);
+  });
   it("resolves inherited management against child overrides", () => {
     const child = readFileSync(
       new URL("./__fixtures__/maven/overrides/pom.xml", import.meta.url),

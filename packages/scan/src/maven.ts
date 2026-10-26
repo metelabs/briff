@@ -173,7 +173,7 @@ export function parseMavenFiles(files: Readonly<Record<string, string>>): Locked
             : parts.slice(0, 2).join(":"));
         const version =
           text(entry.version) || text(versions[text(table(entry.version).ref)]) || parts[2] || "";
-        if (coordinate(name) && literal(version))
+        if (coordinate(name))
           declarations.push({
             name,
             version,
@@ -207,7 +207,14 @@ export function parseMavenFiles(files: Readonly<Record<string, string>>): Locked
   }
   for (const dep of declarations) {
     if (!literal(dep.version)) continue;
-    if (locks.some(([file]) => posix.dirname(file) === dep.owner)) continue;
+    if (
+      locks.some(
+        ([file, content]) =>
+          posix.dirname(file) === dep.owner &&
+          content.split(/\r?\n/).some((line) => line.startsWith(`${dep.name}:`))
+      )
+    )
+      continue;
     rows.push({
       name: dep.name,
       version: dep.version,
