@@ -1,6 +1,6 @@
 {
   "name": "briff",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Weekly dependency briefing and same-day security alerts derived from your repositories' lockfiles and runtime files.",
   "private": true,
   "license": "AGPL-3.0-only",
