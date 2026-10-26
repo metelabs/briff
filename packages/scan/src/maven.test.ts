@@ -17,6 +17,32 @@ const files = Object.fromEntries(
 );
 
 describe("Maven and Gradle", () => {
+  it("resolves inherited management against child overrides", () => {
+    const child = readFileSync(
+      new URL("./__fixtures__/maven/overrides/pom.xml", import.meta.url),
+      "utf8"
+    );
+    expect(
+      parseMavenFiles({ "pom.xml": files["pom.xml"], "overrides/pom.xml": child })[0].version
+    ).toBe("2.14.0");
+  });
+  it("uses locks for versionless declarations and ignores unused constraints", () => {
+    const build = readFileSync(
+      new URL("./__fixtures__/maven/gradle/versionless.gradle.kts", import.meta.url),
+      "utf8"
+    );
+    expect(parseMavenFiles({ "build.gradle.kts": build })).toEqual([]);
+    const rows = parseMavenFiles({
+      "build.gradle.kts": build,
+      "gradle.lockfile": files["gradle/gradle.lockfile"],
+    });
+    expect(rows.find((d) => d.name === "org.apache.logging.log4j:log4j-core")).toMatchObject({
+      direct: true,
+      project: "build.gradle.kts",
+      version: "2.14.1",
+    });
+    expect(rows.some((d) => d.name === "org.acme:unused")).toBe(false);
+  });
   it("resolves parent properties and dependency management without installing unused managed packages", () => {
     const rows = parseMavenFiles({
       "pom.xml": files["pom.xml"],

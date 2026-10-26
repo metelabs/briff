@@ -22,6 +22,28 @@ function pom(content: string): Table {
   return table(table(parsed).project);
 }
 
+// Constraints affect resolution but do not install a package by themselves.
+function gradleDependencies(content: string): string {
+  let clean = content.replace(
+    /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,
+    (token) => (token.startsWith("/") ? " " : token)
+  );
+  for (const match of [...clean.matchAll(/\bconstraints\s*\{/g)].reverse()) {
+    const start = match.index;
+    const tail = clean.slice(start + match[0].length);
+    let depth = 1;
+    for (const token of tail.matchAll(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[{}]/g)) {
+      if (token[0] === "{") depth++;
+      if (token[0] === "}") depth--;
+      if (depth === 0) {
+        clean = clean.slice(0, start) + " " + tail.slice(token.index + 1);
+        break;
+      }
+    }
+  }
+  return clean;
+}
+
 /** Static manifests only: local parent properties and dependency management, without executing builds. */
 export function parseMavenFiles(files: Readonly<Record<string, string>>): LockedDependency[] {
   const rows: LockedDependency[] = [];
@@ -30,12 +52,16 @@ export function parseMavenFiles(files: Readonly<Record<string, string>>): Locked
       .filter(([f]) => posix.basename(f) === "pom.xml")
       .map(([f, c]) => [f, pom(c)])
   );
-  type Model = { properties: Record<string, string>; managed: Map<string, string> };
+  type Model = {
+    properties: Record<string, string>;
+    expressions: Record<string, string>;
+    managed: Map<string, string>;
+  };
   const models = new Map<string, Model>();
   const model = (file: string, visiting = new Set<string>()): Model => {
     const cached = models.get(file);
     if (cached) return cached;
-    if (visiting.has(file)) return { properties: {}, managed: new Map() };
+    if (visiting.has(file)) return { properties: {}, expressions: {}, managed: new Map() };
     visiting.add(file);
     const project = poms.get(file) ?? {};
     const parent = table(project.parent);
@@ -46,9 +72,9 @@ export function parseMavenFiles(files: Readonly<Record<string, string>>): Locked
     const parentFile = relative ? posix.normalize(posix.join(posix.dirname(file), relative)) : "";
     const inherited = poms.has(parentFile)
       ? model(parentFile, visiting)
-      : { properties: {}, managed: new Map<string, string>() };
+      : { properties: {}, expressions: {}, managed: new Map<string, string>() };
     const properties = {
-      ...inherited.properties,
+      ...inherited.expressions,
       ...Object.fromEntries(
         Object.entries(table(project.properties)).map(([k, v]) => [k, text(v)])
       ),
@@ -56,6 +82,7 @@ export function parseMavenFiles(files: Readonly<Record<string, string>>): Locked
     properties["project.version"] = text(project.version) || text(parent.version);
     properties["project.groupId"] = text(project.groupId) || text(parent.groupId);
     properties["pom.version"] = properties["project.version"];
+    const expressions = { ...properties };
     const resolve = (value: string): string => {
       for (let i = 0; i < 20 && value.includes("${"); i++) {
         const next = value.replace(
@@ -72,11 +99,10 @@ export function parseMavenFiles(files: Readonly<Record<string, string>>): Locked
     for (const entry of list(table(table(project.dependencyManagement).dependencies).dependency)) {
       const dep = table(entry);
       const name = `${resolve(text(dep.groupId))}:${resolve(text(dep.artifactId))}`;
-      const version = resolve(text(dep.version));
-      if (coordinate(name) && literal(version) && dep.scope !== "import")
-        managed.set(name, version);
+      const version = text(dep.version);
+      if (coordinate(name) && version && dep.scope !== "import") managed.set(name, version);
     }
-    const result = { properties, managed };
+    const result = { properties, expressions, managed };
     models.set(file, result);
     return result;
   };
@@ -87,7 +113,7 @@ export function parseMavenFiles(files: Readonly<Record<string, string>>): Locked
     for (const entry of list(table(project.dependencies).dependency)) {
       const dep = table(entry);
       const name = `${resolve(dep.groupId)}:${resolve(dep.artifactId)}`;
-      const version = resolve(dep.version) || managed.get(name) || "";
+      const version = resolve(dep.version) || resolve(managed.get(name));
       if (!coordinate(name) || !literal(version) || dep.scope === "import") continue;
       rows.push({
         name,
@@ -112,16 +138,17 @@ export function parseMavenFiles(files: Readonly<Record<string, string>>): Locked
     /(?:^|\/)build\.gradle(?:\.kts)?$/.test(file)
   );
   for (const [file, content] of builds) {
-    const clean = content.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
-    for (const match of clean.matchAll(/\b(\w+)\s*\(?\s*["']([\w.-]+:[\w.-]+):([^"']+)["']/g)) {
-      if (literal(match[3]))
-        declarations.push({
-          name: match[2],
-          version: match[3],
-          project: file,
-          owner: posix.dirname(file),
-          dev: /^(?:test|androidTest)/i.test(match[1]),
-        });
+    const clean = gradleDependencies(content);
+    for (const match of clean.matchAll(
+      /\b(\w+)\s*\(?\s*["']([\w.-]+:[\w.-]+)(?::([^"']+))?["']/g
+    )) {
+      declarations.push({
+        name: match[2],
+        version: match[3] ?? "",
+        project: file,
+        owner: posix.dirname(file),
+        dev: /^(?:test|androidTest)/i.test(match[1]),
+      });
     }
     for (const [catalogFile, catalogContent] of Object.entries(files)) {
       if (posix.basename(catalogFile) !== "libs.versions.toml") continue;
@@ -179,6 +206,7 @@ export function parseMavenFiles(files: Readonly<Record<string, string>>): Locked
     }
   }
   for (const dep of declarations) {
+    if (!literal(dep.version)) continue;
     if (locks.some(([file]) => posix.dirname(file) === dep.owner)) continue;
     rows.push({
       name: dep.name,
