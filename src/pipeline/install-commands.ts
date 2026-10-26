@@ -159,6 +159,8 @@ function pythonInstall(variant: InstallVariant, pkg: string, version: string): s
       });
       return [...new Set(commands)].join(" && ");
     }
+    case "maven":
+    case "gradle":
     case "pip":
       // A requirements file has no sections; pip installs into the environment.
       return `pip install ${pythonRequirement(pkg, declared(".")[0], `==${version}`, false)}`;
@@ -179,6 +181,8 @@ export function installCommand(
   variant: InstallVariant = {}
 ): string {
   switch (ecosystem ?? "npm") {
+    case "Maven":
+      return `set ${pkg} in ${variant.project ?? (variant.manager === "gradle" ? "build.gradle" : "pom.xml")} to ${version}, then resolve dependencies`;
     case "crates.io":
       return `cargo update -p ${shellWord(`${pkg}${variant.requirement ? `@${variant.requirement}` : ""}`)} --precise ${shellWord(version)}`;
     case "RubyGems":
@@ -211,6 +215,10 @@ export function whyCommand(
   manager?: PackageManager
 ): string {
   switch (ecosystem ?? "npm") {
+    case "Maven":
+      return manager === "gradle"
+        ? "./gradlew dependencies --configuration runtimeClasspath"
+        : "mvn dependency:tree";
     case "crates.io":
       return `cargo tree -i ${shellWord(pkg)}`;
     case "RubyGems":

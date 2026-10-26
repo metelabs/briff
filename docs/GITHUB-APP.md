@@ -206,3 +206,5 @@ Common problems:
   the worker.
 - `GITHUB_APP_PRIVATE_KEY is neither a PEM nor a base64-encoded PEM`: the value got cut;
   paste the `base64 -w0` output again.
+
+Maven dependencies are read from `pom.xml` (including local parent properties and dependency management). Gradle packages use root/subproject `gradle.lockfile`, or literal declarations in `build.gradle`, `build.gradle.kts` and `gradle/libs.versions.toml` when no lock is present. These names are exported by the scanner and shared with the tree filter.

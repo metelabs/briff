@@ -312,3 +312,9 @@ RubyGems metadata uses the fixed rubygems.org JSON API: `gems/<gem>.json` suppli
 repository links and `versions/<gem>/latest.json` supplies the latest non-yanked release.
 There is no package deprecation field. RubyGems advisories use OSV ecosystem `RubyGems`;
 GitHub source links attach the existing GitHub releases feed.
+
+Maven metadata uses `search.maven.org/solrsearch/select` (`latestVersion`) and the published
+POM at `repo.maven.apache.org/maven2` for its SCM repository link. GitHub repository links
+attach the existing release feed. Missing SCM links leave the package without a release
+feed; Central supplies no package-wide deprecation or yanked status. OSV uses `Maven` and
+`group:artifact` coordinates for Maven and Gradle alike.

@@ -1,4 +1,5 @@
 import type { Ecosystem } from "@scan/ecosystems";
+import { fetchMavenPackage } from "./maven";
 import { fetchCrate } from "./crates";
 
 import { fetchRubyGemsPackage } from "./rubygems";
@@ -17,6 +18,8 @@ export type RegistryLookup = { status: "ok"; info: RegistryInfo } | { status: "n
 
 export function fetchRegistryPackage(ecosystem: Ecosystem, name: string): Promise<RegistryLookup> {
   switch (ecosystem) {
+    case "Maven":
+      return fetchMavenPackage(name);
     case "crates.io":
       return fetchCrate(name);
     case "RubyGems":
