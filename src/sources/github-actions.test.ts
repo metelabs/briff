@@ -8,7 +8,7 @@ import { ecosystemLabel } from "@scan/ecosystems";
 import { dedupeDependencies } from "@/lib/scan/ingest";
 import { fixCommand } from "@/pipeline/fixes";
 
-import { actionTags } from "./github-actions";
+import { actionTags, isPublicAction } from "./github-actions";
 import {
   queryOsvBatchHits,
   actionConstraintAffected,
@@ -24,6 +24,29 @@ const recorded = (name: string): unknown =>
 const advisory = osvVulnSchema.parse(recorded("changed-files"));
 
 describe("GitHub Actions coverage", () => {
+  it("requires an explicit public repository response without authentication", async () => {
+    const fetcher = vi.fn();
+    vi.stubGlobal("fetch", fetcher);
+    try {
+      for (const [response, expected] of [
+        [Response.json(recorded("checkout-visibility")), true],
+        [Response.json({ private: true }), false],
+        [Response.json({}), false],
+        [new Response(null, { status: 404 }), false],
+        [new Response(null, { status: 403 }), false],
+      ] as const) {
+        fetcher.mockResolvedValueOnce(response);
+        expect(await isPublicAction("acme/tool")).toBe(expected);
+      }
+      expect(fetcher).toHaveBeenCalledWith(
+        "https://api.github.com/repos/acme/tool",
+        expect.objectContaining({ headers: { Accept: "application/vnd.github+json" } })
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("uses the same workflow parser for uploaded and GitHub App files", async () => {
     const workflow = readFileSync(
       new URL("../../packages/scan/src/__fixtures__/actions/workflow.yml", import.meta.url),

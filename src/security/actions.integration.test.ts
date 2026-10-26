@@ -20,13 +20,14 @@ describe.skipIf(!url)("workflow upload through the real security scan", () => {
   let orgId = "";
   const suffix = Date.now().toString(36);
   const pkg = `acme/action-${suffix}`;
+  const privatePkg = `acme/private-${suffix}`;
   const osvId = `GHSA-acme-${suffix}`;
   afterAll(async () => {
     vi.unstubAllGlobals();
     vi.unstubAllEnvs();
     resetEnvCache();
     if (orgId) await db.org.delete({ where: { id: orgId } });
-    await db.package.deleteMany({ where: { name: pkg } });
+    await db.package.deleteMany({ where: { name: { in: [pkg, privatePkg] } } });
     await db.$disconnect();
   });
 
@@ -50,10 +51,15 @@ describe.skipIf(!url)("workflow upload through the real security scan", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: string | URL, init?: RequestInit) => {
+        if (String(input) === `https://api.github.com/repos/${pkg}`)
+          return Response.json({ private: false });
+        if (String(input) === `https://api.github.com/repos/${privatePkg}`)
+          return new Response(null, { status: 404 });
         if (String(input).endsWith("/querybatch")) {
           const body = JSON.parse(String(init?.body)) as {
             queries: { package: { name: string } }[];
           };
+          expect(JSON.stringify(body)).not.toContain(privatePkg);
           return Response.json({
             results: body.queries.map((q) => ({
               vulns: q.package.name === pkg ? [{ id: osvId, modified: vuln.modified }] : [],
@@ -69,7 +75,7 @@ describe.skipIf(!url)("workflow upload through the real security scan", () => {
     const repo = await collectFromFiles(
       `acme/web-${suffix}`,
       {
-        ".github/workflows/check.yml": `jobs:\n  check:\n    steps:\n      - uses: ${pkg}@v45\n      - uses: ${pkg}@${sha} # v45.0.7`,
+        ".github/workflows/check.yml": `jobs:\n  check:\n    steps:\n      - uses: ${pkg}@v45\n      - uses: ${pkg}@${sha} # v45.0.7\n      - uses: ${privatePkg}/.github/workflows/build.yml@main`,
       },
       { warn: () => undefined }
     );

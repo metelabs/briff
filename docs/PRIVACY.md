@@ -136,3 +136,8 @@ A missing tag mapping directs the reader to the advisory; a fix outside the
 installed release line never becomes a command. Public action names and refs are sent to
 OSV; action repository names are sent to the public GitHub tags API. No credentials or
 workflow `run` values are sent to either API.
+
+Before querying OSV for an Actions reference, Briff checks the repository with an
+unauthenticated GitHub API request. Only an explicit public response permits the OSV
+query. Private, missing, rate-limited or unavailable repositories are excluded and
+checked again on the next scan. GitHub receives its own repository name for this check.

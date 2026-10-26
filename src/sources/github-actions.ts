@@ -27,6 +27,18 @@ export function storedActionTags(value: unknown): Record<string, string> | undef
   return parsed.success ? parsed.data : undefined;
 }
 
+/** No credentials: private repositories must never reach the public advisory service. */
+export async function isPublicAction(name: string): Promise<boolean> {
+  if (!/^[\w.-]+\/[\w.-]+$/.test(name)) return false;
+  const res = await fetchWithRetry(`https://api.github.com/repos/${name}`, {
+    headers: { Accept: "application/vnd.github+json" },
+    timeoutMs: 15_000,
+  });
+  if (!res.ok) return false;
+  const parsed = z.object({ private: z.boolean() }).safeParse(await res.json());
+  return parsed.success && parsed.data.private === false;
+}
+
 export async function fetchAction(name: string): Promise<RegistryLookup> {
   if (!/^[\w.-]+\/[\w.-]+$/.test(name)) return { status: "not_found" };
   const res = await fetchWithRetry(`https://api.github.com/repos/${name}/tags?per_page=100`, {
