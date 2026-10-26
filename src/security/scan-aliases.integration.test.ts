@@ -16,6 +16,8 @@ import { mixedHits, mixedQueries, mixedVuln, mixedVulnIds } from "./__fixtures__
 const osv = vi.hoisted(() => ({
   fetched: [] as string[],
   hidden: new Set<string>(),
+  // Ids whose record fetch throws.
+  failing: new Set<string>(),
   // Overrides of the `modified` the batch answer reports, per id.
   modified: new Map<string, string>(),
 }));
@@ -33,6 +35,7 @@ vi.mock("@/sources/osv", async (importOriginal) => {
       ),
     fetchOsvVuln: async (id: string): Promise<OsvVuln> => {
       osv.fetched.push(id);
+      if (osv.failing.has(id)) throw new Error(`osv: ${id} unavailable`);
       return mixedVuln(id);
     },
   };
@@ -184,6 +187,22 @@ describe.skipIf(!url)("security-scan collapses OSV aliases", () => {
     const goModified = mixedVuln("GO-2023-1737").modified;
     expect(new Date(ghsaModified) < new Date(goModified)).toBe(true);
     osv.modified.set("GHSA-2c4m-59x9-fr2g", "2024-01-01T00:00:00Z");
+
+    // The GHSA fetch fails, the GO one succeeds: the incomplete group must not overwrite the
+    // stored row (rename it to GO-2023-1737, drop its MODERATE level); it is retried later.
+    const before = await db.advisory.findUnique({ where: { osvId: "GHSA-2c4m-59x9-fr2g" } });
+    osv.failing.add("GHSA-2c4m-59x9-fr2g");
+    const partial = await run();
+    osv.failing.clear();
+    expect(partial.counts).toMatchObject({ advisoryFetchErrors: 1, advisoriesMerged: 0 });
+    const after = await db.advisory.findUnique({ where: { osvId: "GHSA-2c4m-59x9-fr2g" } });
+    expect(after).toEqual(before);
+    expect(after).toMatchObject({ severity: "MODERATE", fixedVersion: "1.9.1" });
+    expect(await db.advisory.count({ where: { osvId: "GO-2023-1737" } })).toBe(0);
+    expect(await alertsOf(orgId)).toHaveLength(46);
+    expect(sent.filter((m) => m.to === email)).toHaveLength(1);
+    osv.fetched.length = 0;
+
     await run();
     osv.modified.clear();
     expect(osv.fetched.sort()).toEqual(["GHSA-2c4m-59x9-fr2g", "GO-2023-1737"]);

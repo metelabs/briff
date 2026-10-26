@@ -111,6 +111,7 @@ async function storeAdvisories(
 
   const fetched: OsvVuln[] = [];
   const withdrawn = new Set<string>();
+  const failed = new Set<string>();
   let done = 0;
   await mapLimit([...toFetch], FETCH_CONCURRENCY, async (osvId) => {
     try {
@@ -119,6 +120,7 @@ async function storeAdvisories(
       else fetched.push(vuln);
       counts.advisoriesFetched++;
     } catch (err) {
+      failed.add(osvId);
       counts.advisoryFetchErrors++;
       log.warn({ err, osvId }, "security: advisory fetch failed");
     }
@@ -147,6 +149,20 @@ async function storeAdvisories(
         })
       ),
     ].sort((a, b) => byIdRank(a.osvId, b.osvId));
+    // A group with a record that failed to fetch is incomplete: written now it could lose
+    // the missing record's id, level or fixes (a GO-* without its GHSA has no severity).
+    // Its stored rows stay as they are and are retried next run (still stale).
+    const touchedRows = new Set(touched);
+    if (
+      ids.some((id) => failed.has(id)) ||
+      [...failed].some((id) => {
+        const row = rowOf.get(id);
+        return row !== undefined && touchedRows.has(row);
+      })
+    ) {
+      for (const row of touched) claimed.add(row);
+      continue;
+    }
     // The row already under the canonical id, else the best one, renamed: its alerts stay.
     const target = touched.find((r) => r.osvId === fields.osvId) ?? touched[0];
     const data = {
