@@ -303,3 +303,8 @@ every repo that is in any stream (`Repo.included`).
 - Sources for repos that were deleted on GitHub keep returning 404; they are
   recorded on `Source.lastError` and retried each run.
 - Package EOL data (`Package.eolDate/eolInfo`) is not populated yet (Phase 2 stack page).
+
+RubyGems metadata uses the fixed rubygems.org JSON API: `gems/<gem>.json` supplies
+repository links and `versions/<gem>/latest.json` supplies the latest non-yanked release.
+There is no package deprecation field. RubyGems advisories use OSV ecosystem `RubyGems`;
+GitHub source links attach the existing GitHub releases feed.

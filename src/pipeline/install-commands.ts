@@ -179,6 +179,8 @@ export function installCommand(
   variant: InstallVariant = {}
 ): string {
   switch (ecosystem ?? "npm") {
+    case "RubyGems":
+      return `set ${pkg} in Gemfile to "~> ${version}", then run bundle update ${shellWord(pkg)} --conservative`;
     case "Packagist":
       return `composer require${variant.dev ? " --dev" : ""} ${pkg}:^${version}`;
     case "PyPI":
@@ -207,6 +209,8 @@ export function whyCommand(
   manager?: PackageManager
 ): string {
   switch (ecosystem ?? "npm") {
+    case "RubyGems":
+      return `bundle exec gem dependency ${shellWord(pkg)} --reverse-dependencies`;
     case "Packagist":
       return `composer why ${pkg}`;
     case "PyPI":

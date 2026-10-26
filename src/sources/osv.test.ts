@@ -252,3 +252,10 @@ describe("toAdvisoryFields on recorded PyPI and Go records", () => {
     expect(severityOf(mixedVuln("GO-2023-1737"))).toBeNull();
   });
 });
+
+it("queries RubyGems by its OSV ecosystem name", () => {
+  expect(osvQueryOf({ name: "rack", version: "2.2.3", ecosystem: "RubyGems" })).toEqual({
+    package: { name: "rack", ecosystem: "RubyGems" },
+    version: "2.2.3",
+  });
+});

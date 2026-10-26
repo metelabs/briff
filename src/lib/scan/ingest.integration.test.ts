@@ -294,3 +294,46 @@ describe.skipIf(!url)("scan ingest of Go modules against Postgres", () => {
     expect(match?.reason).toBe(`release:${kit}`);
   });
 });
+
+describe.skipIf(!url)("RubyGems ingest", () => {
+  const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: url ?? "" }) });
+  const suffix = Date.now().toString(36);
+  let orgId = "";
+  beforeAll(async () => {
+    orgId = (await db.org.create({ data: { name: `acme-ruby-${suffix}` } })).id;
+  });
+  afterAll(async () => {
+    await db.org.deleteMany({ where: { id: orgId } });
+    await db.package.deleteMany({ where: { name: `acme-gem-${suffix}` } });
+    await db.$disconnect();
+  });
+  it("stores RubyGems separately from npm and retains development declarations", async () => {
+    const name = `acme-gem-${suffix}`;
+    await ingestScan(db, orgId, {
+      source: "github",
+      repos: [
+        {
+          name: "acme/api",
+          ecosystem: "npm",
+          dependencies: [
+            { name, version: "1.2.3", direct: true, dev: true, ecosystem: "RubyGems" },
+            { name, version: "4.5.6", direct: false },
+          ],
+        },
+      ],
+    });
+    const rows = await withOrg(db, orgId).dependency.findMany({
+      select: {
+        installedVersion: true,
+        direct: true,
+        dev: true,
+        package: { select: { ecosystem: true } },
+      },
+      orderBy: { installedVersion: "asc" },
+    });
+    expect(rows.map((r) => [r.package.ecosystem, r.installedVersion, r.direct, r.dev])).toEqual([
+      ["RubyGems", "1.2.3", true, true],
+      ["npm", "4.5.6", false, false],
+    ]);
+  });
+});

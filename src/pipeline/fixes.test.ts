@@ -326,3 +326,16 @@ describe("fixCommand for Go", () => {
     expect(fixCommand("golang.org/x/net", null, [go("acme/jobs", "0.30.0", "0.33.0")])).toBeNull();
   });
 });
+
+it("bounds RubyGems fixes to the installed major", () => {
+  expect(
+    fixCommand("rack", "3.1.0", [
+      { repo: "acme/api", installed: "2.2.3", fix: "2.2.9", ecosystem: "RubyGems" },
+    ])
+  ).toBe('set rack in Gemfile to "~> 2.2.9", then run bundle update rack --conservative');
+  expect(
+    fixCommand("rack", "3.1.0", [
+      { repo: "acme/api", installed: "2.2.3", fix: "3.0.0", ecosystem: "RubyGems" },
+    ])
+  ).toBeNull();
+});
