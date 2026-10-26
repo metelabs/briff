@@ -19,6 +19,12 @@ describe("Bundler", () => {
   it("does not mark a production declaration as development only", () => {
     expect(rubyDevGems('gem "rack"\ngroup :test do\n gem "rack"\nend').has("rack")).toBe(false);
   });
+  it("collapses arbitrary platforms while preserving canonical prereleases", () => {
+    expect(parseRubyLock(fixture("platforms.lock"))).toEqual([
+      { name: "nokogiri", version: "1.18.9", direct: true, ecosystem: "RubyGems" },
+      { name: "rack", version: "3.0.0.pre.rc1", direct: true, ecosystem: "RubyGems" },
+    ]);
+  });
   it("does not treat path or Git sources as registry packages", () => {
     expect(parseRubyLock("GIT\n  specs:\n    acme-kit (1.0.0)\nDEPENDENCIES\n  acme-kit!")).toEqual(
       []

@@ -50,11 +50,8 @@ export function parseRubyLock(content: string, manifest: string | null = null): 
     if (!inSpecs) continue;
     const spec = /^    ([\w.-]+) \((\d[\w.+-]*)\)$/.exec(line);
     if (!spec) continue;
-    // Platform suffixes describe the same RubyGems release, not another version.
-    const version = spec[2].replace(
-      /-(?:ruby|java|(?:x86_64|x64|x86|aarch64|arm64|arm|universal|i\d86)(?:-.*)?)$/,
-      ""
-    );
+    // Gem::Version canonicalizes prerelease hyphens to `.pre.`; a lock's hyphen starts its platform.
+    const version = spec[2].split("-")[0];
     specs.push({ name: spec[1], version });
   }
   const dev = rubyDevGems(manifest);
