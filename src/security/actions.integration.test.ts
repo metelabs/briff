@@ -1,3 +1,4 @@
+import { prepareStream } from "@/pipeline/weekly";
 import { readFileSync } from "node:fs";
 
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -93,6 +94,32 @@ describe.skipIf(!url)("workflow upload through the real security scan", () => {
     await securityScan(context);
     await securityScan(context);
     expect(await scoped.alert.count()).toBe(1);
+    const tags = { "v45.0.8": "b".repeat(40) };
+    await db.package.updateMany({
+      where: { name: pkg, ecosystem: "GitHub Actions" },
+      data: { actionTags: tags },
+    });
+    const stream = await scoped.bulletinStream.create({
+      data: { orgId, name: "Weekly", slug: "weekly" },
+    });
+    const scanned = await scoped.repo.findFirstOrThrow();
+    await scoped.streamRepo.create({ data: { orgId, streamId: stream.id, repoId: scanned.id } });
+    const now = new Date(Date.now() + 1000);
+    const prepared = await prepareStream(
+      db,
+      orgId,
+      { id: stream.id, name: stream.name, repoIds: [scanned.id] },
+      {
+        now,
+        weekStart: now,
+        week: "W44",
+        language: "en",
+        model: "synthetic",
+        promptVersion: "synthetic",
+      }
+    );
+    expect(prepared?.stack[0].dependencies[0].actionTags).toEqual(tags);
+    expect(JSON.stringify(prepared?.input)).not.toContain("b".repeat(40));
     expect(await scoped.alert.findFirst()).toMatchObject({ kind: "backlog", deliveredAt: null });
   });
 });

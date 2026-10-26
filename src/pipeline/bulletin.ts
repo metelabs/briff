@@ -1067,6 +1067,7 @@ export function itemUpgrades(
           ...(dep.group ? { group: dep.group } : {}),
           ...(dep.requirement ? { requirement: dep.requirement } : {}),
           ...(dep.project ? { project: dep.project } : {}),
+          ...(dep.actionTags ? { actionTags: dep.actionTags } : {}),
           ...(dep.manager ? { manager: dep.manager } : {}),
         };
       }

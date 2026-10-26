@@ -61,7 +61,7 @@ async function loadCandidates(
       score: true,
       reason: true,
       repoIds: true,
-      package: { select: { name: true, ecosystem: true } },
+      package: { select: { name: true, ecosystem: true, actionTags: true } },
       service: { select: { key: true } },
       item: {
         select: {
@@ -126,7 +126,7 @@ async function loadStack(
           project: true,
           manager: true,
           unresolved: true,
-          package: { select: { name: true, ecosystem: true } },
+          package: { select: { name: true, ecosystem: true, actionTags: true } },
         },
       },
       runtimes: {
@@ -172,6 +172,7 @@ async function loadStack(
           const manager = asPackageManager(d.manager);
           return {
             name: d.package.name,
+            actionTags: storedActionTags(d.package.actionTags),
             version: d.installedVersion,
             ...(ecosystem && ecosystem !== "npm" ? { ecosystem } : {}),
             ...(d.dev ? { dev: true as const } : {}),

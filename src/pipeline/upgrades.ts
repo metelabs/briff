@@ -275,7 +275,7 @@ export function releaseUpgrades(
   variantOf: (repo: string, version: string | undefined) => InstallVariant = () => ({})
 ): RepoUpgrade[] {
   const named = (variant: InstallVariant) => {
-    const { dev, manager, group, requirement, project } = variant;
+    const { dev, manager, group, requirement, project, actionTags } = variant;
     return {
       name: pkg,
       ...(ecosystem ? { ecosystem } : {}),
@@ -283,6 +283,7 @@ export function releaseUpgrades(
       ...(group ? { group } : {}),
       ...(requirement ? { requirement } : {}),
       ...(project ? { project } : {}),
+      ...(actionTags ? { actionTags } : {}),
       ...(manager ? { manager } : {}),
     };
   };
