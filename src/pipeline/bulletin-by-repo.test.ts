@@ -456,6 +456,28 @@ describe("repoAnchor", () => {
 });
 
 describe("groupByRepo for a fix command with a line that has no fix (W43 nodemailer)", () => {
+  it("scopes Bundler fix sentences without classifying them as shell commands", () => {
+    const fix = 'set rack in Gemfile to "~> 3.0.9", then run bundle update rack --conservative';
+    const advisory = "2.x has no known fix, read the advisory: acme/legacy";
+    const action = `${fix} (acme/api) · ${advisory}`;
+    const repos = ["acme/api", "acme/legacy"];
+    expect(actionsForRepo(action, "acme/api", repos)).toEqual([{ kind: "text", text: fix }]);
+    expect(actionsForRepo(action, "acme/legacy", repos)).toEqual([
+      { kind: "text", text: advisory },
+    ]);
+    const groups = groupByRepo(
+      {
+        act: [item({ itemId: "rack", action, affectedRepos: repos, bucket: "security" })],
+        know: [],
+        alerts: [],
+      },
+      t
+    );
+    expect(groups.find((g) => g.repo === "acme/legacy")?.entries[0].actions).toEqual([
+      { kind: "text", text: advisory },
+    ]);
+  });
+
   it("gives the fixed line its command and the other line the advisory", () => {
     const action =
       "npm i nodemailer@10.1.4 (briff) · 9.x has no known fix, read the advisory: " +

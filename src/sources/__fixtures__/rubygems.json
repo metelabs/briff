@@ -1,0 +1,7 @@
+{
+  "name": "acme-kit",
+  "version": "1.2.3",
+  "source_code_uri": "https://github.com/acme/kit",
+  "homepage_uri": "https://kit.example",
+  "metadata": { "source_code_uri": "https://github.com/acme/kit" }
+}

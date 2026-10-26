@@ -2,6 +2,7 @@ import type { Ecosystem } from "@scan/ecosystems";
 
 import { fetchAction } from "./github-actions";
 
+import { fetchRubyGemsPackage } from "./rubygems";
 import { fetchGoModule } from "./go-proxy";
 import { fetchNpmPackage, type NpmPackageInfo } from "./npm-registry";
 import { fetchPackagistPackage } from "./packagist";
@@ -19,6 +20,9 @@ export function fetchRegistryPackage(ecosystem: Ecosystem, name: string): Promis
   switch (ecosystem) {
     case "GitHub Actions":
       return fetchAction(name);
+
+    case "RubyGems":
+      return fetchRubyGemsPackage(name);
     case "npm":
       return fetchNpmPackage(name);
     case "Packagist":

@@ -1,0 +1,17 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    nokogiri (1.18.9-armv7-linux-eabihf)
+    nokogiri (1.18.9-powerpc64le-linux)
+    nokogiri (1.18.9-riscv64-linux)
+    rack (3.0.0.pre.rc1-java)
+
+PLATFORMS
+  armv7-linux-eabihf
+  powerpc64le-linux
+  riscv64-linux
+  java
+
+DEPENDENCIES
+  nokogiri
+  rack

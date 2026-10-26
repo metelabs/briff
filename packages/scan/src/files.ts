@@ -12,7 +12,7 @@ export const MAX_DEPTH = 6;
 
 /** A lockfile, a manifest or a runtime file (version files, Dockerfiles, compose files). */
 export function isScannedFileName(name: string): boolean {
-  return lockfileKind(name) !== null || runtimeFileKind(name) !== null;
+  return name === "Gemfile" || lockfileKind(name) !== null || runtimeFileKind(name) !== null;
 }
 
 /**
@@ -33,7 +33,7 @@ export function isScannedPath(relPath: string, maxDepth = MAX_DEPTH): boolean {
  * (`composer.lock` is both: packages and the platform PHP version).
  */
 export const SCANNED_FILE_NAMES: readonly string[] = [
-  ...new Set([...Object.keys(LOCKFILES), ...RUNTIME_FILE_NAMES]),
+  ...new Set([...Object.keys(LOCKFILES), "Gemfile", ...RUNTIME_FILE_NAMES]),
 ];
 
 /**

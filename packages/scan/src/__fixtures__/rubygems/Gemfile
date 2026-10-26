@@ -1,0 +1,5 @@
+source "https://rubygems.org"
+gem "rack", "~> 2.2"
+group :development, :test do
+  gem "nokogiri", "~> 1.13"
+end

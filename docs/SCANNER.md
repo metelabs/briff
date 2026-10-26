@@ -449,3 +449,25 @@ A missing tag mapping directs the reader to the advisory; a fix outside the
 installed release line never becomes a command. Public action names and refs are sent to
 OSV; action repository names are sent to the public GitHub tags API. No credentials or
 workflow `run` values are sent to either API.
+
+### RubyGems (Bundler)
+
+`Gemfile.lock` GEM specs supply installed RubyGems versions; DEPENDENCIES supplies the
+direct set. Platform builds of one version collapse into one pin. Git and path sources
+are excluded. Literal `gem` declarations in `Gemfile` inside development/test groups
+(or with `group:` / `groups:`) mark direct gems as development-only; a production
+declaration wins. Gemfiles are inspected as text, never evaluated, so computed Ruby
+declarations and imported Gemfiles cannot supply group information.
+
+OSV queries use `RubyGems`. Fixes keep the existing declaration and its groups: set its
+version requirement to `"~> X.Y.Z"`, then run `bundle update <gem> --conservative`. The
+bounded requirement prevents a major upgrade while allowing the patched release. Briff
+uses this instead of `bundle add`, which could change declaration groups, or an unbounded
+update, which could select another major. Transitive-only advice uses
+`bundle exec gem dependency <gem> --reverse-dependencies`.
+
+Registry refresh reads RubyGems.org `gems/<gem>.json` for repository/homepage links and
+`versions/<gem>/latest.json` for the latest available release (yanked releases are absent).
+RubyGems exposes no package deprecation status; Briff leaves it unset. Non-semver Ruby
+versions are retained as written; a version the fix rules cannot compare gets advisory
+reading advice rather than a guessed upgrade.

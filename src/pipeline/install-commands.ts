@@ -190,6 +190,9 @@ export function installCommand(
         ? `pin ${pkg} to ${tag[0]} (sha ${tag[1]})`
         : `read the advisory for the ${pkg} ${version} release tag`;
     }
+
+    case "RubyGems":
+      return `set ${pkg} in Gemfile to "~> ${version}", then run bundle update ${shellWord(pkg)} --conservative`;
     case "Packagist":
       return `composer require${variant.dev ? " --dev" : ""} ${pkg}:^${version}`;
     case "PyPI":
@@ -220,6 +223,9 @@ export function whyCommand(
   switch (ecosystem ?? "npm") {
     case "GitHub Actions":
       return `inspect uses: ${pkg} in .github/workflows`;
+
+    case "RubyGems":
+      return `bundle exec gem dependency ${shellWord(pkg)} --reverse-dependencies`;
     case "Packagist":
       return `composer why ${pkg}`;
     case "PyPI":

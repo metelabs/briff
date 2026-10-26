@@ -4,6 +4,7 @@ import path from "node:path";
 import { mergeActionMetadata, parseActions } from "./actions";
 
 import { composerDeclared, parseComposerLock } from "./composer-lock";
+import { parseRubyLock } from "./ruby-lock";
 import { parseGoMod } from "./go-mod";
 import { parseNpmLock } from "./npm-lock";
 import { parsePnpmLock } from "./pnpm-lock";
@@ -31,7 +32,8 @@ export type LockfileKind =
   | "pipenv"
   | "requirements"
   | "gomod"
-  | "actions";
+  | "actions"
+  | "bundler";
 
 /** Reads a file's text; the CLI reads the disk, the GitHub App reads fetched blobs. */
 export type ReadText = (filePath: string) => Promise<string>;
@@ -49,6 +51,7 @@ export const LOCKFILES: Readonly<Record<string, LockfileKind>> = {
   "Pipfile.lock": "pipenv",
   "requirements.txt": "requirements",
   "go.mod": "gomod",
+  "Gemfile.lock": "bundler",
 };
 
 // `requirements-dev.txt`, `requirements_prod.txt`: the common split of requirements.txt.
@@ -270,6 +273,8 @@ export async function readLockfile(
       return parseRequirements(content);
     case "gomod":
       return parseGoMod(content);
+    case "bundler":
+      return parseRubyLock(content, await readOptional(path.join(dir, "Gemfile"), read));
   }
   const ranges = await readDeclaredRanges(dir, read);
   switch (lockfile.kind) {

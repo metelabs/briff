@@ -324,3 +324,8 @@ A missing tag mapping directs the reader to the advisory; a fix outside the
 installed release line never becomes a command. Public action names and refs are sent to
 OSV; action repository names are sent to the public GitHub tags API. No credentials or
 workflow `run` values are sent to either API.
+
+RubyGems metadata uses the fixed rubygems.org JSON API: `gems/<gem>.json` supplies
+repository links and `versions/<gem>/latest.json` supplies the latest non-yanked release.
+There is no package deprecation field. RubyGems advisories use OSV ecosystem `RubyGems`;
+GitHub source links attach the existing GitHub releases feed.
