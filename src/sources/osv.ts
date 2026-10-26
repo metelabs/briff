@@ -1,3 +1,4 @@
+import { log } from "@/lib/log";
 import semver from "semver";
 import { z } from "zod";
 
@@ -133,9 +134,16 @@ export async function queryOsvBatchHits(
         const accepted: OsvHit[] = [];
         for (const hit of hits) {
           await heartbeat();
-          const vuln = await fetchOsvVuln(hit.id);
-          if (!vuln.withdrawn && actionConstraintAffected(vuln, query.name, query.version))
-            accepted.push(hit);
+          try {
+            const vuln = await fetchOsvVuln(hit.id);
+            if (!vuln.withdrawn && actionConstraintAffected(vuln, query.name, query.version))
+              accepted.push(hit);
+          } catch (err) {
+            log.warn(
+              { err, osvId: hit.id },
+              "osv: constraint advisory fetch failed; retry on the next scan"
+            );
+          }
         }
         out.push(accepted);
       } else out.push(hits);

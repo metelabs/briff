@@ -1097,7 +1097,7 @@ const COMMAND =
 
 /** A shell command rather than a sentence (rendered monospace; the derived one wins). */
 export function isCommand(action: string): boolean {
-  return COMMAND.test(action.trim());
+  return COMMAND.test(action.trim()) || /^pin [\w.-]+\/[\w.-]+ to \S+/.test(action.trim());
 }
 
 function escapeRegExp(text: string): string {

@@ -1,7 +1,7 @@
 import { fixedFor } from "@/security/plan";
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { collectFromFiles } from "@scan/collect";
 import { ecosystemLabel } from "@scan/ecosystems";
@@ -9,7 +9,13 @@ import { dedupeDependencies } from "@/lib/scan/ingest";
 import { fixCommand } from "@/pipeline/fixes";
 
 import { actionTags } from "./github-actions";
-import { actionConstraintAffected, osvQueryOf, osvVulnSchema, toAdvisoryFields } from "./osv";
+import {
+  queryOsvBatchHits,
+  actionConstraintAffected,
+  osvQueryOf,
+  osvVulnSchema,
+  toAdvisoryFields,
+} from "./osv";
 
 const recorded = (name: string): unknown =>
   JSON.parse(
@@ -122,4 +128,44 @@ it("preserves unprefixed tags and never invents a ref when tags are unavailable"
   expect(fixCommand("acme/action", null, [repo])).toBe(
     "read the advisory for the acme/action 4.2.1 release tag"
   );
+});
+
+it("isolates a failed floating-ref advisory fetch from other advisories and ecosystems", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: string | URL) => {
+      if (String(input).endsWith("querybatch"))
+        return Response.json({
+          results: [
+            { vulns: [{ id: "missing" }, { id: advisory.id }] },
+            { vulns: [{ id: "npm-advisory" }] },
+          ],
+        });
+      if (String(input).endsWith(`/vulns/${advisory.id}`)) return Response.json(advisory);
+      return new Response("not found", { status: 404 });
+    })
+  );
+  try {
+    const queries = [
+      {
+        ecosystem: "GitHub Actions" as const,
+        name: "tj-actions/changed-files",
+        version: "v45",
+        constraint: true,
+      },
+      { ecosystem: "npm" as const, name: "acme-package", version: "1.0.0" },
+    ];
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const hits = await queryOsvBatchHits(queries);
+      expect(hits.map((list) => list.map((hit) => hit.id))).toEqual([
+        [advisory.id],
+        ["npm-advisory"],
+      ]);
+    }
+    expect(
+      vi.mocked(fetch).mock.calls.filter(([input]) => String(input).endsWith("/vulns/missing"))
+    ).toHaveLength(2);
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });
