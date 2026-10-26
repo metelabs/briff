@@ -1,7 +1,7 @@
 import { lstat, readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 
-import { parseActions } from "./actions";
+import { mergeActionMetadata, parseActions } from "./actions";
 
 import { composerDeclared, parseComposerLock } from "./composer-lock";
 import { parseGoMod } from "./go-mod";
@@ -298,6 +298,8 @@ export function mergeDependencies(lists: LockedDependency[][]): LockedDependency
         merged.set(id, { ...dep });
         continue;
       }
+      if (dep.ecosystem === "GitHub Actions")
+        prev.metadata = mergeActionMetadata(prev.metadata, dep.metadata);
       // Development-only while no file declares it for production.
       // A Python lockfile's declaration (group, extra, dev) wins over a requirements export of
       // the same pin, which knows none of them.

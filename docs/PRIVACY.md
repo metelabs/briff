@@ -131,8 +131,8 @@ constraints, matched only when an advisory covers their entire release interval.
 refs have no known release line and receive no versioned fix recommendation.
 
 Public GitHub tags are fetched during package refresh (up to the first 100 tags), alongside
-the existing GitHub releases feed. On-line fixes say `pin owner/repo to vX.Y.Z` and include
-the tag's SHA when available. A missing tag mapping omits the SHA; a fix outside the
+the existing GitHub releases feed. On-line fixes use the tag's original spelling and SHA (`pin owner/repo to vX.Y.Z (sha …)`).
+A missing tag mapping directs the reader to the advisory; a fix outside the
 installed release line never becomes a command. Public action names and refs are sent to
 OSV; action repository names are sent to the public GitHub tags API. No credentials or
 workflow `run` values are sent to either API.

@@ -1,3 +1,5 @@
+import semver from "semver";
+
 import { shapesFor, type Ecosystem, type PackageManager } from "@scan/ecosystems";
 
 // The copyable commands per ecosystem: install a version, and show what pulls a transitive
@@ -180,8 +182,14 @@ export function installCommand(
   variant: InstallVariant = {}
 ): string {
   switch (ecosystem ?? "npm") {
-    case "GitHub Actions":
-      return `pin ${pkg} to v${version.replace(/^v/, "")}${variant.actionTags?.[version.replace(/^v/, "")] ? ` (sha ${variant.actionTags[version.replace(/^v/, "")]})` : ""}`;
+    case "GitHub Actions": {
+      const tag = Object.entries(variant.actionTags ?? {}).find(
+        ([name]) => semver.valid(name) === semver.valid(version)
+      );
+      return tag
+        ? `pin ${pkg} to ${tag[0]} (sha ${tag[1]})`
+        : `read the advisory for the ${pkg} ${version} release tag`;
+    }
     case "Packagist":
       return `composer require${variant.dev ? " --dev" : ""} ${pkg}:^${version}`;
     case "PyPI":

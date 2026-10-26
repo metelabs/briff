@@ -2,18 +2,20 @@ import { z } from "zod";
 
 import { ECOSYSTEMS, PACKAGE_MANAGERS } from "@scan/ecosystems";
 
+const actionEvidenceSchema = z.object({
+  source: z.string().max(500),
+  ref: z.string().max(256),
+  subpath: z.string().max(500).optional(),
+  sha: z
+    .string()
+    .regex(/^[a-f0-9]{40}$/i)
+    .optional(),
+});
+
 export const scanDependencySchema = z.object({
   constraint: z.boolean().optional(),
-  metadata: z
-    .object({
-      source: z.string().max(500),
-      ref: z.string().max(256),
-      subpath: z.string().max(500).optional(),
-      sha: z
-        .string()
-        .regex(/^[a-f0-9]{40}$/i)
-        .optional(),
-    })
+  metadata: actionEvidenceSchema
+    .extend({ occurrences: z.array(actionEvidenceSchema).max(1000).optional() })
     .optional(),
   // npm names stop at 214 characters; Go module paths and Composer names can be longer.
   name: z.string().min(1).max(300),

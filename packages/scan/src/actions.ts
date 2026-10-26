@@ -3,16 +3,36 @@ import { isScalar, parseDocument, visit } from "yaml";
 /** The sole exception to the scanner's dot-directory exclusion. */
 export const WORKFLOW_PATH = /^\.github\/workflows\/[^/]+\.ya?ml$/;
 
+export interface ActionEvidence {
+  source: string;
+  ref: string;
+  subpath?: string;
+  sha?: string;
+}
+
+export type ActionMetadata = ActionEvidence & { occurrences?: ActionEvidence[] };
+
+export function mergeActionMetadata(
+  a: ActionMetadata | undefined,
+  b: ActionMetadata | undefined
+): ActionMetadata | undefined {
+  if (!a || !b) return a ?? b;
+  const occurrences = [
+    ...new Map(
+      [...(a.occurrences ?? [a]), ...(b.occurrences ?? [b])].map((entry) => [
+        JSON.stringify(entry),
+        entry,
+      ])
+    ).values(),
+  ];
+  return { ...a, occurrences };
+}
+
 export interface ActionReference {
   name: string;
   version: string;
   constraint: boolean;
-  metadata: {
-    source: string;
-    ref: string;
-    subpath?: string;
-    sha?: string;
-  };
+  metadata: ActionMetadata;
 }
 
 /** Reads only literal uses lines; local actions, images and expressions are not packages. */

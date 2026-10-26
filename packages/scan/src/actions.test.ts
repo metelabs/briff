@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { parseActions, WORKFLOW_PATH } from "./actions";
+import { mergeActionMetadata, parseActions, WORKFLOW_PATH } from "./actions";
 
 const fixture = readFileSync(
   new URL("./__fixtures__/actions/workflow.yml", import.meta.url),
@@ -50,4 +50,10 @@ describe("workflow uses references", () => {
     for (const path of [".github/actions/ci.yml", ".github/workflows/nested/ci.yml", "ci.yml"])
       expect(WORKFLOW_PATH.test(path)).toBe(false);
   });
+});
+
+it("retains evidence when several workflows use the same package and version", () => {
+  const a = parseActions("uses: acme/action/one@v1.2.3", ".github/workflows/a.yml")[0].metadata;
+  const b = parseActions("uses: acme/action/two@v1.2.3", ".github/workflows/b.yml")[0].metadata;
+  expect(mergeActionMetadata(a, b)?.occurrences).toEqual([a, b]);
 });

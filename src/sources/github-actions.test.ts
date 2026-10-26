@@ -83,7 +83,7 @@ describe("GitHub Actions coverage", () => {
           installed: "v4.1.0",
           fix: "4.2.1",
           ecosystem: "GitHub Actions",
-          actionTags: { "4.2.1": sha },
+          actionTags: { "v4.2.1": sha },
         },
       ])
     ).toBe(`pin acme/action to v4.2.1 (sha ${sha})`);
@@ -104,4 +104,22 @@ it("keeps an Actions security email on the installed line", () => {
       repos: [{ name: "acme/web", installedVersion: "v45.0.7", direct: true }],
     })
   ).toBe("read the advisory");
+});
+
+it("preserves unprefixed tags and never invents a ref when tags are unavailable", () => {
+  const sha = "b".repeat(40);
+  const tags = actionTags([{ name: "4.2.1", commit: { sha } }]);
+  expect(tags).toEqual({ "4.2.1": sha });
+  const repo = {
+    repo: "acme/web",
+    installed: "4.1.0",
+    fix: "4.2.1",
+    ecosystem: "GitHub Actions" as const,
+  };
+  expect(fixCommand("acme/action", null, [{ ...repo, actionTags: tags }])).toBe(
+    `pin acme/action to 4.2.1 (sha ${sha})`
+  );
+  expect(fixCommand("acme/action", null, [repo])).toBe(
+    "read the advisory for the acme/action 4.2.1 release tag"
+  );
 });

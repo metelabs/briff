@@ -17,7 +17,7 @@ export function actionTags(value: unknown): Record<string, string> {
   return Object.fromEntries(
     actionTagsSchema.parse(value).flatMap((tag) => {
       const version = semver.valid(tag.name);
-      return version && !semver.prerelease(version) ? [[version, tag.commit.sha]] : [];
+      return version && !semver.prerelease(version) ? [[tag.name, tag.commit.sha]] : [];
     })
   );
 }
@@ -36,7 +36,9 @@ export async function fetchAction(name: string): Promise<RegistryLookup> {
   if (res.status === 404) return { status: "not_found" };
   if (!res.ok) throw new Error(`action:${name}: HTTP ${res.status}`);
   const tags = actionTags(await res.json());
-  const latestVersion = Object.keys(tags).sort(semver.rcompare)[0];
+  const latestVersion = Object.keys(tags)
+    .flatMap((tag) => semver.valid(tag) ?? [])
+    .sort(semver.rcompare)[0];
   if (!latestVersion) return { status: "not_found" };
   return {
     status: "ok",

@@ -1,8 +1,9 @@
+import type { ActionMetadata } from "./actions";
 import type { Ecosystem, PackageManager } from "./ecosystems";
 
 export interface LockedDependency {
   constraint?: boolean;
-  metadata?: { source: string; ref: string; subpath?: string; sha?: string };
+  metadata?: ActionMetadata;
   name: string;
   version: string;
   direct: boolean;

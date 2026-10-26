@@ -1,3 +1,4 @@
+import { mergeActionMetadata } from "@scan/actions";
 import "server-only";
 
 import type { PrismaClient } from "@/generated/prisma/client";
@@ -70,6 +71,8 @@ export function dedupeDependencies(deps: ScanDependency[]): IngestDependency[] {
       byKey.set(key, row);
       continue;
     }
+    if (ecosystem === "GitHub Actions")
+      prev.metadata = mergeActionMetadata(prev.metadata, row.metadata);
     // Every section either row declares is kept; development-only while none is production.
     const merged = mergeDeclarations(prev, row);
     prev.dev = merged.dev;
