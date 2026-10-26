@@ -333,6 +333,7 @@ export interface PreparedStream {
   stack: StackRepo[];
   /** Every repo name of the org, aliased in the request (the profile text is org-wide). */
   orgRepoNames: string[];
+  privateActionNames?: string[];
   input: SynthesisInput;
   inputHash: string;
   /** Length of the JSON the model receives (tracks the input shrink next to the token count). */
@@ -360,13 +361,18 @@ export async function prepareStream(
   const periodStart = previous?.periodEnd ?? new Date(ctx.now.getTime() - WINDOW_DAYS * 86_400_000);
   const periodEnd = ctx.now;
 
-  const [candidates, { repos, stack, traits, runtimes }, alerts, profile, orgRepos] =
+  const [candidates, { repos, stack, traits, runtimes }, alerts, profile, orgRepos, actionDeps] =
     await Promise.all([
       loadCandidates(db, orgId, periodStart, periodEnd),
       loadStack(db, orgId, stream.repoIds),
       loadAlerts(db, orgId, periodStart, periodEnd, stream.repoIds),
       scoped.interestProfile.findFirst({ select: { text: true, weights: true } }),
       scoped.repo.findMany({ select: { name: true } }),
+      scoped.dependency.findMany({
+        where: { package: { ecosystem: "GitHub Actions" } },
+        distinct: ["packageId"],
+        select: { package: { select: { name: true } } },
+      }),
     ]);
   const weights = parseWeights(profile?.weights);
   const t = strings(ctx.language);
@@ -405,6 +411,7 @@ export async function prepareStream(
     alertPackages: new Set(alerts.repoFixes.keys()),
     stack,
     orgRepoNames: orgRepos.map((r) => r.name),
+    privateActionNames: actionDeps.map((d) => d.package.name),
     input,
     inputHash: synthesisInputHash(ctx.model, ctx.promptVersion, input, selected, stream.id),
     inputChars: JSON.stringify(input).length,
@@ -421,8 +428,9 @@ export function synthesisRequest(
   const { input, aliases } = pseudonymiseSynthesisInput(
     prepared.input,
     prepared.orgRepoNames,
-    // Every installed direct dependency is public, not only those sent this week.
-    prepared.stack.flatMap((r) => r.dependencies.map((d) => d.name))
+    // Actions repository names remain private at the model boundary.
+    prepared.stack.flatMap((r) => r.dependencies.map((d) => d.name)),
+    prepared.privateActionNames
   );
   return {
     task: "synthesis",

@@ -141,3 +141,8 @@ Before querying OSV for an Actions reference, Briff checks the repository with a
 unauthenticated GitHub API request. Only an explicit public response permits the OSV
 query. Private, missing, rate-limited or unavailable repositories are excluded and
 checked again on the next scan. GitHub receives its own repository name for this check.
+
+Actions repository names are treated as private at the model boundary, even when
+they are public on GitHub. They are never package-name redaction exemptions. Names
+from every Actions dependency in the organisation are aliased in profile text,
+weights and synthesis package fields, including references outside the current stream.
