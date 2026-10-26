@@ -27,13 +27,30 @@ export function storedActionTags(value: unknown): Record<string, string> | undef
   return parsed.success ? parsed.data : undefined;
 }
 
+export class ActionVisibilityDeferred extends Error {
+  constructor(readonly retryAt: Date) {
+    super("GitHub Actions visibility checks deferred until the rate limit resets");
+  }
+}
+
 /** No credentials: private repositories must never reach the public advisory service. */
 export async function isPublicAction(name: string): Promise<boolean> {
   if (!/^[\w.-]+\/[\w.-]+$/.test(name)) return false;
   const res = await fetchWithRetry(`https://api.github.com/repos/${name}`, {
+    retries: 0,
     headers: { Accept: "application/vnd.github+json" },
     timeoutMs: 15_000,
   });
+  if (
+    res.status === 429 ||
+    (res.status === 403 && res.headers.get("x-ratelimit-remaining") === "0")
+  ) {
+    const reset = Number(res.headers.get("x-ratelimit-reset")) * 1000;
+    const after = Number(res.headers.get("retry-after")) * 1000;
+    throw new ActionVisibilityDeferred(
+      new Date(Math.max(Date.now() + 1000, reset || Date.now() + (after || 3_600_000)))
+    );
+  }
   if (!res.ok) return false;
   const parsed = z.object({ private: z.boolean() }).safeParse(await res.json());
   return parsed.success && parsed.data.private === false;

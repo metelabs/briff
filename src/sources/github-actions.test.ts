@@ -8,7 +8,7 @@ import { ecosystemLabel } from "@scan/ecosystems";
 import { dedupeDependencies } from "@/lib/scan/ingest";
 import { fixCommand } from "@/pipeline/fixes";
 
-import { actionTags, isPublicAction } from "./github-actions";
+import { actionTags, isPublicAction, ActionVisibilityDeferred } from "./github-actions";
 import {
   queryOsvBatchHits,
   actionConstraintAffected,
@@ -24,6 +24,31 @@ const recorded = (name: string): unknown =>
 const advisory = osvVulnSchema.parse(recorded("changed-files"));
 
 describe("GitHub Actions coverage", () => {
+  it("preserves the reset time when visibility hits the unauthenticated limit", async () => {
+    const reset = Math.ceil(Date.now() / 1000) + 3600;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(null, {
+            status: 403,
+            headers: {
+              "x-ratelimit-remaining": "0",
+              "x-ratelimit-reset": String(reset),
+            },
+          })
+      )
+    );
+    try {
+      await expect(isPublicAction("acme/tool")).rejects.toMatchObject({
+        retryAt: new Date(reset * 1000),
+      });
+      await expect(isPublicAction("acme/tool")).rejects.toBeInstanceOf(ActionVisibilityDeferred);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("requires an explicit public repository response without authentication", async () => {
     const fetcher = vi.fn();
     vi.stubGlobal("fetch", fetcher);

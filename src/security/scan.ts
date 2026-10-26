@@ -9,7 +9,7 @@ import { fetchOsvVuln, queryOsvBatchHits, type OsvRange, type OsvVuln } from "@/
 import type { JobContext, JobResult } from "@/worker/types";
 import { ECOSYSTEMS, isEcosystem, type Ecosystem } from "@scan/ecosystems";
 
-import { isPublicAction, storedActionTags } from "@/sources/github-actions";
+import { storedActionTags } from "@/sources/github-actions";
 
 import { aliasGroups, byIdRank, idsOf, mergeAliasGroup } from "./aliases";
 import {
@@ -23,6 +23,8 @@ import {
   type AlertGroup,
   type StackDependency,
 } from "./plan";
+
+import { publicActionsForScan } from "./action-visibility";
 
 const FETCH_CONCURRENCY = 8;
 
@@ -362,18 +364,10 @@ export async function securityScan({ db, log, heartbeat }: JobContext): Promise<
     }
   }
 
-  const publicActions = new Set<string>();
-  const actions = [
-    ...new Set(deps.filter((d) => d.ecosystem === "GitHub Actions").map((d) => d.name)),
-  ];
-  await mapLimit(actions, FETCH_CONCURRENCY, async (name) => {
-    await heartbeat();
-    try {
-      if (await isPublicAction(name)) publicActions.add(name);
-    } catch {
-      log.warn({}, "security: action visibility unavailable; retry on the next scan");
-    }
-  });
+  const publicActions = await publicActionsForScan(
+    { db, log, heartbeat },
+    deps.filter((d) => d.ecosystem === "GitHub Actions").map((d) => d.name)
+  );
   const queries = planQueries(
     deps.filter((d) => d.ecosystem !== "GitHub Actions" || publicActions.has(d.name))
   );

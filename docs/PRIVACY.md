@@ -140,7 +140,10 @@ workflow `run` values are sent to either API.
 Before querying OSV for an Actions reference, Briff checks the repository with an
 unauthenticated GitHub API request. Only an explicit public response permits the OSV
 query. Private, missing, rate-limited or unavailable repositories are excluded and
-checked again on the next scan. GitHub receives its own repository name for this check.
+checked again after a deferred retry or cache expiry. GitHub receives its own repository
+name for this check. Completed visibility checks are cached for 24 hours. Rate limits
+persist a retry deadline and schedule a security scan after the budget resets; unknown
+repositories are checked first so large stacks make progress.
 
 Actions repository names are treated as private at the model boundary, even when
 they are public on GitHub. They are never package-name redaction exemptions. Names
