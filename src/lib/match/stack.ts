@@ -23,8 +23,16 @@ export async function loadOrgStacks(db: PrismaClient, orgIds?: string[]): Promis
   for (const org of orgs) {
     const scoped = withOrg(db, org.id);
     const runtimeRows = await scoped.repoRuntime.findMany({
-      select: { repoId: true, name: true, version: true, normalized: true },
+      select: { repoId: true, name: true, version: true, normalized: true, image: true },
     });
+    const githubRepos = await scoped.repo.findMany({
+      where: { source: "github" },
+      select: { id: true },
+    });
+    const scopedRepos = new Map<string, Set<string>>([
+      ["github", new Set(githubRepos.map((r) => r.id))],
+      ["docker", new Set(runtimeRows.filter((r) => r.image !== null).map((r) => r.repoId))],
+    ]);
     const deps = await scoped.dependency.findMany({
       select: {
         repoId: true,
@@ -88,6 +96,7 @@ export async function loadOrgStacks(db: PrismaClient, orgIds?: string[]): Promis
     stacks.push({
       orgId: org.id,
       packages,
+      scopedRepos,
       packagesByFeed,
       services,
       runtimes: runtimesOf(runtimeRows),

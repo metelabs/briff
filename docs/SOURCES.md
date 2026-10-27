@@ -333,3 +333,44 @@ RubyGems metadata uses the fixed rubygems.org JSON API: `gems/<gem>.json` suppli
 repository links and `versions/<gem>/latest.json` supplies the latest non-yanked release.
 There is no package deprecation field. RubyGems advisories use OSV ecosystem `RubyGems`;
 GitHub source links attach the existing GitHub releases feed.
+
+## Ecosystem news feeds
+
+All URLs below returned HTTP 200 with RSS or Atom entries in a real development
+fetch on **2026-10-27**. Existing PHP, Ruby and Rust runtime feeds are reused.
+No HTML is scraped for articles. uv's official release feed supplies its changelog.
+
+| Ecosystem/runtime      | Official feed    | URL                                              |
+| ---------------------- | ---------------- | ------------------------------------------------ |
+| PHP / Packagist        | PHP news         | https://www.php.net/feed.atom                    |
+| PHP / Packagist        | Laravel          | https://laravel.com/feed                         |
+| PHP / Packagist        | Symfony          | https://feeds.feedburner.com/symfony/blog        |
+| Python / PyPI          | Python Insider   | https://blog.python.org/feeds/posts/default      |
+| Python / PyPI          | Django weblog    | https://www.djangoproject.com/rss/weblog/        |
+| Python / PyPI          | FastAPI releases | https://github.com/fastapi/fastapi/releases.atom |
+| Python / PyPI          | uv changelog     | https://github.com/astral-sh/uv/releases.atom    |
+| Ruby / RubyGems        | Ruby news        | https://www.ruby-lang.org/en/feeds/news.rss      |
+| Ruby / RubyGems        | Rails blog       | https://rubyonrails.org/feed.xml                 |
+| Go                     | Go blog          | https://go.dev/blog/feed.atom                    |
+| Rust / crates.io       | Rust blog        | https://blog.rust-lang.org/feed.xml              |
+| .NET / NuGet           | .NET blog        | https://devblogs.microsoft.com/dotnet/feed/      |
+| Java / Maven           | Spring blog      | https://spring.io/blog.atom                      |
+| Java / Maven           | Inside Java      | https://inside.java/feed.xml                     |
+| Dart / Pub             | Dart news        | https://dart.dev/blog/feed.xml                   |
+| Dart / Pub             | Flutter blog     | https://medium.com/feed/flutter                  |
+| Elixir / Hex           | Elixir blog      | https://elixir-lang.org/atom.xml                 |
+| Docker image evidence  | Docker blog      | https://www.docker.com/blog/feed/                |
+| GitHub repos / Actions | GitHub changelog | https://github.blog/changelog/feed/              |
+
+Ecosystem news feeds carry `scope:` keywords in the shared Source catalog. Matching
+returns only repo ids with one of the listed ecosystems or runtimes. Docker needs
+an image row, including a mapped language image; GitHub needs a GitHub-source repo
+or an Actions dependency. Package mentions cannot bypass a scoped feed's gate.
+The existing stream repo intersection then drops a feed reached only through
+another stream's repos. PHP, Ruby and Rust retain their runtime source identity
+for the security pipeline while also matching their package ecosystems. Other
+existing platform feeds keep their documented trait/service matching.
+
+Feed collection is shared globally, but relevance is evaluated per org and repo.
+Dart/Flutter and Elixir news require matching scanner evidence (Pub/Hex package
+rows or runtime rows); a feed does not enable a new parser by itself.
