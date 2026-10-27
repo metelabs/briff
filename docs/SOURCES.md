@@ -334,6 +334,29 @@ repository links and `versions/<gem>/latest.json` supplies the latest non-yanked
 There is no package deprecation field. RubyGems advisories use OSV ecosystem `RubyGems`;
 GitHub source links attach the existing GitHub releases feed.
 
+## Runtime lifecycle catalog
+
+The daily `refresh-runtime-lifecycle` job (02:30 UTC) fetches the public
+[endoflife.date API](https://endoflife.date/docs/api). It stores product, cycle,
+EOL, latest, LTS and support fields in `RuntimeLifecycle`; dates and boolean
+support values retain their distinct meanings. A failed product refresh retains
+its previous data. The bundled table remains the fallback for each product until
+that product's first successful fetch. Requests and jobs load the persisted catalog
+before making lifecycle decisions. Rust has no lifecycle entry.
+
+Products: nodejs, php, python, go, ruby, eclipse-temurin, dotnet, deno, bun,
+postgresql, mysql, mariadb, redis, nginx, debian, ubuntu and alpine-linux.
+Java uses Eclipse Temurin's public support policy because `/api/java.json` does
+not exist; it does not infer a Java vendor or promise another vendor's support.
+Paid extended support is excluded; Debian's EOL field already includes public LTS.
+Provider payloads and product names were checked on 2026-10-27.
+
+The Stack and Repos EOL badges show the known date. A concrete runtime reaching
+EOL within 90 calendar days adds a deterministic fact to the bulletin summary,
+including its repo, release line and date. Constraints are never judged EOL.
+Boolean EOL values never acquire an invented date. Existing same-line fix and
+lowest-supported-line migration rules remain in force.
+
 ## Base image advisories
 
 Dockerfile and compose images with a known distro add a distro runtime row. Explicit

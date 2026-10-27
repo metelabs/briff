@@ -773,6 +773,18 @@ model Run {
   @@map("run")
 }
 
+model RuntimeLifecycle {
+  product String
+  cycle String
+  eol Json
+  latest String?
+  lts Json?
+  support Json?
+  fetchedAt DateTime @default(now())
+
+  @@id([product, cycle])
+  @@map("runtime_lifecycle")
+}
 
 // Candidate distro advisories: the image tag does not expose installed OS packages.
 model BaseImageAlert {

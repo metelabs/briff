@@ -102,7 +102,11 @@ export function RepoList({ rows }: { rows: RepoListRow[] }) {
                       {c.unresolved && " ?"}
                       <span className={c.eol ? "opacity-85" : "text-fg-muted"}> · {c.sources}</span>
                     </span>
-                    {c.eol && <b className="ml-0.5 font-sans text-[11px] font-semibold">EOL</b>}
+                    {c.eol && (
+                      <b className="ml-0.5 font-sans text-[11px] font-semibold">
+                        {c.eolDate ? `EOL on ${c.eolDate}` : "EOL"}
+                      </b>
+                    )}
                   </span>
                 </Tooltip>
               ))}
