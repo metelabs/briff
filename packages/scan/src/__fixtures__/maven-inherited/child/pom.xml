@@ -1,0 +1,1 @@
+<project><parent><groupId>org.acme</groupId><artifactId>parent</artifactId><version>1.0</version></parent><artifactId>child</artifactId><properties><kit.version>1.2.3</kit.version></properties><dependencies><dependency><groupId>org.acme</groupId><artifactId>kit</artifactId><scope>test</scope></dependency></dependencies></project>

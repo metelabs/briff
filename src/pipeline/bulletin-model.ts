@@ -1,3 +1,4 @@
+import type { BaseImageGroup } from "@/security/base-image-view";
 import type { Language } from "@/lib/i18n";
 import type { Ecosystem } from "@scan/ecosystems";
 
@@ -89,6 +90,7 @@ export interface BulletinView {
   alerts: BulletinViewAlert[];
   /** Advisories of the period from a repo's first scan; their own, secondary group. */
   backlogAlerts: BulletinViewAlert[];
+  baseImageAlerts?: BaseImageGroup[];
 }
 
 /** Rows stored before synthesis-v2 have no section; security and deadlines read as "act". */

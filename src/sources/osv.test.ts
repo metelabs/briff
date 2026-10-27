@@ -266,3 +266,10 @@ it("queries crates.io by its OSV ecosystem name", () => {
     version: "1.24.1",
   });
 });
+
+it("queries Maven coordinates with the OSV ecosystem name", () => {
+  expect(osvQueryOf({ name: "org.acme:kit", version: "1.2.3", ecosystem: "Maven" })).toEqual({
+    package: { name: "org.acme:kit", ecosystem: "Maven" },
+    version: "1.2.3",
+  });
+});

@@ -41,12 +41,34 @@ async function readGroup(
   root: string,
   warn: (message: string) => void,
   read?: ReadText,
-  manifestPaths: readonly string[] = group.runtimeFiles.map((f) => f.path)
+  manifestPaths: readonly string[] = [...group.runtimeFiles, ...group.lockfiles].map((f) => f.path)
 ): Promise<ScanRepoPayload | null> {
   const lists: LockedDependency[][] = [];
+  let javaRead = false;
   for (const lockfile of group.lockfiles) {
+    if (lockfile.kind === "maven") {
+      if (javaRead) continue;
+      javaRead = true;
+    }
     try {
-      lists.push(await readLockfile(lockfile, read, manifestPaths));
+      lists.push(
+        await readLockfile(
+          lockfile,
+          read,
+          lockfile.kind === "maven"
+            ? [
+                ...group.lockfiles.map((f) => f.path),
+                ...manifestPaths.filter(
+                  (f) =>
+                    path.basename(f) === "pom.xml" &&
+                    !path.relative(path.dirname(f), group.absPath).split(path.sep).includes("..")
+                ),
+              ]
+            : manifestPaths,
+          group.absPath,
+          warn
+        )
+      );
     } catch (err) {
       warn(`skip ${path.relative(root, lockfile.path)}: ${(err as Error).message}`);
     }
@@ -108,7 +130,9 @@ export async function collectRepos(
     }
   }
   const payloads: ScanRepoPayload[] = [];
-  const manifestPaths = discovered.flatMap((r) => r.runtimeFiles.map((f) => f.path));
+  const manifestPaths = discovered.flatMap((r) =>
+    [...r.runtimeFiles, ...r.lockfiles].map((f) => f.path)
+  );
   for (const group of groups) {
     const payload = await readGroup(group, root, options.warn, undefined, manifestPaths);
     if (payload) payloads.push(payload);

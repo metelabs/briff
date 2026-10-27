@@ -49,7 +49,9 @@ function Cell({ cell, column }: { cell: DriftCell; column: DriftColumn }) {
       >
         {cell.version}
         {cell.status === "eol" && (
-          <small className="font-sans text-[11px] font-semibold">EOL</small>
+          <small className="font-sans text-[11px] font-semibold">
+            {cell.eolDate ? `EOL on ${cell.eolDate}` : "EOL"}
+          </small>
         )}
         {cell.status === "major" && (
           <small className="font-sans text-[11px] font-semibold">−{cell.behind}</small>

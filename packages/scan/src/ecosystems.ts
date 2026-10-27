@@ -8,6 +8,7 @@ export const ECOSYSTEMS = [
   "Go",
   "RubyGems",
   "crates.io",
+  "Maven",
   "GitHub Actions",
 ] as const;
 
@@ -17,7 +18,7 @@ export type Ecosystem = (typeof ECOSYSTEMS)[number];
  * The tool a Python lockfile belongs to, so a fix command speaks it (`uv lock`, `poetry add`,
  * `pipenv install`, `pip install` for a requirements file). Other ecosystems have one tool.
  */
-export const PACKAGE_MANAGERS = ["pip", "poetry", "uv", "pipenv"] as const;
+export const PACKAGE_MANAGERS = ["pip", "poetry", "uv", "pipenv", "maven", "gradle"] as const;
 
 export type PackageManager = (typeof PACKAGE_MANAGERS)[number];
 
@@ -114,6 +115,7 @@ export function normalizePackageName(ecosystem: Ecosystem, name: string): string
       return trimmed.toLowerCase();
     case "PyPI":
       return trimmed.toLowerCase().replace(/[-_.]+/g, "-");
+    case "Maven":
     case "crates.io":
     case "RubyGems":
     case "npm":
@@ -168,6 +170,7 @@ export function normalizeVersion(ecosystem: Ecosystem, version: string): string 
     }
     case "Go":
       return raw.replace(/^v(?=\d)/, "");
+    case "Maven":
     case "crates.io":
     case "RubyGems":
     case "npm":

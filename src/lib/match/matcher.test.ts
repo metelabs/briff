@@ -95,7 +95,7 @@ describe("runtime matching", () => {
 
   it("merges repos and versions per runtime and leaves unmapped images out", () => {
     const runtimes = runtimeStack().runtimes;
-    expect([...runtimes.keys()].sort()).toEqual(["node", "php"]);
+    expect([...runtimes.keys()].sort()).toEqual(["debian", "node", "php"]);
     expect(runtimes.get("node")).toEqual({
       name: "node",
       versions: new Set(["22"]),

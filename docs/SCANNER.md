@@ -489,3 +489,24 @@ Registry refresh reads RubyGems.org `gems/<gem>.json` for repository/homepage li
 RubyGems exposes no package deprecation status; Briff leaves it unset. Non-semver Ruby
 versions are retained as written; a version the fix rules cannot compare gets advisory
 reading advice rather than a guessed upgrade.
+
+### Maven and Gradle
+
+OSV uses `Maven`, with package names `group:artifact`. POM dependencies with literal
+versions or locally resolved properties are direct; local parents supply properties and
+dependency management. Managed entries alone are not installed packages. Module POMs are
+read within the normal depth and directory limits. External parents and imported BOMs are
+not downloaded by the scanner; unresolved versions are skipped.
+
+Gradle uses `gradle.lockfile` pins when present, including transitive packages. Without a
+lock it reads literal coordinates in `build.gradle(.kts)` and `gradle/libs.versions.toml`.
+It never executes Maven, Gradle, plugins or build scripts. Dynamic versions and ranges are
+skipped. Without a lock, declared versions are evidence rather than a resolved graph.
+Non-semver Maven versions are retained for OSV but cannot produce automatic fix targets.
+
+Fix guidance names the declaration file and a safe version on the installed release line;
+edit the version or its controlling property/catalog entry and resolve dependencies. A
+transitive dependency uses `mvn dependency:tree`, or
+`./gradlew dependencies --configuration runtimeClasspath` for Gradle. Registry refresh uses
+Maven Central search for latestVersion and the published POM's SCM link for GitHub releases.
+Central provides no package-wide deprecation or yank field, so those remain unset.

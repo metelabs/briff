@@ -1,0 +1,9 @@
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>org.acme</groupId><artifactId>service</artifactId><version>1.0.0</version></parent>
+  <artifactId>overrides</artifactId>
+  <properties><log4j.version>2.14.0</log4j.version></properties>
+  <dependencies>
+    <dependency><groupId>org.apache.logging.log4j</groupId><artifactId>log4j-core</artifactId></dependency>
+  </dependencies>
+</project>

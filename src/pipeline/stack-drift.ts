@@ -1,6 +1,6 @@
 import semver from "semver";
 
-import { lineLifecycle } from "@/lib/runtime-eol";
+import { endOfLifeDate, lineLifecycle } from "@/lib/runtime-eol";
 import { runtimeVersionLabel } from "@/lib/runtime-range";
 import { releaseLineOf, runtimeName } from "@/lib/runtime-security";
 import { stackPackageKey } from "@/lib/match/matcher";
@@ -35,6 +35,7 @@ export interface DriftCell {
   status: DriftStatus;
   /** Release lines behind the latest (major behind only). */
   behind: number;
+  eolDate?: string;
   /** Where the version comes from (runtimes): `Dockerfile`, `.nvmrc +1`. */
   source: string | null;
 }
@@ -97,6 +98,15 @@ function runtimeCell(rows: readonly DriftRuntimeRow[], asOf: Date): DriftCell {
   return {
     version: pick.shown,
     status: pick.eol ? "eol" : "plain",
+    ...(pick.eol
+      ? {
+          eolDate:
+            endOfLifeDate(
+              pick.row.name,
+              releaseLineOf(pick.row.name, pick.row.normalized ?? pick.row.version) ?? ""
+            ) ?? undefined,
+        }
+      : {}),
     behind: 0,
     source: files.length > 1 ? `${pick.row.source} +${files.length - 1}` : pick.row.source,
   };

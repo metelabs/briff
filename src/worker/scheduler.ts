@@ -13,8 +13,10 @@ export interface ScheduleEntry {
 
 // All times UTC. 04:00 UTC is 07:00 in Türkiye.
 export const SCHEDULE: ScheduleEntry[] = [
+  { type: "refresh-runtime-lifecycle", cron: "30 2 * * *" },
   { type: "refresh-packages", cron: "0 3 * * *" },
   { type: "security-scan", cron: "0 4 * * *" },
+  { type: "base-image-scan", cron: "15 4 * * *" },
   { type: "weekly-bulletin", cron: "0 4 * * 1" },
   // Hourly: security sources every run, the others when their last fetch is ~6h old
   // (`due`, see isSourceDue in src/sources/collect.ts).

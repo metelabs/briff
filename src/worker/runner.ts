@@ -1,3 +1,4 @@
+import { loadRuntimeLifecycle } from "@/lib/runtime-eol-catalog";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import {
   claimNextJob,
@@ -30,6 +31,7 @@ export async function runJob(
 
   try {
     if (!isJobType(job.type)) throw new Error(`unknown job type: ${job.type}`);
+    await loadRuntimeLifecycle(db);
     const result = await handlers[job.type]({
       db,
       log: jobLog,
