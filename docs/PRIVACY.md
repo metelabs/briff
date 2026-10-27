@@ -150,6 +150,11 @@ they are public on GitHub. They are never package-name redaction exemptions. Nam
 from every Actions dependency in the organisation are aliased in profile text,
 weights and synthesis package fields, including references outside the current stream.
 
+The daily runtime lifecycle refresh sends only fixed public product names to
+`endoflife.date` (`/api/<product>.json`). It sends no repository names, installed
+versions, organisation data or image references. The shared lifecycle catalog
+contains public release support data only.
+
 ## Base image advisories
 
 Dockerfile and compose images with a known distro add a distro runtime row. Explicit

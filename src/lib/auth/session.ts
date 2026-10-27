@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { getAuth } from "@/lib/auth/auth";
+import { loadRuntimeLifecycle } from "@/lib/runtime-eol-catalog";
 import { getDb } from "@/lib/db/client";
 
 export interface OrgContext {
@@ -25,6 +26,7 @@ export async function getOrgContext(): Promise<OrgContext | null> {
     orderBy: { createdAt: "asc" },
   });
   if (!membership) return null;
+  await loadRuntimeLifecycle(getDb());
   return {
     userId: session.user.id,
     email: session.user.email,

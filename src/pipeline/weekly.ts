@@ -1,3 +1,4 @@
+import { upcomingEol } from "./runtime-eol-facts";
 import { storedActionTags } from "@/sources/github-actions";
 import { createHash } from "node:crypto";
 import { loadBaseImageGroups } from "@/security/base-image-view";
@@ -330,6 +331,7 @@ export interface PreparedStream {
   periodEnd: Date;
   selected: SelectedCandidate[];
   minorCount: number;
+  eolFacts?: string[];
   alertPackages: ReadonlySet<string>;
   /** The stream's repos with their direct dependencies (installed versions for itemUpgrades). */
   stack: StackRepo[];
@@ -389,6 +391,7 @@ export async function prepareStream(
     runtimes,
   });
   const minorCount = countMinor(folded, repos, traits);
+  const { facts: eolFacts } = upcomingEol([...runtimes.values()].flat(), ctx.now);
   // A first-scan backlog alone still gets a bulletin: its page is where the backlog is listed.
   const baseImages = await loadBaseImageGroups(
     db,
@@ -400,6 +403,7 @@ export async function prepareStream(
     selected.length === 0 &&
     alerts.summaries.length === 0 &&
     alerts.backlogAdvisories === 0 &&
+    eolFacts.length === 0 &&
     baseImages.length === 0
   )
     return null;
@@ -428,6 +432,7 @@ export async function prepareStream(
     periodEnd,
     selected,
     minorCount,
+    eolFacts,
     alertPackages: new Set(alerts.repoFixes.keys()),
     stack,
     orgRepoNames: orgRepos.map((r) => r.name),
@@ -520,7 +525,7 @@ export async function storeBulletin(
     model: res.model,
     promptVersion: ctx.promptVersion,
     subject,
-    summary: assembled.summary,
+    summary: [assembled.summary, ...(prepared.eolFacts ?? [])].filter(Boolean).join("\n\n"),
     minorCount: prepared.minorCount,
     inputHash: prepared.inputHash,
     emailStatus: preview ? ("skipped" as const) : ("pending" as const),
