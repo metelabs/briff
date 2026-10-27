@@ -73,6 +73,7 @@ export interface OrgStack {
   /** Runtime id -> repos that declare it (version files, manifests, images). */
   runtimes: Map<string, StackRuntime>;
   traits: Set<string>;
+  scopedRepos?: Map<string, Set<string>>;
 }
 
 export interface MatchSource {
@@ -189,6 +190,36 @@ export function matchItem(
   source: MatchSource,
   stack: OrgStack
 ): MatchResult | null {
+  const scopes = source.traits.filter((t) => t.startsWith("scope:")).map((t) => t.slice(6));
+  if (scopes.length) {
+    const ids = new Set<string>();
+    for (const scope of scopes) {
+      if (scope.startsWith("ecosystem:")) {
+        for (const pkg of stack.packages.values()) {
+          if ((pkg.ecosystem ?? "npm") === scope.slice(10))
+            for (const id of pkg.repoIds) ids.add(id);
+        }
+      } else if (scope.startsWith("runtime:")) {
+        for (const id of stack.runtimes.get(scope.slice(8))?.repoIds ?? []) ids.add(id);
+      } else {
+        for (const id of stack.scopedRepos?.get(scope) ?? []) ids.add(id);
+      }
+    }
+    const release = feedRelease(source.url, stack);
+    if (release) {
+      const repoIds = release.repoIds.filter((id) => ids.has(id));
+      return repoIds.length ? { ...release, repoIds } : null;
+    }
+    return ids.size
+      ? {
+          score: SCORES.trait,
+          reason: source.runtime ? `runtime:${source.runtime}` : `scope:${scopes.join("|")}`,
+          packageId: null,
+          serviceKey: source.serviceKey,
+          repoIds: [...ids].sort(),
+        }
+      : null;
+  }
   let result: MatchResult | null = null;
 
   result = best(result, feedRelease(source.url, stack));
