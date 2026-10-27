@@ -245,6 +245,8 @@ model Dependency {
   project          String?
   // `installedVersion` is a requirement as written (`>=2.0`), not an installed version: an
   // unpinned requirements.txt line. Kept for matching; never sent to OSV, never compared.
+  constraint       Boolean  @default(false)
+  metadata         Json?
   unresolved       Boolean  @default(false)
   createdAt        DateTime @default(now())
 
@@ -289,24 +291,28 @@ model RepoRuntime {
 }
 
 model Package {
-  id              String       @id @default(cuid())
-  ecosystem       String
-  name            String
-  latestVersion   String?
-  deprecated      String?
-  repoUrl         String?
-  releaseFeedUrl  String?
-  eolDate         DateTime?
-  eolInfo         Json?
-  serviceId       String?
-  service         Service?     @relation(fields: [serviceId], references: [id], onDelete: SetNull)
-  lastRefreshedAt DateTime?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  dependencies    Dependency[]
-  sources         Source[]
-  advisories      Advisory[]
-  itemMatches     ItemMatch[]
+  id                        String       @id @default(cuid())
+  ecosystem                 String
+  name                      String
+  actionTags                Json?
+  actionPublic              Boolean?
+  actionVisibilityCheckedAt DateTime?
+  actionVisibilityRetryAt   DateTime?
+  latestVersion             String?
+  deprecated                String?
+  repoUrl                   String?
+  releaseFeedUrl            String?
+  eolDate                   DateTime?
+  eolInfo                   Json?
+  serviceId                 String?
+  service                   Service?     @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  lastRefreshedAt           DateTime?
+  createdAt                 DateTime     @default(now())
+  updatedAt                 DateTime     @updatedAt
+  dependencies              Dependency[]
+  sources                   Source[]
+  advisories                Advisory[]
+  itemMatches               ItemMatch[]
 
   @@unique([ecosystem, name])
   @@map("package")

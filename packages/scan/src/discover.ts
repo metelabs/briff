@@ -1,5 +1,7 @@
-import { readdir, readFile, stat } from "node:fs/promises";
+import { lstat, readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
+
+import { mergeActionMetadata, parseActions } from "./actions";
 
 import { composerDeclared, parseComposerLock } from "./composer-lock";
 import { parseMavenFiles } from "./maven";
@@ -32,6 +34,7 @@ export type LockfileKind =
   | "pipenv"
   | "requirements"
   | "gomod"
+  | "actions"
   | "bundler"
   | "cargo"
   | "maven";
@@ -153,6 +156,7 @@ export async function discoverRepos(
       return;
     }
 
+    // Workflows are the sole dot-directory exception; never walk arbitrary .github files.
     const repoFor = (): DiscoveredRepo => {
       const owner = currentRepo ?? dir;
       const name = path.relative(root, owner) || path.basename(owner);
@@ -161,6 +165,25 @@ export async function discoverRepos(
       return repo;
     };
 
+    if (currentRepo === dir || dir === root) {
+      const workflowDir = path.join(dir, ".github/workflows");
+      try {
+        const githubStat = await lstat(path.join(dir, ".github"));
+        const workflowStat = await lstat(workflowDir);
+        if (githubStat.isDirectory() && workflowStat.isDirectory()) {
+          const workflows = await readdir(workflowDir, { withFileTypes: true });
+          for (const file of workflows) {
+            if (file.isFile() && /\.ya?ml$/.test(file.name))
+              repoFor().lockfiles.push({
+                kind: "actions",
+                path: path.join(workflowDir, file.name),
+              });
+          }
+        }
+      } catch {
+        // A repository need not have workflows.
+      }
+    }
     for (const entry of entries) {
       if (!entry.isFile()) continue;
       const lockKind = lockfileKind(entry.name);
@@ -223,6 +246,21 @@ export async function readLockfile(
   const content = await read(lockfile.path);
   const dir = path.dirname(lockfile.path);
   switch (lockfile.kind) {
+    case "actions":
+      return parseActions(
+        content,
+        path
+          .relative(path.dirname(path.dirname(dir)), lockfile.path)
+          .split(path.sep)
+          .join("/")
+      ).map((row) => ({
+        name: row.name,
+        version: row.version,
+        direct: true,
+        ecosystem: "GitHub Actions",
+        ...(row.constraint ? { constraint: true } : {}),
+        metadata: row.metadata,
+      }));
     case "composer":
       return parseComposerLock(
         content,
@@ -297,6 +335,8 @@ export function mergeDependencies(lists: LockedDependency[][]): LockedDependency
         merged.set(id, { ...dep });
         continue;
       }
+      if (dep.ecosystem === "GitHub Actions")
+        prev.metadata = mergeActionMetadata(prev.metadata, dep.metadata);
       // Development-only while no file declares it for production.
       // A Python lockfile's declaration (group, extra, dev) wins over a requirements export of
       // the same pin, which knows none of them.

@@ -2,6 +2,6 @@
 
 exports[`landing: the files Briff reads > matches the scanner's lists 1`] = `
 "Files: package-lock.json, npm-shrinkwrap.json, pnpm-lock.yaml, yarn.lock, composer.lock, poetry.lock, uv.lock, Pipfile.lock, requirements.txt, go.mod, Gemfile.lock, Cargo.lock, pom.xml, build.gradle, build.gradle.kts, gradle.lockfile, libs.versions.toml, Gemfile, .nvmrc, .node-version, package.json, .tool-versions, mise.toml, .mise.toml, composer.json, .python-version, pyproject.toml, runtime.txt, Pipfile, .ruby-version, .sdkmanrc, global.json, rust-toolchain, rust-toolchain.toml, Cargo.toml, Dockerfile, Containerfile
-Patterns: requirements-<x>.txt, requirements_<x>.txt, *.csproj, Dockerfile.<x>, Containerfile.<x>, *.Dockerfile, *.dockerfile, compose.yml, compose.yaml, docker-compose.yml, docker-compose.yaml, compose.<x>.yml, docker-compose.<x>.yml
-At most 6 directories deep; never inside node_modules, dist, build, out, coverage, vendor, target, Pods, DerivedData, venv, site-packages, __pypackages__, __fixtures__, fixtures, testdata, __mocks__ or a directory starting with a dot."
+Patterns: requirements-<x>.txt, requirements_<x>.txt, *.csproj, Dockerfile.<x>, Containerfile.<x>, *.Dockerfile, *.dockerfile, compose.yml, compose.yaml, docker-compose.yml, docker-compose.yaml, compose.<x>.yml, docker-compose.<x>.yml, .github/workflows/*.yml|yaml (uses only)
+At most 6 directories deep; never inside node_modules, dist, build, out, coverage, vendor, target, Pods, DerivedData, venv, site-packages, __pypackages__, __fixtures__, fixtures, testdata, __mocks__ or a directory starting with a dot (except .github/workflows uses lines)."
 `;

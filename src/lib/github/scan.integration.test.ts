@@ -1,6 +1,6 @@
 import { generateKeyPairSync } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -20,7 +20,7 @@ import { linkInstallation, removeInstallationRepos, findInstallation } from "./i
 import { scanInstallation, scannedTreeEntries } from "./scan";
 
 // GitHub responses recorded from the public api.github.com for vercel/ms (repo, branch,
-// recursive tree, the two blobs the scanner reads); the token and the installation's repo
+// recursive tree, the scanned blobs); the token and the installation's repo
 // list are shaped like the API's (there is no app to record them from).
 const FIXTURES = path.join(__dirname, "__fixtures__", "vercel-ms");
 const json = (name: string) => JSON.parse(readFileSync(path.join(FIXTURES, name), "utf8"));
@@ -79,9 +79,10 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
     for (const name of ["cli", "app"]) {
       orgs.push((await db.org.create({ data: { name: `${name}-${suffix}` } })).id);
     }
-    // The CLI's view: a checkout with the same two files.
+    // The CLI's view: a checkout with the same scanned files.
     dir = await mkdtemp(path.join(tmpdir(), "briff-ms-"));
     for (const entry of scannedTreeEntries(tree)) {
+      await mkdir(path.dirname(path.join(dir, entry.path)), { recursive: true });
       await writeFile(path.join(dir, entry.path), blobs.get(entry.sha) ?? "");
     }
   });
@@ -150,9 +151,9 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
       log,
       heartbeat: async () => {},
     });
-    expect(result).toMatchObject({ counts: { repos: 1, ingested: 1, filesFetched: 2 } });
-    // Paths only from the tree; contents only for package.json and pnpm-lock.yaml.
-    expect(requests.filter((r) => r.includes("/git/blobs/"))).toHaveLength(2);
+    expect(result).toMatchObject({ counts: { repos: 1, ingested: 1, filesFetched: 5 } });
+    // Paths only from the tree; contents only for manifests, lockfiles and workflow uses.
+    expect(requests.filter((r) => r.includes("/git/blobs/"))).toHaveLength(5);
     expect(requests.some((r) => r.includes("tarball") || r.includes("zipball"))).toBe(false);
 
     const cli = await record(cliOrg);
@@ -245,7 +246,9 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
     const bare = {
       ...tree,
       tree: tree.tree.filter(
-        (e: { path: string }) => !["package.json", "pnpm-lock.yaml"].includes(e.path)
+        (e: { path: string }) =>
+          !["package.json", "pnpm-lock.yaml"].includes(e.path) &&
+          !e.path.startsWith(".github/workflows/")
       ),
     };
     const res = await run(

@@ -304,6 +304,27 @@ every repo that is in any stream (`Repo.included`).
   recorded on `Source.lastError` and retried each run.
 - Package EOL data (`Package.eolDate/eolInfo`) is not populated yet (Phase 2 stack page).
 
+## GitHub Actions
+
+Briff reads `.github/workflows/*.yml` and `*.yaml` for literal `uses:` references only.
+It extracts action and reusable-workflow package names (`owner/repo`), refs and subpaths;
+local actions, `docker://` references and expressions are ignored. Workflow contents are
+not stored or uploaded by the CLI. The GitHub App fetches these workflow blobs to run the
+same parser and discards their contents; it does not execute workflow steps.
+
+Actions appear under **Actions** with OSV ecosystem `GitHub Actions`. Full tags are exact
+versions. A 40-character SHA with a `# vX.Y.Z` annotation uses that version and retains the
+SHA as evidence; unannotated SHAs are queried as commits. Floating majors and minors are
+constraints, matched only when an advisory covers their entire release interval. Branch
+refs have no known release line and receive no versioned fix recommendation.
+
+Public GitHub tags are fetched during package refresh (up to the first 100 tags), alongside
+the existing GitHub releases feed. On-line fixes use the tag's original spelling and SHA (`pin owner/repo to vX.Y.Z (sha …)`).
+A missing tag mapping directs the reader to the advisory; a fix outside the
+installed release line never becomes a command. Public action names and refs are sent to
+OSV; action repository names are sent to the public GitHub tags API. No credentials or
+workflow `run` values are sent to either API.
+
 Cargo metadata uses `crates.io/api/v1/crates/<crate>` with an identifying User-Agent.
 `max_stable_version` supplies the latest stable version, yanked releases are excluded,
 and `repository` attaches GitHub releases. OSV uses ecosystem `crates.io`.

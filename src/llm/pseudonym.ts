@@ -56,11 +56,11 @@ function alternation(tokens: Iterable<string>): RegExp | null {
 export function repoAliases(
   names: Iterable<string>,
   keep: Iterable<string> = [],
-  options: { avoidIn?: string } = {}
+  options: { avoidIn?: string; privateNames?: readonly string[] } = {}
 ): RepoAliases {
-  const sorted = [...new Set([...names].filter((n) => n.length > 0))].sort((a, b) =>
-    a < b ? -1 : a > b ? 1 : 0
-  );
+  const sorted = [
+    ...new Set([...names, ...(options.privateNames ?? [])].filter((n) => n.length > 0)),
+  ].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   // A `repo-N` the request already contains (a URL, a package) is never handed out, so
   // restoring only touches aliases this request introduced.
   const taken = new Set(
@@ -75,7 +75,10 @@ export function repoAliases(
     byAlias.set(next, name);
     next++;
   }
-  const kept = new Set([...keep].map((k) => k.toLowerCase()).filter((k) => k.length > 0));
+  const privateNames = new Set((options.privateNames ?? []).map((name) => name.toLowerCase()));
+  const kept = new Set(
+    [...keep].map((k) => k.toLowerCase()).filter((k) => k.length > 0 && !privateNames.has(k))
+  );
   // Alias -> spellings it replaced in this request (lower-cased -> first original).
   const used = new Map<string, Map<string, string>>();
   const record = (alias: string, surface: string) => {

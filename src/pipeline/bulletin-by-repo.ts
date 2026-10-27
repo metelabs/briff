@@ -60,7 +60,7 @@ function repoList(text: string): string[] {
 }
 
 /** `npm i x@1 (a, b)` -> command + repos; null when the clause names no repo list. */
-const COMMAND_WITH_REPOS = /^(.*\S)\s+\(([^()]+)\)$/;
+const COMMAND_WITH_REPOS = /^(.*\S)\s+\((?!sha [a-f\d]{40}\)$)([^()]+)\)$/i;
 /** `garden.example: rebuild to pick up PHP 8.3.36; ...` (runtime-fixes.ts repo clauses). */
 const REPO_CLAUSE = /^([^\s:]+):\s+(.+)$/;
 const TRANSITIVE_CLAUSE = /^transitive:\s+(.+)$/;
@@ -174,6 +174,7 @@ export function upgradeActions(upgrades: readonly RepoUpgrade[]): RepoAction[] {
         group: u.group,
         requirement: u.requirement,
         project: u.project,
+        actionTags: u.actionTags,
       });
     }
     if (text && !out.some((a) => a.text === text)) {

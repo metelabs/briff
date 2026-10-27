@@ -22,6 +22,7 @@ export const npmLatestSchema = z
   .loose();
 
 export interface NpmPackageInfo {
+  actionTags?: Record<string, string>;
   latestVersion: string;
   deprecated: string | null;
   repositoryUrl: string | null;

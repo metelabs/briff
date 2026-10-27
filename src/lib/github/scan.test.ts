@@ -17,7 +17,13 @@ const tree = JSON.parse(
 
 describe("scannedTreeEntries", () => {
   it("keeps only the files the scanner reads from a recorded tree", () => {
-    expect(scannedTreeEntries(tree).map((e) => e.path)).toEqual(["package.json", "pnpm-lock.yaml"]);
+    expect(scannedTreeEntries(tree).map((e) => e.path)).toEqual([
+      ".github/workflows/quality.yml",
+      ".github/workflows/release.yml",
+      ".github/workflows/test.yml",
+      "package.json",
+      "pnpm-lock.yaml",
+    ]);
   });
 
   it("drops symlinks, submodules, skipped directories and oversized blobs", () => {

@@ -149,7 +149,9 @@ function packageColumns(
     kind: "package" as const,
     label: p.name,
     latest: p.latest,
-    ...(mixed ? { ecosystem: ecosystemLabel(p.ecosystem) } : {}),
+    ...(mixed || p.ecosystem === "GitHub Actions"
+      ? { ecosystem: ecosystemLabel(p.ecosystem) }
+      : {}),
   }));
 }
 
@@ -215,8 +217,10 @@ export function computeDrift(input: {
         const own = input.dependencies.filter(
           (d) => d.repo === repo && stackPackageKey(d.ecosystem ?? "npm", d.packageName) === key
         );
-        const installed = own.filter((d) => !d.unresolved).map((d) => d.installedVersion);
-        const required = own.find((d) => d.unresolved);
+        const requirement = (d: DriftDependency) =>
+          d.unresolved || (d.ecosystem === "GitHub Actions" && !semver.valid(d.installedVersion));
+        const installed = own.filter((d) => !requirement(d)).map((d) => d.installedVersion);
+        const required = own.find(requirement);
         cells[col.key] =
           installed.length === 0 && required
             ? {

@@ -14,7 +14,10 @@ export interface ScannedFileList {
 export function scannedFileList(): ScannedFileList {
   return {
     names: SCANNED_FILE_NAMES,
-    patterns: SCANNED_NAME_PATTERNS.map((p) => p.pattern),
+    patterns: [
+      ...SCANNED_NAME_PATTERNS.map((p) => p.pattern),
+      ".github/workflows/*.yml|yaml (uses only)",
+    ],
     skippedDirs: [...SKIP_DIRS],
     maxDepth: MAX_DEPTH,
   };
@@ -25,6 +28,6 @@ export function scannedFilesText(list: ScannedFileList = scannedFileList()): str
   return [
     `Files: ${list.names.join(", ")}`,
     `Patterns: ${list.patterns.join(", ")}`,
-    `At most ${list.maxDepth} directories deep; never inside ${list.skippedDirs.join(", ")} or a directory starting with a dot.`,
+    `At most ${list.maxDepth} directories deep; never inside ${list.skippedDirs.join(", ")} or a directory starting with a dot (except .github/workflows uses lines).`,
   ].join("\n");
 }

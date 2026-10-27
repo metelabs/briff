@@ -115,3 +115,37 @@ one is empty; a new tenant table must cascade from `Org` too.
 On your own instance, the recipients above are the only ones; leave `ANTHROPIC_API_KEY` empty
 and nothing goes to Anthropic (triage and the bulletin are then skipped), leave the SMTP
 variables empty and no email leaves.
+
+## GitHub Actions
+
+Briff reads `.github/workflows/*.yml` and `*.yaml` for literal `uses:` references only.
+It extracts action and reusable-workflow package names (`owner/repo`), refs and subpaths;
+local actions, `docker://` references and expressions are ignored. Workflow contents are
+not stored or uploaded by the CLI. The GitHub App fetches these workflow blobs to run the
+same parser and discards their contents; it does not execute workflow steps.
+
+Actions appear under **Actions** with OSV ecosystem `GitHub Actions`. Full tags are exact
+versions. A 40-character SHA with a `# vX.Y.Z` annotation uses that version and retains the
+SHA as evidence; unannotated SHAs are queried as commits. Floating majors and minors are
+constraints, matched only when an advisory covers their entire release interval. Branch
+refs have no known release line and receive no versioned fix recommendation.
+
+Public GitHub tags are fetched during package refresh (up to the first 100 tags), alongside
+the existing GitHub releases feed. On-line fixes use the tag's original spelling and SHA (`pin owner/repo to vX.Y.Z (sha …)`).
+A missing tag mapping directs the reader to the advisory; a fix outside the
+installed release line never becomes a command. Public action names and refs are sent to
+OSV; action repository names are sent to the public GitHub tags API. No credentials or
+workflow `run` values are sent to either API.
+
+Before querying OSV for an Actions reference, Briff checks the repository with an
+unauthenticated GitHub API request. Only an explicit public response permits the OSV
+query. Private, missing, rate-limited or unavailable repositories are excluded and
+checked again after a deferred retry or cache expiry. GitHub receives its own repository
+name for this check. Completed visibility checks are cached for 24 hours. Rate limits
+persist a retry deadline and schedule a security scan after the budget resets; unknown
+repositories are checked first so large stacks make progress.
+
+Actions repository names are treated as private at the model boundary, even when
+they are public on GitHub. They are never package-name redaction exemptions. Names
+from every Actions dependency in the organisation are aliased in profile text,
+weights and synthesis package fields, including references outside the current stream.

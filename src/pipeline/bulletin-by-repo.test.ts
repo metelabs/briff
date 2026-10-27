@@ -601,3 +601,52 @@ describe("upgradeActions with declarations on two release lines", () => {
     ).toEqual(["uv add acme-probe==2.0.1"]);
   });
 });
+
+it("scopes verified Actions pins to the repo whose installed line has a fix", () => {
+  const sha = "a".repeat(40);
+  const pin = `pin acme/action to v4.2.1 (sha ${sha})`;
+  const action = `${pin} (acme/fixed) · 3.x has no known fix, read the advisory: acme/unfixed`;
+  const repos = ["acme/fixed", "acme/unfixed"];
+  expect(actionsForRepo(action, "acme/fixed", repos).map((a) => a.text)).toEqual([pin]);
+  expect(
+    actionsForRepo(action, "acme/unfixed", repos).some((a) => a.text.includes("pin acme/action"))
+  ).toBe(false);
+  expect(actionsForRepo(pin, "acme/fixed", ["acme/fixed"])[0].text).toBe(pin);
+  const groups = groupByRepo(
+    {
+      act: [
+        item({
+          itemId: "action",
+          bucket: "security",
+          action,
+          affectedRepos: repos,
+          upgrades: [
+            {
+              repo: "acme/fixed",
+              name: "acme/action",
+              ecosystem: "GitHub Actions",
+              installed: ["4.1.0"],
+              target: "4.2.1",
+              actionTags: { "v4.2.1": sha },
+            },
+            {
+              repo: "acme/unfixed",
+              name: "acme/action",
+              ecosystem: "GitHub Actions",
+              installed: ["3.1.0"],
+              target: null,
+            },
+          ],
+        }),
+      ],
+      know: [],
+      alerts: [],
+    },
+    t
+  );
+  expect(
+    groups
+      .find((g) => g.repo === "acme/unfixed")
+      ?.entries[0].actions.some((a) => a.text.includes("pin acme/action"))
+  ).toBe(false);
+});

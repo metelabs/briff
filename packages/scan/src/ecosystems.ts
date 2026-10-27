@@ -9,6 +9,7 @@ export const ECOSYSTEMS = [
   "RubyGems",
   "crates.io",
   "Maven",
+  "GitHub Actions",
 ] as const;
 
 export type Ecosystem = (typeof ECOSYSTEMS)[number];
@@ -94,6 +95,8 @@ export function ecosystemLabel(ecosystem: string): string {
   switch (ecosystem) {
     case "Packagist":
       return "Composer";
+    case "GitHub Actions":
+      return "Actions";
     default:
       return ecosystem;
   }
@@ -108,6 +111,7 @@ export function normalizePackageName(ecosystem: Ecosystem, name: string): string
   const trimmed = name.trim();
   switch (ecosystem) {
     case "Packagist":
+    case "GitHub Actions":
       return trimmed.toLowerCase();
     case "PyPI":
       return trimmed.toLowerCase().replace(/[-_.]+/g, "-");
@@ -170,6 +174,7 @@ export function normalizeVersion(ecosystem: Ecosystem, version: string): string 
     case "crates.io":
     case "RubyGems":
     case "npm":
+    case "GitHub Actions":
       return raw;
   }
 }

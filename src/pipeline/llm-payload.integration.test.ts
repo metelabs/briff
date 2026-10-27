@@ -59,6 +59,7 @@ describe.skipIf(!url)("LLM payloads against Postgres", () => {
   let sourceId = "";
   let itemId = "";
   let packageId = "";
+  let actionPackageId = "";
 
   beforeAll(async () => {
     Object.assign(process.env, {
@@ -108,6 +109,20 @@ describe.skipIf(!url)("LLM payloads against Postgres", () => {
         data: { orgId, repoId: repo.id, packageId, installedVersion: "1.0.0", direct: true },
       });
     }
+    actionPackageId = (
+      await db.package.create({
+        data: { ecosystem: "GitHub Actions", name: secret.outside },
+      })
+    ).id;
+    await scoped.dependency.create({
+      data: {
+        orgId,
+        repoId: repoIds[0],
+        packageId: actionPackageId,
+        installedVersion: "main",
+        direct: true,
+      },
+    });
     await scoped.repo.create({
       data: { orgId, name: secret.outside, source: "github", included: false },
     });
@@ -148,7 +163,7 @@ describe.skipIf(!url)("LLM payloads against Postgres", () => {
       data: {
         orgId,
         text: `Cares most about billing-core-${suffix} and ledger-web-${suffix}, then https://github.com/${secret.outside}.`,
-        weights: { [`package:hush-pkg-${suffix}`]: 1 },
+        weights: { [`package:hush-pkg-${suffix}`]: 1, [`package:${secret.outside}`]: 1 },
       },
     });
     await scoped.feedback.create({ data: { orgId, userId, itemId, kind: "up" } });
@@ -158,7 +173,7 @@ describe.skipIf(!url)("LLM payloads against Postgres", () => {
     await db.org.deleteMany({ where: { id: orgId } });
     await db.user.deleteMany({ where: { id: userId } });
     await db.source.deleteMany({ where: { id: sourceId } });
-    await db.package.deleteMany({ where: { id: packageId } });
+    await db.package.deleteMany({ where: { id: { in: [packageId, actionPackageId] } } });
     await db.$disconnect();
     process.env = saved;
     resetEnvCache();
