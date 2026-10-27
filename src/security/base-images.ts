@@ -89,12 +89,20 @@ export async function queryBaseImageAdvisories(
 
 export async function baseImageScan({ db, log, heartbeat }: JobContext): Promise<JobResult> {
   const now = new Date();
-  const counts = { images: 0, candidates: 0, created: 0, errors: 0, emailsSent: 0 };
+  const counts = {
+    images: 0,
+    candidates: 0,
+    created: 0,
+    errors: 0,
+    emailsSent: 0,
+    deliveryLocked: 0,
+  };
   const cached = new Map<string, Awaited<ReturnType<typeof queryBaseImageAdvisories>> | null>();
   for (const org of await db.org.findMany({
     where: { baseImageAlerts: true },
     select: { id: true },
   })) {
+    await heartbeat();
     const scoped = withOrg(db, org.id);
     const repos = await scoped.repo.findMany({
       where: { included: true },
@@ -108,6 +116,7 @@ export async function baseImageScan({ db, log, heartbeat }: JobContext): Promise
     });
     const live = new Set<string>();
     for (const repo of repos) {
+      await heartbeat();
       const images = [
         ...new Set(
           repo.runtimes
@@ -185,42 +194,58 @@ export async function baseImageScan({ db, log, heartbeat }: JobContext): Promise
     }
     const smtp = smtpConfig();
     if (!smtp) continue;
-    const pending = await scoped.baseImageAlert.findMany({
-      where: { deliveredAt: null, repo: { included: true } },
-      include: { repo: { select: { name: true } } },
-    });
-    const ready = pending.filter(
-      (a) => live.has(`${a.repoId}\0${a.image}\0${a.osvId}`) && emailsImmediately(a.severity)
+    // Hold the lock across SMTP and its marker write; scanning can overlap safely.
+    await db.$transaction(
+      async (tx) => {
+        const [lock] = await tx.$queryRaw<{ locked: boolean }[]>`
+          SELECT pg_try_advisory_xact_lock(68421::int, hashtext(${org.id})) AS locked`;
+        if (!lock?.locked) {
+          counts.deliveryLocked++;
+          return;
+        }
+        const pending = await scoped.baseImageAlert.findMany({
+          where: { deliveredAt: null, repo: { included: true } },
+          include: { repo: { select: { name: true } } },
+        });
+        const ready = pending.filter(
+          (a) => live.has(`${a.repoId}\0${a.image}\0${a.osvId}`) && emailsImmediately(a.severity)
+        );
+        if (!ready.length) return;
+        const groups: AlertGroup[] = ready.map((a) => ({
+          osvId: a.osvId,
+          packageName: `Base image advisories: ${a.image}`,
+          summary: `Package presence and installed versions are unverified. ${a.summary ?? "Read the advisory."}`,
+          severity: a.severity,
+          affected: [],
+          fallbackFixed: a.action,
+          repos: [
+            {
+              name: a.repo.name,
+              installedVersion: "OS package inventory unavailable",
+              direct: true,
+            },
+          ],
+        }));
+        let sent = 0;
+        for (const recipient of await orgRecipients(db, org.id)) {
+          await heartbeat();
+          const email = renderSecurityAlertEmail(
+            recipient.language,
+            groups,
+            null,
+            getEnv().BETTER_AUTH_URL
+          );
+          if ((await sendMail({ to: recipient.to, ...email }, smtp)).status === "sent") sent++;
+        }
+        counts.emailsSent += sent;
+        if (sent)
+          await scoped.baseImageAlert.updateMany({
+            where: { id: { in: ready.map((a) => a.id) }, deliveredAt: null },
+            data: { deliveredAt: new Date() },
+          });
+      },
+      { maxWait: 10_000, timeout: 30 * 60_000 }
     );
-    if (!ready.length) continue;
-    const groups: AlertGroup[] = ready.map((a) => ({
-      osvId: a.osvId,
-      packageName: `Base image advisories: ${a.image}`,
-      summary: `Package presence and installed versions are unverified. ${a.summary ?? "Read the advisory."}`,
-      severity: a.severity,
-      affected: [],
-      fallbackFixed: a.action,
-      repos: [
-        { name: a.repo.name, installedVersion: "OS package inventory unavailable", direct: true },
-      ],
-    }));
-    let sent = 0;
-    for (const recipient of await orgRecipients(db, org.id)) {
-      await heartbeat();
-      const email = renderSecurityAlertEmail(
-        recipient.language,
-        groups,
-        null,
-        getEnv().BETTER_AUTH_URL
-      );
-      if ((await sendMail({ to: recipient.to, ...email }, smtp)).status === "sent") sent++;
-    }
-    counts.emailsSent += sent;
-    if (sent)
-      await scoped.baseImageAlert.updateMany({
-        where: { id: { in: ready.map((a) => a.id) }, deliveredAt: null },
-        data: { deliveredAt: new Date() },
-      });
   }
   if (cached.size && [...cached.values()].every((entry) => entry === null))
     throw new Error("All base image advisory queries failed");

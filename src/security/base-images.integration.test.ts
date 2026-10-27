@@ -15,10 +15,14 @@ import { collectFromFiles } from "@scan/collect";
 import { baseImageScan } from "./base-images";
 import { loadBaseImageGroups } from "./base-image-view";
 
-const mail = vi.hoisted(() => ({ sent: 0 }));
+const mail = vi.hoisted(() => ({
+  sent: 0,
+  beforeSend: undefined as (() => Promise<void>) | undefined,
+}));
 vi.mock("@/lib/email/mailer", () => ({
   smtpConfig: () => ({ host: "example.com" }),
   sendMail: async () => {
+    await mail.beforeSend?.();
     mail.sent++;
     return { status: "sent" };
   },
@@ -105,6 +109,32 @@ describe.skipIf(!url)("base image scan against Postgres", () => {
     await baseImageScan(context);
     expect(await enabled.baseImageAlert.count()).toBe(2);
     expect(mail.sent).toBe(1);
+    await enabled.baseImageAlert.updateMany({ data: { deliveredAt: null } });
+    let releaseSend: () => void = () => undefined;
+    let reachedSend: () => void = () => undefined;
+    const sending = new Promise<void>((resolve) => {
+      reachedSend = resolve;
+    });
+    const holdSend = new Promise<void>((resolve) => {
+      releaseSend = resolve;
+    });
+    mail.beforeSend = async () => {
+      reachedSend();
+      await holdSend;
+    };
+    const first = baseImageScan(context);
+    try {
+      await sending;
+      const overlapping = await baseImageScan(context);
+      expect(overlapping.counts?.deliveryLocked).toBe(1);
+      expect(mail.sent).toBe(1);
+    } finally {
+      releaseSend();
+      await first;
+      mail.beforeSend = undefined;
+    }
+    expect(mail.sent).toBe(2);
+    expect(await enabled.baseImageAlert.count({ where: { deliveredAt: null } })).toBe(0);
     const stream = await enabled.bulletinStream.create({
       data: { orgId: orgs[0], name: "Weekly", slug: "weekly" },
     });
