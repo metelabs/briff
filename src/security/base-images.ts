@@ -10,9 +10,7 @@ import { lineLifecycle, lowestSupportedLineAbove } from "@/lib/runtime-eol";
 import { fetchJson } from "@/lib/platforms/fetch-with-retry";
 import { osvVulnSchema, severityOf, type OsvVuln } from "@/sources/osv";
 import type { JobContext, JobResult } from "@/worker/types";
-import { IMAGE_DISTROS, baseImagePackages, imageDistro, type ImageDistro } from "@scan/distros";
-
-import { imageRepository } from "@scan/runtimes";
+import { baseImagePackages, imageDistro, type ImageDistro } from "@scan/distros";
 
 import { emailsImmediately, type AlertGroup } from "./plan";
 
@@ -22,23 +20,7 @@ export function baseImageAction(distro: ImageDistro, now: Date): string {
   const next = lowestSupportedLineAbove(distro.name, distro.version, now);
   if (!next)
     return `${distro.name} ${distro.version} is end-of-life; read the advisory and plan a base image migration`;
-  const { repository, tag } = imageRepository(distro.image);
-  if (!tag) return `${distro.name} ${distro.version} is end-of-life; plan a base image migration`;
-  const prefix = distro.image.slice(0, distro.image.lastIndexOf(":"));
-  const codename = Object.entries(IMAGE_DISTROS.debian).find(
-    ([, version]) => version === next
-  )?.[0];
-  const nextTag =
-    repository === distro.name && /^\d/.test(tag)
-      ? tag.replace(/^\d+(?:\.\d+){0,2}/, next)
-      : distro.name === "alpine"
-        ? tag.replace(/alpine\d+\.\d+/, `alpine${next}`)
-        : codename
-          ? tag.replace(/buster|bullseye|bookworm|trixie/, codename)
-          : tag;
-  return nextTag === tag
-    ? `${distro.name} ${distro.version} is end-of-life; read the advisory and plan a base image migration`
-    : `${distro.name} ${distro.version} is end-of-life; move to ${prefix}:${nextTag}`;
+  return `${distro.name} ${distro.version} is end-of-life; migrate to ${distro.name} ${next} or later`;
 }
 
 const packageResult = z.object({
