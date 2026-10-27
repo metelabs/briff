@@ -84,8 +84,9 @@ export function parseMavenFiles(
       !project.parent || parent.relativePath === ""
         ? null
         : text(parent.relativePath) || "../pom.xml";
-    const parentFile = relative ? posix.normalize(posix.join(posix.dirname(file), relative)) : "";
-    const candidate = poms.has(parentFile) ? model(parentFile, visiting) : null;
+    const parentPath = relative ? posix.normalize(posix.join(posix.dirname(file), relative)) : "";
+    const parentFile = poms.has(parentPath) ? parentPath : posix.join(parentPath, "pom.xml");
+    const candidate = relative && poms.has(parentFile) ? model(parentFile, visiting) : null;
     const parentMatches =
       candidate &&
       ["groupId", "artifactId", "version"].every((key) => {
@@ -199,7 +200,7 @@ export function parseMavenFiles(
   for (const [file, content] of builds) {
     const clean = gradleDependencies(content);
     for (const match of clean.matchAll(
-      /\b(\w+)\s*\(?\s*["']([\w.-]+:[\w.-]+)(?::([^"']+))?["']/g
+      /\b(\w+)\s*\(?\s*["']([\w.-]+:[\w.-]+)(?::([^"':@]+)(?::[^"'@]+)?(?:@[^"']+)?)?["']/g
     )) {
       if (!dependencyConfiguration(match[1])) continue;
       declarations.push({

@@ -17,6 +17,22 @@ const files = Object.fromEntries(
 );
 
 describe("Maven and Gradle", () => {
+  it("resolves directory parents and separates Gradle artifact qualifiers from versions", () => {
+    const fixture = (name: string) =>
+      readFileSync(new URL(`./__fixtures__/maven-inherited/${name}`, import.meta.url), "utf8");
+    const rows = parseMavenFiles({
+      "directory-parent/pom.xml": fixture("pom.xml"),
+      "child/pom.xml": fixture("directory-parent.xml"),
+      "build.gradle.kts": fixture("qualified.gradle.kts"),
+    });
+    expect(rows.map((row) => [row.name, row.version, row.project])).toEqual([
+      ["org.acme:kit", "1.2.4", "directory-parent/pom.xml"],
+      ["org.acme:kit", "1.2.4", "child/pom.xml"],
+      ["org.acme:kit", "1.2.3", "build.gradle.kts"],
+      ["org.acme:other", "1.2.4", "build.gradle.kts"],
+      ["org.acme:both", "1.2.5", "build.gradle.kts"],
+    ]);
+  });
   it("resolves CI-friendly parents and parent aliases independently of the child version", () => {
     const fixture = (name: string) =>
       readFileSync(new URL(`./__fixtures__/maven-inherited/${name}`, import.meta.url), "utf8");
