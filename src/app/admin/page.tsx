@@ -13,7 +13,13 @@ import { JOB_TYPES } from "@/lib/jobs/types";
 import { isoWeekLabel } from "@/pipeline/bulletin";
 import { PREVIEW_MODELS } from "@/pipeline/preview-payload";
 
-import { DeletePreviewButton, JobButton, PreviewForm, TestEmailButton } from "./_client";
+import {
+  DeletePreviewButton,
+  JobButton,
+  PreviewForm,
+  TestEmailButton,
+  LimitsForm,
+} from "./_client";
 
 export const metadata: Metadata = { title: "Admin · Briff" };
 
@@ -42,6 +48,10 @@ export default async function AdminPage() {
   const ctx = await requireAdminContext();
   const db = getDb();
   const scoped = withOrg(db, ctx.orgId);
+  const organisations = await db.org.findMany({
+    orderBy: { createdAt: "asc" },
+    select: { id: true, name: true, repoLimit: true, streamLimit: true },
+  });
   const [lastRuns, errors, queued, streams, previews] = await Promise.all([
     db.$queryRaw<LastRunRow[]>`
       SELECT DISTINCT ON ("jobType") "jobType", "status"::text AS "status", "startedAt", "finishedAt", "counts", "tokens"
@@ -87,6 +97,19 @@ export default async function AdminPage() {
         title="Admin"
         sub="Run jobs by hand, preview a synthesis, and see what the worker did last."
       />
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle>Organisation limits</CardTitle>
+          <CardDescription>
+            Raise repository and stream capacity for an organisation.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {organisations.map((org) => (
+            <LimitsForm key={org.id} org={org} />
+          ))}
+        </CardContent>
+      </Card>
       <div className="grid items-start gap-3 min-[980px]:grid-cols-2">
         <Card>
           <CardHeader>

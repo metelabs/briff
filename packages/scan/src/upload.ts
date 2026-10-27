@@ -32,6 +32,7 @@ export async function uploadRepos(
   const doFetch: FetchLike = options.fetch ?? ((input, init) => fetch(input, init));
   const scanId = randomUUID();
   const results: RepoResult[] = [];
+  let capacityError: string | undefined;
   for (let i = 0; i < payloads.length; i += options.chunk) {
     const repos = payloads.slice(i, i + options.chunk);
     const final = i + options.chunk >= payloads.length;
@@ -46,8 +47,27 @@ export async function uploadRepos(
       signal: AbortSignal.timeout(120_000),
     });
     const text = await res.text();
-    if (!res.ok) throw new Error(`POST /api/scan -> HTTP ${res.status}: ${text.slice(0, 500)}`);
+    if (!res.ok) {
+      const message = `POST /api/scan -> HTTP ${res.status}: ${text.slice(0, 500)}`;
+      if (res.status === 409 && isCapacityResponse(text)) {
+        capacityError = message;
+        continue;
+      }
+      throw new Error(message);
+    }
     results.push(...(JSON.parse(text) as { repos: RepoResult[] }).repos);
   }
+  if (capacityError) throw new Error(capacityError);
   return results;
+}
+
+function isCapacityResponse(text: string): boolean {
+  try {
+    const body: unknown = JSON.parse(text);
+    return (
+      typeof body === "object" && body !== null && "code" in body && body.code === "REPO_LIMIT"
+    );
+  } catch {
+    return false;
+  }
 }

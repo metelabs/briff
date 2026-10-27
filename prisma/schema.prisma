@@ -88,6 +88,9 @@ model Verification {
 // ---------------------------------------------------------------------------
 
 model Org {
+  repoLimit Int @default(10)
+  streamLimit Int @default(2)
+  githubRepoLimitReached Boolean @default(false)
   baseImageAlerts Boolean @default(true)
   baseAlerts BaseImageAlert[]
   id                  String               @id @default(cuid())

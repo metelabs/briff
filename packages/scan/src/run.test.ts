@@ -200,4 +200,31 @@ describe("briff-scan run", () => {
     expect(failed).toBe(1);
     expect(usage.err.at(-1)).toMatch(/HTTP 401.*revoked/);
   });
+  it("reports repository capacity errors in local CLI and GitHub Action output", async () => {
+    for (const github of [false, true]) {
+      const errors: string[] = [];
+      const code = await run(
+        [],
+        {
+          BRIFF_TOKEN: "synthetic",
+          ...(github ? { GITHUB_ACTIONS: "true", GITHUB_REPOSITORY: "acme/web" } : {}),
+        },
+        {
+          cwd: site,
+          out: () => undefined,
+          err: (message) => errors.push(message),
+          fetch: async () =>
+            Response.json(
+              {
+                error:
+                  "Repository limit reached (10). Ask the instance admin to raise your organisation's limit.",
+              },
+              { status: 409 }
+            ),
+        }
+      );
+      expect(code).toBe(1);
+      expect(errors.join(" ")).toContain("Repository limit reached (10)");
+    }
+  });
 });

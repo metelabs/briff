@@ -1,3 +1,4 @@
+import { OrgLimitError, repoLimitMessage } from "@/lib/org-limits";
 import { mergeActionMetadata } from "@scan/actions";
 import "server-only";
 
@@ -142,7 +143,8 @@ export async function ingestScan(
   db: PrismaClient,
   orgId: string,
   body: ScanBody,
-  now: Date = new Date()
+  now: Date = new Date(),
+  options: { skipRepoLimit?: boolean } = {}
 ): Promise<RepoIngestResult[]> {
   const scoped = withOrg(db, orgId);
   const repos = body.repos.map((repo) => ({
@@ -158,10 +160,21 @@ export async function ingestScan(
   const results: RepoIngestResult[] = [];
   for (const repo of repos) {
     const result = await scoped.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(68422::int, hashtext(${orgId}))`;
       const existing = await tx.repo.findUnique({
         where: { orgId_source_name: { orgId, source: body.source, name: repo.name } },
         select: { id: true },
       });
+      if (!existing) {
+        const org = await tx.org.findUniqueOrThrow({
+          where: { id: orgId },
+          select: { repoLimit: true },
+        });
+        if ((await tx.repo.count()) >= org.repoLimit) {
+          if (options.skipRepoLimit) return null;
+          throw new OrgLimitError(repoLimitMessage(org.repoLimit));
+        }
+      }
       const saved = existing
         ? await tx.repo.update({
             where: { id: existing.id },
@@ -239,7 +252,7 @@ export async function ingestScan(
         runtimesChanged,
       };
     });
-    results.push(result);
+    if (result) results.push(result);
   }
   return results;
 }
