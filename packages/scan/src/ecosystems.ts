@@ -9,6 +9,7 @@ export const ECOSYSTEMS = [
   "RubyGems",
   "crates.io",
   "Maven",
+  "NuGet",
   "GitHub Actions",
 ] as const;
 
@@ -110,6 +111,7 @@ export function ecosystemLabel(ecosystem: string): string {
 export function normalizePackageName(ecosystem: Ecosystem, name: string): string {
   const trimmed = name.trim();
   switch (ecosystem) {
+    case "NuGet":
     case "Packagist":
     case "GitHub Actions":
       return trimmed.toLowerCase();
@@ -170,6 +172,7 @@ export function normalizeVersion(ecosystem: Ecosystem, version: string): string 
     }
     case "Go":
       return raw.replace(/^v(?=\d)/, "");
+    case "NuGet":
     case "Maven":
     case "crates.io":
     case "RubyGems":

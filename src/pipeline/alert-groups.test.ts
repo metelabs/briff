@@ -297,3 +297,24 @@ describe("alertGroupsOf with two declarations of one line in a repo", () => {
     ]);
   });
 });
+
+it("keeps the NuGet tag and owning projects in direct and transitive alert guidance", () => {
+  const make = (direct: boolean): AlertGroupRow => {
+    const r = row(direct ? "acme/api" : "acme/worker", "acme.kit", "GHSA-synthetic", {
+      direct,
+      installed: ["1.2.3"],
+      affected: range("1.2.4"),
+    });
+    return {
+      ...r,
+      project: direct ? "api/Acme.csproj" : "worker/Acme.csproj",
+      advisory: { ...r.advisory, package: { name: "acme.kit", ecosystem: "NuGet" } },
+    };
+  };
+  const [group] = alertGroupsOf([make(true), make(false)], wording);
+  expect(group.ecosystem).toBe("NuGet");
+  expect(group.fixes.map((f) => f.command)).toEqual([
+    "dotnet add api/Acme.csproj package acme.kit --version 1.2.4",
+    "dotnet nuget why worker/Acme.csproj acme.kit",
+  ]);
+});

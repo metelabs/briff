@@ -387,7 +387,12 @@ export function releaseVersionsOf(
 function transitiveWhy(pkg: string, repos: readonly RepoFix[]): string {
   const managers = new Set(repos.map((r) => r.manager));
   const manager = managers.size === 1 ? [...managers][0] : undefined;
-  return whyCommand(repos.find((r) => r.ecosystem)?.ecosystem, pkg, manager);
+  return whyCommand(
+    repos.find((r) => r.ecosystem)?.ecosystem,
+    pkg,
+    manager,
+    [...new Set(repos.flatMap((r) => r.project?.split(",") ?? []))].join(",") || undefined
+  );
 }
 
 /** Whether an item belongs in "do this week", and the action when it can be derived. */

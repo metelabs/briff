@@ -221,3 +221,16 @@ it("names the Maven or Gradle declaration and uses the tool's dependency tree", 
     "./gradlew dependencies --configuration runtimeClasspath"
   );
 });
+
+it("targets every NuGet project and quotes shell arguments", () => {
+  expect(
+    installCommand("NuGet", "acme.kit", "1.2.4", {
+      project: "api/Acme.csproj,Worker App/Worker.csproj",
+    })
+  ).toBe(
+    "dotnet add api/Acme.csproj package acme.kit --version 1.2.4 && dotnet add 'Worker App/Worker.csproj' package acme.kit --version 1.2.4"
+  );
+  expect(whyCommand("NuGet", "acme.kit", undefined, "api/Acme.csproj")).toBe(
+    "dotnet nuget why api/Acme.csproj acme.kit"
+  );
+});

@@ -184,6 +184,13 @@ export function installCommand(
   variant: InstallVariant = {}
 ): string {
   switch (ecosystem ?? "npm") {
+    case "NuGet":
+      return (variant.project?.split(",") ?? ["<project.csproj>"])
+        .map(
+          (project) =>
+            `dotnet add ${shellWord(project)} package ${shellWord(pkg)} --version ${shellWord(version)}`
+        )
+        .join(" && ");
     case "Maven":
       return `set ${pkg} in ${variant.project ?? (variant.manager === "gradle" ? "build.gradle" : "pom.xml")} to ${version}, then resolve dependencies`;
     case "GitHub Actions": {
@@ -225,9 +232,14 @@ export function installCommand(
 export function whyCommand(
   ecosystem: Ecosystem | undefined,
   pkg: string,
-  manager?: PackageManager
+  manager?: PackageManager,
+  project?: string
 ): string {
   switch (ecosystem ?? "npm") {
+    case "NuGet":
+      return (project?.split(",") ?? ["<project.csproj>"])
+        .map((file) => `dotnet nuget why ${shellWord(file)} ${shellWord(pkg)}`)
+        .join(" && ");
     case "Maven":
       return manager === "gradle"
         ? "./gradlew dependencies --configuration runtimeClasspath"

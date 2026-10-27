@@ -194,3 +194,25 @@ it("fetches Maven and Gradle dependency files, excluding vendored copies", () =>
     }).map((e) => e.path)
   ).toEqual(paths.slice(0, 3));
 });
+
+it("fetches NuGet dependency files, excluding vendored copies", () => {
+  const paths = [
+    "packages.lock.json",
+    "Directory.Packages.props",
+    "apps/api/Acme.csproj",
+    "vendor/Acme.csproj",
+    "App.cs",
+  ];
+  expect(
+    scannedTreeEntries({
+      truncated: false,
+      tree: paths.map((path) => ({
+        path,
+        mode: "100644",
+        type: "blob",
+        sha: "0".repeat(40),
+        size: 30,
+      })),
+    }).map((e) => e.path)
+  ).toEqual(paths.slice(0, 3));
+});

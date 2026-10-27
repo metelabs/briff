@@ -400,3 +400,10 @@ are included in its data export and cascade when the org or repo is deleted.
 Unqualified distro defaults are limited to verified floating minor tags: PHP 8.2–8.5
 and Python 3.11–3.14. Discontinued lines, patch-pinned historical tags and unverified
 future lines remain unresolved unless their tag explicitly names a distro.
+
+NuGet metadata uses `api.nuget.org` registrations and flatcontainer indexes. Registration
+pages are followed only under the package's fixed API path; the latest stable, listed
+version present in the flatcontainer index supplies metadata and deprecation. The published
+nuspec's repository URL (projectUrl as fallback) attaches the existing GitHub releases feed.
+Prereleases and unlisted versions are excluded from latest metadata. Non-semver four-part
+versions remain scanner evidence but do not receive an automatic fix target.

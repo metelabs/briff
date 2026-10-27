@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net8.0": {
+      "Newtonsoft.Json": {
+        "type": "Direct",
+        "requested": "[12.0.1, )",
+        "resolved": "12.0.1",
+        "contentHash": "synthetic"
+      },
+      "System.Net.Http": { "type": "Transitive", "resolved": "4.3.0", "contentHash": "synthetic" }
+    },
+    "net6.0": {
+      "Newtonsoft.Json": { "type": "Direct", "resolved": "12.0.1", "contentHash": "synthetic" }
+    }
+  }
+}

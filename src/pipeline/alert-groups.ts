@@ -265,7 +265,7 @@ export function alertGroupsOf(
           installed,
           fix: null,
           direct: false,
-          ...(r.manager ? { manager: r.manager } : {}),
+          ...declarationOf(r, installed),
         });
       }
     }
@@ -304,7 +304,14 @@ export function alertGroupsOf(
                 command: whyCommand(
                   g.ecosystem,
                   packageName,
-                  sharedManager(g.transitiveFixes.filter((f) => transitive.includes(f.repo)))
+                  sharedManager(g.transitiveFixes.filter((f) => transitive.includes(f.repo))),
+                  [
+                    ...new Set(
+                      g.transitiveFixes
+                        .filter((f) => transitive.includes(f.repo))
+                        .flatMap((f) => f.project?.split(",") ?? [])
+                    ),
+                  ].join(",") || undefined
                 ),
                 text: wording.transitive,
                 installs: installsOf(packageName, transitive, g.transitiveFixes, null, true),

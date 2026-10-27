@@ -4,6 +4,7 @@ import path from "node:path";
 import { mergeActionMetadata, parseActions } from "./actions";
 
 import { composerDeclared, parseComposerLock } from "./composer-lock";
+import { parseNugetFiles } from "./nuget";
 import { parseMavenFiles } from "./maven";
 import { parseCargoLock } from "./cargo-lock";
 import { parseRubyLock } from "./ruby-lock";
@@ -37,7 +38,8 @@ export type LockfileKind =
   | "actions"
   | "bundler"
   | "cargo"
-  | "maven";
+  | "maven"
+  | "nuget";
 
 /** Reads a file's text; the CLI reads the disk, the GitHub App reads fetched blobs. */
 export type ReadText = (filePath: string) => Promise<string>;
@@ -57,6 +59,8 @@ export const LOCKFILES: Readonly<Record<string, LockfileKind>> = {
   "go.mod": "gomod",
   "Gemfile.lock": "bundler",
   "Cargo.lock": "cargo",
+  "packages.lock.json": "nuget",
+  "Directory.Packages.props": "nuget",
   "pom.xml": "maven",
   "build.gradle": "maven",
   "build.gradle.kts": "maven",
@@ -69,7 +73,14 @@ const REQUIREMENTS_VARIANT = /^requirements[-_][\w.-]+\.txt$/;
 
 /** The lockfile kind of a file name (LOCKFILES, plus requirements-<x>.txt variants); null otherwise. */
 export function lockfileKind(fileName: string): LockfileKind | null {
-  return LOCKFILES[fileName] ?? (REQUIREMENTS_VARIANT.test(fileName) ? "requirements" : null);
+  return (
+    LOCKFILES[fileName] ??
+    (fileName.endsWith(".csproj")
+      ? "nuget"
+      : REQUIREMENTS_VARIANT.test(fileName)
+        ? "requirements"
+        : null)
+  );
 }
 
 /** Directories never entered (besides dot-directories). */
@@ -244,7 +255,8 @@ export async function readLockfile(
   manifestRoot = path.dirname(lockfile.path),
   warn: (message: string) => void = () => {}
 ): Promise<LockedDependency[]> {
-  const content = lockfile.kind === "maven" ? "" : await read(lockfile.path);
+  const content =
+    lockfile.kind === "maven" || lockfile.kind === "nuget" ? "" : await read(lockfile.path);
   const dir = path.dirname(lockfile.path);
   switch (lockfile.kind) {
     case "actions":
@@ -288,6 +300,17 @@ export async function readLockfile(
       return parseGoMod(content);
     case "bundler":
       return parseRubyLock(content, await readOptional(path.join(dir, "Gemfile"), read));
+    case "nuget": {
+      const files: Record<string, string> = {};
+      for (const file of new Set([lockfile.path, ...manifestPaths])) {
+        if (lockfileKind(path.basename(file)) !== "nuget") continue;
+        const content = await readOptional(file, read);
+        if (content !== null)
+          files[path.relative(manifestRoot, file).split(path.sep).join("/")] = content;
+        else warn(`skip ${path.relative(manifestRoot, file)}: unable to read NuGet manifest`);
+      }
+      return parseNugetFiles(files, warn);
+    }
     case "maven": {
       const files: Record<string, string> = {};
       for (const file of new Set([lockfile.path, ...manifestPaths])) {
@@ -339,6 +362,16 @@ export function mergeDependencies(lists: LockedDependency[][]): LockedDependency
       }
       if (dep.ecosystem === "GitHub Actions")
         prev.metadata = mergeActionMetadata(prev.metadata, dep.metadata);
+      const nugetProject =
+        dep.ecosystem === "NuGet"
+          ? prev.direct && !dep.direct
+            ? prev.project
+            : !prev.direct && dep.direct
+              ? dep.project
+              : [...new Set([prev.project, dep.project].flatMap((p) => p?.split(",") ?? []))].join(
+                  ","
+                )
+          : undefined;
       // Development-only while no file declares it for production.
       // A Python lockfile's declaration (group, extra, dev) wins over a requirements export of
       // the same pin, which knows none of them.
@@ -362,11 +395,15 @@ export function mergeDependencies(lists: LockedDependency[][]): LockedDependency
       // The declaration's shape and owner follow the same authority.
       const requirement = authority ? authority.requirement : (prev.requirement ?? dep.requirement);
       const project =
-        dep.ecosystem === "Maven"
-          ? [...new Set([prev.project, dep.project].flatMap((p) => p?.split(",") ?? []))].join(",")
-          : authority
-            ? authority.project
-            : (prev.project ?? dep.project);
+        dep.ecosystem === "NuGet"
+          ? nugetProject
+          : dep.ecosystem === "Maven"
+            ? [...new Set([prev.project, dep.project].flatMap((p) => p?.split(",") ?? []))].join(
+                ","
+              )
+            : authority
+              ? authority.project
+              : (prev.project ?? dep.project);
       if (requirement) prev.requirement = requirement;
       else delete prev.requirement;
       if (project) prev.project = project;
