@@ -17,6 +17,21 @@ const files = Object.fromEntries(
 );
 
 describe("Maven and Gradle", () => {
+  it("evaluates inherited dependencies with child properties and isolates malformed modules", () => {
+    const fixture = (file: string) =>
+      readFileSync(new URL(`./__fixtures__/maven-inherited/${file}`, import.meta.url), "utf8");
+    const rows = parseMavenFiles({
+      "pom.xml": fixture("pom.xml"),
+      "child/pom.xml": fixture("child/pom.xml"),
+      "broken/pom.xml": fixture("broken.xml"),
+      "build.gradle.kts": fixture("build.gradle.kts"),
+    });
+    expect(rows.map((d) => [d.name, d.version, d.project])).toEqual([
+      ["org.acme:kit", "1.2.4", "pom.xml"],
+      ["org.acme:kit", "1.2.3", "child/pom.xml"],
+      ["org.acme:used", "1.2.3", "build.gradle.kts"],
+    ]);
+  });
   it("keeps versionless catalog ownership and literals outside partial locks", () => {
     const partial = Object.fromEntries(
       ["build.gradle.kts", "gradle/libs.versions.toml", "gradle.lockfile"].map((file) => [
