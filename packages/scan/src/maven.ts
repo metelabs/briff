@@ -136,7 +136,11 @@ export function parseMavenFiles(
       const dep = table(entry);
       const name = `${resolve(text(dep.groupId))}:${resolve(text(dep.artifactId))}`;
       const version = text(dep.version);
-      if (coordinate(name) && version && dep.scope !== "import") managed.set(name, version);
+      if (coordinate(name) && version && dep.scope !== "import")
+        managed.set(
+          `${name}:${resolve(text(dep.type)) || "jar"}:${resolve(text(dep.classifier))}`,
+          version
+        );
     }
     const dependencies = new Map(inherited.dependencies);
     for (const entry of list(table(project.dependencies).dependency)) {
@@ -154,7 +158,8 @@ export function parseMavenFiles(
       text(v).replace(/\$\{([^}]+)\}/g, (match: string, key: string) => properties[key] ?? match);
     for (const dep of dependencies.values()) {
       const name = `${resolve(dep.groupId)}:${resolve(dep.artifactId)}`;
-      const version = resolve(dep.version) || resolve(managed.get(name));
+      const key = `${name}:${resolve(dep.type) || "jar"}:${resolve(dep.classifier)}`;
+      const version = resolve(dep.version) || resolve(managed.get(key));
       if (!coordinate(name) || !literal(version) || dep.scope === "import") continue;
       rows.push({
         name,

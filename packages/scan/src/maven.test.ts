@@ -17,6 +17,17 @@ const files = Object.fromEntries(
 );
 
 describe("Maven and Gradle", () => {
+  it("keeps managed versions separate by type and classifier", () => {
+    const pom = readFileSync(
+      new URL("./__fixtures__/maven-inherited/classifiers.xml", import.meta.url),
+      "utf8"
+    );
+    expect(parseMavenFiles({ "pom.xml": pom }).map((row) => row.version)).toEqual([
+      "1.2.3",
+      "1.2.4",
+      "1.2.5",
+    ]);
+  });
   it("evaluates inherited dependencies with child properties and isolates malformed modules", () => {
     const fixture = (file: string) =>
       readFileSync(new URL(`./__fixtures__/maven-inherited/${file}`, import.meta.url), "utf8");
