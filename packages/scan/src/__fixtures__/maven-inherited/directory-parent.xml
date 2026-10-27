@@ -1,0 +1,1 @@
+<project><parent><groupId>org.acme</groupId><artifactId>parent</artifactId><version>1.0</version><relativePath>../directory-parent</relativePath></parent><artifactId>child</artifactId></project>

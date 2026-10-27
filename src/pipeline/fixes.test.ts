@@ -358,3 +358,23 @@ it("bounds RubyGems fixes to the installed major", () => {
     ])
   ).toBeNull();
 });
+
+it("bounds Maven fix guidance to the installed major", () => {
+  expect(
+    fixCommand("org.acme:kit", "2.0.0", [
+      {
+        repo: "acme/api",
+        installed: "1.2.3",
+        fix: "1.2.4",
+        ecosystem: "Maven",
+        manager: "maven",
+        project: "api/pom.xml",
+      },
+    ])
+  ).toBe("set org.acme:kit in api/pom.xml to 1.2.4, then resolve dependencies");
+  expect(
+    fixCommand("org.acme:kit", "2.0.0", [
+      { repo: "acme/api", installed: "1.2.3", fix: "2.0.0", ecosystem: "Maven" },
+    ])
+  ).toBeNull();
+});

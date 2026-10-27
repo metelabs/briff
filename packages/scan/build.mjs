@@ -1,4 +1,4 @@
-// Bundles the CLI and its two dependencies (yaml, smol-toml) into dist/cli.mjs, so
+// Bundles the CLI and its parsing dependencies (yaml, smol-toml, fast-xml-parser) into dist/cli.mjs, so
 // `npx briff-scan` installs nothing else. Runs from any directory; esbuild resolves from the repo root.
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
@@ -21,6 +21,7 @@ const licenseOf = (pkg) => {
 };
 const yamlLicense = await licenseOf("yaml");
 const tomlLicense = await licenseOf("smol-toml");
+const xmlLicense = await licenseOf("fast-xml-parser");
 
 await build({
   entryPoints: [here("./src/cli.ts")],
@@ -45,6 +46,7 @@ await build({
     js: [
       `/*! Bundled dependency yaml (ISC licence):\n${yamlLicense.trim()}\n*/`,
       `/*! Bundled dependency smol-toml (BSD-3-Clause licence):\n${tomlLicense.trim()}\n*/`,
+      `/*! Bundled dependency fast-xml-parser (MIT licence):\n${xmlLicense.trim()}\n*/`,
     ].join("\n"),
   },
 });

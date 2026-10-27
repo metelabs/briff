@@ -205,3 +205,19 @@ it("keeps Bundler declarations in their existing groups with a bounded constrain
     "bundle exec gem dependency rack --reverse-dependencies"
   );
 });
+
+it("names the Maven or Gradle declaration and uses the tool's dependency tree", () => {
+  expect(
+    installCommand("Maven", "org.acme:kit", "1.2.4", { project: "api/pom.xml", manager: "maven" })
+  ).toContain("api/pom.xml to 1.2.4");
+  expect(
+    installCommand("Maven", "org.acme:kit", "1.2.4", {
+      project: "build.gradle.kts",
+      manager: "gradle",
+    })
+  ).toContain("build.gradle.kts to 1.2.4");
+  expect(whyCommand("Maven", "org.acme:kit", "maven")).toBe("mvn dependency:tree");
+  expect(whyCommand("Maven", "org.acme:kit", "gradle")).toBe(
+    "./gradlew dependencies --configuration runtimeClasspath"
+  );
+});

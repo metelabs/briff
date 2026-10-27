@@ -4,6 +4,7 @@ import path from "node:path";
 import { mergeActionMetadata, parseActions } from "./actions";
 
 import { composerDeclared, parseComposerLock } from "./composer-lock";
+import { parseMavenFiles } from "./maven";
 import { parseCargoLock } from "./cargo-lock";
 import { parseRubyLock } from "./ruby-lock";
 import { parseGoMod } from "./go-mod";
@@ -35,7 +36,8 @@ export type LockfileKind =
   | "gomod"
   | "actions"
   | "bundler"
-  | "cargo";
+  | "cargo"
+  | "maven";
 
 /** Reads a file's text; the CLI reads the disk, the GitHub App reads fetched blobs. */
 export type ReadText = (filePath: string) => Promise<string>;
@@ -55,6 +57,11 @@ export const LOCKFILES: Readonly<Record<string, LockfileKind>> = {
   "go.mod": "gomod",
   "Gemfile.lock": "bundler",
   "Cargo.lock": "cargo",
+  "pom.xml": "maven",
+  "build.gradle": "maven",
+  "build.gradle.kts": "maven",
+  "gradle.lockfile": "maven",
+  "libs.versions.toml": "maven",
 };
 
 // `requirements-dev.txt`, `requirements_prod.txt`: the common split of requirements.txt.
@@ -233,9 +240,11 @@ async function readOptional(filePath: string, read: ReadText): Promise<string | 
 export async function readLockfile(
   lockfile: DiscoveredLockfile,
   read: ReadText = readDisk,
-  manifestPaths: readonly string[] = []
+  manifestPaths: readonly string[] = [],
+  manifestRoot = path.dirname(lockfile.path),
+  warn: (message: string) => void = () => {}
 ): Promise<LockedDependency[]> {
-  const content = await read(lockfile.path);
+  const content = lockfile.kind === "maven" ? "" : await read(lockfile.path);
   const dir = path.dirname(lockfile.path);
   switch (lockfile.kind) {
     case "actions":
@@ -279,6 +288,17 @@ export async function readLockfile(
       return parseGoMod(content);
     case "bundler":
       return parseRubyLock(content, await readOptional(path.join(dir, "Gemfile"), read));
+    case "maven": {
+      const files: Record<string, string> = {};
+      for (const file of new Set([lockfile.path, ...manifestPaths])) {
+        if (lockfileKind(path.basename(file)) !== "maven") continue;
+        const text = await readOptional(file, read);
+        if (text !== null)
+          files[path.relative(manifestRoot, file).split(path.sep).join("/")] = text;
+        else warn(`skip ${path.relative(manifestRoot, file)}: unable to read Java manifest`);
+      }
+      return parseMavenFiles(files, warn);
+    }
     case "cargo": {
       const manifests: Record<string, string> = {};
       for (const file of new Set([path.join(dir, "Cargo.toml"), ...manifestPaths])) {
@@ -341,7 +361,12 @@ export function mergeDependencies(lists: LockedDependency[][]): LockedDependency
       else delete prev.group;
       // The declaration's shape and owner follow the same authority.
       const requirement = authority ? authority.requirement : (prev.requirement ?? dep.requirement);
-      const project = authority ? authority.project : (prev.project ?? dep.project);
+      const project =
+        dep.ecosystem === "Maven"
+          ? [...new Set([prev.project, dep.project].flatMap((p) => p?.split(",") ?? []))].join(",")
+          : authority
+            ? authority.project
+            : (prev.project ?? dep.project);
       if (requirement) prev.requirement = requirement;
       else delete prev.requirement;
       if (project) prev.project = project;

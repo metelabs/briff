@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { collectFromFiles } from "@scan/collect";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -376,6 +378,73 @@ describe.skipIf(!url)("crates.io ingest", () => {
     });
     expect(rows.map((r) => [r.package.ecosystem, r.installedVersion, r.direct, r.dev])).toEqual([
       ["crates.io", "1.2.3", true, true],
+      ["npm", "4.5.6", false, false],
+    ]);
+  });
+});
+
+describe.skipIf(!url)("Maven ingest", () => {
+  const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: url ?? "" }) });
+  const suffix = Date.now().toString(36);
+  let orgId = "";
+  beforeAll(async () => {
+    orgId = (await db.org.create({ data: { name: `acme-maven-${suffix}` } })).id;
+  });
+  afterAll(async () => {
+    await db.org.deleteMany({ where: { id: orgId } });
+    await db.package.deleteMany({ where: { name: `org.acme:kit-${suffix}` } });
+    await db.$disconnect();
+  });
+  it("ingests the recorded Maven scanner fixture through the real collector", async () => {
+    const files = Object.fromEntries(
+      ["pom.xml", "api/pom.xml"].map((file) => [
+        file,
+        readFileSync(
+          new URL(`../../../packages/scan/src/__fixtures__/maven/${file}`, import.meta.url),
+          "utf8"
+        ),
+      ])
+    );
+    const repo = await collectFromFiles("acme/maven-fixture", files, { warn: () => {} });
+    expect(repo).not.toBeNull();
+    if (!repo) throw new Error("fixture did not scan");
+    await ingestScan(db, orgId, { source: "local", repos: [repo] });
+    const rows = await withOrg(db, orgId).dependency.findMany({
+      where: { repo: { name: "acme/maven-fixture" } },
+      include: { package: true },
+    });
+    expect(rows.map((r) => [r.package.name, r.installedVersion]).sort()).toEqual([
+      ["org.apache.logging.log4j:log4j-core", "2.14.1"],
+      ["org.yaml:snakeyaml", "1.30"],
+    ]);
+  });
+  it("stores Maven separately from npm and retains development declarations", async () => {
+    const name = `org.acme:kit-${suffix}`;
+    await ingestScan(db, orgId, {
+      source: "github",
+      repos: [
+        {
+          name: "acme/api",
+          ecosystem: "npm",
+          dependencies: [
+            { name, version: "1.2.3", direct: true, dev: true, ecosystem: "Maven" },
+            { name, version: "4.5.6", direct: false },
+          ],
+        },
+      ],
+    });
+    const rows = await withOrg(db, orgId).dependency.findMany({
+      where: { repo: { name: "acme/api" } },
+      select: {
+        installedVersion: true,
+        direct: true,
+        dev: true,
+        package: { select: { ecosystem: true } },
+      },
+      orderBy: { installedVersion: "asc" },
+    });
+    expect(rows.map((r) => [r.package.ecosystem, r.installedVersion, r.direct, r.dev])).toEqual([
+      ["Maven", "1.2.3", true, true],
       ["npm", "4.5.6", false, false],
     ]);
   });
