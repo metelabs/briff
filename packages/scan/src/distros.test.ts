@@ -57,3 +57,12 @@ describe("base image distribution evidence", () => {
     expect(baseImagePackages(debian)).toContain("dpkg");
   });
 });
+
+it("does not apply current distro defaults to discontinued lines or historical patch tags", () => {
+  const historical = readFileSync(
+    new URL("./__fixtures__/distros/unqualified.txt", import.meta.url),
+    "utf8"
+  );
+  for (const image of historical.trim().split("\n")) expect(imageDistro(image), image).toBeNull();
+  expect(imageDistro("php:7.4-bullseye")?.version).toBe("11");
+});

@@ -8,10 +8,13 @@ export interface ImageDistro {
 }
 
 // Checked against docker-library/official-images library/python and library/php on
-// 2026-10-26. Recheck when official images change their unqualified Debian variant.
+// 2026-10-27. Recheck when official images change their unqualified Debian variant.
 export const IMAGE_DISTROS = {
   debian: { buster: "10", bullseye: "11", bookworm: "12", trixie: "13" },
-  defaultDebian: { python: "13", php: "13" },
+  defaultDebian: {
+    python: { "3.11": "13", "3.12": "13", "3.13": "13", "3.14": "13" },
+    php: { "8.2": "13", "8.3": "13", "8.4": "13", "8.5": "13" },
+  },
 } as const;
 
 export function imageDistro(reference: string): ImageDistro | null {
@@ -48,13 +51,12 @@ export function imageDistro(reference: string): ImageDistro | null {
     } else if (image === "debian" && /^\d+(?:-slim)?$/.test(tag)) {
       name = "debian";
       version = tag.split("-")[0];
-    } else if (
-      !tag.includes("alpine") &&
-      /^(?:\d+\.)*\d+(?:-(?:slim|cli|fpm|apache|zts))?$/.test(tag)
-    ) {
+    } else if (!tag.includes("alpine") && /^\d+\.\d+(?:-(?:slim|cli|fpm|apache|zts))?$/.test(tag)) {
       if (image === "python" || image === "php") {
         name = "debian";
-        version = IMAGE_DISTROS.defaultDebian[image];
+        version = (IMAGE_DISTROS.defaultDebian[image] as Readonly<Record<string, string>>)[
+          tag.split("-")[0]
+        ];
       }
     }
   }

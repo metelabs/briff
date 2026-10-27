@@ -158,7 +158,7 @@ explicit distro variants of official language images. Unqualified `python:3.12-s
 `php:8.3-cli` currently imply Debian 13 (Trixie), checked against the
 [official Python image tags](https://github.com/docker-library/official-images/blob/master/library/python)
 and [official PHP image tags](https://github.com/docker-library/official-images/blob/master/library/php)
-on 2026-10-26. The defaults and codenames live in `packages/scan/src/distros.ts`; recheck
+on 2026-10-27. The defaults and codenames live in `packages/scan/src/distros.ts`; recheck
 them when official image defaults change. Private image names, variable tags, digest pins
 and floating Alpine variants are not resolved.
 
@@ -183,3 +183,7 @@ extended support is excluded; Debian includes public LTS. Each new organisation 
 `Org.baseImageAlerts = true`; disabling it in the database stops this scan, its emails and
 its presentation. There is no settings control yet. Candidate rows belong to the org,
 are included in its data export and cascade when the org or repo is deleted.
+
+Unqualified distro defaults are limited to verified floating minor tags: PHP 8.2–8.5
+and Python 3.11–3.14. Discontinued lines, patch-pinned historical tags and unverified
+future lines remain unresolved unless their tag explicitly names a distro.
