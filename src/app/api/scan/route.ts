@@ -1,4 +1,4 @@
-import { OrgLimitError } from "@/lib/org-limits";
+import { repoLimitMessage } from "@/lib/org-limits";
 import { z } from "zod";
 
 import { getDb } from "@/lib/db/client";
@@ -57,14 +57,12 @@ export async function POST(request: Request): Promise<Response> {
     orgId = org.orgId;
   }
 
-  let accepted;
-  try {
-    accepted = await acceptScan(db, orgId, parsed.data);
-  } catch (err) {
-    if (err instanceof OrgLimitError) return Response.json({ error: err.message }, { status: 409 });
-    throw err;
-  }
+  const accepted = await acceptScan(db, orgId, parsed.data, new Date(), { skipRepoLimit: true });
   const { repos, refreshJob: job, urgentPass } = accepted;
+  const savedNames = new Set(repos.map((repo) => repo.name));
+  const rejected = parsed.data.repos
+    .filter((repo) => !savedNames.has(repo.name))
+    .map((repo) => repo.name);
   log.info(
     {
       orgId,
@@ -78,5 +76,22 @@ export async function POST(request: Request): Promise<Response> {
     },
     "scan: ingested"
   );
+  if (rejected.length > 0) {
+    const org = await db.org.findUniqueOrThrow({
+      where: { id: orgId },
+      select: { repoLimit: true },
+    });
+    return Response.json(
+      {
+        code: "REPO_LIMIT",
+        error: repoLimitMessage(org.repoLimit),
+        rejected,
+        repos,
+        refreshJob: job,
+        urgentPass,
+      },
+      { status: 409 }
+    );
+  }
   return Response.json({ repos, refreshJob: job, urgentPass });
 }

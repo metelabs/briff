@@ -10,6 +10,7 @@ import { POST } from "@/app/api/scan/route";
 import { ingestScan } from "@/lib/scan/ingest";
 import { generateScanToken } from "@/lib/scan/tokens";
 import { createLimitedStream } from "./org-limits";
+import { uploadRepos } from "@scan/upload";
 const auth = vi.hoisted(() => ({ orgId: "" }));
 vi.mock("@/lib/auth/session", () => ({
   requireOrgContext: async () => ({ orgId: auth.orgId }),
@@ -96,5 +97,35 @@ describe.skipIf(!url)("organisation capacity", () => {
       "Repository limit reached (1)"
     );
     expect(await scoped.repo.count()).toBe(1);
+    for (const chunk of [1, 2]) {
+      const requests: boolean[] = [];
+      await expect(
+        uploadRepos(
+          ["acme/new", "acme/existing"].map((name) => ({
+            name,
+            path: name,
+            ecosystem: "npm" as const,
+            dependencies: [{ name: "acme-http", version: `1.0.${chunk}`, direct: true }],
+            runtimes: [],
+          })),
+          {
+            apiUrl: "https://example.com",
+            token: token.secret,
+            source: "local",
+            chunk,
+            fetch: async (input, init) => {
+              requests.push((JSON.parse(String(init.body)) as { final: boolean }).final);
+              return POST(new Request(input, init));
+            },
+          }
+        )
+      ).rejects.toThrow("Repository limit reached (1)");
+      expect(requests.at(-1)).toBe(true);
+      expect(requests).toHaveLength(chunk === 1 ? 2 : 1);
+      expect(await scoped.repo.count()).toBe(1);
+      expect(await scoped.dependency.findFirstOrThrow()).toMatchObject({
+        installedVersion: `1.0.${chunk}`,
+      });
+    }
   });
 });
