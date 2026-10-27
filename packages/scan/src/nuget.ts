@@ -63,18 +63,6 @@ export function parseNugetFiles(
     if (locked.has(posix.dirname(file))) continue;
     const project = xml.get(file);
     if (!project) continue;
-    const properties = Object.assign({}, ...list(project.PropertyGroup).map(table)) as Table;
-    const resolve = (v: string) => {
-      for (let i = 0; i < 20 && v.includes("$("); i++) {
-        const next = v.replace(
-          /\$\(([^)]+)\)/g,
-          (match: string, key: string) => text(properties[key]) || match
-        );
-        if (next === v) break;
-        v = next;
-      }
-      return v;
-    };
     const centralFile = Object.keys(files)
       .filter(
         (candidate) =>
@@ -87,13 +75,50 @@ export function parseNugetFiles(
           posix.relative(posix.dirname(b), file).split("/").length
       )[0];
     const central = centralFile ? xml.get(centralFile) : undefined;
-    const centralProperties = Object.assign(
-      {},
-      ...list(central?.PropertyGroup).map(table)
-    ) as Table;
-    Object.assign(properties, { ...centralProperties, ...properties });
-    const enabled =
-      resolve(text(properties.ManagePackageVersionsCentrally)).toLowerCase() === "true";
+    const properties = new Map<string, Set<string>>();
+    for (const source of [central, project]) {
+      const own = new Map<string, Set<string>>();
+      for (const group of list(source?.PropertyGroup)) {
+        for (const [key, value] of Object.entries(table(group))) {
+          if (key === "Condition") continue;
+          const values = own.get(key) ?? new Set<string>();
+          const literal = text(value) || text(table(value)["#text"]);
+          if (literal) values.add(literal);
+          own.set(key, values);
+        }
+      }
+      for (const [key, values] of own) properties.set(key, values);
+    }
+    const resolve = (input: string): string[] => {
+      let values = new Set([input]);
+      for (let i = 0; i < 20; i++) {
+        const next = new Set<string>();
+        let changed = false;
+        for (const value of values) {
+          const match = /\$\(([^)]+)\)/.exec(value);
+          const replacements = match ? properties.get(match[1]) : undefined;
+          if (!match || !replacements?.size) {
+            next.add(value);
+            continue;
+          }
+          for (const replacement of replacements) {
+            const resolved = value.replaceAll(match[0], replacement);
+            changed ||= resolved !== value;
+            next.add(resolved);
+            if (next.size > 256) {
+              warn(`skip ${file}: too many NuGet property alternatives`);
+              return [];
+            }
+          }
+        }
+        values = next;
+        if (!changed) break;
+      }
+      return [...values];
+    };
+    const enabled = [...(properties.get("ManagePackageVersionsCentrally") ?? [])].some((value) =>
+      resolve(value).some((resolved) => resolved.toLowerCase() === "true")
+    );
     const versions = new Map<string, Set<string>>();
     if (enabled)
       for (const group of list(central?.ItemGroup)) {
@@ -103,7 +128,7 @@ export function parseNugetFiles(
           if (name) {
             const key = name.toLowerCase();
             const alternatives = versions.get(key) ?? new Set<string>();
-            alternatives.add(resolve(text(dep.Version)));
+            for (const version of resolve(text(dep.Version))) alternatives.add(version);
             versions.set(key, alternatives);
           }
         }
@@ -115,7 +140,7 @@ export function parseNugetFiles(
         if (!id(name)) continue;
         const explicit = text(dep.VersionOverride) || text(dep.Version);
         const alternatives = explicit
-          ? [resolve(explicit)]
+          ? resolve(explicit)
           : [...(versions.get(name.toLowerCase()) ?? [])];
         for (const version of alternatives) {
           const exact = /^\[([^,]+)\]$/.exec(version)?.[1] ?? version;
@@ -131,12 +156,16 @@ export function parseNugetFiles(
       }
     }
   }
-  const conditional = Object.entries(files).some(([file, content]) =>
-    file.endsWith("packages.lock.json")
-      ? rows.some((a) =>
-          rows.some((b) => a.name === b.name && a.project === b.project && a.version !== b.version)
-        )
-      : /\bCondition\s*=|<TargetFrameworks[>\s]/.test(content)
-  );
+  const pins = new Map<string, string>();
+  let differingPins = false;
+  for (const row of rows) {
+    const key = `${row.project ?? ""}\t${row.name}`;
+    const previous = pins.get(key);
+    if (previous !== undefined && previous !== row.version) differingPins = true;
+    pins.set(key, row.version);
+  }
+  const conditional =
+    differingPins ||
+    Object.values(files).some((content) => /\bCondition\s*=|<TargetFrameworks[>\s]/.test(content));
   return conditional ? rows.map((row) => ({ ...row, requirement: "nuget-conditional" })) : rows;
 }

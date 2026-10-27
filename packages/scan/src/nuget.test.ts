@@ -15,6 +15,50 @@ export const fixtureFiles = Object.fromEntries(
   ])
 );
 describe("NuGet", () => {
+  it("retains conditional project and central property alternatives", () => {
+    const files = Object.fromEntries(
+      ["Acme.csproj", "Directory.Packages.props"].map((file) => [
+        file,
+        readFileSync(new URL(`./__fixtures__/nuget-properties/${file}`, import.meta.url), "utf8"),
+      ])
+    );
+    expect(parseNugetFiles(files).map((dep) => [dep.name, dep.version])).toEqual([
+      ["system.text.json", "8.0.0"],
+      ["system.text.json", "9.0.0"],
+      ["system.text.encodings.web", "8.0.0"],
+      ["system.text.encodings.web", "9.0.0"],
+    ]);
+  });
+  it("detects differing lock pins while handling a many-project solution", () => {
+    const files = Object.fromEntries(
+      Array.from({ length: 40 }, (_, i) => [
+        `app${i}/packages.lock.json`,
+        JSON.stringify({
+          dependencies: {
+            net8: Object.fromEntries(
+              Array.from({ length: 100 }, (_, j) => [
+                `Acme.Package${j}`,
+                { type: "Direct", resolved: "1.0.0" },
+              ])
+            ),
+          },
+        }),
+      ])
+    );
+    const rows = parseNugetFiles(files);
+    expect(rows).toHaveLength(4000);
+    expect(rows.every((row) => row.requirement === undefined)).toBe(true);
+    expect(
+      parseNugetFiles({
+        "packages.lock.json": JSON.stringify({
+          dependencies: {
+            net8: { "Acme.Kit": { type: "Direct", resolved: "8.0.0" } },
+            net9: { "Acme.Kit": { type: "Direct", resolved: "9.0.0" } },
+          },
+        }),
+      }).every((row) => row.requirement === "nuget-conditional")
+    ).toBe(true);
+  });
   it("preserves conditional central version alternatives and explicit overrides", () => {
     const files = Object.fromEntries(
       ["Acme.csproj", "Directory.Packages.props"].map((file) => [
