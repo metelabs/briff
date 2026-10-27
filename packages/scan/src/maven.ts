@@ -227,9 +227,16 @@ export function parseMavenFiles(
       const versions = table(catalog.versions);
       for (const [alias, value] of Object.entries(table(catalog.libraries))) {
         const accessor = alias.replace(/[-_]/g, ".");
-        const uses = [...clean.matchAll(/\b(\w+)\s*\(?\s*libs\.([\w.]+)/g)].filter(
-          (m) => m[2] === accessor && dependencyConfiguration(m[1])
-        );
+        const uses = [...clean.matchAll(/\b(\w+)\s*\(?\s*libs\.([\w.]+)/g)].filter((m) => {
+          if (!dependencyConfiguration(m[1])) return false;
+          if (m[2] === accessor) return true;
+          return Object.entries(table(catalog.bundles)).some(
+            ([bundle, members]) =>
+              m[2] === `bundles.${bundle.replace(/[-_]/g, ".")}` &&
+              Array.isArray(members) &&
+              members.includes(alias)
+          );
+        });
         if (uses.length === 0) continue;
         const entry = table(value);
         const parts = text(value).split(":");

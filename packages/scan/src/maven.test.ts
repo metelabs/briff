@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import * as maven from "./maven";
 import { collectFromFiles } from "./collect";
 import { parseMavenFiles } from "./maven";
 
@@ -17,6 +18,37 @@ const files = Object.fromEntries(
 );
 
 describe("Maven and Gradle", () => {
+  it("parses a Java manifest group once during collection", async () => {
+    const parse = vi.spyOn(maven, "parseMavenFiles");
+    try {
+      const repo = await collectFromFiles("acme/java", files, { warn: () => {} });
+      expect(repo?.dependencies.length).toBeGreaterThan(0);
+      expect(parse).toHaveBeenCalledTimes(1);
+    } finally {
+      parse.mockRestore();
+    }
+  });
+  it("expands referenced bundles with directness and development scope", () => {
+    const fixture = (name: string) =>
+      readFileSync(new URL(`./__fixtures__/maven-inherited/${name}`, import.meta.url), "utf8");
+    const manifests = {
+      "build.gradle.kts": fixture("bundles.gradle.kts"),
+      "gradle/libs.versions.toml": fixture("bundles.toml"),
+    };
+    for (const input of [
+      manifests,
+      { ...manifests, "gradle.lockfile": "org.acme:kit:1.2.4=testCompileClasspath" },
+    ]) {
+      const rows = parseMavenFiles(input);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({
+        name: "org.acme:kit",
+        direct: true,
+        dev: true,
+        project: "gradle/libs.versions.toml",
+      });
+    }
+  });
   it("resolves directory parents and separates Gradle artifact qualifiers from versions", () => {
     const fixture = (name: string) =>
       readFileSync(new URL(`./__fixtures__/maven-inherited/${name}`, import.meta.url), "utf8");

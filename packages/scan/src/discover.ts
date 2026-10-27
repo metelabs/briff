@@ -244,7 +244,7 @@ export async function readLockfile(
   manifestRoot = path.dirname(lockfile.path),
   warn: (message: string) => void = () => {}
 ): Promise<LockedDependency[]> {
-  const content = await read(lockfile.path);
+  const content = lockfile.kind === "maven" ? "" : await read(lockfile.path);
   const dir = path.dirname(lockfile.path);
   switch (lockfile.kind) {
     case "actions":
@@ -295,6 +295,7 @@ export async function readLockfile(
         const text = await readOptional(file, read);
         if (text !== null)
           files[path.relative(manifestRoot, file).split(path.sep).join("/")] = text;
+        else warn(`skip ${path.relative(manifestRoot, file)}: unable to read Java manifest`);
       }
       return parseMavenFiles(files, warn);
     }

@@ -44,7 +44,12 @@ async function readGroup(
   manifestPaths: readonly string[] = [...group.runtimeFiles, ...group.lockfiles].map((f) => f.path)
 ): Promise<ScanRepoPayload | null> {
   const lists: LockedDependency[][] = [];
+  let javaRead = false;
   for (const lockfile of group.lockfiles) {
+    if (lockfile.kind === "maven") {
+      if (javaRead) continue;
+      javaRead = true;
+    }
     try {
       lists.push(
         await readLockfile(
