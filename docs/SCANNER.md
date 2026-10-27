@@ -489,3 +489,13 @@ Registry refresh reads RubyGems.org `gems/<gem>.json` for repository/homepage li
 RubyGems exposes no package deprecation status; Briff leaves it unset. Non-semver Ruby
 versions are retained as written; a version the fix rules cannot compare gets advisory
 reading advice rather than a guessed upgrade.
+
+### Organisation capacity
+
+New organisations can store 10 repositories and 2 streams, including the default
+stream. All stored repos count, including excluded ones. Existing repositories can
+still refresh at capacity. A new repo over capacity gets HTTP 409 with
+`Repository limit reached (10)`; the CLI and GitHub Action print that message and
+exit 1. Earlier chunks or repositories in a multi-repo upload may already have been
+accepted. Remove an unused repo or ask the instance admin to raise the limit, then
+rerun the scan. The Admin page can raise both limits.

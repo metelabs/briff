@@ -19,12 +19,17 @@ function createAuth() {
     baseURL: env.BETTER_AUTH_URL,
     secret: env.BETTER_AUTH_SECRET,
     database: prismaAdapter(db, { provider: "postgresql" }),
+    rateLimit: {
+      enabled: true,
+      storage: "memory",
+      customRules: { "/sign-up/email": { window: 3600, max: 5 } },
+    },
+    advanced: { ipAddress: { ipAddressHeaders: ["x-real-ip"] } },
     emailAndPassword: { enabled: true, minPasswordLength: 12, autoSignIn: true },
     databaseHooks: {
       user: {
         create: {
-          // Multi-user schema, single-user operations: the first account bootstraps
-          // the instance; further sign-ups need ALLOW_SIGNUP=true.
+          // The first account can always bootstrap a closed instance.
           before: async (user) => {
             if (!getEnv().ALLOW_SIGNUP && (await db.user.count()) > 0) {
               throw new APIError("FORBIDDEN", { message: "Sign-up is disabled." });

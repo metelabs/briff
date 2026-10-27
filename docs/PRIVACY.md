@@ -149,3 +149,17 @@ Actions repository names are treated as private at the model boundary, even when
 they are public on GitHub. They are never package-name redaction exemptions. Names
 from every Actions dependency in the organisation are aliased in profile text,
 weights and synthesis package fields, including references outside the current stream.
+
+## Sign-up controls
+
+Registration is open by default; operators can close it with `ALLOW_SIGNUP=false`
+after the first account. Each account gets an organisation with 10 repositories and
+2 streams. The instance admin can view and raise these capacity settings.
+Email verification is not required by the current Better Auth configuration.
+
+Sign-up requests use Better Auth's per-IP window: five attempts per hour. The
+window is held in web-process memory and resets on restart; multiple web replicas
+have independent windows. The reverse proxy must overwrite `X-Real-IP` with the
+client address (never pass a client-supplied value through). No IP is added to
+Briff's database for this window. If no IP is available, Better Auth uses a shared
+fallback bucket. Existing authentication rate limits remain enabled.

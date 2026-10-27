@@ -24,7 +24,7 @@ export function orgExportSections(
       () =>
         db.org.findUniqueOrThrow({
           where: { id: orgId },
-          select: { id: true, name: true, createdAt: true },
+          select: { id: true, name: true, createdAt: true, repoLimit: true, streamLimit: true },
         }),
     ],
     [

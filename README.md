@@ -108,9 +108,11 @@ with `DATABASE_URL=postgresql://briff:change-me@db:5432/briff` in `.env`. Put a 
 proxy in front of port 3000. `GET /api/health` reports the database state and which optional
 features are disabled by missing variables. Both roles have a container healthcheck.
 
-The first account created on an instance owns it and is its admin. After that, sign-ups are
-closed unless `ALLOW_SIGNUP=true` (each new account then gets its own organisation; there is
-no invite system). Point scanners at your instance with `BRIFF_API_URL`, and create your own
+The first account created on an instance owns it and is its admin. Sign-ups are open by default
+(`ALLOW_SIGNUP=true`); set `ALLOW_SIGNUP=false` to close registration after the first account.
+Each new account gets its own organisation with 10 repositories and 2 streams (including
+the default stream). The instance Admin page can raise these limits. There is no invite
+system. Point scanners at your instance with `BRIFF_API_URL`, and create your own
 GitHub App if you want "Connect GitHub" ([docs/GITHUB-APP.md](docs/GITHUB-APP.md)).
 
 Operator notes for the hosted instance at app.briff.dev (its servers, deploy hooks and

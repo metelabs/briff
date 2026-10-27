@@ -227,3 +227,11 @@ A missing tag mapping directs the reader to the advisory; a fix outside the
 installed release line never becomes a command. Public action names and refs are sent to
 OSV; action repository names are sent to the public GitHub tags API. No credentials or
 workflow `run` values are sent to either API.
+
+## Organisation capacity
+
+New organisations have a 10-repository limit shared with CLI/Action uploads. A scan
+leaves extra GitHub repositories unlinked when capacity is exhausted; their existing
+installation permission on GitHub is unchanged. Repos displays a capacity note.
+Ask the instance admin to raise the limit in Admin, then rescan the installation.
+Concurrent scans enforce the same limit at the shared ingestion write boundary.

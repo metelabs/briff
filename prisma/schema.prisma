@@ -88,6 +88,9 @@ model Verification {
 // ---------------------------------------------------------------------------
 
 model Org {
+  repoLimit Int @default(10)
+  streamLimit Int @default(2)
+  githubRepoLimitReached Boolean @default(false)
   id                  String               @id @default(cuid())
   name                String
   createdAt           DateTime             @default(now())

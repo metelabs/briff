@@ -257,7 +257,7 @@ export async function scanInstallation(args: {
 
   for (let i = 0; i < payloads.length; i += INGEST_CHUNK) {
     const chunk = payloads.slice(i, i + INGEST_CHUNK);
-    await acceptScan(
+    const accepted = await acceptScan(
       db,
       row.orgId,
       {
@@ -266,17 +266,23 @@ export async function scanInstallation(args: {
         scanId: args.scanId,
         final: i + INGEST_CHUNK >= payloads.length,
       },
-      now
+      now,
+      { skipRepoLimit: true }
     );
+    const acceptedNames = new Set(accepted.repos.map((r) => r.name));
+    counts.repoLimitSkipped += chunk.length - accepted.repos.length;
     for (const p of chunk) {
+      if (!acceptedNames.has(p.payload.name)) continue;
       await scoped.repo.updateMany({
         where: { source: "github", name: p.payload.name },
         data: { githubInstallationId: row.id, githubHeadSha: p.headSha },
       });
     }
-    counts.ingested += chunk.length;
+    counts.ingested += accepted.repos.length;
   }
 
+  if (counts.repoLimitSkipped)
+    await db.org.update({ where: { id: row.orgId }, data: { githubRepoLimitReached: true } });
   if (deferred) {
     await followUp(db, { ...payload, repos: deferred.repos }, deferred.retryAt);
     counts.rateLimited = 1;
@@ -319,6 +325,7 @@ function emptyCounts() {
     retriesQueued: 0,
     rateLimited: 0,
     ingested: 0,
+    repoLimitSkipped: 0,
   };
 }
 

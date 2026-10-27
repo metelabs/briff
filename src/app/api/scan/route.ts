@@ -1,3 +1,4 @@
+import { OrgLimitError } from "@/lib/org-limits";
 import { z } from "zod";
 
 import { getDb } from "@/lib/db/client";
@@ -56,7 +57,14 @@ export async function POST(request: Request): Promise<Response> {
     orgId = org.orgId;
   }
 
-  const { repos, refreshJob: job, urgentPass } = await acceptScan(db, orgId, parsed.data);
+  let accepted;
+  try {
+    accepted = await acceptScan(db, orgId, parsed.data);
+  } catch (err) {
+    if (err instanceof OrgLimitError) return Response.json({ error: err.message }, { status: 409 });
+    throw err;
+  }
+  const { repos, refreshJob: job, urgentPass } = accepted;
   log.info(
     {
       orgId,
