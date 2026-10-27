@@ -1,3 +1,5 @@
+import { BaseImageAdvisories } from "@/components/base-image-advisories";
+import { loadBaseImageGroups } from "@/security/base-image-view";
 import { ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -64,6 +66,7 @@ export default async function AlertsPage({
     }),
     db.repo.count({ where: repoScope(scope) }),
   ]);
+  const baseImages = await loadBaseImageGroups(getDb(), ctx.orgId, repoScope(scope));
   const withInstalls = await attachInstalls(db, rows);
   const wording = {
     noLineFix: t.no_line_fix,
@@ -94,7 +97,8 @@ export default async function AlertsPage({
         title="Alerts"
         sub="Same-day emails when a new critical or high advisory hits a package you run, plus the backlog from your first scan."
       />
-      {rows.length === 0 ? (
+      <BaseImageAdvisories groups={baseImages} />
+      {rows.length === 0 && baseImages.length > 0 ? null : rows.length === 0 ? (
         <Card className="rise [--i:1]">
           <EmptyState
             icon={<ShieldCheck strokeWidth={1.4} />}

@@ -14,6 +14,7 @@ export const TENANT_MODELS = [
   "RepoRuntime",
   "ItemMatch",
   "Alert",
+  "BaseImageAlert",
   "Bulletin",
   "BulletinItem",
   "Feedback",

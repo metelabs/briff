@@ -89,8 +89,9 @@ describe("briff-scan run", () => {
     expect(res.code).toBe(0);
     expect(res.requests).toEqual([]);
     expect(res.out).toEqual([
-      `root ${site}: 1 repos, 2 dependencies (1 direct), 2 runtimes`,
+      `root ${site}: 1 repos, 2 dependencies (1 direct), 3 runtimes`,
       `  ${"acme-site".padEnd(40)}      2 deps    1 direct`,
+      "      debian 13 · vendor-tool/Dockerfile base image php:8.3-fpm",
       "      node 22 · .nvmrc",
       "      php 8.3 (8.3-fpm) · vendor-tool/Dockerfile",
       "dry run: nothing was sent",

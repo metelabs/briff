@@ -24,7 +24,7 @@ export function orgExportSections(
       () =>
         db.org.findUniqueOrThrow({
           where: { id: orgId },
-          select: { id: true, name: true, createdAt: true },
+          select: { id: true, name: true, createdAt: true, baseImageAlerts: true },
         }),
     ],
     [
@@ -80,6 +80,7 @@ export function orgExportSections(
           },
         }),
     ],
+    ["baseImageAlerts", () => scoped.baseImageAlert.findMany({ orderBy: { createdAt: "asc" } })],
     [
       "repos",
       () =>

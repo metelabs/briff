@@ -1,3 +1,4 @@
+import { distroRuntime } from "./distros";
 import { parse as parseYaml } from "yaml";
 
 import type { DetectedRuntime } from "./types";
@@ -517,7 +518,7 @@ export function parseDockerfile(content: string, source: string): DetectedRuntim
     const builtOnStage = image.toLowerCase() === "scratch" || stages.has(image.toLowerCase());
     if (as?.toLowerCase() === "as" && alias) stages.add(alias.toLowerCase());
     if (builtOnStage) continue;
-    out.push(imageRuntime(image, source));
+    out.push(imageRuntime(image, source), ...distroRuntime(image, source));
   }
   return out;
 }
@@ -528,7 +529,9 @@ export function parseCompose(content: string, source: string): DetectedRuntime[]
   if (!isRecord(services)) return [];
   return Object.values(services).flatMap((service) => {
     const image = stringAt(service, "image");
-    return image ? [imageRuntime(image.trim(), source)] : [];
+    return image
+      ? [imageRuntime(image.trim(), source), ...distroRuntime(image.trim(), source)]
+      : [];
   });
 }
 

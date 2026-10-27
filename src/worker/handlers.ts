@@ -1,3 +1,4 @@
+import { baseImageScan } from "@/security/base-images";
 import { githubScan } from "@/lib/github/scan";
 import type { JobType } from "@/lib/jobs/types";
 import { bulletinPreview } from "@/pipeline/preview";
@@ -11,6 +12,7 @@ import type { JobHandler } from "./types";
 
 export const handlers: Record<JobType, JobHandler> = {
   "security-scan": securityScan,
+  "base-image-scan": baseImageScan,
   "collect-sources": collectSources,
   "triage-items": triageItems,
   "weekly-bulletin": weeklyBulletin,
