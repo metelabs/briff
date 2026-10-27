@@ -60,7 +60,8 @@ async function readGroup(
                 ),
               ]
             : manifestPaths,
-          group.absPath
+          group.absPath,
+          warn
         )
       );
     } catch (err) {

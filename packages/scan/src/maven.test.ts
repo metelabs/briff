@@ -32,6 +32,22 @@ describe("Maven and Gradle", () => {
       ["org.acme:used", "1.2.3", "build.gradle.kts"],
     ]);
   });
+  it("warns collection about a malformed module while collecting valid projects", async () => {
+    const fixture = (file: string) =>
+      readFileSync(new URL(`./__fixtures__/maven-inherited/${file}`, import.meta.url), "utf8");
+    const warnings: string[] = [];
+    const repo = await collectFromFiles(
+      "acme/service",
+      {
+        "pom.xml": fixture("pom.xml"),
+        "broken/pom.xml": fixture("broken.xml"),
+        "build.gradle.kts": fixture("build.gradle.kts"),
+      },
+      { warn: (message) => warnings.push(message) }
+    );
+    expect(repo?.dependencies.map((d) => d.name).sort()).toEqual(["org.acme:kit", "org.acme:used"]);
+    expect(warnings.some((message) => message.includes("broken/pom.xml"))).toBe(true);
+  });
   it("keeps versionless catalog ownership and literals outside partial locks", () => {
     const partial = Object.fromEntries(
       ["build.gradle.kts", "gradle/libs.versions.toml", "gradle.lockfile"].map((file) => [

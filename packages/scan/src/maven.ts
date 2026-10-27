@@ -51,7 +51,10 @@ function dependencyConfiguration(name: string): boolean {
 }
 
 /** Static manifests only: local parent properties and dependency management, without executing builds. */
-export function parseMavenFiles(files: Readonly<Record<string, string>>): LockedDependency[] {
+export function parseMavenFiles(
+  files: Readonly<Record<string, string>>,
+  warn: (message: string) => void = () => {}
+): LockedDependency[] {
   const rows: LockedDependency[] = [];
   const poms = new Map<string, Table>();
   for (const [file, content] of Object.entries(files)) {
@@ -59,7 +62,7 @@ export function parseMavenFiles(files: Readonly<Record<string, string>>): Locked
     try {
       poms.set(file, pom(content));
     } catch {
-      // A broken module must not suppress unrelated projects.
+      warn(`skip ${file}: invalid pom.xml`);
     }
   }
   type Model = {
@@ -122,10 +125,8 @@ export function parseMavenFiles(files: Readonly<Record<string, string>>): Locked
     const dependencies = new Map(inherited.dependencies);
     for (const entry of list(table(project.dependencies).dependency)) {
       const dep = table(entry);
-      dependencies.set(
-        `${text(dep.groupId)}:${text(dep.artifactId)}:${text(dep.type)}:${text(dep.classifier)}`,
-        dep
-      );
+      const key = `${text(dep.groupId)}:${text(dep.artifactId)}:${text(dep.type) || "jar"}:${text(dep.classifier)}`;
+      dependencies.set(key, { ...dependencies.get(key), ...dep });
     }
     const result = { properties, expressions, managed, dependencies };
     models.set(file, result);

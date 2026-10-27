@@ -241,7 +241,8 @@ export async function readLockfile(
   lockfile: DiscoveredLockfile,
   read: ReadText = readDisk,
   manifestPaths: readonly string[] = [],
-  manifestRoot = path.dirname(lockfile.path)
+  manifestRoot = path.dirname(lockfile.path),
+  warn: (message: string) => void = () => {}
 ): Promise<LockedDependency[]> {
   const content = await read(lockfile.path);
   const dir = path.dirname(lockfile.path);
@@ -295,7 +296,7 @@ export async function readLockfile(
         if (text !== null)
           files[path.relative(manifestRoot, file).split(path.sep).join("/")] = text;
       }
-      return parseMavenFiles(files);
+      return parseMavenFiles(files, warn);
     }
     case "cargo": {
       const manifests: Record<string, string> = {};
