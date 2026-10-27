@@ -1,6 +1,7 @@
 import { withOrg } from "@/lib/db/with-org";
 import { prepareStream, storeBulletin, synthesisRequest } from "@/pipeline/weekly";
 import { createFakeLlm } from "@/llm/fake";
+import { synthesisInputHash } from "@/pipeline/bulletin";
 import { loadPrompt } from "@/llm/prompts";
 import { readFileSync } from "node:fs";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -75,6 +76,15 @@ describe.skipIf(!url)("persisted runtime lifecycle", () => {
         "acme/web: node 22 — EOL in 60 days (EOL on 2027-04-30).",
       ]);
       if (!prepared) throw new Error("Missing fact-only bulletin");
+      expect(prepared.inputHash).toBe(
+        synthesisInputHash(
+          context.model,
+          context.promptVersion,
+          prepared.input,
+          prepared.selected,
+          stream.id
+        )
+      );
       const nextDay = await prepareStream(
         db,
         org.id,

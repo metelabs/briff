@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { upcomingEol } from "./runtime-eol-facts";
 import { storedActionTags } from "@/sources/github-actions";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
@@ -390,10 +389,7 @@ export async function prepareStream(
     runtimes,
   });
   const minorCount = countMinor(folded, repos, traits);
-  const { facts: eolFacts, identities: eolKeys } = upcomingEol(
-    [...runtimes.values()].flat(),
-    ctx.now
-  );
+  const { facts: eolFacts } = upcomingEol([...runtimes.values()].flat(), ctx.now);
   // A first-scan backlog alone still gets a bulletin: its page is where the backlog is listed.
   if (
     selected.length === 0 &&
@@ -426,10 +422,8 @@ export async function prepareStream(
     orgRepoNames: orgRepos.map((r) => r.name),
     privateActionNames: actionDeps.map((d) => d.package.name),
     input,
-    inputHash: createHash("sha256")
-      .update(synthesisInputHash(ctx.model, ctx.promptVersion, input, selected, stream.id))
-      .update(JSON.stringify(eolKeys))
-      .digest("hex"),
+    // Preserve stored hashes; lifecycle facts alone must never re-send this week's email.
+    inputHash: synthesisInputHash(ctx.model, ctx.promptVersion, input, selected, stream.id),
     inputChars: JSON.stringify(input).length,
     candidates: candidates.length,
   };
