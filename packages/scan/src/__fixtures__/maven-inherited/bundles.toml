@@ -1,0 +1,4 @@
+[libraries]
+kit = { module = "org.acme:kit", version = "1.2.3" }
+[bundles]
+test-stack = ["kit"]

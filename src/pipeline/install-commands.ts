@@ -162,6 +162,8 @@ function pythonInstall(variant: InstallVariant, pkg: string, version: string): s
       });
       return [...new Set(commands)].join(" && ");
     }
+    case "maven":
+    case "gradle":
     case "pip":
       // A requirements file has no sections; pip installs into the environment.
       return `pip install ${pythonRequirement(pkg, declared(".")[0], `==${version}`, false)}`;
@@ -182,6 +184,8 @@ export function installCommand(
   variant: InstallVariant = {}
 ): string {
   switch (ecosystem ?? "npm") {
+    case "Maven":
+      return `set ${pkg} in ${variant.project ?? (variant.manager === "gradle" ? "build.gradle" : "pom.xml")} to ${version}, then resolve dependencies`;
     case "GitHub Actions": {
       const tag = Object.entries(variant.actionTags ?? {}).find(
         ([name]) => semver.valid(name) === semver.valid(version)
@@ -224,6 +228,10 @@ export function whyCommand(
   manager?: PackageManager
 ): string {
   switch (ecosystem ?? "npm") {
+    case "Maven":
+      return manager === "gradle"
+        ? "./gradlew dependencies --configuration runtimeClasspath"
+        : "mvn dependency:tree";
     case "GitHub Actions":
       return `inspect uses: ${pkg} in .github/workflows`;
 

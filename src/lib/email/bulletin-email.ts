@@ -172,6 +172,10 @@ ${view.know.map((item) => knowRow(item, t, view.language, detailsUrl(item))).joi
   if (view.alerts.length > 0) footerLines.push(t.alerts_line(advisoryCount(view.alerts)));
   if (view.backlogAlerts.length > 0)
     footerLines.push(t.backlog_line(advisoryCount(view.backlogAlerts)));
+  if (view.baseImageAlerts?.length)
+    footerLines.push(
+      `${view.baseImageAlerts.length} base images have candidate distro advisories; installed OS packages and versions are unverified. See the bulletin page before acting.`
+    );
   const restHtml =
     footerLines.length > 0
       ? `<p class="b-muted" style="font-size:14px;line-height:1.5;color:${C.muted};margin:28px 0 0;">${footerLines.map(esc).join(" ")} ${arrowLink(pageUrl, t.rest_link)}</p>`

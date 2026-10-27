@@ -501,3 +501,24 @@ repo appears earlier in the upload; accepted repos are retained. The API reports
 capacity errors with `code: "REPO_LIMIT"`, the accepted `repos` and rejected names.
 Remove an unused repo or ask the instance admin to raise the limit, then
 rerun the scan. The Admin page can raise both limits.
+
+### Maven and Gradle
+
+OSV uses `Maven`, with package names `group:artifact`. POM dependencies with literal
+versions or locally resolved properties are direct; local parents supply properties and
+dependency management. Managed entries alone are not installed packages. Module POMs are
+read within the normal depth and directory limits. External parents and imported BOMs are
+not downloaded by the scanner; unresolved versions are skipped.
+
+Gradle uses `gradle.lockfile` pins when present, including transitive packages. Without a
+lock it reads literal coordinates in `build.gradle(.kts)` and `gradle/libs.versions.toml`.
+It never executes Maven, Gradle, plugins or build scripts. Dynamic versions and ranges are
+skipped. Without a lock, declared versions are evidence rather than a resolved graph.
+Non-semver Maven versions are retained for OSV but cannot produce automatic fix targets.
+
+Fix guidance names the declaration file and a safe version on the installed release line;
+edit the version or its controlling property/catalog entry and resolve dependencies. A
+transitive dependency uses `mvn dependency:tree`, or
+`./gradlew dependencies --configuration runtimeClasspath` for Gradle. Registry refresh uses
+Maven Central search for latestVersion and the published POM's SCM link for GitHub releases.
+Central provides no package-wide deprecation or yank field, so those remain unset.

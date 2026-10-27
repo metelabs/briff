@@ -1,4 +1,5 @@
 import { storedActionTags } from "@/sources/github-actions";
+import { loadBaseImageGroups } from "@/security/base-image-view";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
 import { PRODUCT_LANGUAGE } from "@/lib/i18n";
@@ -156,6 +157,14 @@ export async function loadBulletinView(
     rest: inSection("rest"),
     alerts: alertLinesOf(lineRows("new")),
     backlogAlerts: alertLinesOf(lineRows("backlog")),
+    baseImageAlerts: await loadBaseImageGroups(
+      db,
+      orgId,
+      bulletin.streamId
+        ? { streams: { some: { streamId: bulletin.streamId } } }
+        : { included: true },
+      { gte: bulletin.periodStart, lt: bulletin.periodEnd }
+    ),
   };
 }
 

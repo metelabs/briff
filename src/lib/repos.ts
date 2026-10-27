@@ -1,4 +1,4 @@
-import { lineLifecycle } from "@/lib/runtime-eol";
+import { endOfLifeDate, lineLifecycle } from "@/lib/runtime-eol";
 import { isVersionRange, runtimeVersionLabel } from "@/lib/runtime-range";
 import { releaseLineOf } from "@/lib/runtime-security";
 import { ecosystemLabel } from "@scan/ecosystems";
@@ -35,6 +35,7 @@ export interface RuntimeChip {
    * (`node 20+` from `engines.node >=20`) says what is allowed, not what runs.
    */
   eol: boolean;
+  eolDate?: string;
   /** `php 8.3`, `node 20+` for a constraint, or `image ghcr.io/acme/tools:2.1` for an unmapped image. */
   label: string;
   /** `Dockerfile`, or `.nvmrc +2` when several files say the same. */
@@ -75,6 +76,15 @@ export function runtimeChips(rows: readonly RuntimeRow[], asOf: Date = new Date(
       return {
         name: first.name,
         eol,
+        ...(eol
+          ? {
+              eolDate:
+                endOfLifeDate(
+                  first.name,
+                  releaseLineOf(first.name, first.normalized ?? first.version) ?? ""
+                ) ?? undefined,
+            }
+          : {}),
         label,
         sources: files.length > 1 ? `${files[0]} +${files.length - 1}` : files[0],
         detail: list

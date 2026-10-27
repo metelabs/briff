@@ -41,7 +41,7 @@ export function runtimeName(id: string): string {
  * Version segments that make a release line: Node.js, Java and PostgreSQL patch
  * per major (24.x, 21.x, 17.x); the others per minor (php 8.3.x, python 3.12.x).
  */
-const LINE_DEPTH: Readonly<Record<string, number>> = { node: 1, java: 1, postgres: 1 };
+const LINE_DEPTH: Readonly<Record<string, number>> = { node: 1, java: 1, postgres: 1, debian: 1 };
 
 export function lineDepth(runtime: string): number {
   return LINE_DEPTH[runtime] ?? 2;

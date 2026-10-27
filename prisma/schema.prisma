@@ -91,6 +91,8 @@ model Org {
   repoLimit Int @default(10)
   streamLimit Int @default(2)
   githubRepoLimitReached Boolean @default(false)
+  baseImageAlerts Boolean @default(true)
+  baseAlerts BaseImageAlert[]
   id                  String               @id @default(cuid())
   name                String
   createdAt           DateTime             @default(now())
@@ -189,6 +191,8 @@ enum RepoSource {
 }
 
 model Repo {
+  baseImageScannedAt DateTime?
+  baseAlerts BaseImageAlert[]
   id                   String              @id @default(cuid())
   orgId                String
   org                  Org                 @relation(fields: [orgId], references: [id], onDelete: Cascade)
@@ -770,4 +774,42 @@ model Run {
 
   @@index([jobType, startedAt])
   @@map("run")
+}
+
+model RuntimeLifecycle {
+  product String
+  cycle String
+  eol Json
+  latest String?
+  lts Json?
+  support Json?
+  fetchedAt DateTime @default(now())
+
+  @@id([product, cycle])
+  @@map("runtime_lifecycle")
+}
+
+// Candidate distro advisories: the image tag does not expose installed OS packages.
+model BaseImageAlert {
+  active Boolean @default(true)
+  id String @id @default(cuid())
+  orgId String
+  org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  repoId String
+  repo Repo @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  image String
+  ecosystem String
+  osvId String
+  summary String?
+  severity String?
+  packages Json
+  action String
+  kind AlertKind @default(new)
+  publishedAt DateTime?
+  modifiedAt DateTime
+  deliveredAt DateTime?
+  createdAt DateTime @default(now())
+  @@unique([repoId, image, osvId])
+  @@index([orgId])
+  @@map("base_image_alert")
 }

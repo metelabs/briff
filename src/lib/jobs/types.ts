@@ -1,5 +1,7 @@
 export const JOB_TYPES = [
+  "refresh-runtime-lifecycle",
   "security-scan",
+  "base-image-scan",
   "collect-sources",
   "triage-items",
   "weekly-bulletin",
