@@ -768,3 +768,16 @@ model Run {
   @@index([jobType, startedAt])
   @@map("run")
 }
+
+model RuntimeLifecycle {
+  product String
+  cycle String
+  eol Json
+  latest String?
+  lts Json?
+  support Json?
+  fetchedAt DateTime @default(now())
+
+  @@id([product, cycle])
+  @@map("runtime_lifecycle")
+}

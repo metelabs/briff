@@ -1,3 +1,4 @@
+import { refreshRuntimeLifecycle } from "@/lib/runtime-eol-catalog";
 import { githubScan } from "@/lib/github/scan";
 import type { JobType } from "@/lib/jobs/types";
 import { bulletinPreview } from "@/pipeline/preview";
@@ -10,6 +11,7 @@ import { refreshPackages } from "@/sources/refresh-packages";
 import type { JobHandler } from "./types";
 
 export const handlers: Record<JobType, JobHandler> = {
+  "refresh-runtime-lifecycle": refreshRuntimeLifecycle,
   "security-scan": securityScan,
   "collect-sources": collectSources,
   "triage-items": triageItems,

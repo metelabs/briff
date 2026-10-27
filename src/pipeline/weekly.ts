@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import { upcomingEolFacts } from "./runtime-eol-facts";
 import { storedActionTags } from "@/sources/github-actions";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
@@ -328,6 +330,7 @@ export interface PreparedStream {
   periodEnd: Date;
   selected: SelectedCandidate[];
   minorCount: number;
+  eolFacts?: string[];
   alertPackages: ReadonlySet<string>;
   /** The stream's repos with their direct dependencies (installed versions for itemUpgrades). */
   stack: StackRepo[];
@@ -387,8 +390,14 @@ export async function prepareStream(
     runtimes,
   });
   const minorCount = countMinor(folded, repos, traits);
+  const eolFacts = upcomingEolFacts([...runtimes.values()].flat(), ctx.now);
   // A first-scan backlog alone still gets a bulletin: its page is where the backlog is listed.
-  if (selected.length === 0 && alerts.summaries.length === 0 && alerts.backlogAdvisories === 0)
+  if (
+    selected.length === 0 &&
+    alerts.summaries.length === 0 &&
+    alerts.backlogAdvisories === 0 &&
+    eolFacts.length === 0
+  )
     return null;
 
   const input = buildSynthesisInput({
@@ -408,12 +417,16 @@ export async function prepareStream(
     periodEnd,
     selected,
     minorCount,
+    eolFacts,
     alertPackages: new Set(alerts.repoFixes.keys()),
     stack,
     orgRepoNames: orgRepos.map((r) => r.name),
     privateActionNames: actionDeps.map((d) => d.package.name),
     input,
-    inputHash: synthesisInputHash(ctx.model, ctx.promptVersion, input, selected, stream.id),
+    inputHash: createHash("sha256")
+      .update(synthesisInputHash(ctx.model, ctx.promptVersion, input, selected, stream.id))
+      .update(JSON.stringify(eolFacts))
+      .digest("hex"),
     inputChars: JSON.stringify(input).length,
     candidates: candidates.length,
   };
@@ -498,7 +511,7 @@ export async function storeBulletin(
     model: res.model,
     promptVersion: ctx.promptVersion,
     subject,
-    summary: assembled.summary,
+    summary: [assembled.summary, ...(prepared.eolFacts ?? [])].filter(Boolean).join("\n\n"),
     minorCount: prepared.minorCount,
     inputHash: prepared.inputHash,
     emailStatus: preview ? ("skipped" as const) : ("pending" as const),
