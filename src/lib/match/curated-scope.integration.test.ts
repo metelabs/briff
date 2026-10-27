@@ -67,5 +67,26 @@ describe.skipIf(!url)("curated scope matching", () => {
     expect(matches("GitHub changelog")?.repoIds).toEqual([web.id]);
     expect(matches("Laravel blog")).toBeNull();
     expect(matches("Elixir blog")).toBeNull();
+    const releaseSource = ECOSYSTEM_SOURCES.find((s) => s.name === "FastAPI releases");
+    if (!releaseSource) throw new Error("Missing release feed");
+    const tracked = await db.package.update({
+      where: { id: packageIds[0] },
+      data: { releaseFeedUrl: releaseSource.url },
+    });
+    const [refreshed] = await loadOrgStacks(db, [org.id]);
+    const release = matchItem(
+      { title: "Acme 1.1.0", rawText: "Release notes" },
+      {
+        kind: "rss",
+        url: releaseSource.url,
+        serviceKey: null,
+        runtime: null,
+        traits: releaseSource.traits,
+      },
+      refreshed
+    );
+    expect(release?.reason).toBe(`release:${tracked.name}`);
+    expect(release?.packageId).toBe(tracked.id);
+    expect(release?.repoIds).toEqual([python.id]);
   });
 });

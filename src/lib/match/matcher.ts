@@ -205,6 +205,11 @@ export function matchItem(
         for (const id of stack.scopedRepos?.get(scope) ?? []) ids.add(id);
       }
     }
+    const release = feedRelease(source.url, stack);
+    if (release) {
+      const repoIds = release.repoIds.filter((id) => ids.has(id));
+      return repoIds.length ? { ...release, repoIds } : null;
+    }
     return ids.size
       ? {
           score: SCORES.trait,
