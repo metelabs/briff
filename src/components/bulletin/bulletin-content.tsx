@@ -1,3 +1,4 @@
+import { BaseImageAdvisories } from "@/components/base-image-advisories";
 import Link from "next/link";
 import { Fragment, type CSSProperties, type ReactNode } from "react";
 
@@ -197,6 +198,7 @@ export function BulletinContent({
                   </Card>
                 )}
               </div>
+              <BaseImageAdvisories groups={view.baseImageAlerts ?? []} />
               <AdvisoriesCard view={view} t={t} signedIn={signedIn} />
               {folded > 0 && (
                 <div className="rise [--i:6]">

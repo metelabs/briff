@@ -1,4 +1,6 @@
 import { storedActionTags } from "@/sources/github-actions";
+import { createHash } from "node:crypto";
+import { loadBaseImageGroups } from "@/security/base-image-view";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
 import { getEnv } from "@/lib/env";
@@ -388,7 +390,18 @@ export async function prepareStream(
   });
   const minorCount = countMinor(folded, repos, traits);
   // A first-scan backlog alone still gets a bulletin: its page is where the backlog is listed.
-  if (selected.length === 0 && alerts.summaries.length === 0 && alerts.backlogAdvisories === 0)
+  const baseImages = await loadBaseImageGroups(
+    db,
+    orgId,
+    { id: { in: stream.repoIds } },
+    { gte: periodStart, lt: periodEnd }
+  );
+  if (
+    selected.length === 0 &&
+    alerts.summaries.length === 0 &&
+    alerts.backlogAdvisories === 0 &&
+    baseImages.length === 0
+  )
     return null;
 
   const input = buildSynthesisInput({
@@ -401,6 +414,13 @@ export async function prepareStream(
     minorCount,
     alerts: alerts.summaries,
   });
+  const synthesisHash = synthesisInputHash(
+    ctx.model,
+    ctx.promptVersion,
+    input,
+    selected,
+    stream.id
+  );
   return {
     orgId,
     stream,
@@ -413,7 +433,9 @@ export async function prepareStream(
     orgRepoNames: orgRepos.map((r) => r.name),
     privateActionNames: actionDeps.map((d) => d.package.name),
     input,
-    inputHash: synthesisInputHash(ctx.model, ctx.promptVersion, input, selected, stream.id),
+    inputHash: baseImages.length
+      ? createHash("sha256").update(synthesisHash).update(JSON.stringify(baseImages)).digest("hex")
+      : synthesisHash,
     inputChars: JSON.stringify(input).length,
     candidates: candidates.length,
   };

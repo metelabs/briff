@@ -179,6 +179,7 @@ describe("Dockerfile", () => {
   it("maps every FROM image, ignoring --platform, stage aliases and scratch", () => {
     expect(brief(parse("Dockerfile"))).toEqual([
       "node 22-bookworm-slim (22) · Dockerfile",
+      "debian 12 (12) · Dockerfile base image node:22-bookworm-slim",
       "php 8.3-fpm-alpine (8.3) · Dockerfile",
       "php ${PHP_VERSION}-cli (-) ? · Dockerfile",
       "nginx 1.27.2-alpine (1.27.2) · Dockerfile",
@@ -193,7 +194,10 @@ describe("Dockerfile", () => {
 
   it("handles a lower-case from and a stage that reuses the image name", () => {
     const out = parseRuntimeFile("dockerfile", "from php:8.4 as php\nFROM php\n", "Dockerfile");
-    expect(brief(out)).toEqual(["php 8.4 (8.4) · Dockerfile"]);
+    expect(brief(out)).toEqual([
+      "php 8.4 (8.4) · Dockerfile",
+      "debian 13 (13) · Dockerfile base image php:8.4",
+    ]);
   });
 });
 

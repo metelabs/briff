@@ -1,0 +1,7 @@
+php:7.4-fpm
+php:8.1-cli
+php:8.3.1-cli
+python:3.9-slim
+python:3.12.1-slim
+python:3-slim
+php:9.0-cli
