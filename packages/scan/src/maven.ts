@@ -85,8 +85,23 @@ export function parseMavenFiles(
         ? null
         : text(parent.relativePath) || "../pom.xml";
     const parentFile = relative ? posix.normalize(posix.join(posix.dirname(file), relative)) : "";
-    const inherited = poms.has(parentFile)
-      ? model(parentFile, visiting)
+    const candidate = poms.has(parentFile) ? model(parentFile, visiting) : null;
+    const parentMatches =
+      candidate &&
+      ["groupId", "artifactId", "version"].every((key) => {
+        let declared = text(parent[key]);
+        for (let i = 0; i < 20 && declared.includes("${"); i++) {
+          const next = declared.replace(
+            /\$\{([^}]+)\}/g,
+            (match: string, property: string) => text(table(project.properties)[property]) || match
+          );
+          if (next === declared) break;
+          declared = next;
+        }
+        return declared === candidate.properties[`project.${key}`];
+      });
+    const inherited = parentMatches
+      ? candidate
       : {
           properties: {},
           expressions: {},
@@ -101,6 +116,7 @@ export function parseMavenFiles(
     };
     properties["project.version"] = text(project.version) || text(parent.version);
     properties["project.groupId"] = text(project.groupId) || text(parent.groupId);
+    properties["project.artifactId"] = text(project.artifactId);
     properties["pom.version"] = properties["project.version"];
     const expressions = { ...properties };
     const resolve = (value: string): string => {
@@ -182,7 +198,13 @@ export function parseMavenFiles(
         ? posix.dirname(posix.dirname(catalogFile))
         : posix.dirname(catalogFile);
       if (posix.relative(root, file).startsWith("../")) continue;
-      const catalog = parseToml(catalogContent);
+      let catalog: Table;
+      try {
+        catalog = parseToml(catalogContent);
+      } catch {
+        warn(`skip ${catalogFile}: invalid version catalog`);
+        continue;
+      }
       const versions = table(catalog.versions);
       for (const [alias, value] of Object.entries(table(catalog.libraries))) {
         const accessor = alias.replace(/[-_]/g, ".");

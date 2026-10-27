@@ -1,0 +1,1 @@
+<project><parent><groupId>org.acme.external</groupId><artifactId>parent</artifactId><version>1.0</version></parent><artifactId>module</artifactId><dependencies><dependency><groupId>org.acme</groupId><artifactId>local</artifactId><version>2.0.1</version></dependency></dependencies></project>

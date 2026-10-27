@@ -48,6 +48,26 @@ describe("Maven and Gradle", () => {
     expect(repo?.dependencies.map((d) => d.name).sort()).toEqual(["org.acme:kit", "org.acme:used"]);
     expect(warnings.some((message) => message.includes("broken/pom.xml"))).toBe(true);
   });
+  it("rejects unrelated local parents and isolates invalid catalogs", () => {
+    const fixture = (file: string) =>
+      readFileSync(new URL(`./__fixtures__/maven-inherited/${file}`, import.meta.url), "utf8");
+    const warnings: string[] = [];
+    const rows = parseMavenFiles(
+      {
+        "pom.xml": fixture("pom.xml"),
+        "module/pom.xml": fixture("external.xml"),
+        "build.gradle.kts": fixture("build.gradle.kts"),
+        "gradle/libs.versions.toml": fixture("broken.toml"),
+      },
+      (message) => warnings.push(message)
+    );
+    expect(rows.map((d) => [d.name, d.project])).toEqual([
+      ["org.acme:kit", "pom.xml"],
+      ["org.acme:local", "module/pom.xml"],
+      ["org.acme:used", "build.gradle.kts"],
+    ]);
+    expect(warnings).toContain("skip gradle/libs.versions.toml: invalid version catalog");
+  });
   it("keeps versionless catalog ownership and literals outside partial locks", () => {
     const partial = Object.fromEntries(
       ["build.gradle.kts", "gradle/libs.versions.toml", "gradle.lockfile"].map((file) => [
