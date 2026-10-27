@@ -25,7 +25,7 @@ describe("curated sources", () => {
     for (const s of RUNTIME_SOURCES) {
       expect(s.runtime).toBeDefined();
       expect(s.class).toBeDefined();
-      expect(s.traits).toEqual([]);
+      expect(s.traits.every((t) => t.startsWith("scope:"))).toBe(true);
       if (s.kind === "github_advisories") {
         expect(s.class).toBe("security");
         expect(s.url).toMatch(

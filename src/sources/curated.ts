@@ -110,7 +110,17 @@ function feed(
   name: string,
   url: string
 ): CuratedSource {
-  return { name, kind: "rss", url, traits: [], runtime, class: sourceClass };
+  const ecosystem = (
+    { php: "Packagist", ruby: "RubyGems", rust: "crates.io" } as Readonly<Record<string, string>>
+  )[runtime];
+  return {
+    name,
+    kind: "rss",
+    url,
+    traits: ecosystem ? [`scope:runtime:${runtime}`, `scope:ecosystem:${ecosystem}`] : [],
+    runtime,
+    class: sourceClass,
+  };
 }
 
 function advisories(runtime: RuntimeId, owner: string, repo: string): CuratedSource {
@@ -187,4 +197,76 @@ export const RUNTIME_SOURCES: CuratedSource[] = [
   feed("bun", "releases", "oven-sh/bun releases", "https://github.com/oven-sh/bun/releases.atom"),
 ];
 
-export const CURATED_SOURCES: CuratedSource[] = [...PLATFORM_SOURCES, ...RUNTIME_SOURCES];
+function ecosystemFeed(name: string, url: string, ...scopes: string[]): CuratedSource {
+  return { name, url, kind: "rss", class: "news", traits: scopes.map((s) => `scope:${s}`) };
+}
+
+export const ECOSYSTEM_SOURCES: CuratedSource[] = [
+  ecosystemFeed("Laravel blog", "https://laravel.com/feed", "ecosystem:Packagist", "runtime:php"),
+  ecosystemFeed(
+    "Symfony blog",
+    "https://feeds.feedburner.com/symfony/blog",
+    "ecosystem:Packagist",
+    "runtime:php"
+  ),
+  ecosystemFeed(
+    "Python Insider",
+    "https://blog.python.org/feeds/posts/default",
+    "ecosystem:PyPI",
+    "runtime:python"
+  ),
+  ecosystemFeed(
+    "Django weblog",
+    "https://www.djangoproject.com/rss/weblog/",
+    "ecosystem:PyPI",
+    "runtime:python"
+  ),
+  ecosystemFeed(
+    "FastAPI releases",
+    "https://github.com/fastapi/fastapi/releases.atom",
+    "ecosystem:PyPI",
+    "runtime:python"
+  ),
+  ecosystemFeed(
+    "uv changelog",
+    "https://github.com/astral-sh/uv/releases.atom",
+    "ecosystem:PyPI",
+    "runtime:python"
+  ),
+  ecosystemFeed(
+    "Rails blog",
+    "https://rubyonrails.org/feed.xml",
+    "ecosystem:RubyGems",
+    "runtime:ruby"
+  ),
+  ecosystemFeed("Go blog", "https://go.dev/blog/feed.atom", "ecosystem:Go", "runtime:go"),
+  ecosystemFeed(
+    ".NET blog",
+    "https://devblogs.microsoft.com/dotnet/feed/",
+    "ecosystem:NuGet",
+    "runtime:dotnet"
+  ),
+  ecosystemFeed("Spring blog", "https://spring.io/blog.atom", "ecosystem:Maven", "runtime:java"),
+  ecosystemFeed("Inside Java", "https://inside.java/feed.xml", "ecosystem:Maven", "runtime:java"),
+  ecosystemFeed("Dart news", "https://dart.dev/blog/feed.xml", "ecosystem:Pub", "runtime:dart"),
+  ecosystemFeed("Flutter blog", "https://medium.com/feed/flutter", "ecosystem:Pub", "runtime:dart"),
+  ecosystemFeed(
+    "Elixir blog",
+    "https://elixir-lang.org/atom.xml",
+    "ecosystem:Hex",
+    "runtime:elixir"
+  ),
+  ecosystemFeed("Docker blog", "https://www.docker.com/blog/feed/", "docker"),
+  ecosystemFeed(
+    "GitHub changelog",
+    "https://github.blog/changelog/feed/",
+    "github",
+    "ecosystem:GitHub Actions"
+  ),
+];
+
+export const CURATED_SOURCES: CuratedSource[] = [
+  ...PLATFORM_SOURCES,
+  ...RUNTIME_SOURCES,
+  ...ECOSYSTEM_SOURCES,
+];
