@@ -2,13 +2,14 @@ import "server-only";
 
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { APIError } from "better-auth/api";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 
 import { getDb } from "@/lib/db/client";
 import { getEnv } from "@/lib/env";
 import { log } from "@/lib/log";
 import { createOrgForUser } from "@/lib/org";
+import { signupAllowed } from "./signup-limit";
 
 function createAuth() {
   const env = getEnv();
@@ -25,6 +26,15 @@ function createAuth() {
       customRules: { "/sign-up/email": { window: 3600, max: 5 } },
     },
     advanced: { ipAddress: { ipAddressHeaders: ["x-real-ip"] } },
+    hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path === "/sign-up/email" && !signupAllowed(ctx.headers?.get("x-real-ip"))) {
+          throw new APIError("TOO_MANY_REQUESTS", {
+            message: "Too many sign-up attempts. Try again in one hour.",
+          });
+        }
+      }),
+    },
     emailAndPassword: { enabled: true, minPasswordLength: 12, autoSignIn: true },
     databaseHooks: {
       user: {

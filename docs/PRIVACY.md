@@ -200,7 +200,8 @@ after the first account. Each account gets an organisation with 10 repositories 
 2 streams. The instance admin can view and raise these capacity settings.
 Email verification is not required by the current Better Auth configuration.
 
-Sign-up requests use Better Auth's per-IP window: five attempts per hour. The
+Sign-up requests share a per-IP auth-hook window: five attempts per hour, covering
+both HTTP requests and the login Server Action's direct auth API calls. The
 window is held in web-process memory and resets on restart; multiple web replicas
 have independent windows. The reverse proxy must overwrite `X-Real-IP` with the
 client address (never pass a client-supplied value through). No IP is added to
