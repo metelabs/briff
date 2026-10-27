@@ -17,6 +17,19 @@ const files = Object.fromEntries(
 );
 
 describe("Maven and Gradle", () => {
+  it("resolves CI-friendly parents and parent aliases independently of the child version", () => {
+    const fixture = (name: string) =>
+      readFileSync(new URL(`./__fixtures__/maven-inherited/${name}`, import.meta.url), "utf8");
+    const rows = parseMavenFiles({
+      "pom.xml": fixture("revision.xml"),
+      "child/pom.xml": fixture("parent-aliases.xml"),
+    });
+    expect(rows.map((row) => [row.name, row.version])).toEqual([
+      ["org.acme:kit", "1.2.3"],
+      ["org.acme:alias", "1.2.3"],
+      ["org.acme:pom-alias", "1.2.3"],
+    ]);
+  });
   it("keeps managed versions separate by type and classifier", () => {
     const pom = readFileSync(
       new URL("./__fixtures__/maven-inherited/classifiers.xml", import.meta.url),

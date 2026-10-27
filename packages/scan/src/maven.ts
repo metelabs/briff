@@ -93,7 +93,12 @@ export function parseMavenFiles(
         for (let i = 0; i < 20 && declared.includes("${"); i++) {
           const next = declared.replace(
             /\$\{([^}]+)\}/g,
-            (match: string, property: string) => text(table(project.properties)[property]) || match
+            (match: string, property: string) =>
+              text(table(project.properties)[property]) ||
+              (/^(?:revision|sha1|changelist)$/.test(property)
+                ? candidate.properties[property]
+                : undefined) ||
+              match
           );
           if (next === declared) break;
           declared = next;
@@ -118,6 +123,14 @@ export function parseMavenFiles(
     properties["project.groupId"] = text(project.groupId) || text(parent.groupId);
     properties["project.artifactId"] = text(project.artifactId);
     properties["pom.version"] = properties["project.version"];
+    properties["pom.groupId"] = properties["project.groupId"];
+    properties["pom.artifactId"] = properties["project.artifactId"];
+    for (const key of ["groupId", "artifactId", "version"]) {
+      const value = text(parent[key]);
+      properties[`project.parent.${key}`] = value;
+      properties[`pom.parent.${key}`] = value;
+      properties[`parent.${key}`] = value;
+    }
     const expressions = { ...properties };
     const resolve = (value: string): string => {
       for (let i = 0; i < 20 && value.includes("${"); i++) {
