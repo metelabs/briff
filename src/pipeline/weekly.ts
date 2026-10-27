@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { upcomingEolFacts } from "./runtime-eol-facts";
+import { upcomingEol } from "./runtime-eol-facts";
 import { storedActionTags } from "@/sources/github-actions";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
@@ -390,7 +390,10 @@ export async function prepareStream(
     runtimes,
   });
   const minorCount = countMinor(folded, repos, traits);
-  const eolFacts = upcomingEolFacts([...runtimes.values()].flat(), ctx.now);
+  const { facts: eolFacts, identities: eolKeys } = upcomingEol(
+    [...runtimes.values()].flat(),
+    ctx.now
+  );
   // A first-scan backlog alone still gets a bulletin: its page is where the backlog is listed.
   if (
     selected.length === 0 &&
@@ -425,7 +428,7 @@ export async function prepareStream(
     input,
     inputHash: createHash("sha256")
       .update(synthesisInputHash(ctx.model, ctx.promptVersion, input, selected, stream.id))
-      .update(JSON.stringify(eolFacts))
+      .update(JSON.stringify(eolKeys))
       .digest("hex"),
     inputChars: JSON.stringify(input).length,
     candidates: candidates.length,

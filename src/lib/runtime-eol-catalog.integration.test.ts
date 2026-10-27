@@ -75,6 +75,14 @@ describe.skipIf(!url)("persisted runtime lifecycle", () => {
         "acme/web: node 22 — EOL in 60 days (EOL on 2027-04-30).",
       ]);
       if (!prepared) throw new Error("Missing fact-only bulletin");
+      const nextDay = await prepareStream(
+        db,
+        org.id,
+        { id: stream.id, name: stream.name, repoIds: [repo.id] },
+        { ...context, now: new Date("2027-03-02T12:00:00Z") }
+      );
+      expect(nextDay?.eolFacts?.[0]).toContain("EOL in 59 days");
+      expect(nextDay?.inputHash).toBe(prepared.inputHash);
       const result = await createFakeLlm().json(
         synthesisRequest(prepared, context.model, prompt.text)
       );
