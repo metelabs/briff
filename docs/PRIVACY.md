@@ -154,3 +154,41 @@ The daily runtime lifecycle refresh sends only fixed public product names to
 `endoflife.date` (`/api/<product>.json`). It sends no repository names, installed
 versions, organisation data or image references. The shared lifecycle catalog
 contains public release support data only.
+
+## Base image advisories
+
+Dockerfile and compose images with a known distro add a distro runtime row. Explicit
+Debian codenames/numbers, Ubuntu releases and Alpine minor releases are supported, as are
+explicit distro variants of official language images. Unqualified `python:3.12-slim` and
+`php:8.3-cli` currently imply Debian 13 (Trixie), checked against the
+[official Python image tags](https://github.com/docker-library/official-images/blob/master/library/python)
+and [official PHP image tags](https://github.com/docker-library/official-images/blob/master/library/php)
+on 2026-10-27. The defaults and codenames live in `packages/scan/src/distros.ts`; recheck
+them when official image defaults change. Private image names, variable tags, digest pins
+and floating Alpine variants are not resolved.
+
+A daily worker job queries OSV using the distro ecosystem (`Debian:12`, `Ubuntu:24.04:LTS`,
+`Alpine:v3.20`) and a short source-package list: OpenSSL, zlib, glibc or musl, libxml2,
+curl, expat, SQLite, GnuTLS, libtasn1, BusyBox on Alpine, and apt/dpkg on Debian/Ubuntu.
+Only distro ecosystem and public package names leave Briff for these queries. Image names,
+repo names and file contents do not go to OSV; no image or package inventory is fetched.
+
+**These are candidate base image advisories, not confirmed vulnerabilities.** A tag cannot
+tell Briff which OS packages are present or which versions were patched into the image.
+The short list intentionally over-approximates possible presence, including libraries not
+installed by every minimal image; packages outside the list and packages installed by
+Dockerfile commands are not covered. OSV receives no invented installed version. The Alerts
+and bulletin pages group candidates by image and explain this limitation. Critical/high
+candidates use the normal immediate-email threshold, with delivery tracked per repo,
+image and advisory; lower severities remain on the pages and are noted in the weekly email.
+
+Advice is to rebuild on the latest existing image tag. An EOL distro gets a migration
+sentence to the lowest supported distro, preserving the language release line. Paid
+extended support is excluded; Debian includes public LTS. Each new organisation has
+`Org.baseImageAlerts = true`; disabling it in the database stops this scan, its emails and
+its presentation. There is no settings control yet. Candidate rows belong to the org,
+are included in its data export and cascade when the org or repo is deleted.
+
+Unqualified distro defaults are limited to verified floating minor tags: PHP 8.2–8.5
+and Python 3.11–3.14. Discontinued lines, patch-pinned historical tags and unverified
+future lines remain unresolved unless their tag explicitly names a distro.

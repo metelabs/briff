@@ -1,5 +1,16 @@
 // Built-in fallback until the first successful fetch for a product.
 export const FALLBACK_EOL: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  // Distro support excludes paid extended support; Debian includes public LTS.
+  debian: { "10": "2024-06-30", "11": "2026-08-31", "12": "2028-06-30", "13": "2030-06-30" },
+  ubuntu: { "20.04": "2025-05-31", "22.04": "2027-06-01", "24.04": "2029-05-31" },
+  alpine: {
+    "3.19": "2025-11-01",
+    "3.20": "2026-04-01",
+    "3.21": "2026-11-01",
+    "3.22": "2027-05-01",
+    "3.23": "2027-11-01",
+    "3.24": "2028-06-01",
+  },
   node: {
     "14": "2023-04-30",
     "15": "2021-06-01",
