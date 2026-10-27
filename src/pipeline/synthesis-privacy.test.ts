@@ -11,6 +11,7 @@ import {
 } from "./bulletin";
 import type { RepoFix } from "./fixes";
 import { pseudonymiseSynthesisInput, restoreSynthesisOutput } from "./synthesis-privacy";
+import { profileRequest } from "./profile";
 import { synthesisRequest, type PreparedStream } from "./weekly";
 
 const NOW = new Date("2026-10-19T04:00:00Z");
@@ -105,6 +106,34 @@ function fixture() {
 }
 
 describe("pseudonymiseSynthesisInput", () => {
+  it("aliases Actions names even when packages and weights would exempt them", () => {
+    const { input } = fixture();
+    const name = "acme/internal-ci";
+    input.profile.text = `Prioritise ${name}`;
+    input.profile.weights[`package:${name}`] = 1;
+    input.stack[0].packages.push(`${name}@main`);
+    const { input: out, aliases } = pseudonymiseSynthesisInput(input, [], [name], [name]);
+    expect(JSON.stringify(out)).not.toContain(name);
+    expect(aliases.restoreText(out.profile.text)).toBe(input.profile.text);
+    const request = profileRequest({
+      model: "fake",
+      system: "test",
+      language: "en",
+      currentText: input.profile.text,
+      weights: input.profile.weights,
+      feedback: [{ kind: "up", title: `Update ${name}` }],
+      repoNames: [],
+      packageNames: [name],
+      privateActionNames: [name],
+    });
+    expect(request.user).not.toContain(name);
+    expect(
+      request.parse({ text: (JSON.parse(request.user) as { current_text: string }).current_text })
+    ).toEqual({
+      text: input.profile.text,
+    });
+  });
+
   it("leaves no repo name in the payload and keeps packages, versions and advisories", () => {
     const { input } = fixture();
     const { input: out } = pseudonymiseSynthesisInput(input);

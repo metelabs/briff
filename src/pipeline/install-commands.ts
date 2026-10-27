@@ -1,3 +1,5 @@
+import semver from "semver";
+
 import { shapesFor, type Ecosystem, type PackageManager } from "@scan/ecosystems";
 
 // The copyable commands per ecosystem: install a version, and show what pulls a transitive
@@ -14,6 +16,7 @@ import { shapesFor, type Ecosystem, type PackageManager } from "@scan/ecosystems
  */
 export interface InstallVariant {
   dev?: boolean;
+  actionTags?: Record<string, string>;
   manager?: PackageManager;
   /**
    * Where a Python package is declared when not only in the main list: its sections,
@@ -179,8 +182,18 @@ export function installCommand(
   variant: InstallVariant = {}
 ): string {
   switch (ecosystem ?? "npm") {
+    case "GitHub Actions": {
+      const tag = Object.entries(variant.actionTags ?? {}).find(
+        ([name]) => semver.valid(name) === semver.valid(version)
+      );
+      return tag
+        ? `pin ${pkg} to ${tag[0]} (sha ${tag[1]})`
+        : `read the advisory for the ${pkg} ${version} release tag`;
+    }
+
     case "crates.io":
       return `cargo update -p ${shellWord(`${pkg}${variant.requirement ? `@${variant.requirement}` : ""}`)} --precise ${shellWord(version)}`;
+
     case "RubyGems":
       return `set ${pkg} in Gemfile to "~> ${version}", then run bundle update ${shellWord(pkg)} --conservative`;
     case "Packagist":
@@ -211,8 +224,12 @@ export function whyCommand(
   manager?: PackageManager
 ): string {
   switch (ecosystem ?? "npm") {
+    case "GitHub Actions":
+      return `inspect uses: ${pkg} in .github/workflows`;
+
     case "crates.io":
       return `cargo tree -i ${shellWord(pkg)}`;
+
     case "RubyGems":
       return `bundle exec gem dependency ${shellWord(pkg)} --reverse-dependencies`;
     case "Packagist":

@@ -51,7 +51,8 @@ export function pseudonymiseSynthesisInput(
   input: SynthesisInput,
   orgRepoNames: readonly string[] = [],
   /** More public names, e.g. every direct dependency of the stream (not only those sent). */
-  extraPublic: readonly string[] = []
+  extraPublic: readonly string[] = [],
+  privateNames: readonly string[] = []
 ): {
   input: SynthesisInput;
   aliases: RepoAliases;
@@ -59,23 +60,38 @@ export function pseudonymiseSynthesisInput(
   const aliases = repoAliases(
     [...synthesisRepoNames(input), ...orgRepoNames],
     [...publicNames(input), ...extraPublic],
-    { avoidIn: JSON.stringify(input) }
+    { avoidIn: JSON.stringify(input), privateNames }
   );
   return {
     aliases,
     input: {
       ...input,
-      profile: { ...input.profile, text: aliases.aliasText(input.profile.text) },
-      stack: input.stack.map((r) => ({ ...r, name: aliases.alias(r.name) })),
+      profile: {
+        ...input.profile,
+        text: aliases.aliasText(input.profile.text),
+        weights: Object.fromEntries(
+          Object.entries(input.profile.weights).map(([key, value]) => [
+            aliases.aliasText(key),
+            value,
+          ])
+        ),
+      },
+      stack: input.stack.map((r) => ({
+        ...r,
+        name: aliases.alias(r.name),
+        packages: r.packages.map(aliases.aliasText),
+      })),
       items: input.items.map((i) => ({
         ...i,
         affected_repos: i.affected_repos.map(aliases.alias),
+        packages: i.packages.map(aliases.aliasText),
         suggested_action:
           i.suggested_action === null ? null : aliases.aliasText(i.suggested_action),
       })),
       security_alerts: input.security_alerts.map((a) => ({
         ...a,
         repos: a.repos.map(aliases.alias),
+        package: aliases.aliasText(a.package),
       })),
     },
   };

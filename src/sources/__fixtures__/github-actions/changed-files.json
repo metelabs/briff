@@ -1,0 +1,46 @@
+{
+  "id": "GHSA-mrrh-fwg8-r2c3",
+  "summary": "tj-actions changed-files through 45.0.7 allows remote attackers to discover secrets by reading actions logs.",
+  "aliases": ["CVE-2025-30066"],
+  "modified": "2025-10-22T19:29:00Z",
+  "published": "2025-03-15T06:30:34Z",
+  "database_specific": {
+    "github_reviewed_at": "2025-03-15T16:39:06Z",
+    "nvd_published_at": "2025-03-15T06:15:12Z",
+    "cwe_ids": ["CWE-506"],
+    "severity": "HIGH",
+    "github_reviewed": true
+  },
+  "affected": [
+    {
+      "package": {
+        "name": "tj-actions/changed-files",
+        "ecosystem": "GitHub Actions"
+      },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            },
+            {
+              "fixed": "46.0.1"
+            }
+          ]
+        }
+      ],
+      "database_specific": {
+        "last_known_affected_version_range": "<= 45.0.7",
+        "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2025/03/GHSA-mrrh-fwg8-r2c3/GHSA-mrrh-fwg8-r2c3.json"
+      }
+    }
+  ],
+  "schema_version": "1.9.0",
+  "severity": [
+    {
+      "type": "CVSS_V3",
+      "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:N/A:N/E:H"
+    }
+  ]
+}

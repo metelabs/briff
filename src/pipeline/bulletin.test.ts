@@ -1,3 +1,5 @@
+import { upgradeActions } from "./bulletin-by-repo";
+import { parseUpgrades } from "./upgrades";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
@@ -2004,4 +2006,44 @@ describe("fix command and affected repos without an alert", () => {
     expect(c.affectedRepos).toEqual(["garden", "west"]);
     expect(c.suggestedAction).toBe("npm i payload@3.92.0 (garden)");
   });
+});
+
+it("retains verified tags through ordinary Actions release upgrades and stored JSON", () => {
+  const sha = "a".repeat(40);
+  const release = candidate({
+    itemId: "action",
+    title: "acme/action v4.2.1",
+    sourceKind: "github_releases",
+    matchReason: "release:acme/action",
+    matchedPackage: { name: "acme/action", ecosystem: "GitHub Actions" },
+    repoIds: ["r1"],
+    keys: {
+      packages: ["acme/action"],
+      services: [],
+      source: "acme/action",
+      topic: "breaking_or_feature",
+    },
+  });
+  const selected = selectCandidates([release], new Map([["r1", "acme/web"]]), {}, noAlerts)[0];
+  const upgrades = itemUpgrades(
+    { section: "know", todo: "upgrade", action: "Update acme/action", affectedRepos: ["acme/web"] },
+    selected,
+    [
+      {
+        name: "acme/web",
+        dependencies: [
+          {
+            name: "acme/action",
+            ecosystem: "GitHub Actions",
+            version: "4.1.0",
+            actionTags: { "v4.2.1": sha },
+          },
+        ],
+      },
+    ]
+  );
+  expect(upgrades[0]).toMatchObject({ target: "4.2.1", actionTags: { "v4.2.1": sha } });
+  expect(upgradeActions(parseUpgrades(JSON.parse(JSON.stringify(upgrades))))[0].text).toBe(
+    `pin acme/action to v4.2.1 (sha ${sha})`
+  );
 });

@@ -37,8 +37,15 @@ export function profileRequest(args: {
   repoNames: string[];
   /** Package names the org installs: public, never rewritten in the text. */
   packageNames: string[];
+  privateActionNames?: string[];
 }): JsonRequest<{ text: string }> {
-  const aliases = repoAliases(args.repoNames, [...args.packageNames, ...weightNames(args.weights)]);
+  const aliases = repoAliases(
+    args.repoNames,
+    [...args.packageNames, ...weightNames(args.weights)],
+    {
+      privateNames: args.privateActionNames,
+    }
+  );
   return {
     task: "profile",
     model: args.model,
@@ -46,8 +53,10 @@ export function profileRequest(args: {
     user: JSON.stringify({
       language: args.language,
       current_text: aliases.aliasText(args.currentText),
-      weights: args.weights,
-      recent_feedback: args.feedback,
+      weights: Object.fromEntries(
+        Object.entries(args.weights).map(([key, value]) => [aliases.aliasText(key), value])
+      ),
+      recent_feedback: args.feedback.map((f) => ({ ...f, title: aliases.aliasText(f.title) })),
     }),
     schema: PROFILE_JSON_SCHEMA,
     parse: (v) => {
@@ -94,6 +103,13 @@ export async function refreshProfile(args: {
       weights: parseWeights(profile?.weights),
       feedback: feedback.map((f) => ({ kind: f.kind, title: f.item.title })),
       repoNames: (await scoped.repo.findMany({ select: { name: true } })).map((r) => r.name),
+      privateActionNames: (
+        await scoped.dependency.findMany({
+          where: { package: { ecosystem: "GitHub Actions" } },
+          distinct: ["packageId"],
+          select: { package: { select: { name: true } } },
+        })
+      ).map((d) => d.package.name),
       packageNames: (
         await scoped.dependency.findMany({
           distinct: ["packageId"],

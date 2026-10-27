@@ -1,6 +1,8 @@
 import type { Ecosystem } from "@scan/ecosystems";
 import { fetchCrate } from "./crates";
 
+import { fetchAction } from "./github-actions";
+
 import { fetchRubyGemsPackage } from "./rubygems";
 import { fetchGoModule } from "./go-proxy";
 import { fetchNpmPackage, type NpmPackageInfo } from "./npm-registry";
@@ -17,8 +19,12 @@ export type RegistryLookup = { status: "ok"; info: RegistryInfo } | { status: "n
 
 export function fetchRegistryPackage(ecosystem: Ecosystem, name: string): Promise<RegistryLookup> {
   switch (ecosystem) {
+    case "GitHub Actions":
+      return fetchAction(name);
+
     case "crates.io":
       return fetchCrate(name);
+
     case "RubyGems":
       return fetchRubyGemsPackage(name);
     case "npm":

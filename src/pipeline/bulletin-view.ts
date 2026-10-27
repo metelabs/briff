@@ -1,3 +1,4 @@
+import { storedActionTags } from "@/sources/github-actions";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
 import { PRODUCT_LANGUAGE } from "@/lib/i18n";
@@ -180,6 +181,7 @@ export async function attachInstalls<
     group?: string;
     requirement?: string;
     project?: string;
+    actionTags?: Record<string, string>;
     manager?: PackageManager;
     declarations: Record<string, VersionDeclaration>;
   })[]
@@ -203,6 +205,7 @@ export async function attachInstalls<
             requirement: true,
             project: true,
             manager: true,
+            package: { select: { actionTags: true } },
           },
         })
       : [];
@@ -222,6 +225,7 @@ export async function attachInstalls<
       const manager = asPackageManager(d.manager);
       const byVersion = declarations.get(key) ?? {};
       byVersion[d.installedVersion] ??= {
+        actionTags: storedActionTags(d.package.actionTags),
         ...(d.dev ? { dev: true } : {}),
         ...(d.group ? { group: d.group } : {}),
         ...(d.requirement ? { requirement: d.requirement } : {}),
@@ -266,6 +270,7 @@ export interface VersionDeclaration {
   group?: string;
   requirement?: string;
   project?: string;
+  actionTags?: Record<string, string>;
   manager?: PackageManager;
 }
 
@@ -274,7 +279,10 @@ export interface VersionDeclaration {
  * one, else the row's (rows built without per-version declarations).
  */
 export function declarationOf(
-  r: Pick<AlertRow, "dev" | "group" | "requirement" | "project" | "manager" | "declarations">,
+  r: Pick<
+    AlertRow,
+    "dev" | "group" | "requirement" | "project" | "manager" | "actionTags" | "declarations"
+  >,
   installed: string
 ): VersionDeclaration {
   const own = r.declarations?.[installed];
@@ -284,6 +292,7 @@ export function declarationOf(
     ...(r.group ? { group: r.group } : {}),
     ...(r.requirement ? { requirement: r.requirement } : {}),
     ...(r.project ? { project: r.project } : {}),
+    ...(r.actionTags ? { actionTags: r.actionTags } : {}),
     ...(r.manager ? { manager: r.manager } : {}),
   };
 }
@@ -305,6 +314,7 @@ export interface AlertRow {
   /** Per installed version, its own declaration (attachInstalls); wins over the fields above. */
   declarations?: Record<string, VersionDeclaration>;
   /** The Python tool the repo installs the package with (attachInstalls). */
+  actionTags?: Record<string, string>;
   manager?: PackageManager;
   advisory: {
     osvId: string;

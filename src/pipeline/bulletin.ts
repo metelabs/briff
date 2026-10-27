@@ -666,6 +666,7 @@ export interface StackRepo {
     group?: string;
     requirement?: string;
     project?: string;
+    actionTags?: Record<string, string>;
     manager?: PackageManager;
     unresolved?: true;
   }[];
@@ -746,6 +747,7 @@ export interface PeriodAlert {
     group?: string;
     requirement?: string;
     project?: string;
+    actionTags?: Record<string, string>;
     manager?: PackageManager;
   }[];
 }
@@ -775,6 +777,7 @@ export function summariseAlerts(rows: readonly PeriodAlert[]): {
       ...(i.group ? { group: i.group } : {}),
       ...(i.requirement ? { requirement: i.requirement } : {}),
       ...(i.project ? { project: i.project } : {}),
+      ...(i.actionTags ? { actionTags: i.actionTags } : {}),
       ...(i.manager ? { manager: i.manager } : {}),
     }));
     if (entries.length > 0) repoFixes.set(pkg, [...(repoFixes.get(pkg) ?? []), ...entries]);
@@ -1064,6 +1067,7 @@ export function itemUpgrades(
           ...(dep.group ? { group: dep.group } : {}),
           ...(dep.requirement ? { requirement: dep.requirement } : {}),
           ...(dep.project ? { project: dep.project } : {}),
+          ...(dep.actionTags ? { actionTags: dep.actionTags } : {}),
           ...(dep.manager ? { manager: dep.manager } : {}),
         };
       }
@@ -1094,7 +1098,7 @@ const COMMAND =
 
 /** A shell command rather than a sentence (rendered monospace; the derived one wins). */
 export function isCommand(action: string): boolean {
-  return COMMAND.test(action.trim());
+  return COMMAND.test(action.trim()) || /^pin [\w.-]+\/[\w.-]+ to \S+/.test(action.trim());
 }
 
 function escapeRegExp(text: string): string {

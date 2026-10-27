@@ -1,5 +1,7 @@
 import path from "node:path";
 
+import { WORKFLOW_PATH } from "./actions";
+
 import {
   discoverRepos,
   lockfileKind,
@@ -138,7 +140,7 @@ export async function collectFromFiles(
     if (!isScannedPath(rel)) continue;
     const name = rel.split("/").pop() ?? rel;
     const abs = path.posix.join(MEMORY_ROOT, rel);
-    const lockKind = lockfileKind(name);
+    const lockKind = WORKFLOW_PATH.test(rel) ? "actions" : lockfileKind(name);
     if (lockKind) group.lockfiles.push({ kind: lockKind, path: abs });
     const runtimeKind = runtimeFileKind(name);
     if (runtimeKind) group.runtimeFiles.push({ kind: runtimeKind, path: abs });
