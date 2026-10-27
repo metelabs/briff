@@ -67,6 +67,7 @@ describe("discoverRepos", () => {
     const site = repos.find((r) => r.name === "site")!;
     const lists = await Promise.all(site.runtimeFiles.map((f) => readRuntimeFile(f, site.absPath)));
     expect(mergeRuntimes(lists).map((r) => `${r.name} ${r.normalized} · ${r.source}`)).toEqual([
+      "debian 13 · docker/php/Dockerfile base image php:8.3-fpm",
       "node 22 · .nvmrc",
       "php 8.3 · docker/php/Dockerfile",
     ]);

@@ -66,6 +66,18 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
       data: { orgId, itemId, packageId, repoIds: [repo.id], reason: "release:x", score: 1 },
     });
     await scoped.alert.create({ data: { orgId, advisoryId, repoId: repo.id } });
+    await scoped.baseImageAlert.create({
+      data: {
+        orgId,
+        repoId: repo.id,
+        image: "debian:12",
+        ecosystem: "Debian:12",
+        osvId: "CVE-ACME",
+        packages: ["openssl"],
+        action: "rebuild on the latest debian:12 tag",
+        modifiedAt: new Date(),
+      },
+    });
     const bulletin = await scoped.bulletin.create({
       data: {
         orgId,
@@ -188,6 +200,7 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
       "bulletins",
       "bulletinItems",
       "alerts",
+      "baseImageAlerts",
       "feedback",
       "deadlines",
       "scanTokens",
