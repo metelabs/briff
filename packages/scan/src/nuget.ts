@@ -94,13 +94,18 @@ export function parseNugetFiles(
     Object.assign(properties, { ...centralProperties, ...properties });
     const enabled =
       resolve(text(properties.ManagePackageVersionsCentrally)).toLowerCase() === "true";
-    const versions = new Map<string, string>();
+    const versions = new Map<string, Set<string>>();
     if (enabled)
       for (const group of list(central?.ItemGroup)) {
         for (const entry of list(table(group).PackageVersion)) {
           const dep = table(entry);
           const name = text(dep.Include) || text(dep.Update);
-          if (name) versions.set(name.toLowerCase(), resolve(text(dep.Version)));
+          if (name) {
+            const key = name.toLowerCase();
+            const alternatives = versions.get(key) ?? new Set<string>();
+            alternatives.add(resolve(text(dep.Version)));
+            versions.set(key, alternatives);
+          }
         }
       }
     for (const group of list(project.ItemGroup)) {
@@ -108,18 +113,21 @@ export function parseNugetFiles(
         const dep = table(entry);
         const name = text(dep.Include);
         if (!id(name)) continue;
-        const version = resolve(
-          text(dep.VersionOverride) || text(dep.Version) || versions.get(name.toLowerCase()) || ""
-        );
-        const exact = /^\[([^,]+)\]$/.exec(version)?.[1] ?? version;
-        if (!pin(exact)) continue;
-        rows.push({
-          name: name.toLowerCase(),
-          version: exact,
-          direct: true,
-          ecosystem: "NuGet",
-          project: file,
-        });
+        const explicit = text(dep.VersionOverride) || text(dep.Version);
+        const alternatives = explicit
+          ? [resolve(explicit)]
+          : [...(versions.get(name.toLowerCase()) ?? [])];
+        for (const version of alternatives) {
+          const exact = /^\[([^,]+)\]$/.exec(version)?.[1] ?? version;
+          if (!pin(exact)) continue;
+          rows.push({
+            name: name.toLowerCase(),
+            version: exact,
+            direct: true,
+            ecosystem: "NuGet",
+            project: file,
+          });
+        }
       }
     }
   }

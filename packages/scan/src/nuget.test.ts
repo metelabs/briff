@@ -15,6 +15,19 @@ export const fixtureFiles = Object.fromEntries(
   ])
 );
 describe("NuGet", () => {
+  it("preserves conditional central version alternatives and explicit overrides", () => {
+    const files = Object.fromEntries(
+      ["Acme.csproj", "Directory.Packages.props"].map((file) => [
+        file,
+        readFileSync(new URL(`./__fixtures__/nuget-conditional/${file}`, import.meta.url), "utf8"),
+      ])
+    );
+    expect(parseNugetFiles(files).map((dep) => [dep.name, dep.version])).toEqual([
+      ["system.text.json", "8.0.0"],
+      ["system.text.json", "9.0.0"],
+      ["acme.override", "1.2.3"],
+    ]);
+  });
   it("keeps fix ownership on direct projects when another project has the same pin transitively", async () => {
     const repo = await collectFromFiles(
       "acme/nuget",

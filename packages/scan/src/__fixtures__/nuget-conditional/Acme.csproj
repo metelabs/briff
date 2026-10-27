@@ -1,0 +1,1 @@
+<Project><PropertyGroup><TargetFrameworks>net8.0;net9.0</TargetFrameworks></PropertyGroup><ItemGroup><PackageReference Include="System.Text.Json"/><PackageReference Include="Acme.Override" VersionOverride="1.2.3"/></ItemGroup></Project>
