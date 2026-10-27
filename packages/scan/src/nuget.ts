@@ -131,5 +131,12 @@ export function parseNugetFiles(
       }
     }
   }
-  return rows;
+  const conditional = Object.entries(files).some(([file, content]) =>
+    file.endsWith("packages.lock.json")
+      ? rows.some((a) =>
+          rows.some((b) => a.name === b.name && a.project === b.project && a.version !== b.version)
+        )
+      : /\bCondition\s*=|<TargetFrameworks[>\s]/.test(content)
+  );
+  return conditional ? rows.map((row) => ({ ...row, requirement: "nuget-conditional" })) : rows;
 }

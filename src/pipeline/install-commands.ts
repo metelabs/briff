@@ -185,6 +185,8 @@ export function installCommand(
 ): string {
   switch (ecosystem ?? "npm") {
     case "NuGet":
+      if (variant.requirement === "nuget-conditional")
+        return `set only the ${pkg} PackageReference or central PackageVersion declarations on the ${semver.major(version) === 0 ? `0.${semver.minor(version)}` : semver.major(version)} release line in ${variant.project ?? "the project"} to ${version}; preserve other framework conditions and versions`;
       return (variant.project?.split(",") ?? ["<project.csproj>"])
         .map(
           (project) =>

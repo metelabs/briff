@@ -22,7 +22,9 @@ describe("NuGet", () => {
         readFileSync(new URL(`./__fixtures__/nuget-conditional/${file}`, import.meta.url), "utf8"),
       ])
     );
-    expect(parseNugetFiles(files).map((dep) => [dep.name, dep.version])).toEqual([
+    const rows = parseNugetFiles(files);
+    expect(rows.every((dep) => dep.requirement === "nuget-conditional")).toBe(true);
+    expect(rows.map((dep) => [dep.name, dep.version])).toEqual([
       ["system.text.json", "8.0.0"],
       ["system.text.json", "9.0.0"],
       ["acme.override", "1.2.3"],

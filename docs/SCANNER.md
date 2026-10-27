@@ -525,6 +525,9 @@ commit a lockfile for the resolved transitive set. Several conditional/framework
 retained, and duplicate pins merge their owning project paths.
 
 OSV uses `NuGet`. Direct fixes use `dotnet add <project.csproj> package <id> --version X`
-for every recorded owning project; transitive guidance uses `dotnet nuget why <project.csproj>
+for every recorded owning project. Conditional or multi-target declarations instead get an
+instruction to edit only declarations on the target release line, preserving other framework
+conditions and versions; project-wide add commands cannot safely express that change.
+Transitive guidance uses `dotnet nuget why <project.csproj>
 <id>`. The target remains on the installed release line. No development flag is inferred
 from PrivateAssets: it controls propagation, not whether the dependency runs in production.

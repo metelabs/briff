@@ -234,3 +234,16 @@ it("targets every NuGet project and quotes shell arguments", () => {
     "dotnet nuget why api/Acme.csproj acme.kit"
   );
 });
+
+it("preserves framework boundaries for conditional NuGet declarations", () => {
+  for (const version of ["8.0.5", "9.0.1"]) {
+    expect(
+      installCommand("NuGet", "system.text.json", version, {
+        project: "Acme.csproj",
+        requirement: "nuget-conditional",
+      })
+    ).toBe(
+      `set only the system.text.json PackageReference or central PackageVersion declarations on the ${version[0]} release line in Acme.csproj to ${version}; preserve other framework conditions and versions`
+    );
+  }
+});
