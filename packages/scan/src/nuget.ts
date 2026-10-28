@@ -7,11 +7,20 @@ const table = (v: unknown): Table =>
   v && typeof v === "object" && !Array.isArray(v) ? (v as Table) : {};
 const list = (v: unknown): unknown[] => (v === undefined ? [] : Array.isArray(v) ? v : [v]);
 const text = (v: unknown): string => (typeof v === "string" ? v : "");
-const texts = (value: unknown): string[] =>
+const literals = (value: unknown): { value: string; conditional: boolean; condition: string }[] =>
   list(value).flatMap((entry) => {
     const literal = text(entry) || text(table(entry)["#text"]);
-    return literal ? [literal] : [];
+    return literal
+      ? [
+          {
+            value: literal,
+            conditional: Boolean(table(entry).Condition),
+            condition: text(table(entry).Condition),
+          },
+        ]
+      : [];
   });
+const texts = (value: unknown): string[] => literals(value).map((entry) => entry.value);
 const id = (v: string) => /^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(v);
 const pin = (v: string) => /^\d+(?:\.\d+){1,3}(?:-[A-Za-z0-9.-]+)?(?:\+[A-Za-z0-9.-]+)?$/.test(v);
 
@@ -82,16 +91,19 @@ export function parseNugetFiles(
     const central = centralFile ? xml.get(centralFile) : undefined;
     const properties = new Map<string, Set<string>>();
     for (const source of [central, project]) {
-      const own = new Map<string, Set<string>>();
       for (const group of list(source?.PropertyGroup)) {
         for (const [key, value] of Object.entries(table(group))) {
           if (key === "Condition") continue;
-          const values = own.get(key) ?? new Set<string>();
-          for (const literal of texts(value)) values.add(literal);
-          own.set(key, values);
+          for (const literal of literals(value)) {
+            const conditional = Boolean(table(group).Condition) || literal.conditional;
+            const values = conditional
+              ? (properties.get(key) ?? new Set<string>())
+              : new Set<string>();
+            values.add(literal.value);
+            properties.set(key, values);
+          }
         }
       }
-      for (const [key, values] of own) properties.set(key, values);
     }
     const resolve = (input: string): string[] => {
       let values = new Set([input]);
@@ -120,6 +132,23 @@ export function parseNugetFiles(
       }
       return [...values];
     };
+    const frameworks = [
+      ...(properties.get("TargetFrameworks") ?? properties.get("TargetFramework") ?? []),
+    ]
+      .flatMap((value) => resolve(value).flatMap((entry) => entry.split(";")))
+      .filter(Boolean);
+    const needsFallback = (entries: ReturnType<typeof literals>): boolean => {
+      if (entries.some((entry) => !entry.conditional)) return false;
+      const covered = new Set(
+        entries.flatMap((entry) => {
+          const match = /^\s*['"]\$\(TargetFramework\)['"]\s*==\s*['"]([^'"]+)['"]\s*$/.exec(
+            entry.condition
+          );
+          return match ? [match[1]] : [];
+        })
+      );
+      return frameworks.length === 0 || frameworks.some((framework) => !covered.has(framework));
+    };
     const enabled = [...(properties.get("ManagePackageVersionsCentrally") ?? [])].some((value) =>
       resolve(value).some((resolved) => resolved.toLowerCase() === "true")
     );
@@ -143,11 +172,17 @@ export function parseNugetFiles(
         const dep = table(entry);
         const name = text(dep.Include);
         if (!id(name)) continue;
-        const overrides = texts(dep.VersionOverride);
-        const explicit = overrides.length ? overrides : texts(dep.Version);
-        const alternatives = explicit.length
-          ? explicit.flatMap(resolve)
-          : [...(versions.get(name.toLowerCase()) ?? [])];
+        const declared = literals(dep.Version);
+        const overrides = literals(dep.VersionOverride);
+        const centralVersions = [...(versions.get(name.toLowerCase()) ?? [])];
+        const base = [
+          ...declared.flatMap((entry) => resolve(entry.value)),
+          ...(needsFallback(declared) ? centralVersions : []),
+        ];
+        const alternatives = new Set([
+          ...overrides.flatMap((entry) => resolve(entry.value)),
+          ...(needsFallback(overrides) ? base : []),
+        ]);
         for (const version of alternatives) {
           const exact = /^\[([^,]+)\]$/.exec(version)?.[1] ?? version;
           if (!pin(exact)) continue;

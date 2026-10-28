@@ -534,7 +534,10 @@ are not dependencies. Names are case-insensitive and stored lower-case. Dynamic 
 external MSBuild imports and expressions are not evaluated; no restore or build executes.
 A literal unlocked version is declaration evidence rather than a verified restore result;
 commit a lockfile for the resolved transitive set. Several conditional/framework pins are
-retained, and duplicate pins merge their owning project paths.
+retained, and duplicate pins merge their owning project paths. Later unconditional property
+assignments replace earlier values. Conditional child versions retain their central or explicit
+fallback unless simple TargetFramework equality conditions cover every declared framework.
+Other conditions are retained as alternatives rather than evaluated as MSBuild expressions.
 
 OSV uses `NuGet`. Direct fixes use `dotnet add <project.csproj> package <id> --version X`
 for every recorded owning project. Conditional or multi-target declarations instead get an

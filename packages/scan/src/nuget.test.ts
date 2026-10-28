@@ -15,6 +15,21 @@ export const fixtureFiles = Object.fromEntries(
   ])
 );
 describe("NuGet", () => {
+  it("retains central fallbacks for conditional children and replaces unconditional properties", () => {
+    const files = Object.fromEntries(
+      ["Acme.csproj", "Directory.Packages.props"].map((file) => [
+        file,
+        readFileSync(new URL(`./__fixtures__/nuget-fallback/${file}`, import.meta.url), "utf8"),
+      ])
+    );
+    expect(parseNugetFiles(files).map((dep) => [dep.name, dep.version])).toEqual([
+      ["system.text.json", "8.0.5"],
+      ["system.text.encodings.web", "9.0.0"],
+      ["system.text.encodings.web", "8.0.1"],
+      ["acme.child", "9.0.0"],
+      ["acme.child", "8.0.0"],
+    ]);
+  });
   it("retains conditional project and central property alternatives", () => {
     const files = Object.fromEntries(
       ["Acme.csproj", "Directory.Packages.props"].map((file) => [
