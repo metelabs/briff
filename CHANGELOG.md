@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/metelabs/briff/compare/0.7.0...0.7.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* **public:** describe current stack coverage and open signup ([#21](https://github.com/metelabs/briff/issues/21)) ([57789ec](https://github.com/metelabs/briff/commit/57789ec61466268085b96fe5985cac968ffdb34f))
+
 ## [0.7.0](https://github.com/metelabs/briff/compare/0.6.3...0.7.0) (2026-10-28)
 
 
