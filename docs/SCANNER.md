@@ -551,7 +551,9 @@ from PrivateAssets: it controls propagation, not whether the dependency runs in 
 
 `pubspec.lock` supplies hosted pub.dev versions and `direct main` / `direct dev` /
 `transitive` ownership. The sibling `pubspec.yaml` selects Flutter when its dependencies
-include the Flutter SDK, otherwise Dart. Without a lock, manifest ranges remain unresolved:
+or development dependencies include any Flutter SDK package, otherwise Dart. Workspace
+root locks resolve ownership against member pubspecs listed by workspace paths or globs,
+so fixes edit each existing member declaration. Without a lock, manifest ranges remain unresolved:
 they match releases but never become installed versions in OSV queries. SDK, git, path and
 custom registry packages are skipped. No Dart or Flutter process runs during scanning.
 

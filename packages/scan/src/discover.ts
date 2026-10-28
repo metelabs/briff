@@ -269,12 +269,21 @@ export async function readLockfile(
           ? content
           : await readOptional(path.join(dir, "pubspec.lock"), read);
       if (path.basename(lockfile.path) === "pubspec.yaml" && lock !== null) return [];
+      const manifests: Record<string, string> = {};
+      for (const file of manifestPaths) {
+        if (path.basename(file) !== "pubspec.yaml") continue;
+        const relative = path.relative(dir, file);
+        if (relative.split(path.sep).includes("..")) continue;
+        const value = await read(file);
+        manifests[path.relative(manifestRoot, file).split(path.sep).join("/")] = value;
+      }
       return parsePubLock(
         lock,
         path.basename(lockfile.path) === "pubspec.yaml"
           ? content
           : await readOptional(path.join(dir, "pubspec.yaml"), read),
-        path.relative(manifestRoot, path.join(dir, "pubspec.yaml")).split(path.sep).join("/")
+        path.relative(manifestRoot, path.join(dir, "pubspec.yaml")).split(path.sep).join("/"),
+        manifests
       );
     }
     case "actions":
@@ -380,7 +389,7 @@ export function mergeDependencies(lists: LockedDependency[][]): LockedDependency
       }
       if (dep.ecosystem === "GitHub Actions")
         prev.metadata = mergeActionMetadata(prev.metadata, dep.metadata);
-      const nugetProject = ["NuGet", "Pub"].includes(dep.ecosystem ?? "")
+      const directProjects = ["NuGet", "Pub"].includes(dep.ecosystem ?? "")
         ? prev.direct && !dep.direct
           ? prev.project
           : !prev.direct && dep.direct
@@ -412,7 +421,7 @@ export function mergeDependencies(lists: LockedDependency[][]): LockedDependency
       // The declaration's shape and owner follow the same authority.
       const requirement = authority ? authority.requirement : (prev.requirement ?? dep.requirement);
       const project = ["NuGet", "Pub"].includes(dep.ecosystem ?? "")
-        ? nugetProject
+        ? directProjects
         : dep.ecosystem === "Maven"
           ? [...new Set([prev.project, dep.project].flatMap((p) => p?.split(",") ?? []))].join(",")
           : authority

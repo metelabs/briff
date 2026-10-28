@@ -67,3 +67,30 @@ describe("pub", () => {
     );
   });
 });
+
+it("assigns workspace pins to members and detects development-only Flutter SDK declarations", async () => {
+  const files = Object.fromEntries(
+    ["pubspec.yaml", "pubspec.lock", "packages/app/pubspec.yaml", "packages/cli/pubspec.yaml"].map(
+      (file) => [
+        file,
+        readFileSync(new URL(`./__fixtures__/pub-workspace/${file}`, import.meta.url), "utf8"),
+      ]
+    )
+  );
+  const repo = await collectFromFiles("acme/workspace", files, {
+    warn: (message) => {
+      throw new Error(message);
+    },
+  });
+  expect(repo?.dependencies.find((row) => row.name === "dio")).toMatchObject({
+    version: "4.0.0",
+    direct: true,
+    project: "packages/app/pubspec.yaml:flutter",
+  });
+  const archive = repo?.dependencies.find((row) => row.name === "archive");
+  expect(archive?.project?.split(",").sort()).toEqual([
+    "packages/app/pubspec.yaml:flutter",
+    "packages/cli/pubspec.yaml:dart",
+  ]);
+  expect(archive?.dev).toBeUndefined();
+});
