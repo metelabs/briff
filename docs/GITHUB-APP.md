@@ -234,3 +234,11 @@ NuGet: the shared tree filter also reads `packages.lock.json` and
 `Directory.Packages.props`, alongside the existing `*.csproj` pattern. Lockfile pins take
 precedence over declarations in the same directory; central versions apply only to project
 references using the nearest central file. Imported MSBuild files are not fetched or executed.
+
+## Organisation capacity
+
+New organisations have a 10-repository limit shared with CLI/Action uploads. A scan
+leaves extra GitHub repositories unlinked when capacity is exhausted; their existing
+installation permission on GitHub is unchanged. Repos displays a capacity note.
+Ask the instance admin to raise the limit in Admin, then rescan the installation.
+Concurrent scans enforce the same limit at the shared ingestion write boundary.

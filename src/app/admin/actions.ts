@@ -113,3 +113,38 @@ export async function sendTestEmailAction(): Promise<AdminState> {
   if (result.status === "skipped") return { ok: false, message: `Not sent: ${result.reason}.` };
   return { ok: false, message: `Failed: ${result.error}` };
 }
+
+export interface LimitsState extends AdminState {
+  repoLimit?: number;
+  streamLimit?: number;
+}
+
+export async function raiseOrgLimitsAction(
+  _prev: LimitsState,
+  form: FormData
+): Promise<LimitsState> {
+  await requireAdminContext();
+  const parsed = z
+    .object({
+      orgId: z.string().min(1),
+      repoLimit: z.coerce.number().int().min(1).max(100000),
+      streamLimit: z.coerce.number().int().min(1).max(10000),
+    })
+    .safeParse(Object.fromEntries(form));
+  if (!parsed.success) return { ok: false, message: "Enter positive whole-number limits." };
+  const { orgId, repoLimit, streamLimit } = parsed.data;
+  const changed = await getDb().org.updateMany({
+    where: { id: orgId, repoLimit: { lte: repoLimit }, streamLimit: { lte: streamLimit } },
+    data: { repoLimit, streamLimit },
+  });
+  if (!changed.count)
+    return { ok: false, message: "Organisation not found, or a limit would decrease." };
+  revalidatePath("/admin");
+  revalidatePath("/repos");
+  return {
+    ok: true,
+    message: "Limits saved. Rescan any repositories previously skipped.",
+    repoLimit,
+    streamLimit,
+  };
+}

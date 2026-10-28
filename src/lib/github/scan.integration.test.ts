@@ -113,6 +113,38 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
     return r;
   }
 
+  it("leaves over-limit GitHub repositories unlinked and records a Repos notice", async () => {
+    const org = await db.org.create({ data: { name: "acme-capacity", repoLimit: 1 } });
+    orgs.push(org.id);
+    const scoped = withOrg(db, org.id);
+    await scoped.repo.create({ data: { orgId: org.id, name: "acme/existing", source: "local" } });
+    const installationId = `7${Date.now()}`.slice(0, 12);
+    await linkInstallation(db, {
+      orgId: org.id,
+      installationId,
+      accountLogin: "acme",
+      accountType: "Organization",
+      suspendedAt: null,
+    });
+    const result = await scanInstallation({
+      db,
+      http: fakeGithub([]),
+      config,
+      payload: { installationId },
+      scanId: "capacity",
+      log,
+      heartbeat: async () => undefined,
+    });
+    if (!("counts" in result)) throw new Error("Unexpected skip");
+    expect(result.counts.repoLimitSkipped).toBe(1);
+    expect(result.counts.ingested).toBe(0);
+    expect(await scoped.repo.count()).toBe(1);
+    expect(await scoped.repo.count({ where: { githubInstallationId: { not: null } } })).toBe(0);
+    expect((await db.org.findUniqueOrThrow({ where: { id: org.id } })).githubRepoLimitReached).toBe(
+      true
+    );
+  });
+
   it("fetches only the scanned blobs and stores the same repo record as the CLI upload", async () => {
     const [cliOrg, appOrg] = orgs;
     const [cliPayload] = await collectRepos(

@@ -24,7 +24,7 @@ const serverEnvSchema = z.object({
   BETTER_AUTH_URL: z.url(),
   ALLOW_SIGNUP: z
     .enum(["true", "false"])
-    .default("false")
+    .default("true")
     .transform((v) => v === "true"),
   // Deprecated fallback for /api/scan; per-org ScanToken rows replace it (docs/SCANNER.md).
   SCANNER_TOKEN: optionalString.pipe(z.string().min(24).optional()),

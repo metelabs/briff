@@ -192,3 +192,18 @@ are included in its data export and cascade when the org or repo is deleted.
 Unqualified distro defaults are limited to verified floating minor tags: PHP 8.2–8.5
 and Python 3.11–3.14. Discontinued lines, patch-pinned historical tags and unverified
 future lines remain unresolved unless their tag explicitly names a distro.
+
+## Sign-up controls
+
+Registration is open by default; operators can close it with `ALLOW_SIGNUP=false`
+after the first account. Each account gets an organisation with 10 repositories and
+2 streams. The instance admin can view and raise these capacity settings.
+Email verification is not required by the current Better Auth configuration.
+
+Sign-up requests share a per-IP auth-hook window: five attempts per hour, covering
+both HTTP requests and the login Server Action's direct auth API calls. The
+window is held in web-process memory and resets on restart; multiple web replicas
+have independent windows. The reverse proxy must overwrite `X-Real-IP` with the
+client address (never pass a client-supplied value through). No IP is added to
+Briff's database for this window. If no IP is available, Better Auth uses a shared
+fallback bucket. Existing authentication rate limits remain enabled.

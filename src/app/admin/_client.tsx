@@ -7,6 +7,7 @@ import { ConfirmDialog } from "@/components/ui/dialog";
 
 import {
   type AdminState,
+  raiseOrgLimitsAction,
   deletePreviewAction,
   previewSynthesisAction,
   type PreviewState,
@@ -132,6 +133,51 @@ export function TestEmailButton() {
     <form action={action} className="flex flex-col gap-1">
       <Button type="submit" variant="secondary" disabled={pending} className="w-full justify-start">
         Send test email
+      </Button>
+      <Status state={state} />
+    </form>
+  );
+}
+
+export function LimitsForm({
+  org,
+}: {
+  org: { id: string; name: string; repoLimit: number; streamLimit: number };
+}) {
+  const [state, action, pending] = useActionState(raiseOrgLimitsAction, {
+    ok: true,
+    message: null,
+  } as import("./actions").LimitsState);
+  return (
+    <form action={action} className="flex flex-wrap items-end gap-3">
+      <input type="hidden" name="orgId" value={org.id} />
+      <p className="w-full text-[13px] font-medium">{org.name}</p>
+      <label className="text-fg-muted text-[12px]">
+        Repositories
+        <input
+          aria-label="Repository limit"
+          className="border-line bg-surface mt-1 block w-28 rounded border p-2"
+          type="number"
+          name="repoLimit"
+          min={org.repoLimit}
+          defaultValue={state.repoLimit ?? org.repoLimit}
+          required
+        />
+      </label>
+      <label className="text-fg-muted text-[12px]">
+        Streams
+        <input
+          aria-label="Stream limit"
+          className="border-line bg-surface mt-1 block w-28 rounded border p-2"
+          type="number"
+          name="streamLimit"
+          min={org.streamLimit}
+          defaultValue={state.streamLimit ?? org.streamLimit}
+          required
+        />
+      </label>
+      <Button type="submit" disabled={pending}>
+        Save limits
       </Button>
       <Status state={state} />
     </form>

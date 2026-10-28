@@ -21,10 +21,10 @@ export async function createOrgForUser(
       data: {
         id: orgId,
         name: args.name,
-        members: { create: { userId: args.userId, role: "owner" } },
-        interestProfile: { create: {} },
       },
     });
+    await tx.orgMember.create({ data: { orgId, userId: args.userId, role: "owner" } });
+    await tx.interestProfile.create({ data: { orgId } });
     await ensureDefaultStream(tx, orgId);
   });
   return orgId;

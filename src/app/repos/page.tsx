@@ -30,6 +30,10 @@ export default async function ReposPage({
   // Set by the GitHub App routes on their way back (src/lib/github/status.ts).
   const githubStatus = isGithubFlowStatus(query.github) ? GITHUB_FLOW_MESSAGES[query.github] : null;
   const scope = await loadStreamScope(ctx.orgId);
+  const limits = await getDb().org.findUniqueOrThrow({
+    where: { id: ctx.orgId },
+    select: { githubRepoLimitReached: true, repoLimit: true },
+  });
   const db = withOrg(getDb(), ctx.orgId);
   const [repos, direct, open, otherEcosystems] = await Promise.all([
     db.repo.findMany({
@@ -139,6 +143,13 @@ export default async function ReposPage({
 
   return (
     <AppShell ctx={ctx} active="/repos">
+      {limits.githubRepoLimitReached && (
+        <p role="status" className="text-upgrade mb-4 text-[13px]">
+          Some GitHub repositories were previously left unlinked at capacity. Current repository
+          limit: {limits.repoLimit}. Rescan the installation after freeing space or asking the
+          instance admin to raise the limit.
+        </p>
+      )}
       <PageHeader
         title="Repos"
         sub={

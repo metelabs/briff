@@ -1,5 +1,6 @@
 "use server";
 
+import { createLimitedStream, OrgLimitError } from "@/lib/org-limits";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -33,10 +34,12 @@ export async function createStreamAction(
   const ctx = await requireOrgContext();
   const name = nameSchema.safeParse(form.get("name") ?? "");
   if (!name.success) return { ok: false, message: `Name: 1–${STREAM_NAME_MAX} characters.` };
-  const db = withOrg(getDb(), ctx.orgId);
-  await db.bulletinStream.create({
-    data: { orgId: ctx.orgId, name: name.data, slug: await freeSlug(db, name.data) },
-  });
+  try {
+    await createLimitedStream(getDb(), ctx.orgId, name.data);
+  } catch (err) {
+    if (err instanceof OrgLimitError) return { ok: false, message: err.message };
+    throw err;
+  }
   revalidateStreams();
   return { ok: true, message: `Created “${name.data}”.`, name: "" };
 }

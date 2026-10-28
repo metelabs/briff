@@ -23,9 +23,10 @@ export async function acceptScan(
   db: PrismaClient,
   orgId: string,
   body: ScanBody,
-  now: Date = new Date()
+  now: Date = new Date(),
+  options: { skipRepoLimit?: boolean } = {}
 ): Promise<AcceptedScan> {
-  const repos = await ingestScan(db, orgId, body, now);
+  const repos = await ingestScan(db, orgId, body, now, options);
   const refreshJob = await enqueueJob(db, "refresh-packages");
   const followUp = scanFollowUp({ scanId: body.scanId, final: body.final }, now);
   let urgentPass: { id: string; runAfter: Date } | null = null;
