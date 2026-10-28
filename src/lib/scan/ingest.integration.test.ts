@@ -449,3 +449,71 @@ describe.skipIf(!url)("Maven ingest", () => {
     ]);
   });
 });
+
+describe.skipIf(!url)("NuGet ingest", () => {
+  const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: url ?? "" }) });
+  const suffix = Date.now().toString(36);
+  let orgId = "";
+  beforeAll(async () => {
+    orgId = (await db.org.create({ data: { name: `acme-nuget-${suffix}` } })).id;
+  });
+  afterAll(async () => {
+    await db.org.deleteMany({ where: { id: orgId } });
+    await db.package.deleteMany({ where: { name: `acme.kit-${suffix}` } });
+    await db.$disconnect();
+  });
+  it("retains conditional guidance through collector and tenant ingest", async () => {
+    const files = Object.fromEntries(
+      ["Acme.csproj", "Directory.Packages.props"].map((file) => [
+        file,
+        readFileSync(
+          new URL(
+            `../../../packages/scan/src/__fixtures__/nuget-conditional/${file}`,
+            import.meta.url
+          ),
+          "utf8"
+        ),
+      ])
+    );
+    const repo = await collectFromFiles("acme/nuget-conditional", files, { warn: () => {} });
+    if (!repo) throw new Error("fixture did not scan");
+    await ingestScan(db, orgId, { source: "local", repos: [repo] });
+    const rows = await withOrg(db, orgId).dependency.findMany({
+      where: { repo: { name: "acme/nuget-conditional" }, package: { name: "system.text.json" } },
+      orderBy: { installedVersion: "asc" },
+    });
+    expect(rows.map((row) => [row.installedVersion, row.requirement])).toEqual([
+      ["8.0.0", "nuget-conditional"],
+      ["9.0.0", "nuget-conditional"],
+    ]);
+  });
+  it("ingests the recorded NuGet scanner fixture through the real collector", async () => {
+    const files = Object.fromEntries(
+      [
+        "Directory.Packages.props",
+        "api/Acme.Api.csproj",
+        "locked/Acme.Worker.csproj",
+        "locked/packages.lock.json",
+      ].map((file) => [
+        file,
+        readFileSync(
+          new URL(`../../../packages/scan/src/__fixtures__/nuget/${file}`, import.meta.url),
+          "utf8"
+        ),
+      ])
+    );
+    const repo = await collectFromFiles("acme/nuget-fixture", files, { warn: () => {} });
+    expect(repo).not.toBeNull();
+    if (!repo) throw new Error("fixture did not scan");
+    await ingestScan(db, orgId, { source: "local", repos: [repo] });
+    const rows = await withOrg(db, orgId).dependency.findMany({
+      where: { repo: { name: "acme/nuget-fixture" } },
+      include: { package: true },
+    });
+    expect(rows.map((r) => [r.package.name, r.installedVersion]).sort()).toEqual([
+      ["newtonsoft.json", "12.0.1"],
+      ["system.net.http", "4.3.0"],
+      ["system.text.encodings.web", "4.5.1"],
+    ]);
+  });
+});

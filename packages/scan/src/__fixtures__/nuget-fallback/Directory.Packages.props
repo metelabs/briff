@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup><ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally><EncodingVersion>8.0.0</EncodingVersion></PropertyGroup>
+  <PropertyGroup><EncodingVersion>8.0.1</EncodingVersion></PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="System.Text.Encodings.Web" Version="$(EncodingVersion)"/>
+    <PackageVersion Include="Acme.Child" Version="8.0.0"/>
+  </ItemGroup>
+</Project>

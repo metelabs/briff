@@ -37,7 +37,7 @@ walk and the app; the names come from `lockfileKind` (`packages/scan/src/discove
 | Go               | `go.mod` (`require` for the modules and the direct flag, `go` / `toolchain`); never `go.sum`                                                                                                                                                         |
 | Ruby             | `.ruby-version`, `Gemfile.lock` (GEM specs, DEPENDENCIES, Ruby runtime), `Gemfile` (literal development/test groups)                                                                                                                                 |
 | JVM              | `pom.xml`, `build.gradle`, `build.gradle.kts`                                                                                                                                                                                                        |
-| .NET             | `global.json`, `*.csproj`                                                                                                                                                                                                                            |
+| .NET             | `global.json`, `*.csproj`, `packages.lock.json`, `Directory.Packages.props`                                                                                                                                                                          |
 | Rust             | `rust-toolchain`, `rust-toolchain.toml`, `Cargo.toml` (workspace and dependency declarations), `Cargo.lock` (v3/v4 registry pins)                                                                                                                    |
 | Containers       | `Dockerfile`, `Containerfile`, `Dockerfile.<x>` / `Containerfile.<x>` (not `.md`/`.txt`), `*.Dockerfile` / `*.dockerfile`, `compose.yml`, `compose.yaml`, `docker-compose.yml`, `docker-compose.yaml`, `compose.<x>.yml` / `docker-compose.<x>.yaml` |
 
@@ -229,6 +229,11 @@ A missing tag mapping directs the reader to the advisory; a fix outside the
 installed release line never becomes a command. Public action names and refs are sent to
 OSV; action repository names are sent to the public GitHub tags API. No credentials or
 workflow `run` values are sent to either API.
+
+NuGet: the shared tree filter also reads `packages.lock.json` and
+`Directory.Packages.props`, alongside the existing `*.csproj` pattern. Lockfile pins take
+precedence over declarations in the same directory; central versions apply only to project
+references using the nearest central file. Imported MSBuild files are not fetched or executed.
 
 ## Organisation capacity
 

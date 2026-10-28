@@ -273,3 +273,10 @@ it("queries Maven coordinates with the OSV ecosystem name", () => {
     version: "1.2.3",
   });
 });
+
+it("queries NuGet using its stored package identity", () => {
+  expect(osvQueryOf({ name: "acme.kit", version: "1.2.3", ecosystem: "NuGet" })).toEqual({
+    package: { name: "acme.kit", ecosystem: "NuGet" },
+    version: "1.2.3",
+  });
+});

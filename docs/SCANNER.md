@@ -522,3 +522,27 @@ transitive dependency uses `mvn dependency:tree`, or
 `./gradlew dependencies --configuration runtimeClasspath` for Gradle. Registry refresh uses
 Maven Central search for latestVersion and the published POM's SCM link for GitHub releases.
 Central provides no package-wide deprecation or yank field, so those remain unset.
+
+## NuGet
+
+`packages.lock.json` supplies installed versions and `Direct`/`Transitive` ownership per
+framework. Project declarations are a fallback only in directories without a lockfile:
+`*.csproj` PackageReference versions and VersionOverride, including child XML elements,
+local properties, exact bracket pins and the closest `Directory.Packages.props`
+PackageVersion entries when ManagePackageVersionsCentrally is true. Unused central entries
+are not dependencies. Names are case-insensitive and stored lower-case. Dynamic ranges,
+external MSBuild imports and expressions are not evaluated; no restore or build executes.
+A literal unlocked version is declaration evidence rather than a verified restore result;
+commit a lockfile for the resolved transitive set. Several conditional/framework pins are
+retained, and duplicate pins merge their owning project paths. Later unconditional property
+assignments replace earlier values. Conditional child versions retain their central or explicit
+fallback unless simple TargetFramework equality conditions cover every declared framework.
+Other conditions are retained as alternatives rather than evaluated as MSBuild expressions.
+
+OSV uses `NuGet`. Direct fixes use `dotnet add <project.csproj> package <id> --version X`
+for every recorded owning project. Conditional or multi-target declarations instead get an
+instruction to edit only declarations on the target release line, preserving other framework
+conditions and versions; project-wide add commands cannot safely express that change.
+Transitive guidance uses `dotnet nuget why <project.csproj>
+<id>`. The target remains on the installed release line. No development flag is inferred
+from PrivateAssets: it controls propagation, not whether the dependency runs in production.
