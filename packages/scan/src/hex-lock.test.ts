@@ -53,6 +53,15 @@ it("keeps pins transitive without a readable manifest and never treats Git locks
   expect(parseHexLock(fixture("hex/mix.lock"), {})).toHaveLength(3);
 });
 
+it.each([1, 10, 100])("retains public Hex pins when a Git lock records depth %s", (depth) => {
+  const lock = fixture("hex/mix.lock").replace("depth: 100", `depth: ${depth}`);
+  expect(parseHexLock(lock, { "mix.exs": fixture("hex/mix.exs") }).map((dep) => dep.name)).toEqual([
+    "plug",
+    "phoenix_html",
+    "plug_crypto",
+  ]);
+});
+
 it("retains locked advisory evidence when manifest declarations are computed", () => {
   const rows = parseHexLock(fixture("hex/mix.lock"), { "mix.exs": fixture("hex-dynamic/mix.exs") });
   expect(rows).toHaveLength(3);

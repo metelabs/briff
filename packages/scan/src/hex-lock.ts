@@ -14,7 +14,7 @@ const packageName = (value: string) => /^[a-z][a-z0-9_]*$/.test(value);
 function tokens(content: string): Token[] {
   return [
     ...content.matchAll(
-      /"(?:\\.|[^"\\])*"|#[^\n]*|:[a-zA-Z_][\w!?]*|[a-zA-Z_][\w!?]*|%\{|=>|[^\s]/g
+      /"(?:\\.|[^"\\])*"|#[^\n]*|:[a-zA-Z_][\w!?]*|[a-zA-Z_][\w!?]*|-?\d[\d_]*(?:\.\d[\d_]*)?(?:[eE][+-]?\d[\d_]*)?|%\{|=>|[^\s]/g
     ),
   ]
     .filter(([raw]) => !raw.startsWith("#"))
