@@ -7,6 +7,11 @@ const table = (v: unknown): Table =>
   v && typeof v === "object" && !Array.isArray(v) ? (v as Table) : {};
 const list = (v: unknown): unknown[] => (v === undefined ? [] : Array.isArray(v) ? v : [v]);
 const text = (v: unknown): string => (typeof v === "string" ? v : "");
+const texts = (value: unknown): string[] =>
+  list(value).flatMap((entry) => {
+    const literal = text(entry) || text(table(entry)["#text"]);
+    return literal ? [literal] : [];
+  });
 const id = (v: string) => /^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(v);
 const pin = (v: string) => /^\d+(?:\.\d+){1,3}(?:-[A-Za-z0-9.-]+)?(?:\+[A-Za-z0-9.-]+)?$/.test(v);
 
@@ -82,8 +87,7 @@ export function parseNugetFiles(
         for (const [key, value] of Object.entries(table(group))) {
           if (key === "Condition") continue;
           const values = own.get(key) ?? new Set<string>();
-          const literal = text(value) || text(table(value)["#text"]);
-          if (literal) values.add(literal);
+          for (const literal of texts(value)) values.add(literal);
           own.set(key, values);
         }
       }
@@ -128,7 +132,8 @@ export function parseNugetFiles(
           if (name) {
             const key = name.toLowerCase();
             const alternatives = versions.get(key) ?? new Set<string>();
-            for (const version of resolve(text(dep.Version))) alternatives.add(version);
+            for (const literal of texts(dep.Version))
+              for (const version of resolve(literal)) alternatives.add(version);
             versions.set(key, alternatives);
           }
         }
@@ -138,9 +143,10 @@ export function parseNugetFiles(
         const dep = table(entry);
         const name = text(dep.Include);
         if (!id(name)) continue;
-        const explicit = text(dep.VersionOverride) || text(dep.Version);
-        const alternatives = explicit
-          ? resolve(explicit)
+        const overrides = texts(dep.VersionOverride);
+        const explicit = overrides.length ? overrides : texts(dep.Version);
+        const alternatives = explicit.length
+          ? explicit.flatMap(resolve)
           : [...(versions.get(name.toLowerCase()) ?? [])];
         for (const version of alternatives) {
           const exact = /^\[([^,]+)\]$/.exec(version)?.[1] ?? version;

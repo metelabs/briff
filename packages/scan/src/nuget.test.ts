@@ -27,6 +27,10 @@ describe("NuGet", () => {
       ["system.text.json", "9.0.0"],
       ["system.text.encodings.web", "8.0.0"],
       ["system.text.encodings.web", "9.0.0"],
+      ["acme.child", "8.0.0"],
+      ["acme.child", "9.0.0"],
+      ["acme.override", "8.0.0"],
+      ["acme.override", "9.0.0"],
     ]);
   });
   it("detects differing lock pins while handling a many-project solution", () => {
