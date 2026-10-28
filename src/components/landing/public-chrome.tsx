@@ -14,6 +14,7 @@ import { DOCS_URL, METELABS_URL, PRIVACY_URL, SOURCE_URL } from "./links";
 
 const NAV = [
   { href: "/#replays", label: "Replays" },
+  { href: "/#coverage", label: "Coverage" },
   { href: "/#reads", label: "What it reads" },
   { href: "/#sample", label: "Sample" },
   { href: "/#privacy", label: "Privacy" },

@@ -13,10 +13,10 @@ export const metadata: Metadata = { title: "Sign in · Briff" };
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ deleted?: string }>;
+  searchParams: Promise<{ deleted?: string; mode?: string }>;
 }) {
   if (await getOrgContext()) redirect("/");
-  const { deleted } = await searchParams;
+  const { deleted, mode: requestedMode } = await searchParams;
   const hasUsers = (await getDb().user.count()) > 0;
   const mode = hasUsers ? "sign-in" : "bootstrap";
   return (
@@ -31,7 +31,11 @@ export default async function LoginPage({
             Your organisation and account were deleted.
           </p>
         )}
-        <AuthForm mode={mode} allowSignup={!hasUsers || getEnv().ALLOW_SIGNUP} />
+        <AuthForm
+          mode={mode}
+          allowSignup={!hasUsers || getEnv().ALLOW_SIGNUP}
+          signup={requestedMode === "sign-up"}
+        />
       </main>
     </div>
   );

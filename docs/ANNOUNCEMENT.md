@@ -14,14 +14,15 @@ Show HN: Briff – a weekly dependency briefing and same-day CVE emails for repo
 
 (79 characters.) Link: `https://github.com/metelabs/briff`.
 
-### First comment (target 350–450 words)
+### First comment
 
 ```
 Hi HN, I built Briff because I run a few dozen small repos (client sites, side projects,
 apps) and kept finding out about security releases for things I actually run from a news
 site, days late, with no idea which of my repos were affected.
 
-Briff reads what each repo uses: lockfiles (npm, pnpm, yarn) and runtime files
+Briff reads what each repo uses: package pins (npm/pnpm/yarn, Composer, PyPI, Go modules, Bundler, Cargo, Maven/Gradle,
+NuGet, pub, SwiftPM and Hex), GitHub Actions uses references, and runtime files
 (Dockerfile FROM lines, compose images, .nvmrc, engines, go.mod, composer.json,
 .tool-versions and so on). It never reads source code. You connect repos with a GitHub App
 (contents read-only, only those file paths are fetched), a GitHub Action, or a CLI
@@ -50,13 +51,17 @@ through the production pipeline on a fake clock:
 The delay is the hourly collect, not a typo; security sources are polled every hour.
 
 What it does not do: it does not open PRs or touch your repos, it does not scan code for
-vulnerabilities, and lockfile support is JavaScript-only for now (runtimes cover Node, PHP,
-Python, Go, Ruby, .NET, Rust, Postgres, Redis and a few more). The weekly text uses an LLM
+vulnerabilities, and it cannot see the installed OS package inventory inside a Docker image. Debian, Ubuntu
+and Alpine image advisories are candidates from a short base-package list, with rebuild
+or migration advice. Runtime support dates refresh daily from endoflife.date, with
+"EOL in N days" facts. Curated ecosystem news is scoped to streams using that ecosystem
+or runtime. The weekly text uses an LLM
 (Anthropic); repo names are replaced with aliases before anything is sent. Runtime security
 emails and OSV advisory emails are built by rules, with no model involved. docs/PRIVACY.md lists every outbound connection.
 
 It is one Docker image (web + worker) on Postgres, self-hostable; the web app and worker are
-AGPL-3.0, the scanner is MIT. There is also a hosted instance.
+AGPL-3.0, the scanner is MIT. Hosted sign-ups are open, with defaults of 10 repos and 2 streams per organisation.
+Self-hosted admins can raise those same defaults.
 
 Code and replays: https://github.com/metelabs/briff
 ```
@@ -65,23 +70,29 @@ Check before posting:
 
 - Timelines: `src/replay/replay.test.ts` (php2shell: 28 and 26 minutes; node-oct-2026: the
   send times) and `docs/replay/*.html`.
-- Lockfile ecosystems: `packages/scan/src/discover.ts` (`LOCKFILES`). If more ecosystems have
-  landed, change "JavaScript-only for now" and the list in the second paragraph.
+- Package coverage and paths: `packages/scan/src/discover.ts` (`LOCKFILES`), `files.ts`,
+  `ecosystems.ts`; registry adapters: `src/sources/registries.ts`; commands:
+  `src/pipeline/install-commands.ts`; OSV planning: `src/security/plan.ts`.
+- Actions: `packages/scan/src/actions.ts`, `src/sources/github-actions.ts`.
+- Base image limits: `packages/scan/src/distros.ts`, `src/security/base-images.ts`.
+- Lifecycle products and daily schedule: `src/lib/runtime-eol-catalog.ts`, `src/worker/scheduler.ts`.
+- Scoped news: `src/sources/curated.ts`, docs/SOURCES.md.
+- Capacity and sign-up defaults: `prisma/schema.prisma` (`Org`), `src/lib/env.ts`,
+  `src/lib/org-limits.ts`; Admin can raise limits on self-hosted instances too.
 - Runtime list: docs/SOURCES.md, "Runtime sources".
 - EOL sentence: `src/pipeline/runtime-fixes.ts`.
 - "A few dozen small repos": adjust to your own number or drop it.
-- "There is also a hosted instance": only if sign-ups are open there (`ALLOW_SIGNUP=true` on
-  the web service); otherwise drop the sentence.
+- Hosted registration: confirm the deployed `ALLOW_SIGNUP` setting before posting.
 
-## Reddit r/selfhosted (target 150–220 words)
+## Reddit r/selfhosted
 
 Title: `Briff: a self-hosted weekly briefing of what changed in the packages and runtimes your repos use, plus same-day security emails`
 
 ```
 I've open-sourced Briff, which I've been running for my own repos.
 
-It scans lockfiles and runtime files (Dockerfile FROM, compose images, .nvmrc, go.mod,
-composer.json, ...), never source code, then watches official feeds (release feeds, vendor
+It reads npm/pnpm/yarn, Composer, PyPI, Go modules, Bundler, Cargo, Maven/Gradle, NuGet,
+pub, SwiftPM and Hex pins, Actions uses references and runtime files, never application code, then watches official feeds (release feeds, vendor
 security pages, GitHub advisories, OSV) and emails you:
 
 - once a week: what changed for the things you actually run, per repo, with the step to take
@@ -94,20 +105,29 @@ security alerts still work. All config is runtime env, documented in .env.exampl
 is needed at build time. Repos come in through a GitHub App you create on your instance, a
 GitHub Action, or a CLI.
 
+Support dates refresh daily from endoflife.date. Debian/Ubuntu/Alpine image advisories
+are candidates: Briff cannot see installed OS packages. News feeds follow each stream's
+ecosystems. Hosted sign-ups are open (10 repos, 2 streams per organisation by default);
+self-hosted admins can raise those limits.
+
 Every outbound connection is listed in docs/PRIVACY.md. AGPL-3.0 (the scanner is MIT).
 
 https://github.com/metelabs/briff
 ```
+
+Claims: package parsers in `packages/scan/src/discover.ts`, lifecycle catalog in
+`src/lib/runtime-eol-catalog.ts`, base images in `src/security/base-images.ts`, scoped feeds in
+`src/sources/curated.ts`, capacity defaults in `prisma/schema.prisma`.
 
 Check before posting: README "Self-hosting"; `.env.example`; r/selfhosted rules (flair
 "Release" or "Software", self-promotion limits).
 
 ## X / Bluesky (each at most 280 characters on X, 300 on Bluesky with the full URL)
 
-1. Launch (253 characters with the full URL; 239 on X):
+1. Launch:
 
    ```
-   Briff is open source. It reads your repos' lockfiles and Dockerfiles (never code) and emails you once a week what changed for the stack you actually run, plus the same day when a security fix hits a version you use.
+   Briff: weekly stack briefings and same-day security emails. Package coverage from npm to Hex, Actions refs, runtimes and candidate Docker OS advisories. Never application code. Hosted sign-ups open; self-host with Docker + Postgres.
    https://github.com/metelabs/briff
    ```
 

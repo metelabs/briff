@@ -10,6 +10,15 @@ describe("landing: the files Briff reads", () => {
     expect(scannedFilesText()).toMatchSnapshot();
   });
 
+  it("groups every exported name and pattern exactly once", () => {
+    const list = scannedFileList();
+    const grouped = list.groups.flatMap((group) => group.files);
+    expect(grouped.sort()).toEqual([...list.names, ...list.patterns].sort());
+    expect(list.groups.find((group) => group.label === "GitHub Actions")?.files).toEqual([
+      ".github/workflows/*.yml|yaml (uses only)",
+    ]);
+  });
+
   it("starts with the lockfiles and never lists a source or env file", () => {
     const { names } = scannedFileList();
     expect(names.slice(0, 4)).toEqual([

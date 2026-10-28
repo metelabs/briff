@@ -5,6 +5,7 @@ import { PublicFooter, PublicHeader } from "@/components/landing/public-chrome";
 import { scannedFileList } from "@/components/landing/scanned-files";
 import {
   Hero,
+  CoverageSection,
   PrivacySection,
   ReadsSection,
   ReplaysSection,
@@ -23,7 +24,7 @@ export const dynamic = "force-dynamic";
 
 const TITLE = "Briff: what changed in your stack this week, and security fixes the same day";
 const DESCRIPTION =
-  "A weekly briefing of what changed in the packages and runtimes your repos actually run, and a same-day email when a security fix lands for one of them.";
+  "Weekly briefings and same-day security alerts for package ecosystems from npm to Hex, GitHub Actions, runtimes and Docker base images. Open sign-up.";
 
 export function generateMetadata(): Metadata {
   return {
@@ -96,6 +97,7 @@ export default function LandingPage() {
       <PageContainer as="main">
         <Hero stats={stats} />
         <ReplaysSection cards={cards} />
+        <CoverageSection />
         <ReadsSection files={files} apiUrl={publicSiteUrl()} />
         <SampleSection view={weekly.view} alert={fixEmail} replayId="php2shell" />
         <PrivacySection />

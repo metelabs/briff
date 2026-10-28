@@ -42,14 +42,15 @@ walk and the app; the names come from `lockfileKind` (`packages/scan/src/discove
 | Dart / Flutter   | `pubspec.lock`, `pubspec.yaml` (public hosted packages and tool/workspace ownership)                                                                                                                                                                 |
 | SwiftPM          | `Package.resolved` (v1/v2/v3 pins), `Package.swift` (literal direct URLs)                                                                                                                                                                            |
 | Elixir           | `mix.lock` (public Hex pins), `mix.exs` (literal dependency and umbrella declarations)                                                                                                                                                               |
+| GitHub Actions   | `.github/workflows/*.yml`, `.github/workflows/*.yaml` (`uses:` references only; never executed)                                                                                                                                                      |
 | Containers       | `Dockerfile`, `Containerfile`, `Dockerfile.<x>` / `Containerfile.<x>` (not `.md`/`.txt`), `*.Dockerfile` / `*.dockerfile`, `compose.yml`, `compose.yaml`, `docker-compose.yml`, `docker-compose.yaml`, `compose.<x>.yml` / `docker-compose.<x>.yaml` |
 
 Note that dot-files such as `.nvmrc` are read; dot-_directories_ (`.github`, `.devcontainer`)
-are not.
+are not, except `.github/workflows/*.yml` and `*.yaml`, read for literal `uses:` references only.
 
 ## What Briff never reads
 
-Source code, READMEs, workflows, issues, pull requests, secrets, environment files, git
+Application source code, READMEs, issues, pull requests, secrets, environment files, git
 history, or any file not in the table. The contents it reads are parsed on the server into
 `{package, installed version, direct}` and `{runtime, version, file}` rows, exactly as the CLI
 does (`collectFromFiles` in `packages/scan/src/collect.ts`, tested to give the same record as
@@ -157,9 +158,11 @@ alerts for the packages and runtimes you actually run.
 Only the files Briff needs to know your stack: dependency manifests and lockfiles
 (`package.json`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `composer.json`,
 `composer.lock`, `pyproject.toml`, `poetry.lock`, `uv.lock`, `Pipfile.lock`, `requirements.txt`,
-`go.mod` and similar) and runtime
+`go.mod`, `Gemfile.lock`, `Cargo.lock`, `pom.xml`, `gradle.lockfile`, `libs.versions.toml`,
+`packages.lock.json`, `pubspec.lock`, `Package.resolved`, `mix.lock` and their supported manifests) and runtime
 files (`Dockerfile`, `docker-compose.yml`, `.nvmrc`, `.node-version`, `.tool-versions`).
-It never reads application code, issues, pull requests or secrets, and it never writes to
+It also reads `.github/workflows/*.yml` and `*.yaml` for literal `uses:` references only.
+It never executes workflows or reads application code, issues, pull requests or secrets, and it never writes to
 your repositories.
 
 **Permissions**
