@@ -247,3 +247,15 @@ it("preserves framework boundaries for conditional NuGet declarations", () => {
     );
   }
 });
+
+it("keeps pub fixes on the chosen line and runs each project's own tool", () => {
+  expect(
+    installCommand("Pub", "dio", "4.0.6", { project: "pubspec.yaml:flutter,cli/pubspec.yaml:dart" })
+  ).toBe(
+    'set dio in pubspec.yaml to "^4.0.6", then run flutter pub upgrade dio; set dio in cli/pubspec.yaml to "^4.0.6", then run (cd cli && dart pub upgrade dio)'
+  );
+  expect(installCommand("Pub", "archive", "0.3.2", { dev: true })).toContain(
+    '"^0.3.2" under dev_dependencies'
+  );
+  expect(whyCommand("Pub", "dio")).toBe("dart pub deps");
+});

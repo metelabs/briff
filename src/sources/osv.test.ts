@@ -280,3 +280,10 @@ it("queries NuGet using its stored package identity", () => {
     version: "1.2.3",
   });
 });
+
+it("queries Pub with its public registry identity", () => {
+  expect(osvQueryOf({ name: "archive", version: "3.3.1", ecosystem: "Pub" })).toEqual({
+    package: { name: "archive", ecosystem: "Pub" },
+    version: "3.3.1",
+  });
+});
