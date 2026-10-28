@@ -588,3 +588,49 @@ describe.skipIf(!url)("Pub ingest", () => {
     expect(dio).toMatchObject({ installedVersion: "4.0.0", direct: true });
   });
 });
+
+describe.skipIf(!url)("SwiftPM ingest", () => {
+  const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: url ?? "" }) });
+  let orgId = "";
+  beforeAll(async () => {
+    orgId = (await db.org.create({ data: { name: `acme-swift-${Date.now()}` } })).id;
+  });
+  afterAll(async () => {
+    await db.org.deleteMany({ where: { id: orgId } });
+    await db.$disconnect();
+  });
+  it("stores normalized repository identities through the real collector", async () => {
+    const files = Object.fromEntries(
+      ["Package.resolved", "Package.swift"].map((file) => [
+        file,
+        readFileSync(
+          new URL(`../../../packages/scan/src/__fixtures__/swiftpm/${file}`, import.meta.url),
+          "utf8"
+        ),
+      ])
+    );
+    const repo = await collectFromFiles("acme/swift", files, {
+      warn: (message) => {
+        throw new Error(message);
+      },
+    });
+    if (!repo) throw new Error("fixture did not scan");
+    await ingestScan(db, orgId, { source: "local", repos: [repo] });
+    const rows = await withOrg(db, orgId).dependency.findMany({
+      include: { package: true },
+      orderBy: { package: { name: "asc" } },
+    });
+    expect(
+      rows.map((row) => [
+        row.package.ecosystem,
+        row.package.name,
+        row.installedVersion,
+        row.direct,
+        row.project,
+      ])
+    ).toEqual([
+      ["SwiftURL", "github.com/apple/swift-nio", "2.40.0", false, null],
+      ["SwiftURL", "github.com/vapor/vapor", "4.50.0", true, "Package.swift"],
+    ]);
+  });
+});

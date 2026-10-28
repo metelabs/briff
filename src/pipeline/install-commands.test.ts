@@ -270,3 +270,14 @@ it("updates Pub's effective override instead of leaving its vulnerable pin in pl
     'set dio in pubspec.yaml to "^4.0.6" under dependency_overrides, then run dart pub upgrade dio'
   );
 });
+
+it("pins SwiftPM's existing rule before updating its package identity", () => {
+  expect(
+    installCommand("SwiftURL", "github.com/acme/Kit", "1.2.4", {
+      project: "apps/server/Package.swift",
+    })
+  ).toBe(
+    'set the github.com/acme/Kit version rule in apps/server/Package.swift to .exact("1.2.4"), then run (cd apps/server && swift package update kit)'
+  );
+  expect(whyCommand("SwiftURL", "github.com/acme/Kit")).toBe("swift package show-dependencies");
+});

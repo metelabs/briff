@@ -1,3 +1,4 @@
+import { fetchSwiftPackage } from "./swift";
 import { fetchPubPackage } from "./pub";
 import type { Ecosystem } from "@scan/ecosystems";
 import { fetchNugetPackage } from "./nuget";
@@ -22,6 +23,8 @@ export type RegistryLookup = { status: "ok"; info: RegistryInfo } | { status: "n
 
 export function fetchRegistryPackage(ecosystem: Ecosystem, name: string): Promise<RegistryLookup> {
   switch (ecosystem) {
+    case "SwiftURL":
+      return fetchSwiftPackage(name);
     case "Pub":
       return fetchPubPackage(name);
     case "NuGet":

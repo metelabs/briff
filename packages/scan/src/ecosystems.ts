@@ -1,3 +1,5 @@
+import { swiftPackageName } from "./swift-url";
+
 // Package ecosystems, named as OSV names them (https://ossf.github.io/osv-schema/#affectedpackage-field):
 // the same string is `Package.ecosystem` in Briff and the `ecosystem` of an OSV query.
 
@@ -11,6 +13,7 @@ export const ECOSYSTEMS = [
   "Maven",
   "NuGet",
   "Pub",
+  "SwiftURL",
   "GitHub Actions",
 ] as const;
 
@@ -97,6 +100,8 @@ export function ecosystemLabel(ecosystem: string): string {
   switch (ecosystem) {
     case "Packagist":
       return "Composer";
+    case "SwiftURL":
+      return "SwiftPM";
     case "GitHub Actions":
       return "Actions";
     default:
@@ -112,6 +117,8 @@ export function ecosystemLabel(ecosystem: string): string {
 export function normalizePackageName(ecosystem: Ecosystem, name: string): string {
   const trimmed = name.trim();
   switch (ecosystem) {
+    case "SwiftURL":
+      return swiftPackageName(trimmed) ?? trimmed;
     case "Pub":
     case "NuGet":
     case "Packagist":
@@ -174,6 +181,7 @@ export function normalizeVersion(ecosystem: Ecosystem, version: string): string 
     }
     case "Go":
       return raw.replace(/^v(?=\d)/, "");
+    case "SwiftURL":
     case "Pub":
     case "NuGet":
     case "Maven":

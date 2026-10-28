@@ -184,6 +184,15 @@ export function installCommand(
   variant: InstallVariant = {}
 ): string {
   switch (ecosystem ?? "npm") {
+    case "SwiftURL":
+      return (variant.project?.split(",") ?? ["Package.swift"])
+        .map((file) => {
+          const dir = file.includes("/") ? file.slice(0, file.lastIndexOf("/")) : ".";
+          const name = pkg.split("/").at(-1)?.toLowerCase() ?? pkg;
+          const command = `swift package update ${shellWord(name)}`;
+          return `set the ${pkg} version rule in ${file} to .exact("${version}"), then run ${dir === "." ? command : `(cd ${shellWord(dir)} && ${command})`}`;
+        })
+        .join("; ");
     case "Pub": {
       const owners = variant.project?.split(",") ?? ["pubspec.yaml:dart"];
       return owners
@@ -252,6 +261,8 @@ export function whyCommand(
   project?: string
 ): string {
   switch (ecosystem ?? "npm") {
+    case "SwiftURL":
+      return "swift package show-dependencies";
     case "Pub":
       return "dart pub deps";
     case "NuGet":

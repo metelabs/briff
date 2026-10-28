@@ -452,3 +452,10 @@ Pub metadata uses `https://pub.dev/api/packages/<name>`: latest.version, isDisco
 and latest.pubspec.repository (homepage fallback). A retracted latest release has no latest
 version recommendation. Repository links attach the existing GitHub releases feed. OSV
 queries use `Pub` and the public package name; custom hosted packages are excluded.
+
+SwiftPM packages use `SwiftURL` repository identities (`github.com/owner/repo`, lower-casing
+GitHub paths). The registry layer reads the first 100 GitHub releases for stable tagged
+versions and returns the repository link to the existing GitHub releases feed mechanism.
+Draft/prerelease releases do not become latest versions. Other hosts have no automated
+latest lookup; there is no package-wide deprecation field. Branch and commit pins are
+excluded from version-based OSV scans.

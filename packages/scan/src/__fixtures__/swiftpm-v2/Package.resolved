@@ -1,0 +1,17 @@
+{
+  "pins": [
+    {
+      "identity": "vapor",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/vapor/vapor.git",
+      "state": { "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "version": "4.50.0" }
+    },
+    {
+      "identity": "acme.local",
+      "kind": "registry",
+      "location": "",
+      "state": { "version": "1.0.0" }
+    }
+  ],
+  "version": 2
+}

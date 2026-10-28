@@ -246,3 +246,7 @@ Concurrent scans enforce the same limit at the shared ingestion write boundary.
 Pub: the shared exported file list includes `pubspec.lock` and `pubspec.yaml` at the root
 and in subprojects. Only public hosted dependencies are scanned; custom repositories, SDK,
 path and git dependencies are excluded. The App never executes Dart or Flutter.
+
+SwiftPM: the shared file list includes `Package.resolved` and `Package.swift`, including
+resolved files under Xcode project workspaces when they pass the existing path exclusions.
+Only literal manifest URLs are read for direct ownership; no Swift code is executed.
