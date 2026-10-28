@@ -242,3 +242,7 @@ leaves extra GitHub repositories unlinked when capacity is exhausted; their exis
 installation permission on GitHub is unchanged. Repos displays a capacity note.
 Ask the instance admin to raise the limit in Admin, then rescan the installation.
 Concurrent scans enforce the same limit at the shared ingestion write boundary.
+
+SwiftPM: the shared file list includes `Package.resolved` and `Package.swift`, including
+resolved files under Xcode project workspaces when they pass the existing path exclusions.
+Only literal manifest URLs are read for direct ownership; no Swift code is executed.

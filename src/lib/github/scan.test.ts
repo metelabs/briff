@@ -216,3 +216,25 @@ it("fetches NuGet dependency files, excluding vendored copies", () => {
     }).map((e) => e.path)
   ).toEqual(paths.slice(0, 3));
 });
+
+it("fetches SwiftPM pins and their manifest while excluding ordinary Swift sources", () => {
+  const paths = [
+    "Package.resolved",
+    "Package.swift",
+    "Acme.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved",
+    "Sources/main.swift",
+    "vendor/Package.resolved",
+  ];
+  expect(
+    scannedTreeEntries({
+      truncated: false,
+      tree: paths.map((path) => ({
+        path,
+        mode: "100644",
+        type: "blob",
+        sha: "0".repeat(40),
+        size: 30,
+      })),
+    }).map((row) => row.path)
+  ).toEqual(paths.slice(0, 3));
+});

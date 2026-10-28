@@ -280,3 +280,12 @@ it("queries NuGet using its stored package identity", () => {
     version: "1.2.3",
   });
 });
+
+it("matches SwiftURL advisory identities to resolved repository URLs", () => {
+  expect(
+    osvQueryOf({ name: "github.com/vapor/vapor", version: "4.50.0", ecosystem: "SwiftURL" })
+  ).toEqual({
+    package: { name: "github.com/vapor/vapor", ecosystem: "SwiftURL" },
+    version: "4.50.0",
+  });
+});

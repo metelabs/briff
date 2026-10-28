@@ -1,0 +1,25 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "Vapor",
+        "repositoryURL": "https://github.com/vapor/vapor.git",
+        "state": {
+          "branch": null,
+          "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "version": "4.50.0"
+        }
+      },
+      {
+        "package": "AcmeBranch",
+        "repositoryURL": "https://github.com/acme/branch.git",
+        "state": {
+          "branch": "main",
+          "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "version": null
+        }
+      }
+    ]
+  },
+  "version": 1
+}

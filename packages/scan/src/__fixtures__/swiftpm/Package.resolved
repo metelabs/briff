@@ -1,0 +1,18 @@
+{
+  "originHash": "aaaaaaaa",
+  "pins": [
+    {
+      "identity": "vapor",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/vapor/vapor.git",
+      "state": { "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "version": "4.50.0" }
+    },
+    {
+      "identity": "swift-nio",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/apple/swift-nio.git",
+      "state": { "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "version": "2.40.0" }
+    }
+  ],
+  "version": 3
+}

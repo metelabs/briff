@@ -546,3 +546,24 @@ conditions and versions; project-wide add commands cannot safely express that ch
 Transitive guidance uses `dotnet nuget why <project.csproj>
 <id>`. The target remains on the installed release line. No development flag is inferred
 from PrivateAssets: it controls propagation, not whether the dependency runs in production.
+
+## Swift Package Manager (SwiftURL)
+
+`Package.resolved` v1, v2 and v3 provide versioned source-control pins. Literal `.package`
+URLs in the closest ancestor `Package.swift` identify direct packages. Commented-out
+entries are ignored; manifests are never executed. Repository identities use OSV's
+`SwiftURL` form: `github.com/owner/repo`, without transport, `.git` or a trailing slash,
+with repository path case preserved. The UI calls the ecosystem SwiftPM.
+
+Branch/revision-only pins, registry packages and local paths do not identify a released
+SwiftURL version and are skipped. Computed manifest URLs cannot identify direct ownership;
+those locked packages remain transitive. Xcode resolved files in non-hidden directories
+follow the shared depth and vendor exclusions. Hidden `.swiftpm` directories are excluded.
+
+Direct fixes set the existing Package.swift rule to `.exact("X")` before running
+`swift package update <identity>` in each owning directory. This preserves the selected
+installed release line; a broad `from:` rule could otherwise resolve a later major.
+Transitive guidance uses `swift package show-dependencies`. Metadata uses up to 100 GitHub
+releases, ignoring drafts and prereleases. The existing repository release feed attaches
+even when no stable GitHub release is available. Non-GitHub repositories retain their URL
+without an automated latest-version lookup; no package-wide retirement status is inferred.

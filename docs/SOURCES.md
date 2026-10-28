@@ -447,3 +447,10 @@ version present in the flatcontainer index supplies metadata and deprecation. Th
 nuspec's repository URL (projectUrl as fallback) attaches the existing GitHub releases feed.
 Prereleases and unlisted versions are excluded from latest metadata. Non-semver four-part
 versions remain scanner evidence but do not receive an automatic fix target.
+
+SwiftPM packages use `SwiftURL` repository identities (`github.com/owner/repo`, preserving
+path case). The registry layer reads the first 100 GitHub releases for stable tagged
+versions and returns the repository link to the existing GitHub releases feed mechanism.
+Draft/prerelease releases do not become latest versions. Other hosts have no automated
+latest lookup; there is no package-wide deprecation field. Branch and commit pins are
+excluded from version-based OSV scans.

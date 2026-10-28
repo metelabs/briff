@@ -4,6 +4,7 @@ import path from "node:path";
 import { mergeActionMetadata, parseActions } from "./actions";
 
 import { composerDeclared, parseComposerLock } from "./composer-lock";
+import { parseSwiftResolved } from "./swift-resolved";
 import { parseNugetFiles } from "./nuget";
 import { parseMavenFiles } from "./maven";
 import { parseCargoLock } from "./cargo-lock";
@@ -39,7 +40,8 @@ export type LockfileKind =
   | "bundler"
   | "cargo"
   | "maven"
-  | "nuget";
+  | "nuget"
+  | "swift";
 
 /** Reads a file's text; the CLI reads the disk, the GitHub App reads fetched blobs. */
 export type ReadText = (filePath: string) => Promise<string>;
@@ -59,6 +61,8 @@ export const LOCKFILES: Readonly<Record<string, LockfileKind>> = {
   "go.mod": "gomod",
   "Gemfile.lock": "bundler",
   "Cargo.lock": "cargo",
+  "Package.resolved": "swift",
+  "Package.swift": "swift",
   "packages.lock.json": "nuget",
   "Directory.Packages.props": "nuget",
   "pom.xml": "maven",
@@ -259,6 +263,29 @@ export async function readLockfile(
     lockfile.kind === "maven" || lockfile.kind === "nuget" ? "" : await read(lockfile.path);
   const dir = path.dirname(lockfile.path);
   switch (lockfile.kind) {
+    case "swift": {
+      if (path.basename(lockfile.path) === "Package.swift") return [];
+      const candidates = [...new Set([path.join(dir, "Package.swift"), ...manifestPaths])]
+        .filter(
+          (file) =>
+            path.basename(file) === "Package.swift" &&
+            !path.relative(path.dirname(file), dir).split(path.sep).includes("..")
+        )
+        .sort((a, b) => b.length - a.length);
+      let manifest: string | null = null;
+      let project = path
+        .relative(manifestRoot, path.join(dir, "Package.swift"))
+        .split(path.sep)
+        .join("/");
+      for (const file of candidates) {
+        manifest = await readOptional(file, read);
+        if (manifest !== null) {
+          project = path.relative(manifestRoot, file).split(path.sep).join("/");
+          break;
+        }
+      }
+      return parseSwiftResolved(content, manifest, project);
+    }
     case "actions":
       return parseActions(
         content,
@@ -362,16 +389,15 @@ export function mergeDependencies(lists: LockedDependency[][]): LockedDependency
       }
       if (dep.ecosystem === "GitHub Actions")
         prev.metadata = mergeActionMetadata(prev.metadata, dep.metadata);
-      const nugetProject =
-        dep.ecosystem === "NuGet"
-          ? prev.direct && !dep.direct
-            ? prev.project
-            : !prev.direct && dep.direct
-              ? dep.project
-              : [...new Set([prev.project, dep.project].flatMap((p) => p?.split(",") ?? []))].join(
-                  ","
-                )
-          : undefined;
+      const nugetProject = ["NuGet", "SwiftURL"].includes(dep.ecosystem ?? "")
+        ? prev.direct && !dep.direct
+          ? prev.project
+          : !prev.direct && dep.direct
+            ? dep.project
+            : [...new Set([prev.project, dep.project].flatMap((p) => p?.split(",") ?? []))].join(
+                ","
+              )
+        : undefined;
       // Development-only while no file declares it for production.
       // A Python lockfile's declaration (group, extra, dev) wins over a requirements export of
       // the same pin, which knows none of them.
@@ -394,16 +420,13 @@ export function mergeDependencies(lists: LockedDependency[][]): LockedDependency
       else delete prev.group;
       // The declaration's shape and owner follow the same authority.
       const requirement = authority ? authority.requirement : (prev.requirement ?? dep.requirement);
-      const project =
-        dep.ecosystem === "NuGet"
-          ? nugetProject
-          : dep.ecosystem === "Maven"
-            ? [...new Set([prev.project, dep.project].flatMap((p) => p?.split(",") ?? []))].join(
-                ","
-              )
-            : authority
-              ? authority.project
-              : (prev.project ?? dep.project);
+      const project = ["NuGet", "SwiftURL"].includes(dep.ecosystem ?? "")
+        ? nugetProject
+        : dep.ecosystem === "Maven"
+          ? [...new Set([prev.project, dep.project].flatMap((p) => p?.split(",") ?? []))].join(",")
+          : authority
+            ? authority.project
+            : (prev.project ?? dep.project);
       if (requirement) prev.requirement = requirement;
       else delete prev.requirement;
       if (project) prev.project = project;

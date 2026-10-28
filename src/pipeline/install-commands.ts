@@ -184,6 +184,15 @@ export function installCommand(
   variant: InstallVariant = {}
 ): string {
   switch (ecosystem ?? "npm") {
+    case "SwiftURL":
+      return (variant.project?.split(",") ?? ["Package.swift"])
+        .map((file) => {
+          const dir = file.includes("/") ? file.slice(0, file.lastIndexOf("/")) : ".";
+          const name = pkg.split("/").at(-1)?.toLowerCase() ?? pkg;
+          const command = `swift package update ${shellWord(name)}`;
+          return `set the ${pkg} version rule in ${file} to .exact("${version}"), then run ${dir === "." ? command : `(cd ${shellWord(dir)} && ${command})`}`;
+        })
+        .join("; ");
     case "NuGet":
       if (variant.requirement === "nuget-conditional")
         return `set only the ${pkg} PackageReference or central PackageVersion declarations on the ${semver.major(version) === 0 ? `0.${semver.minor(version)}` : semver.major(version)} release line in ${variant.project ?? "the project"} to ${version}; preserve other framework conditions and versions`;
@@ -238,6 +247,8 @@ export function whyCommand(
   project?: string
 ): string {
   switch (ecosystem ?? "npm") {
+    case "SwiftURL":
+      return "swift package show-dependencies";
     case "NuGet":
       return (project?.split(",") ?? ["<project.csproj>"])
         .map((file) => `dotnet nuget why ${shellWord(file)} ${shellWord(pkg)}`)
