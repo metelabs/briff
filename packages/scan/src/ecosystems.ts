@@ -14,6 +14,7 @@ export const ECOSYSTEMS = [
   "NuGet",
   "Pub",
   "SwiftURL",
+  "Hex",
   "GitHub Actions",
 ] as const;
 
@@ -119,6 +120,7 @@ export function normalizePackageName(ecosystem: Ecosystem, name: string): string
   switch (ecosystem) {
     case "SwiftURL":
       return swiftPackageName(trimmed) ?? trimmed;
+    case "Hex":
     case "Pub":
     case "NuGet":
     case "Packagist":
@@ -182,6 +184,7 @@ export function normalizeVersion(ecosystem: Ecosystem, version: string): string 
     case "Go":
       return raw.replace(/^v(?=\d)/, "");
     case "SwiftURL":
+    case "Hex":
     case "Pub":
     case "NuGet":
     case "Maven":

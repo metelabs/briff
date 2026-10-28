@@ -634,3 +634,52 @@ describe.skipIf(!url)("SwiftPM ingest", () => {
     ]);
   });
 });
+
+describe.skipIf(!url)("Hex ingest", () => {
+  const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: url ?? "" }) });
+  let orgId = "";
+  beforeAll(async () => {
+    orgId = (await db.org.create({ data: { name: `acme-hex-${Date.now()}` } })).id;
+  });
+  afterAll(async () => {
+    await db.org.deleteMany({ where: { id: orgId } });
+    await db.$disconnect();
+  });
+  it("persists the real collector's pins, ownership and ecosystem through tenant scoping", async () => {
+    const files = Object.fromEntries(
+      ["mix.lock", "mix.exs"].map((file) => [
+        file,
+        readFileSync(
+          new URL(`../../../packages/scan/src/__fixtures__/hex/${file}`, import.meta.url),
+          "utf8"
+        ),
+      ])
+    );
+    const repo = await collectFromFiles("acme/hex", files, {
+      warn: (message) => {
+        throw new Error(message);
+      },
+    });
+    if (!repo) throw new Error("fixture did not scan");
+    await ingestScan(db, orgId, { source: "local", repos: [repo] });
+    const rows = await withOrg(db, orgId).dependency.findMany({
+      include: { package: true },
+      orderBy: { package: { name: "asc" } },
+    });
+    expect(
+      rows.map((row) => [
+        row.package.ecosystem,
+        row.package.name,
+        row.installedVersion,
+        row.direct,
+        row.dev,
+        row.project,
+        row.unresolved,
+      ])
+    ).toEqual([
+      ["Hex", "phoenix_html", "2.14.0", true, true, "mix.exs:phoenix_html", false],
+      ["Hex", "plug", "1.10.0", true, false, "mix.exs:plug", false],
+      ["Hex", "plug_crypto", "1.0.0", false, false, null, false],
+    ]);
+  });
+});

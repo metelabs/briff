@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "links": {}
+  },
+  "releases": [
+    {
+      "version": "1.0.0"
+    }
+  ],
+  "retirements": {
+    "1.0.0": {
+      "reason": "deprecated",
+      "message": null
+    }
+  }
+}

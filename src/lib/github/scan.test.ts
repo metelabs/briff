@@ -254,3 +254,27 @@ it("fetches SwiftPM pins and their manifest while excluding ordinary Swift sourc
     }).map((row) => row.path)
   ).toEqual(paths.slice(0, 3));
 });
+
+it("fetches Hex locks and Mix manifests while excluding build artifacts and source", () => {
+  const paths = [
+    "mix.lock",
+    "mix.exs",
+    "apps/web/mix.exs",
+    "vendor/mix.lock",
+    "lib/acme.ex",
+    "deps/plug/mix.lock",
+    "_build/dev/mix.lock",
+  ];
+  expect(
+    scannedTreeEntries({
+      truncated: false,
+      tree: paths.map((path) => ({
+        path,
+        mode: "100644",
+        type: "blob",
+        sha: "0".repeat(40),
+        size: 30,
+      })),
+    }).map((entry) => entry.path)
+  ).toEqual(paths.slice(0, 3));
+});

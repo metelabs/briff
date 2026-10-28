@@ -1,3 +1,4 @@
+import { fetchHexPackage } from "./hex";
 import { fetchSwiftPackage } from "./swift";
 import { fetchPubPackage } from "./pub";
 import type { Ecosystem } from "@scan/ecosystems";
@@ -23,6 +24,8 @@ export type RegistryLookup = { status: "ok"; info: RegistryInfo } | { status: "n
 
 export function fetchRegistryPackage(ecosystem: Ecosystem, name: string): Promise<RegistryLookup> {
   switch (ecosystem) {
+    case "Hex":
+      return fetchHexPackage(name);
     case "SwiftURL":
       return fetchSwiftPackage(name);
     case "Pub":

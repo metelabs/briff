@@ -184,6 +184,17 @@ export function installCommand(
   variant: InstallVariant = {}
 ): string {
   switch (ecosystem ?? "npm") {
+    case "Hex":
+      return (variant.project?.split(",") ?? [`mix.exs:${pkg}`])
+        .map((owner) => {
+          const at = owner.lastIndexOf(":");
+          const file = owner.slice(0, at);
+          const app = owner.slice(at + 1);
+          const dir = file.includes("/") ? file.slice(0, file.lastIndexOf("/")) : ".";
+          const command = `mix deps.update ${shellWord(app)}`;
+          return `set ${app} in ${file} to "~> ${version}", then run ${dir === "." ? command : `(cd ${shellWord(dir)} && ${command})`}`;
+        })
+        .join("; ");
     case "SwiftURL":
       return (variant.project?.split(",") ?? ["Package.swift"])
         .map((file) => {
@@ -261,6 +272,8 @@ export function whyCommand(
   project?: string
 ): string {
   switch (ecosystem ?? "npm") {
+    case "Hex":
+      return "mix deps.tree";
     case "SwiftURL":
       return "swift package show-dependencies";
     case "Pub":

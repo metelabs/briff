@@ -24,7 +24,7 @@ It runs in three places, all with the same code:
   one repo, nested git repos and a root that is a linked worktree included. With `--all-repos`
   a repo is the nearest directory with a `.git` and its name is the path relative to the root;
   linked git worktrees (`*-wt` checkouts) are skipped unless `--include-worktrees` is passed.
-  `node_modules`, `dist`, `build`, `Pods` and dot-directories are never entered.
+  `node_modules`, `dist`, `build`, `Pods`, `deps`, `_build` and dot-directories are never entered.
 - Inside GitHub Actions (`GITHUB_ACTIONS=true`) the upload says `source: "github"`, so the
   repo shows as "GitHub" on `/repos`; everywhere else `source: "local"` ("Local scanner").
   The same repo scanned both ways is two Briff repos.
@@ -590,3 +590,31 @@ Transitive guidance uses `swift package show-dependencies`. Metadata uses up to 
 releases, ignoring drafts and prereleases. The existing repository release feed attaches
 even when no stable GitHub release is available. Non-GitHub repositories retain their URL
 without an automated latest-version lookup; no package-wide retirement status is inferred.
+
+## Elixir (Hex)
+
+`mix.lock` supplies public `:hex` pins; the application key is kept distinct from the
+registry package name (`hex: :package` aliases). The sibling `mix.exs` identifies direct
+packages through literal `deps: [...]` lists or a literal `deps` function. `only: :dev`,
+`:test`, or lists containing only those environments mark development dependencies.
+Umbrella roots with a literal `apps_path` also read their immediate member manifests.
+Git/path/umbrella dependencies and private Hex repositories never become public Hex
+packages. Old six-field Hex tuples are accepted as public pins.
+
+The scanner does not execute Elixir. Computed dependency lists cannot establish direct
+ownership; their concrete lock pins still scan as transitive. Without `mix.lock`, no
+installed Hex version is inferred. Custom lockfile paths and computed umbrella paths
+are not resolved.
+
+OSV uses `Hex` and the registry name. Direct fixes change the existing requirement in
+each owning manifest to `~> X.Y.Z`, then run `mix deps.update <application>` in that
+directory. The three-component requirement prevents crossing the selected installed
+release line, including 0.x. Existing dependency options and development environments
+stay in place. Transitive guidance uses `mix deps.tree`. Project evidence records
+comma-separated `mix.exs:application` owners. Stack, Repos and Alerts use the shared Hex
+ecosystem tag.
+
+Metadata uses the public Hex API's releases, version-keyed retirements and meta.links.
+Latest metadata is the newest stable nonretired release; when every stable release is
+retired the package shows a retirement warning and no latest recommendation. GitHub
+repository links attach the existing releases feed.

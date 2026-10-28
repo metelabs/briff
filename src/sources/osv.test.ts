@@ -296,3 +296,10 @@ it("matches SwiftURL advisory identities to resolved repository URLs", () => {
     version: "4.50.0",
   });
 });
+
+it("queries Hex advisories with the registry package rather than its Mix alias", () => {
+  expect(osvQueryOf({ name: "plug", version: "1.10.0", ecosystem: "Hex" })).toEqual({
+    package: { name: "plug", ecosystem: "Hex" },
+    version: "1.10.0",
+  });
+});
