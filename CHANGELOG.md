@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.7.0](https://github.com/metelabs/briff/compare/0.6.3...0.7.0) (2026-10-28)
+
+
+### Features
+
+* **auth:** open signup with organisation limits ([#16](https://github.com/metelabs/briff/issues/16)) ([70221e8](https://github.com/metelabs/briff/commit/70221e8cc674909c37eca807d1dd366d56cfd46a))
+* **platform:** cover Docker base image advisories ([#13](https://github.com/metelabs/briff/issues/13)) ([4e67833](https://github.com/metelabs/briff/commit/4e678333c6e9e3e78cce95740d8bd2e28060b60a))
+* **platform:** refresh runtime lifecycle data daily ([#14](https://github.com/metelabs/briff/issues/14)) ([2e012a5](https://github.com/metelabs/briff/commit/2e012a5c9668fb517ee1ecd0e30f3c6b226b7a75))
+* **scan:** add Cargo crates.io ecosystem support ([#11](https://github.com/metelabs/briff/issues/11)) ([cdf0290](https://github.com/metelabs/briff/commit/cdf0290f534b1b281c8c9965af8c1dcbb0731f1c))
+* **scan:** add Dart and Flutter Pub ecosystem ([#18](https://github.com/metelabs/briff/issues/18)) ([bf8ae95](https://github.com/metelabs/briff/commit/bf8ae9532ae93e5b351ef264d1ff3cb793f482e7))
+* **scan:** add Elixir Hex ecosystem support ([#20](https://github.com/metelabs/briff/issues/20)) ([da0536e](https://github.com/metelabs/briff/commit/da0536e1558bd8b7a6bd7f3c9a18d61aafa5a58d))
+* **scan:** add Maven and Gradle ecosystem support ([#12](https://github.com/metelabs/briff/issues/12)) ([9773f49](https://github.com/metelabs/briff/commit/9773f49c3a00ddfc1bf9c78bb6bc02d8ccddb98b))
+* **scan:** add NuGet ecosystem support ([#17](https://github.com/metelabs/briff/issues/17)) ([f5dc5f4](https://github.com/metelabs/briff/commit/f5dc5f4bd2d0d8b034d1f278e9920a189235c186))
+* **scan:** add RubyGems ecosystem support ([#8](https://github.com/metelabs/briff/issues/8)) ([ec06f1c](https://github.com/metelabs/briff/commit/ec06f1c5a694abb1d35506725a5ee80448661edc))
+* **scan:** add Swift Package Manager ecosystem ([#19](https://github.com/metelabs/briff/issues/19)) ([85867e1](https://github.com/metelabs/briff/commit/85867e113bcf945a8b5de0ff9a6b3613d57ec21c))
+* **scan:** cover GitHub Actions dependencies and advisories ([#9](https://github.com/metelabs/briff/issues/9)) ([056abf1](https://github.com/metelabs/briff/commit/056abf12049fcb93ff92773f5b4bd0e41f0f5b66))
+* **sources:** add scoped ecosystem news feeds ([#15](https://github.com/metelabs/briff/issues/15)) ([8438e2c](https://github.com/metelabs/briff/commit/8438e2c98d3d8bd066f48e340c268f35b82ed153))
+
 ## [0.6.3](https://github.com/metelabs/briff/compare/0.6.2...0.6.3) (2026-10-26)
 
 
