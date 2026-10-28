@@ -281,3 +281,13 @@ it("pins SwiftPM's existing rule before updating its package identity", () => {
   );
   expect(whyCommand("SwiftURL", "github.com/acme/Kit")).toBe("swift package show-dependencies");
 });
+
+it("updates Hex aliases in their owning manifests without widening the release line", () => {
+  expect(installCommand("Hex", "plug", "1.10.4", { project: "apps/web/mix.exs:acme_http" })).toBe(
+    'set acme_http in apps/web/mix.exs to "~> 1.10.4", then run (cd apps/web && mix deps.update acme_http)'
+  );
+  expect(installCommand("Hex", "plug_crypto", "0.3.2")).toBe(
+    'set plug_crypto in mix.exs to "~> 0.3.2", then run mix deps.update plug_crypto'
+  );
+  expect(whyCommand("Hex", "plug")).toBe("mix deps.tree");
+});

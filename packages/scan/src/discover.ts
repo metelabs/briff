@@ -1,3 +1,4 @@
+import { parseHexLock } from "./hex-lock";
 import { parseSwiftResolved } from "./swift-resolved";
 import { lstat, readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
@@ -43,7 +44,8 @@ export type LockfileKind =
   | "maven"
   | "nuget"
   | "pub"
-  | "swift";
+  | "swift"
+  | "hex";
 
 /** Reads a file's text; the CLI reads the disk, the GitHub App reads fetched blobs. */
 export type ReadText = (filePath: string) => Promise<string>;
@@ -63,6 +65,8 @@ export const LOCKFILES: Readonly<Record<string, LockfileKind>> = {
   "go.mod": "gomod",
   "Gemfile.lock": "bundler",
   "Cargo.lock": "cargo",
+  "mix.lock": "hex",
+  "mix.exs": "hex",
   "Package.resolved": "swift",
   "Package.swift": "swift",
   "pubspec.lock": "pub",
@@ -102,6 +106,8 @@ export const SKIP_DIRS: ReadonlySet<string> = new Set([
   "target",
   "Pods",
   "DerivedData",
+  "deps",
+  "_build",
   // Python virtualenvs and installed packages: their files describe what pip installed, not
   // what the project declares (`.venv` is already a dot-directory).
   "venv",
@@ -267,6 +273,21 @@ export async function readLockfile(
     lockfile.kind === "maven" || lockfile.kind === "nuget" ? "" : await read(lockfile.path);
   const dir = path.dirname(lockfile.path);
   switch (lockfile.kind) {
+    case "hex": {
+      if (path.basename(lockfile.path) === "mix.exs") return [];
+      const manifests: Record<string, string> = {};
+      for (const file of new Set([path.join(dir, "mix.exs"), ...manifestPaths])) {
+        if (path.basename(file) !== "mix.exs") continue;
+        const value = await readOptional(file, read);
+        if (value !== null)
+          manifests[path.relative(manifestRoot, file).split(path.sep).join("/")] = value;
+      }
+      return parseHexLock(
+        content,
+        manifests,
+        path.relative(manifestRoot, path.join(dir, "mix.exs")).split(path.sep).join("/")
+      );
+    }
     case "swift": {
       if (path.basename(lockfile.path) === "Package.swift") return [];
       const candidates = [...new Set([path.join(dir, "Package.swift"), ...manifestPaths])]
@@ -417,7 +438,7 @@ export function mergeDependencies(lists: LockedDependency[][]): LockedDependency
       if (!dep.unresolved) delete prev.unresolved;
       if (dep.ecosystem === "GitHub Actions")
         prev.metadata = mergeActionMetadata(prev.metadata, dep.metadata);
-      const directProjects = ["NuGet", "Pub", "SwiftURL"].includes(dep.ecosystem ?? "")
+      const directProjects = ["NuGet", "Pub", "SwiftURL", "Hex"].includes(dep.ecosystem ?? "")
         ? prev.direct && !dep.direct
           ? prev.project
           : !prev.direct && dep.direct
@@ -448,7 +469,7 @@ export function mergeDependencies(lists: LockedDependency[][]): LockedDependency
       else delete prev.group;
       // The declaration's shape and owner follow the same authority.
       const requirement = authority ? authority.requirement : (prev.requirement ?? dep.requirement);
-      const project = ["NuGet", "Pub", "SwiftURL"].includes(dep.ecosystem ?? "")
+      const project = ["NuGet", "Pub", "SwiftURL", "Hex"].includes(dep.ecosystem ?? "")
         ? directProjects
         : dep.ecosystem === "Maven"
           ? [...new Set([prev.project, dep.project].flatMap((p) => p?.split(",") ?? []))].join(",")

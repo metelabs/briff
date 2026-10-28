@@ -20,7 +20,7 @@ Permissions: **Contents: read-only** and **Metadata: read-only**, nothing else. 
 
 A path is read when its file name is in the list below **and** no directory on the way starts
 with `.` or is one of `node_modules`, `dist`, `build`, `out`, `coverage`, `vendor`, `target`,
-`Pods`, `DerivedData`, `venv`, `site-packages`, `__pypackages__`, `__fixtures__`, `fixtures`,
+`Pods`, `DerivedData`, `deps`, `_build`, `venv`, `site-packages`, `__pypackages__`, `__fixtures__`, `fixtures`,
 `testdata`, `__mocks__`, **and** it is at most 6 directories deep. Symlinks and submodules are
 never followed. The test is one function, `isScannedPath` in
 [`packages/scan/src/files.ts`](../packages/scan/src/files.ts), shared by the CLI's directory
@@ -36,9 +36,12 @@ walk and the app; the names come from `lockfileKind` (`packages/scan/src/discove
 | Python           | `.python-version`, `pyproject.toml` (`[project]`, `[dependency-groups]`, `[tool.poetry]` and `[tool.uv]` dependencies for the direct flag, `requires-python`), `runtime.txt`, `Pipfile` (`[packages]` / `[dev-packages]` for the direct flag)        |
 | Go               | `go.mod` (`require` for the modules and the direct flag, `go` / `toolchain`); never `go.sum`                                                                                                                                                         |
 | Ruby             | `.ruby-version`, `Gemfile.lock` (GEM specs, DEPENDENCIES, Ruby runtime), `Gemfile` (literal development/test groups)                                                                                                                                 |
-| JVM              | `pom.xml`, `build.gradle`, `build.gradle.kts`                                                                                                                                                                                                        |
+| JVM              | `pom.xml`, `build.gradle`, `build.gradle.kts`, `gradle.lockfile`, `libs.versions.toml`                                                                                                                                                               |
 | .NET             | `global.json`, `*.csproj`, `packages.lock.json`, `Directory.Packages.props`                                                                                                                                                                          |
 | Rust             | `rust-toolchain`, `rust-toolchain.toml`, `Cargo.toml` (workspace and dependency declarations), `Cargo.lock` (v3/v4 registry pins)                                                                                                                    |
+| Dart / Flutter   | `pubspec.lock`, `pubspec.yaml` (public hosted packages and tool/workspace ownership)                                                                                                                                                                 |
+| SwiftPM          | `Package.resolved` (v1/v2/v3 pins), `Package.swift` (literal direct URLs)                                                                                                                                                                            |
+| Elixir           | `mix.lock` (public Hex pins), `mix.exs` (literal dependency and umbrella declarations)                                                                                                                                                               |
 | Containers       | `Dockerfile`, `Containerfile`, `Dockerfile.<x>` / `Containerfile.<x>` (not `.md`/`.txt`), `*.Dockerfile` / `*.dockerfile`, `compose.yml`, `compose.yaml`, `docker-compose.yml`, `docker-compose.yaml`, `compose.<x>.yml` / `docker-compose.<x>.yaml` |
 
 Note that dot-files such as `.nvmrc` are read; dot-_directories_ (`.github`, `.devcontainer`)
@@ -250,3 +253,7 @@ path and git dependencies are excluded. The App never executes Dart or Flutter.
 SwiftPM: the shared file list includes `Package.resolved` and `Package.swift`, including
 resolved files under Xcode project workspaces when they pass the existing path exclusions.
 Only literal manifest URLs are read for direct ownership; no Swift code is executed.
+
+Hex: the shared exported list includes `mix.lock` and `mix.exs`, including umbrella
+member manifests. The App reads literal declarations and public Hex pins without
+executing Elixir; private registries and git/path dependencies are excluded.

@@ -1,0 +1,7 @@
+%{
+  "plug": {:hex, :plug, "1.10.0", "aaaaaaaa", [:mix], [{:plug_crypto, "~> 1.0", [hex: :plug_crypto, repo: "hexpm", optional: false]}], "hexpm", "bbbbbbbb"},
+  "phoenix_html": {:hex, :phoenix_html, "2.14.0", "cccccccc", [:mix], [], "hexpm", "dddddddd"},
+  "plug_crypto": {:hex, :plug_crypto, "1.0.0", "eeeeeeee", [:mix], [], "hexpm", "ffffffff"},
+  "acme_private": {:hex, :acme_private, "1.0.0", "aaaaaaaa", [:mix], [], "hexpm:acme", "bbbbbbbb"},
+  "acme_git": {:git, "https://github.com/acme/local.git", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", []}
+}

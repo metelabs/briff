@@ -459,3 +459,9 @@ versions and returns the repository link to the existing GitHub releases feed me
 Draft/prerelease releases do not become latest versions. Other hosts have no automated
 latest lookup; there is no package-wide deprecation field. Branch and commit pins are
 excluded from version-based OSV scans.
+
+Hex metadata uses `https://hex.pm/api/packages/<name>`: stable releases excluding the
+version-keyed retirements map, plus meta.links for the repository and homepage. All
+stable releases retired means a retirement warning and no latest recommendation.
+Repository links attach the existing GitHub releases feed. OSV uses `Hex` and the public
+registry name, independent of a local Mix application alias.
