@@ -90,7 +90,23 @@ it("assigns workspace pins to members and detects development-only Flutter SDK d
   const archive = repo?.dependencies.find((row) => row.name === "archive");
   expect(archive?.project?.split(",").sort()).toEqual([
     "packages/app/pubspec.yaml:flutter",
-    "packages/cli/pubspec.yaml:dart",
+    "packages/cli/pubspec.yaml:flutter",
   ]);
   expect(archive?.dev).toBeUndefined();
+});
+
+it("records the effective override section for locked Pub fixes", async () => {
+  const files = Object.fromEntries(
+    ["pubspec.lock", "pubspec.yaml"].map((file) => [
+      file,
+      readFileSync(new URL(`./__fixtures__/pub-overrides/${file}`, import.meta.url), "utf8"),
+    ])
+  );
+  const repo = await collectFromFiles("acme/overrides", files, { warn: () => {} });
+  expect(repo?.dependencies.find((row) => row.name === "dio")).toMatchObject({
+    version: "4.0.0",
+    direct: true,
+    dev: true,
+    project: "pubspec.yaml:dart:dependency_overrides",
+  });
 });

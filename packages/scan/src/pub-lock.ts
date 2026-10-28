@@ -25,7 +25,6 @@ export function parsePubLock(
     ].some((entry) => table(entry).sdk === "flutter")
       ? "flutter"
       : "dart";
-  const owner = `${project}:${toolOf(spec)}`;
   const workspace = Array.isArray(spec.workspace)
     ? spec.workspace.filter((entry): entry is string => typeof entry === "string")
     : [];
@@ -49,6 +48,10 @@ export function parsePubLock(
     });
     if (matches) declarations.push({ spec: table(parse(content)), file });
   }
+  const workspaceFlutter =
+    workspace.length > 0 && declarations.some(({ spec }) => toolOf(spec) === "flutter");
+  const toolFor = (spec: Table) => (workspaceFlutter ? "flutter" : toolOf(spec));
+  const owner = `${project}:${toolFor(spec)}`;
   if (lock !== null) {
     const packages = table(table(parse(lock)).packages);
     return Object.entries(packages).flatMap(([name, value]) => {
@@ -73,8 +76,15 @@ export function parsePubLock(
       const devOnly = owners.length
         ? owners.every(({ spec }) => !(name in table(spec.dependencies)))
         : entry.dependency === "direct dev";
-      const projects = owners.length
-        ? owners.map(({ spec, file }) => `${file}:${toolOf(spec)}`).join(",")
+      const overrides = declarations.filter(({ spec }) => name in table(spec.dependency_overrides));
+      const effective = overrides.length ? overrides : owners;
+      const projects = effective.length
+        ? effective
+            .map(
+              ({ spec, file }) =>
+                `${file}:${toolFor(spec)}${overrides.length ? ":dependency_overrides" : ""}`
+            )
+            .join(",")
         : owner;
       return [
         {
@@ -104,7 +114,7 @@ export function parsePubLock(
         ecosystem: "Pub" as const,
         unresolved: true,
         ...(!(name in main) ? { dev: true as const } : {}),
-        project: owner,
+        project: `${owner}${name in table(spec.dependency_overrides) ? ":dependency_overrides" : ""}`,
       },
     ];
   });

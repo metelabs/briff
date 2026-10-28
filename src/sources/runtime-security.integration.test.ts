@@ -206,7 +206,7 @@ describe.skipIf(!url)("runtime security sources: PHP2Shell replay", () => {
   });
 
   it("lists one act item in the weekly bulletin with the derived action", async () => {
-    const now = new Date();
+    const now = new Date("2026-10-21T18:00:00Z");
     const prepared = await prepareStream(
       db,
       orgId,

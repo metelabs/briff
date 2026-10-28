@@ -188,12 +188,13 @@ export function installCommand(
       const owners = variant.project?.split(",") ?? ["pubspec.yaml:dart"];
       return owners
         .map((owner) => {
-          const at = owner.lastIndexOf(":");
-          const file = owner.slice(0, at);
-          const tool = owner.slice(at + 1) === "flutter" ? "flutter" : "dart";
+          const match = /^(.*):(dart|flutter)(?::(dependency_overrides))?$/.exec(owner);
+          const file = match?.[1] ?? "pubspec.yaml";
+          const tool = match?.[2] ?? "dart";
+          const section = match?.[3] ?? (variant.dev ? "dev_dependencies" : undefined);
           const dir = file.includes("/") ? file.slice(0, file.lastIndexOf("/")) : ".";
           const command = `${tool} pub upgrade ${shellWord(pkg)}`;
-          return `set ${pkg} in ${file} to "^${version}"${variant.dev ? " under dev_dependencies" : ""}, then run ${dir === "." ? command : `(cd ${shellWord(dir)} && ${command})`}`;
+          return `set ${pkg} in ${file} to "^${version}"${section ? ` under ${section}` : ""}, then run ${dir === "." ? command : `(cd ${shellWord(dir)} && ${command})`}`;
         })
         .join("; ");
     }

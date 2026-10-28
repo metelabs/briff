@@ -259,3 +259,14 @@ it("keeps pub fixes on the chosen line and runs each project's own tool", () => 
   );
   expect(whyCommand("Pub", "dio")).toBe("dart pub deps");
 });
+
+it("updates Pub's effective override instead of leaving its vulnerable pin in place", () => {
+  expect(
+    installCommand("Pub", "dio", "4.0.6", {
+      dev: true,
+      project: "pubspec.yaml:dart:dependency_overrides",
+    })
+  ).toBe(
+    'set dio in pubspec.yaml to "^4.0.6" under dependency_overrides, then run dart pub upgrade dio'
+  );
+});

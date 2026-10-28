@@ -1,0 +1,28 @@
+packages:
+  archive:
+    dependency: "direct dev"
+    description:
+      name: archive
+      sha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.3.1"
+  dio:
+    dependency: "direct dev"
+    description:
+      name: dio
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.0"
+  path:
+    dependency: transitive
+    description: path
+    source: hosted
+    version: "1.8.0"
+  flutter:
+    dependency: "direct dev"
+    description: flutter
+    source: sdk
+    version: "0.0.0"
+sdks:
+  dart: '>=2.17.0 <4.0.0'
