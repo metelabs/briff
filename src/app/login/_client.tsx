@@ -7,17 +7,18 @@ import { Input } from "@/components/ui/input";
 import { FormStatus, Label } from "@/components/ui/label";
 
 import { type AuthFormState, signInAction, signUpAction } from "./actions";
-import { type AuthMode, signupFooter } from "./signup-state";
+import { type AuthMode, initialSignup, signupFooter } from "./signup-state";
 
 const INITIAL: AuthFormState = { error: null };
 
 interface AuthFormProps {
   mode: AuthMode;
   allowSignup: boolean;
+  signup?: boolean;
 }
 
-export function AuthForm({ mode, allowSignup }: AuthFormProps) {
-  const [signingUp, setSigningUp] = useState(mode === "bootstrap");
+export function AuthForm({ mode, allowSignup, signup = false }: AuthFormProps) {
+  const [signingUp, setSigningUp] = useState(initialSignup(mode, allowSignup, signup));
   const [signInState, signIn, signInPending] = useActionState(signInAction, INITIAL);
   const [signUpState, signUp, signUpPending] = useActionState(signUpAction, INITIAL);
 

@@ -9,3 +9,8 @@ export function signupFooter(mode: AuthMode, allowSignup: boolean): "toggle" | "
   if (mode === "bootstrap") return null;
   return allowSignup ? "toggle" : "closed";
 }
+
+/** Explicit public CTA mode still respects the instance registration setting. */
+export function initialSignup(mode: AuthMode, allowSignup: boolean, requested: boolean): boolean {
+  return mode === "bootstrap" || (allowSignup && requested);
+}

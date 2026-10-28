@@ -51,6 +51,8 @@ describe("public routes", () => {
     expect(graph.has("src/components/bulletin/bulletin-content.tsx")).toBe(true);
     expect(graph.has("src/replay/engine.ts")).toBe(true);
     expect(graph.has("better-auth/cookies")).toBe(true);
+    expect(graph.has("packages/scan/src/ecosystems.ts")).toBe(true);
+    expect(graph.has("packages/scan/src/runtimes.ts")).toBe(true);
   });
 
   it("import nothing that reads a session or tenant data", () => {

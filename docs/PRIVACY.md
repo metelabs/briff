@@ -39,6 +39,14 @@ on. Which packages you depend on can say something about what you build; if that
 for a repo, leave it out of every stream (it is then not scanned for alerts and not
 summarised).
 
+Package metadata refresh also queries public package names at `repo.packagist.org`,
+`pypi.org`, `proxy.golang.org`, `rubygems.org`, `crates.io`, `search.maven.org`,
+`repo.maven.apache.org`, `api.nuget.org`, `pub.dev` and `hex.pm`.
+SwiftPM metadata uses public GitHub releases; other Swift hosts have no release lookup.
+Maven POM and NuGet metadata requests include public release versions returned by the
+registry, never the installed version from your repos. These requests carry no repo names.
+Adapters: `src/sources/registries.ts` and its ecosystem modules.
+
 ## Repo names and the LLM: aliases
 
 Repo names never reach the Anthropic API. Every request that would carry them is rewritten on

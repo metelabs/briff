@@ -7,7 +7,8 @@ security advisory hits an installed version, it emails the same day. It learns y
 lockfiles and runtime files only; it never reads source code.
 
 Briff is a Next.js app and a worker on Postgres. You can run it yourself (below) or use the
-hosted instance at [app.briff.dev](https://app.briff.dev).
+hosted instance at [app.briff.dev](https://app.briff.dev). Sign-ups are open: each new
+organisation defaults to 10 repos and 2 streams, including the default stream.
 
 ## What you get
 
@@ -25,6 +26,29 @@ hosted instance at [app.briff.dev](https://app.briff.dev).
 
 Sources are official feeds only (release feeds, vendor blogs, security advisories, OSV); no
 HTML scraping. The list and the matching rules are in [docs/SOURCES.md](docs/SOURCES.md).
+
+## What Briff reads
+
+- **Packages:** npm/pnpm/yarn; Composer; PyPI (Poetry, uv, Pipfile and requirements);
+  Go modules; RubyGems/Bundler; crates.io/Cargo; Maven (`pom.xml`, Gradle lockfiles and
+  version catalogs); NuGet; pub (Dart/Flutter); SwiftPM; Hex (Elixir). Package pins feed
+  OSV checks, registry metadata and ecosystem-specific fix advice on the installed line.
+- **GitHub Actions:** literal workflow `uses:` references, with tag/SHA pinning advice.
+  Local actions, Docker references and expressions are skipped.
+- **Runtimes:** Node.js, PHP, Python, Go, Ruby, Java, .NET, Rust, PostgreSQL, MySQL,
+  MariaDB, Redis, Valkey, nginx, Deno and Bun, from version files, manifests and images.
+  Support dates refresh daily from endoflife.date, including Debian, Ubuntu and Alpine,
+  with “EOL in N days” facts. Rust and Valkey have no lifecycle catalog entry.
+- **Docker base images:** candidate Debian, Ubuntu and Alpine OS advisories for a short
+  base-package list (including OpenSSL, zlib, libc and curl), with rebuild or migration
+  advice. Briff cannot see the installed package list or patch versions inside an image;
+  these are candidates, not confirmed vulnerabilities, and do not cover packages added
+  by Dockerfile commands.
+- **Curated news:** ecosystem feeds are scoped to streams whose repos use the matching
+  ecosystem or runtime. See [docs/SOURCES.md](docs/SOURCES.md) for the feeds and rules.
+
+The exact file paths come from `packages/scan/src/files.ts` and `discover.ts`;
+[docs/GITHUB-APP.md](docs/GITHUB-APP.md) lists them for readers.
 
 ## What Briff would have sent
 
@@ -111,7 +135,8 @@ features are disabled by missing variables. Both roles have a container healthch
 The first account created on an instance owns it and is its admin. Sign-ups are open by default
 (`ALLOW_SIGNUP=true`); set `ALLOW_SIGNUP=false` to close registration after the first account.
 Each new account gets its own organisation with 10 repositories and 2 streams (including
-the default stream). The instance Admin page can raise these limits. There is no invite
+the default stream). Self-hosted instances use the same defaults; the instance Admin page can raise these limits
+to fit your own capacity. There is no separate self-hosted tier. There is no invite
 system. Point scanners at your instance with `BRIFF_API_URL`, and create your own
 GitHub App if you want "Connect GitHub" ([docs/GITHUB-APP.md](docs/GITHUB-APP.md)).
 

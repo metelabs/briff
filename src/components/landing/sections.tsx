@@ -1,3 +1,6 @@
+import { ECOSYSTEMS, ecosystemLabel } from "@scan/ecosystems";
+import { RUNTIME_IDS } from "@scan/runtimes";
+
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
@@ -74,13 +77,16 @@ export function Hero({ stats }: { stats: HeroStat[] }) {
           of them.
         </h1>
         <p className="rise text-fg-muted mt-5 max-w-[56ch] text-[16px] [--i:2]">
-          Briff reads lockfiles, version files and Dockerfiles, never your code. It follows the
-          release notes and advisories of what they name and tells you which repo needs which
-          command.
+          From npm to Hex: Briff reads package pins, runtime versions, Docker images and Actions
+          references. It follows their releases, advisories and support dates, then names the
+          affected repos and the step to take.
         </p>
         <div className="rise mt-7 flex flex-wrap items-center gap-2.5 [--i:3]">
-          <Link href="/login" className={buttonVariants({ variant: "primary", size: "lg" })}>
-            Sign in
+          <Link
+            href="/login?mode=sign-up"
+            className={buttonVariants({ variant: "primary", size: "lg" })}
+          >
+            Create an account
             <ArrowRight className="size-4" aria-hidden />
           </Link>
           <a
@@ -94,8 +100,8 @@ export function Hero({ stats }: { stats: HeroStat[] }) {
           </a>
         </div>
         <p className="rise text-fg-muted mt-3 max-w-[56ch] text-[12.5px] [--i:4]">
-          Sign-ups are closed for now. Ask for an account, or run your own: one Docker image and
-          Postgres, configured with environment variables.
+          Sign-ups are open. Hosted defaults: 10 repos and 2 streams per organisation. Self-host
+          with one Docker image and Postgres; raise the limits in Admin.
         </p>
       </div>
       <ul className="grid gap-2 min-[560px]:grid-cols-3 min-[980px]:grid-cols-1">
@@ -278,32 +284,91 @@ export function ReadsSection({ files, apiUrl }: { files: ScannedFileList; apiUrl
             <h3 className="type-h3">The files it reads</h3>
             <p className="text-fg-muted mt-2 text-[13.5px]">
               Only these names, at most {files.maxDepth} directories deep, never inside{" "}
-              {files.skippedDirs.join(", ")} or a directory whose name starts with a dot.
+              {files.skippedDirs.join(", ")} or a dot-directory, except .github/workflows for uses
+              references.
             </p>
             <p className="mt-3 text-[13.5px]">
-              <b className="font-semibold">Never read:</b> source code, READMEs, workflows,
+              <b className="font-semibold">Never read:</b> application source code, READMEs,
               environment files, issues, pull requests or git history. File contents become rows and
               are not stored.
             </p>
           </div>
           <div className="min-w-0">
-            <ul className="flex flex-wrap gap-1.5" aria-label="File names">
-              {files.names.map((n) => (
-                <li key={n}>
-                  <Chip>{n}</Chip>
-                </li>
+            <div className="grid gap-4 min-[560px]:grid-cols-2">
+              {files.groups.map((group) => (
+                <div key={group.label} className="min-w-0">
+                  <h4 className="text-fg-muted mb-2 text-[12.5px] font-semibold">{group.label}</h4>
+                  <ul className="flex flex-wrap gap-1.5" aria-label={`${group.label} files`}>
+                    {group.files.map((file) => (
+                      <li key={file} className="max-w-full min-w-0">
+                        <Chip className="break-all whitespace-normal">{file}</Chip>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
-            <ul className="mt-2.5 flex flex-wrap gap-1.5" aria-label="File name patterns">
-              {files.patterns.map((p) => (
-                <li key={p}>
-                  <Chip className="text-fg-muted border-dashed">{p}</Chip>
-                </li>
-              ))}
-            </ul>
+            </div>
           </div>
         </div>
       </Card>
+    </section>
+  );
+}
+
+export function CoverageSection() {
+  return (
+    <section className="pb-16">
+      <SectionHead id="coverage" title="What Briff covers">
+        Package pins checked against OSV, registry metadata and fix advice for each ecosystem. Fix
+        commands stay on the installed release line; without a safe fix, read the advisory.
+      </SectionHead>
+      <ul className="rise mb-5 flex flex-wrap gap-2" aria-label="Package ecosystems">
+        {ECOSYSTEMS.filter((e) => e !== "GitHub Actions").map((e) => (
+          <li key={e}>
+            <Tag kind="brand">{ecosystemLabel(e)}</Tag>
+          </li>
+        ))}
+      </ul>
+      <div className="grid gap-3 min-[768px]:grid-cols-2">
+        <PathCard title="Packages" index={1}>
+          <p className="text-[14px]">
+            npm, pnpm and yarn; Composer; PyPI with Poetry, uv, Pipfile and requirements; Go
+            modules; Bundler; Cargo; Maven POMs, Gradle lockfiles and version catalogs; NuGet;
+            Dart/Flutter pub; SwiftPM; Elixir Hex.
+          </p>
+          <p className="text-fg-muted text-[13.5px]">
+            Curated ecosystem news reaches only streams whose repos use the matching ecosystem or
+            runtime. Package releases also come from their public repositories.
+          </p>
+        </PathCard>
+        <PathCard title="Runtimes and support dates" index={2}>
+          <p className="text-[14px]">Detected runtimes: {RUNTIME_IDS.join(", ")}.</p>
+          <p className="text-fg-muted text-[13.5px]">
+            Support dates refresh daily from endoflife.date, with “EOL in N days” facts. Lifecycle
+            coverage includes Debian, Ubuntu and Alpine; Rust and Valkey have no lifecycle catalog
+            entry.
+          </p>
+        </PathCard>
+        <PathCard title="GitHub Actions" index={3}>
+          <p className="text-[14px]">
+            Workflow uses references are their own ecosystem, checked against OSV. Fix advice names
+            a tag and its SHA when available, so you can pin the action. Local actions, docker
+            references and expressions are skipped.
+          </p>
+        </PathCard>
+        <PathCard title="Docker base images" index={4}>
+          <p className="text-[14px]">
+            Candidate OS advisories for detected Debian, Ubuntu and Alpine releases: a short
+            base-package list including OpenSSL, zlib, libc and curl. Advice: rebuild, or migrate an
+            end-of-life distro.
+          </p>
+          <p className="text-fg-muted text-[13.5px]">
+            Briff cannot see the image’s installed package list or patch versions. These are
+            candidates to check, not confirmed vulnerabilities; packages added by Dockerfile
+            commands are outside this check.
+          </p>
+        </PathCard>
+      </div>
     </section>
   );
 }
@@ -383,20 +448,34 @@ export function PrivacySection() {
       gets: "Ecosystem, package name and installed version",
       never: "Repo names",
     },
-    { to: "registry.npmjs.org", gets: "A package name", never: "Your versions, repo names" },
+    {
+      to: "Package registries",
+      gets: "Public package names for npm, Composer, PyPI, Go, RubyGems, crates.io, Maven, NuGet, pub and Hex; public SwiftPM releases on GitHub",
+      never: "Your installed versions, repo names",
+    },
+    {
+      to: "endoflife.date",
+      gets: "Fixed public product names for daily support-date refreshes",
+      never: "Installed versions, repo names",
+    },
     {
       to: "github.com",
       gets: "Requests for public release feeds and advisories; with the App, the listed files of the repos you picked",
       never: "Your other repos or files",
+    },
+    {
+      to: "Curated source feeds",
+      gets: "Public feed requests for releases, advisories and ecosystem news",
+      never: "Repo names, installed versions",
     },
     { to: "Your SMTP relay", gets: "The email itself", never: "Tokens, password hashes" },
   ];
   return (
     <section className="pb-20">
       <SectionHead id="privacy" title="What leaves your server">
-        Briff keeps repo names and the package, version and runtime rows from your files. These are
-        its only outbound connections; self-hosted, leave the Anthropic key empty and nothing goes
-        there, leave SMTP empty and no email leaves.
+        Briff keeps repo names and the package, version and runtime rows from your files. The
+        recipients below cover registries, lifecycle data and source feeds; self-hosted, leave the
+        Anthropic key empty and nothing goes there, leave SMTP empty and no email leaves.
       </SectionHead>
       <Card className="rise overflow-hidden [--i:1]">
         <div className="bg-surface-2 text-fg-muted type-label hidden grid-cols-[minmax(0,0.9fr)_minmax(0,2fr)_minmax(0,1.1fr)] gap-4 px-[18px] py-2.5 min-[768px]:grid">
