@@ -547,13 +547,36 @@ Transitive guidance uses `dotnet nuget why <project.csproj>
 <id>`. The target remains on the installed release line. No development flag is inferred
 from PrivateAssets: it controls propagation, not whether the dependency runs in production.
 
+## Dart and Flutter (Pub)
+
+`pubspec.lock` supplies hosted pub.dev versions and `direct main` / `direct dev` /
+`transitive` ownership. The sibling `pubspec.yaml` selects Flutter when its dependencies
+or development dependencies include any Flutter SDK package, otherwise Dart. Workspace
+root locks resolve ownership against member pubspecs listed by workspace paths or globs,
+so fixes edit each existing member declaration. A shared workspace uses Flutter when any
+member needs the Flutter SDK. Without a lock, manifest ranges remain unresolved:
+they match releases but never become installed versions in OSV queries. SDK, git, path and
+custom registry packages are skipped. No Dart or Flutter process runs during scanning.
+
+OSV uses `Pub`. Direct fixes first set the existing declaration to `^X` in each owning
+pubspec, preserving dev_dependencies, then run `dart pub upgrade <pkg>` or
+`flutter pub upgrade <pkg>` in that directory. The caret prevents a higher release line,
+including for 0.x. Transitive guidance is `dart pub deps`. `Dependency.project` records
+comma-separated `pubspec.yaml:dart` / `pubspec.yaml:flutter` owners so mixed repositories
+keep their own tools. An effective dependency_overrides declaration adds
+`:dependency_overrides` to that owner and is the constraint the fix edits, including a
+workspace root override of a member dependency. Registry refresh uses pub.dev latest, isDiscontinued and the pubspec
+repository/homepage link; retracted latest releases are not recommended. Stack, Repos and
+Alerts use the shared Pub ecosystem tag.
+
 ## Swift Package Manager (SwiftURL)
 
 `Package.resolved` v1, v2 and v3 provide versioned source-control pins. Literal `.package`
 URLs in the closest ancestor `Package.swift` identify direct packages. Commented-out
 entries are ignored; manifests are never executed. Repository identities use OSV's
 `SwiftURL` form: `github.com/owner/repo`, without transport, `.git` or a trailing slash,
-with repository path case preserved. The UI calls the ecosystem SwiftPM.
+with GitHub paths lower-cased to match advisory identities; other hosts preserve path case.
+The UI calls the ecosystem SwiftPM.
 
 Branch/revision-only pins, registry packages and local paths do not identify a released
 SwiftURL version and are skipped. Computed manifest URLs cannot identify direct ownership;

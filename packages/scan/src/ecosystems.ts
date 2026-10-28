@@ -12,6 +12,7 @@ export const ECOSYSTEMS = [
   "crates.io",
   "Maven",
   "NuGet",
+  "Pub",
   "SwiftURL",
   "GitHub Actions",
 ] as const;
@@ -97,10 +98,10 @@ export function shapesFor(requirement: string | undefined, target: string): stri
 export function ecosystemLabel(ecosystem: string): string {
   // OSV's names read well as they are, except Packagist: people know the tool.
   switch (ecosystem) {
-    case "SwiftURL":
-      return "SwiftPM";
     case "Packagist":
       return "Composer";
+    case "SwiftURL":
+      return "SwiftPM";
     case "GitHub Actions":
       return "Actions";
     default:
@@ -118,6 +119,7 @@ export function normalizePackageName(ecosystem: Ecosystem, name: string): string
   switch (ecosystem) {
     case "SwiftURL":
       return swiftPackageName(trimmed) ?? trimmed;
+    case "Pub":
     case "NuGet":
     case "Packagist":
     case "GitHub Actions":
@@ -180,6 +182,7 @@ export function normalizeVersion(ecosystem: Ecosystem, version: string): string 
     case "Go":
       return raw.replace(/^v(?=\d)/, "");
     case "SwiftURL":
+    case "Pub":
     case "NuGet":
     case "Maven":
     case "crates.io":

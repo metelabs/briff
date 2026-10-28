@@ -217,6 +217,22 @@ it("fetches NuGet dependency files, excluding vendored copies", () => {
   ).toEqual(paths.slice(0, 3));
 });
 
+it("fetches pub lockfiles and manifests without vendored copies", () => {
+  const paths = ["pubspec.lock", "apps/mobile/pubspec.yaml", "vendor/pubspec.lock", "main.dart"];
+  expect(
+    scannedTreeEntries({
+      truncated: false,
+      tree: paths.map((path) => ({
+        path,
+        mode: "100644",
+        type: "blob",
+        sha: "0".repeat(40),
+        size: 30,
+      })),
+    }).map((entry) => entry.path)
+  ).toEqual(paths.slice(0, 2));
+});
+
 it("fetches SwiftPM pins and their manifest while excluding ordinary Swift sources", () => {
   const paths = [
     "Package.resolved",

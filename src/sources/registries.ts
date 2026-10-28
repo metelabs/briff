@@ -1,4 +1,5 @@
 import { fetchSwiftPackage } from "./swift";
+import { fetchPubPackage } from "./pub";
 import type { Ecosystem } from "@scan/ecosystems";
 import { fetchNugetPackage } from "./nuget";
 import { fetchMavenPackage } from "./maven";
@@ -24,6 +25,8 @@ export function fetchRegistryPackage(ecosystem: Ecosystem, name: string): Promis
   switch (ecosystem) {
     case "SwiftURL":
       return fetchSwiftPackage(name);
+    case "Pub":
+      return fetchPubPackage(name);
     case "NuGet":
       return fetchNugetPackage(name);
     case "Maven":

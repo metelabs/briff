@@ -1,0 +1,13 @@
+{
+  "name": "acme_kit",
+  "isDiscontinued": true,
+  "latest": {
+    "version": "1.2.4",
+    "pubspec": {
+      "name": "acme_kit",
+      "repository": "https://github.com/acme/kit",
+      "homepage": "https://example.com"
+    }
+  },
+  "versions": []
+}

@@ -518,6 +518,77 @@ describe.skipIf(!url)("NuGet ingest", () => {
   });
 });
 
+describe.skipIf(!url)("Pub ingest", () => {
+  const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: url ?? "" }) });
+  let orgId = "";
+  beforeAll(async () => {
+    orgId = (await db.org.create({ data: { name: `acme-pub-${Date.now()}` } })).id;
+  });
+  afterAll(async () => {
+    await db.org.deleteMany({ where: { id: orgId } });
+    await db.$disconnect();
+  });
+  it("stores the real collector's locked versions and tool ownership", async () => {
+    const files = Object.fromEntries(
+      ["pubspec.lock", "pubspec.yaml"].map((file) => [
+        file,
+        readFileSync(
+          new URL(`../../../packages/scan/src/__fixtures__/pub/${file}`, import.meta.url),
+          "utf8"
+        ),
+      ])
+    );
+    const repo = await collectFromFiles("acme/pub", files, {
+      warn: (message) => {
+        throw new Error(message);
+      },
+    });
+    if (!repo) throw new Error("fixture did not scan");
+    await ingestScan(db, orgId, { source: "local", repos: [repo] });
+    const rows = await withOrg(db, orgId).dependency.findMany({
+      include: { package: true },
+      orderBy: { package: { name: "asc" } },
+    });
+    expect(
+      rows.map((row) => [
+        row.package.ecosystem,
+        row.package.name,
+        row.installedVersion,
+        row.direct,
+        row.dev,
+        row.project,
+      ])
+    ).toEqual([
+      ["Pub", "archive", "3.3.1", true, true, "pubspec.yaml:flutter"],
+      ["Pub", "dio", "4.0.0", true, false, "pubspec.yaml:flutter"],
+      ["Pub", "path", "1.8.0", false, false, null],
+    ]);
+  });
+  it("keeps exact workspace declarations eligible for versioned security scans", async () => {
+    const files = Object.fromEntries(
+      [
+        "pubspec.yaml",
+        "pubspec.lock",
+        "packages/app/pubspec.yaml",
+        "packages/cli/pubspec.yaml",
+      ].map((file) => [
+        file,
+        readFileSync(
+          new URL(`../../../packages/scan/src/__fixtures__/pub-workspace/${file}`, import.meta.url),
+          "utf8"
+        ),
+      ])
+    );
+    const repo = await collectFromFiles("acme/pub-workspace", files, { warn: () => {} });
+    if (!repo) throw new Error("fixture did not scan");
+    await ingestScan(db, orgId, { source: "local", repos: [repo] });
+    const dio = await withOrg(db, orgId).dependency.findFirst({
+      where: { repo: { name: "acme/pub-workspace" }, package: { name: "dio" }, unresolved: false },
+    });
+    expect(dio).toMatchObject({ installedVersion: "4.0.0", direct: true });
+  });
+});
+
 describe.skipIf(!url)("SwiftPM ingest", () => {
   const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: url ?? "" }) });
   let orgId = "";

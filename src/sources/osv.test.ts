@@ -281,6 +281,13 @@ it("queries NuGet using its stored package identity", () => {
   });
 });
 
+it("queries Pub with its public registry identity", () => {
+  expect(osvQueryOf({ name: "archive", version: "3.3.1", ecosystem: "Pub" })).toEqual({
+    package: { name: "archive", ecosystem: "Pub" },
+    version: "3.3.1",
+  });
+});
+
 it("matches SwiftURL advisory identities to resolved repository URLs", () => {
   expect(
     osvQueryOf({ name: "github.com/vapor/vapor", version: "4.50.0", ecosystem: "SwiftURL" })

@@ -33,9 +33,10 @@ it("reads SwiftPM v1, v2 and v3 pins, direct literal URLs and skips non-releases
     ["github.com/vapor/vapor", true],
   ]);
 });
-it("normalizes transport suffixes while preserving repository path case", () => {
-  expect(swiftPackageName("git@github.com:acme/Kit.git")).toBe("github.com/acme/Kit");
-  expect(swiftPackageName("https://github.com/acme/Kit/")).toBe("github.com/acme/Kit");
+it("normalizes transport suffixes and GitHub case while preserving other hosts' paths", () => {
+  expect(swiftPackageName("git@github.com:acme/Kit.git")).toBe("github.com/acme/kit");
+  expect(swiftPackageName("https://www.github.com/Acme/Kit/")).toBe("github.com/acme/kit");
+  expect(swiftPackageName("https://git.example/acme/Kit.git")).toBe("git.example/acme/Kit");
   expect(swiftPackageName("https://user:password@github.com/acme/kit")).toBeNull();
 });
 it("ignores commented declarations and retains owning manifests for nested locks", async () => {

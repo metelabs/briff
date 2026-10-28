@@ -1,0 +1,5 @@
+name: acme_workspace
+environment:
+  sdk: ^3.6.0
+workspace:
+  - packages/*

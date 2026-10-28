@@ -4,7 +4,7 @@
     {
       "identity": "vapor",
       "kind": "remoteSourceControl",
-      "location": "https://github.com/vapor/vapor.git",
+      "location": "https://github.com/Vapor/Vapor.git",
       "state": { "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "version": "4.50.0" }
     },
     {

@@ -1,4 +1,4 @@
-/** OSV SwiftURL names omit the transport and .git suffix, preserving path case. */
+/** OSV SwiftURL names omit transport and .git; GitHub paths are case-insensitive. */
 export function swiftPackageName(raw: string): string | null {
   const value = raw
     .trim()
@@ -19,7 +19,10 @@ export function swiftPackageName(raw: string): string | null {
     )
       return null;
     const path = url.pathname.replace(/\/+$/, "").replace(/\.git$/, "");
-    return /^\/[A-Za-z0-9_.~/-]+$/.test(path) && path !== "/" ? `${url.hostname}${path}` : null;
+    if (!/^\/[A-Za-z0-9_.~/-]+$/.test(path) || path === "/") return null;
+    return url.hostname === "github.com" || url.hostname === "www.github.com"
+      ? `github.com${path.toLowerCase()}`
+      : `${url.hostname}${path}`;
   } catch {
     return null;
   }
