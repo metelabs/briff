@@ -564,4 +564,27 @@ describe.skipIf(!url)("Pub ingest", () => {
       ["Pub", "path", "1.8.0", false, false, null],
     ]);
   });
+  it("keeps exact workspace declarations eligible for versioned security scans", async () => {
+    const files = Object.fromEntries(
+      [
+        "pubspec.yaml",
+        "pubspec.lock",
+        "packages/app/pubspec.yaml",
+        "packages/cli/pubspec.yaml",
+      ].map((file) => [
+        file,
+        readFileSync(
+          new URL(`../../../packages/scan/src/__fixtures__/pub-workspace/${file}`, import.meta.url),
+          "utf8"
+        ),
+      ])
+    );
+    const repo = await collectFromFiles("acme/pub-workspace", files, { warn: () => {} });
+    if (!repo) throw new Error("fixture did not scan");
+    await ingestScan(db, orgId, { source: "local", repos: [repo] });
+    const dio = await withOrg(db, orgId).dependency.findFirst({
+      where: { repo: { name: "acme/pub-workspace" }, package: { name: "dio" }, unresolved: false },
+    });
+    expect(dio).toMatchObject({ installedVersion: "4.0.0", direct: true });
+  });
 });

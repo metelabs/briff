@@ -92,6 +92,16 @@ describe("mergeDependencies dev flag", () => {
 });
 
 describe("mergeDependencies with unresolved requirements", () => {
+  it("prefers a lock pin over an identical unresolved declaration in either order", () => {
+    const pin = { name: "dio", version: "4.0.0", direct: true, ecosystem: "Pub" as const };
+    const declaration = { ...pin, unresolved: true as const };
+    for (const lists of [
+      [[declaration], [pin]],
+      [[pin], [declaration]],
+    ]) {
+      expect(mergeDependencies(lists)).toEqual([pin]);
+    }
+  });
   it("drops a requirement once another file pins the package, keeping its direct flag", () => {
     const py = { ecosystem: "PyPI" as const };
     expect(

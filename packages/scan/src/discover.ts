@@ -387,6 +387,7 @@ export function mergeDependencies(lists: LockedDependency[][]): LockedDependency
         merged.set(id, { ...dep });
         continue;
       }
+      if (!dep.unresolved) delete prev.unresolved;
       if (dep.ecosystem === "GitHub Actions")
         prev.metadata = mergeActionMetadata(prev.metadata, dep.metadata);
       const directProjects = ["NuGet", "Pub"].includes(dep.ecosystem ?? "")

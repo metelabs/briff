@@ -87,6 +87,7 @@ it("assigns workspace pins to members and detects development-only Flutter SDK d
     direct: true,
     project: "packages/app/pubspec.yaml:flutter",
   });
+  expect(repo?.dependencies.find((row) => row.name === "dio")?.unresolved).toBeUndefined();
   const archive = repo?.dependencies.find((row) => row.name === "archive");
   expect(archive?.project?.split(",").sort()).toEqual([
     "packages/app/pubspec.yaml:flutter",
