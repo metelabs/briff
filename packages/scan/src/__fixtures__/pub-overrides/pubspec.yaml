@@ -1,0 +1,6 @@
+name: acme_overrides
+dev_dependencies:
+  archive: ^3.3.1
+  dio: ^4.0.0
+dependency_overrides:
+  dio: 4.0.0

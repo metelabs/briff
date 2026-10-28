@@ -447,3 +447,8 @@ version present in the flatcontainer index supplies metadata and deprecation. Th
 nuspec's repository URL (projectUrl as fallback) attaches the existing GitHub releases feed.
 Prereleases and unlisted versions are excluded from latest metadata. Non-semver four-part
 versions remain scanner evidence but do not receive an automatic fix target.
+
+Pub metadata uses `https://pub.dev/api/packages/<name>`: latest.version, isDiscontinued
+and latest.pubspec.repository (homepage fallback). A retracted latest release has no latest
+version recommendation. Repository links attach the existing GitHub releases feed. OSV
+queries use `Pub` and the public package name; custom hosted packages are excluded.

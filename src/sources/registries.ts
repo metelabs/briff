@@ -1,3 +1,4 @@
+import { fetchPubPackage } from "./pub";
 import type { Ecosystem } from "@scan/ecosystems";
 import { fetchNugetPackage } from "./nuget";
 import { fetchMavenPackage } from "./maven";
@@ -21,6 +22,8 @@ export type RegistryLookup = { status: "ok"; info: RegistryInfo } | { status: "n
 
 export function fetchRegistryPackage(ecosystem: Ecosystem, name: string): Promise<RegistryLookup> {
   switch (ecosystem) {
+    case "Pub":
+      return fetchPubPackage(name);
     case "NuGet":
       return fetchNugetPackage(name);
     case "Maven":

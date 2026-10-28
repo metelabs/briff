@@ -1,0 +1,4 @@
+name: acme_cli
+resolution: workspace
+dependencies:
+  archive: ^3.3.1

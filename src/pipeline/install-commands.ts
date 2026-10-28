@@ -184,6 +184,20 @@ export function installCommand(
   variant: InstallVariant = {}
 ): string {
   switch (ecosystem ?? "npm") {
+    case "Pub": {
+      const owners = variant.project?.split(",") ?? ["pubspec.yaml:dart"];
+      return owners
+        .map((owner) => {
+          const match = /^(.*):(dart|flutter)(?::(dependency_overrides))?$/.exec(owner);
+          const file = match?.[1] ?? "pubspec.yaml";
+          const tool = match?.[2] ?? "dart";
+          const section = match?.[3] ?? (variant.dev ? "dev_dependencies" : undefined);
+          const dir = file.includes("/") ? file.slice(0, file.lastIndexOf("/")) : ".";
+          const command = `${tool} pub upgrade ${shellWord(pkg)}`;
+          return `set ${pkg} in ${file} to "^${version}"${section ? ` under ${section}` : ""}, then run ${dir === "." ? command : `(cd ${shellWord(dir)} && ${command})`}`;
+        })
+        .join("; ");
+    }
     case "NuGet":
       if (variant.requirement === "nuget-conditional")
         return `set only the ${pkg} PackageReference or central PackageVersion declarations on the ${semver.major(version) === 0 ? `0.${semver.minor(version)}` : semver.major(version)} release line in ${variant.project ?? "the project"} to ${version}; preserve other framework conditions and versions`;
@@ -238,6 +252,8 @@ export function whyCommand(
   project?: string
 ): string {
   switch (ecosystem ?? "npm") {
+    case "Pub":
+      return "dart pub deps";
     case "NuGet":
       return (project?.split(",") ?? ["<project.csproj>"])
         .map((file) => `dotnet nuget why ${shellWord(file)} ${shellWord(pkg)}`)

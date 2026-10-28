@@ -242,3 +242,7 @@ leaves extra GitHub repositories unlinked when capacity is exhausted; their exis
 installation permission on GitHub is unchanged. Repos displays a capacity note.
 Ask the instance admin to raise the limit in Admin, then rescan the installation.
 Concurrent scans enforce the same limit at the shared ingestion write boundary.
+
+Pub: the shared exported file list includes `pubspec.lock` and `pubspec.yaml` at the root
+and in subprojects. Only public hosted dependencies are scanned; custom repositories, SDK,
+path and git dependencies are excluded. The App never executes Dart or Flutter.
