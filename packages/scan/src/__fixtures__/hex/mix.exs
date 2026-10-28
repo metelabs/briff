@@ -1,5 +1,14 @@
 defmodule AcmeWeb.MixProject do
   use Mix.Project
+  @moduledoc """
+  Acme fixture application.
+  Example only: deps: [{:plug_crypto, "~> 1.0"}]
+  """
+  @description '''
+  A multiline charlist description.
+  deps: [{:plug_crypto, "~> 1.0"}]
+  '''
+  @note 'deps: [{:plug_crypto, "~> 1.0"}]'
   def project do
     [app: :acme_web, version: "0.1.0", deps: deps()]
   end

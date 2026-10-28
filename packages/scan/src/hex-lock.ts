@@ -14,12 +14,19 @@ const packageName = (value: string) => /^[a-z][a-z0-9_]*$/.test(value);
 function tokens(content: string): Token[] {
   return [
     ...content.matchAll(
-      /"(?:\\.|[^"\\])*"|#[^\n]*|:[a-zA-Z_][\w!?]*|[a-zA-Z_][\w!?]*|-?\d[\d_]*(?:\.\d[\d_]*)?(?:[eE][+-]?\d[\d_]*)?|%\{|=>|[^\s]/g
+      /"""(?:\\[\s\S]|(?!""")[\s\S])*"""|'''(?:\\[\s\S]|(?!''')[\s\S])*'''|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#[^\n]*|:[a-zA-Z_][\w!?]*|[a-zA-Z_][\w!?]*|-?\d[\d_]*(?:\.\d[\d_]*)?(?:[eE][+-]?\d[\d_]*)?|%\{|=>|[^\s]/g
     ),
   ]
     .filter(([raw]) => !raw.startsWith("#"))
     .map<Token>(([raw]) => {
-      if (raw.startsWith('"')) return { kind: "string", text: JSON.parse(raw) as string };
+      if (raw.startsWith('"""') || raw.startsWith("'")) return { kind: "string", text: "" };
+      if (raw.startsWith('"')) {
+        try {
+          return { kind: "string", text: JSON.parse(raw) as string };
+        } catch {
+          return { kind: "string", text: "" };
+        }
+      }
       if (raw.startsWith(":") && raw.length > 1) return { kind: "atom", text: raw.slice(1) };
       return { kind: /^[a-zA-Z_]/.test(raw) ? "word" : "symbol", text: raw };
     });
