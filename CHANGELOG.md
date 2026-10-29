@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.7.2](https://github.com/metelabs/briff/compare/0.7.1...0.7.2) (2026-10-29)
+
+
+### Bug Fixes
+
+* **onboarding:** show organisation repository and stream limits ([#26](https://github.com/metelabs/briff/issues/26)) ([e71faf6](https://github.com/metelabs/briff/commit/e71faf663198ff70ebfcd6b6f7f2aa317579b82c))
+* **rss:** accept verified feed bodies served as octet-stream ([#23](https://github.com/metelabs/briff/issues/23)) ([2687e2a](https://github.com/metelabs/briff/commit/2687e2a82e403cdc3e0231449e61982402cebca0))
+* **security:** match Actions tag advisories by release ranges ([#25](https://github.com/metelabs/briff/issues/25)) ([f210798](https://github.com/metelabs/briff/commit/f2107980bf6aaf0dd16c8a0ab97dbc863d0aca66))
+
 ## [0.7.1](https://github.com/metelabs/briff/compare/0.7.0...0.7.1) (2026-10-28)
 
 
