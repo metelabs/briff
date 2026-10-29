@@ -69,7 +69,11 @@ export async function fetchRssFeed(
       log.warn({ url, status: res.status }, "rss:fetch: non-2xx");
       return { status: "error", httpStatus: res.status, error: `HTTP ${res.status}` };
     }
-    if (!ALLOWED_CONTENT_TYPE_PREFIXES.some((p) => res.contentType.startsWith(p))) {
+    // Python Insider serves XML as octet-stream; require a feed root before accepting it.
+    const genericFeed =
+      res.contentType.split(";", 1)[0].trim() === "application/octet-stream" &&
+      /^\s*(?:<\?xml\b[^?]*\?>\s*)?<(?:rss|feed)(?=[\s>])/i.test(res.body);
+    if (!genericFeed && !ALLOWED_CONTENT_TYPE_PREFIXES.some((p) => res.contentType.startsWith(p))) {
       log.warn({ url, contentType: res.contentType }, "rss:fetch: unsupported content-type");
       return { status: "error", httpStatus: res.status, error: `content-type ${res.contentType}` };
     }
