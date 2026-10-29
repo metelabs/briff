@@ -12,6 +12,7 @@ import { actionTags, isPublicAction, ActionVisibilityDeferred } from "./github-a
 import {
   queryOsvBatchHits,
   actionConstraintAffected,
+  actionTagAffected,
   osvQueryOf,
   osvVulnSchema,
   toAdvisoryFields,
@@ -24,6 +25,55 @@ const recorded = (name: string): unknown =>
 const advisory = osvVulnSchema.parse(recorded("changed-files"));
 
 describe("GitHub Actions coverage", () => {
+  it("reads the recorded integer fix boundary without inventing a same-line fix", () => {
+    const vuln = osvVulnSchema.parse(recorded("changed-files-injection"));
+    expect(actionTagAffected(vuln, "tj-actions/changed-files", "v40.0.0")).toBe(true);
+    expect(actionTagAffected(vuln, "tj-actions/changed-files", "v41.0.0")).toBe(false);
+    expect(actionConstraintAffected(vuln, "tj-actions/changed-files", "v40")).toBe(true);
+    const fields = toAdvisoryFields(vuln, "tj-actions/changed-files", "GitHub Actions");
+    expect(fields.fixedVersion).toBe("41.0.0");
+    expect(
+      fixedFor({
+        ecosystem: "GitHub Actions",
+        osvId: vuln.id,
+        packageName: "tj-actions/changed-files",
+        summary: fields.summary,
+        severity: fields.severity,
+        affected: fields.affected,
+        fallbackFixed: fields.fixedVersion,
+        repos: [{ name: "acme/web", installedVersion: "v40.0.0", direct: true }],
+      })
+    ).not.toContain("@v41");
+  });
+  it("queries exact release tags by package and filters the recorded advisory locally", async () => {
+    const query = {
+      ecosystem: "GitHub Actions" as const,
+      name: "tj-actions/changed-files",
+      version: "v40.0.0",
+    };
+    expect(osvQueryOf(query)).toEqual({
+      package: { ecosystem: query.ecosystem, name: query.name },
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async (input: string | URL | Request) =>
+          new Response(
+            JSON.stringify(
+              String(input).endsWith("querybatch")
+                ? { results: [{ vulns: [{ id: advisory.id }] }, { vulns: [{ id: advisory.id }] }] }
+                : advisory
+            )
+          )
+      )
+    );
+    try {
+      const hits = await queryOsvBatchHits([query, { ...query, version: "v46.0.1" }]);
+      expect(hits.map((list) => list.map((hit) => hit.id))).toEqual([[advisory.id], []]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
   it.each([500, 502, 503])(
     "retries transient HTTP %i through the deferred visibility path",
     async (status) => {
