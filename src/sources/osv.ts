@@ -88,8 +88,9 @@ export function osvQueryOf(q: OsvQuery): {
 } {
   const pkg = { ecosystem: q.ecosystem ?? "npm", name: q.name };
   if (q.ecosystem === "GitHub Actions") {
-    if (q.constraint) return { package: pkg };
     if (/^[a-f0-9]{40}$/i.test(q.version)) return { package: pkg, commit: q.version };
+    // OSV does not consistently index Actions tags as versions.
+    return { package: pkg };
   }
   return { package: { ecosystem: q.ecosystem ?? "npm", name: q.name }, version: q.version };
 }
@@ -130,14 +131,16 @@ export async function queryOsvBatchHits(
       }
       const hits = records.map((v) => ({ id: v.id, modified: v.modified ?? null }));
       const query = slice[index];
-      if (query.ecosystem === "GitHub Actions" && query.constraint) {
+      if (query.ecosystem === "GitHub Actions" && !/^[a-f0-9]{40}$/i.test(query.version)) {
         const accepted: OsvHit[] = [];
         for (const hit of hits) {
           await heartbeat();
           try {
             const vuln = await fetchOsvVuln(hit.id);
-            if (!vuln.withdrawn && actionConstraintAffected(vuln, query.name, query.version))
-              accepted.push(hit);
+            const affected = query.constraint
+              ? actionConstraintAffected(vuln, query.name, query.version)
+              : actionTagAffected(vuln, query.name, query.version);
+            if (!vuln.withdrawn && affected) accepted.push(hit);
           } catch (err) {
             log.warn(
               { err, osvId: hit.id },
@@ -182,7 +185,10 @@ export function comparableRange(range: OsvRange, ecosystem: Ecosystem): OsvRange
     for (const key of ["introduced", "fixed", "last_affected", "limit"] as const) {
       const value = event[key];
       if (value === undefined || value === "0" || value === "*") continue;
-      out[key] = normalizeVersion(ecosystem, value);
+      out[key] =
+        ecosystem === "GitHub Actions" && /^v?\d+(?:\.\d+){0,2}$/.test(value)
+          ? value.replace(/^v/, "").split(".").concat(["0", "0"]).slice(0, 3).join(".")
+          : normalizeVersion(ecosystem, value);
     }
     return out;
   });
@@ -336,6 +342,13 @@ export function affectedInstalls<T>(
     const version = versionOf(install);
     return !semver.valid(version) || isAffected(ranges, version);
   });
+}
+
+/** Exact release tags retain their spelling in storage, but compare as semver. */
+export function actionTagAffected(vuln: OsvVuln, name: string, ref: string): boolean {
+  const version = semver.valid(ref);
+  if (!version) return false;
+  return isAffected(rangesFor(vuln, name, "GitHub Actions"), version);
 }
 
 /** A floating ref is affected only if an advisory covers its entire release interval. */
