@@ -1,4 +1,6 @@
 import { CircleCheck } from "lucide-react";
+import { OrgCapacityNotice } from "@/components/org-capacity-notice";
+import { loadOrgCapacity } from "@/lib/org-capacity";
 import type { Metadata } from "next";
 import type { CSSProperties, ReactNode } from "react";
 
@@ -81,7 +83,7 @@ export default async function SettingsPage() {
   const ctx = await requireOrgContext();
   const db = getDb();
   const scoped = withOrg(db, ctx.orgId);
-  const [profile, user, streams, tokens, org, github] = await Promise.all([
+  const [profile, user, streams, tokens, org, github, capacity] = await Promise.all([
     scoped.interestProfile.findFirst({
       select: { text: true, weights: true, refreshedAt: true, model: true, promptVersion: true },
     }),
@@ -97,6 +99,7 @@ export default async function SettingsPage() {
     listScanTokens(db, ctx.orgId),
     db.org.findUniqueOrThrow({ where: { id: ctx.orgId }, select: { name: true } }),
     loadGithubAppState(ctx.orgId),
+    loadOrgCapacity(db, ctx.orgId),
   ]);
   const weights = Object.entries(parseWeights(profile?.weights));
   const emailReady = smtpConfig() !== null;
@@ -107,6 +110,7 @@ export default async function SettingsPage() {
       <div className="grid items-start gap-3 md:grid-cols-[200px_minmax(0,640px)] md:gap-8">
         <SectionIndex sections={SECTIONS} />
         <div className="min-w-0">
+          <OrgCapacityNotice capacity={capacity} />
           <Block
             id="profile"
             index={0}
