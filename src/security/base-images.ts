@@ -345,13 +345,23 @@ export async function baseImageScan({ db, log, heartbeat }: JobContext): Promise
         }
         live.add(`${repo.id}\0${image}`);
         counts.candidates += release.advisories.size;
-        // Withdrawn, or the fix for the release was taken back: no longer an alert.
         const withFix = [...release.advisories]
           .filter(([, a]) => a.fixes.length > 0)
           .map(([id]) => id);
         counts.deactivated += (
           await scoped.baseImageAlert.updateMany({
-            where: { repoId: repo.id, image, active: true, osvId: { notIn: withFix } },
+            // Withdrawn or taken back, or fixed before the image's watch started (a repo
+            // included again): no longer an alert.
+            where: {
+              repoId: repo.id,
+              image,
+              active: true,
+              OR: [
+                { osvId: { notIn: withFix } },
+                { fixedAt: null },
+                { fixedAt: { lte: watch.since } },
+              ],
+            },
             data: { active: false },
           })
         ).count;
@@ -415,7 +425,8 @@ export async function baseImageScan({ db, log, heartbeat }: JobContext): Promise
           where: {
             active: true,
             deliveredAt: null,
-            createdAt: { gte: new Date(now.getTime() - FIX_WINDOW_MS) },
+            // The window runs from the fix, not from when the row was stored.
+            fixedAt: { gte: new Date(now.getTime() - FIX_WINDOW_MS) },
             repo: { included: true },
           },
           include: { repo: { select: { name: true } } },

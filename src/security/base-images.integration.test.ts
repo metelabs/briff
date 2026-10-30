@@ -290,6 +290,18 @@ describe.skipIf(!url)("base image scan against Postgres", () => {
     expect(
       (await scoped.baseImageAlert.findMany({ where: { active: true } })).map((r) => r.osvId)
     ).toEqual(["DSA-6299-1"]);
+
+    // The window runs from the fix: an undelivered alert whose fix is 20 days old is
+    // neither emailed nor listed on Alerts, however recently its row was stored.
+    const stale = new Date(Date.now() - 20 * DAY);
+    await db.baseImageFix.updateMany({
+      where: { ecosystem: "Debian:12", version: announced },
+      data: { fixedAt: stale },
+    });
+    await scoped.baseImageAlert.updateMany({ data: { fixedAt: stale, deliveredAt: null } });
+    await baseImageScan(context);
+    expect(mail.sent).toHaveLength(2);
+    expect(await loadBaseImageGroups(db, orgId, { included: true })).toEqual([]);
     expect(queries).toBeGreaterThan(0);
   });
 
@@ -323,7 +335,9 @@ describe.skipIf(!url)("base image scan against Postgres", () => {
     expect(mail.sent).toHaveLength(0);
     expect(rows[0].deliveredAt).toBeNull();
 
-    // A repo included again yesterday starts over: a fix from two days ago is not news.
+    // A repo included again yesterday starts over: a fix from two days ago is not news,
+    // and a held alert from before is retired instead of emailed.
+    await scoped.baseImageAlert.updateMany({ data: { severity: "HIGH" } });
     const included = new Date(Date.now() - DAY);
     await scoped.repo.updateMany({ data: { includedChangedAt: included } });
     osv["Debian:11 openssl"].push({
@@ -332,7 +346,10 @@ describe.skipIf(!url)("base image scan against Postgres", () => {
       published: new Date(Date.now() - 2 * DAY).toISOString(),
     });
     await baseImageScan(context);
-    expect((await scoped.baseImageAlert.findMany()).map((r) => r.osvId)).toEqual(["DLA-4599-1"]);
+    expect(
+      (await scoped.baseImageAlert.findMany()).map((r) => [r.osvId, r.active, r.deliveredAt])
+    ).toEqual([["DLA-4599-1", false, null]]);
+    expect(mail.sent).toHaveLength(0);
     expect((await scoped.baseImageWatch.findFirstOrThrow()).since).toEqual(included);
   });
 });

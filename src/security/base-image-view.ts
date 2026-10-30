@@ -27,7 +27,7 @@ export interface BaseImageGroup {
 
 /**
  * Grouped base image alerts of the repos in `repoWhere`: created in `period` (bulletins), or
- * within the fix window (the Alerts page) when no period is given.
+ * with a fix inside the window (the Alerts page) when no period is given.
  */
 export async function loadBaseImageGroups(
   db: PrismaClient,
@@ -42,7 +42,9 @@ export async function loadBaseImageGroups(
     where: {
       active: true,
       repo: repoWhere,
-      createdAt: period ?? { gte: new Date(now.getTime() - FIX_WINDOW_MS) },
+      ...(period
+        ? { createdAt: period }
+        : { fixedAt: { gte: new Date(now.getTime() - FIX_WINDOW_MS) } }),
     },
     include: { repo: { select: { name: true, runtimes: { select: { image: true } } } } },
   });
