@@ -161,7 +161,7 @@ Without an Anthropic key, set `BRIFF_LLM_FAKE=true` in `.env` for a deterministi
 Checks before a pull request: `npm run typecheck && npm run lint && npm test`; DB-backed tests
 run when `TEST_DATABASE_URL` points at a disposable, migrated database. Contribution rules are
 in [CONTRIBUTING.md](CONTRIBUTING.md); architecture and code conventions in
-[CLAUDE.md](CLAUDE.md) (written for people and coding agents alike). Release notes:
+[AGENTS.md](AGENTS.md) (written for people and coding agents alike). Release notes:
 [CHANGELOG.md](CHANGELOG.md). Security reports: [SECURITY.md](SECURITY.md).
 
 ## License

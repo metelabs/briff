@@ -26,9 +26,10 @@ refused in production). Without SMTP variables no email is sent; `npm run email:
 /tmp/briff-mail` renders the templates to files instead. `npm run worker -- --once <job> ...`
 enqueues jobs, drains them and exits.
 
-Architecture, data model rules and conventions are in [CLAUDE.md](CLAUDE.md). It is written
+Architecture, data model rules and conventions are in [AGENTS.md](AGENTS.md). It is written
 for coding agents and people alike; read it before changing the pipeline, the tenant layer or
-delivery code. [AGENTS.md](AGENTS.md) lists what a review flags.
+delivery code. Its "Code Review Rules" section lists what a review flags. `CLAUDE.md` only
+imports it for Claude Code.
 
 ## Tests
 
