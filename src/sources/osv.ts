@@ -38,6 +38,8 @@ export const osvVulnSchema = z
     summary: z.string().optional(),
     details: z.string().optional(),
     aliases: z.array(z.string()).optional(),
+    // Distro fix announcements (DSA, DLA, USN) name the CVE records they fix here.
+    upstream: z.array(z.string()).optional(),
     modified: z.string(),
     published: z.string().optional(),
     withdrawn: z.string().optional(),

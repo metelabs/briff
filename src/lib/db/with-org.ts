@@ -15,6 +15,7 @@ export const TENANT_MODELS = [
   "ItemMatch",
   "Alert",
   "BaseImageAlert",
+  "BaseImageWatch",
   "Bulletin",
   "BulletinItem",
   "Feedback",

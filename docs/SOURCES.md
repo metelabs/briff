@@ -421,21 +421,45 @@ curl, expat, SQLite, GnuTLS, libtasn1, BusyBox on Alpine, and apt/dpkg on Debian
 Only distro ecosystem and public package names leave Briff for these queries. Image names,
 repo names and file contents do not go to OSV; no image or package inventory is fetched.
 
-**These are candidate base image advisories, not confirmed vulnerabilities.** A tag cannot
-tell Briff which OS packages are present or which versions were patched into the image.
-The short list intentionally over-approximates possible presence, including libraries not
-installed by every minimal image; packages outside the list and packages installed by
-Dockerfile commands are not covered. OSV receives no invented installed version. The Alerts
-and bulletin pages group candidates by image and explain this limitation. Critical/high
-candidates use the normal immediate-email threshold, with delivery tracked per repo,
-image and advisory; lower severities remain on the pages and are noted in the weekly email.
+**An alert means a fix was published, not that the image is confirmed vulnerable.** A tag
+cannot tell Briff which OS packages are present or which versions were patched into the
+image, so Briff does not report every advisory ever published for the release. A base image
+alert says: a fix for a watched base package was published for this distro release in the
+last 14 days, so rebuilding on the latest tag picks it up. The rule, in
+`src/security/base-images.ts`:
 
-Advice is to rebuild on the latest existing image tag. An EOL distro gets a migration
-sentence to the lowest supported distro, preserving the language release line. Paid
-extended support is excluded; Debian includes public LTS. Each new organisation has
+- A fix is the `fixed` event of the advisory's range for that release (`Debian:12`, ...).
+  Its date is the `published` date of a distro fix announcement (DSA, DLA, USN) naming that
+  fixed version, or else the daily run that first saw the fixed version. OSV regenerates
+  distro records daily, so `modified` is not a fix date. Fixed versions already listed the
+  first time Briff queries a release are not news (`BaseImageFix.fixedAt` null), unless an
+  announcement dates them.
+- Fixes older than 14 days are assumed to be in any image built since and are not alerts.
+  Advisories with no fix for the release are not alerts either (rebuilding does not help);
+  the Stack page shows one line per distro release with their count, never an email.
+- A newly seen image starts from now (`BaseImageWatch.since`): fixes published before
+  Briff first saw the image in that repo are never delivered. There is no first-scan
+  backlog.
+- An announcement stands for the CVE records it names, with the highest severity among them
+  (DSA and DLA records carry none).
+
+Alerts are grouped per repo and image, with one action: rebuild on the latest tag of that
+image, or, for an end-of-life distro, the migration sentence to the lowest supported
+release, preserving the language release line. The same-day email lists one block per image
+with at most 10 advisories (id, packages, normalised severity, unknown shown as such) and
+links to the Alerts page for the rest. It is sent only when the group contains a rated
+critical or high advisory; other groups wait for the weekly bulletin. Delivery is tracked per
+repo, image and advisory, so a fix is emailed once per image. Packages outside the short list
+and packages installed by Dockerfile commands are not covered.
+
+Paid extended support is excluded; Debian includes public LTS. Each new organisation has
 `Org.baseImageAlerts = true`; disabling it in the database stops this scan, its emails and
-its presentation. There is no settings control yet. Candidate rows belong to the org,
-are included in its data export and cascade when the org or repo is deleted.
+its presentation. There is no settings control yet. Alert and watch rows belong to the org,
+are included in its data export and cascade when the org or repo is deleted. The fix
+catalog (`BaseImageFix`, `BaseImageDistro`) holds public OSV data only. Migration
+`20261030120000_base_image_fix_window` deleted every alert row created under the earlier
+rule, which treated every advisory ever published for the release as affecting the image;
+nothing was sent for them.
 
 Unqualified distro defaults are limited to verified floating minor tags: PHP 8.2–8.5
 and Python 3.11–3.14. Discontinued lines, patch-pinned historical tags and unverified

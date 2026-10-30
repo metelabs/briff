@@ -39,11 +39,12 @@ HTML scraping. The list and the matching rules are in [docs/SOURCES.md](docs/SOU
   MariaDB, Redis, Valkey, nginx, Deno and Bun, from version files, manifests and images.
   Support dates refresh daily from endoflife.date, including Debian, Ubuntu and Alpine,
   with “EOL in N days” facts. Rust and Valkey have no lifecycle catalog entry.
-- **Docker base images:** candidate Debian, Ubuntu and Alpine OS advisories for a short
-  base-package list (including OpenSSL, zlib, libc and curl), with rebuild or migration
-  advice. Briff cannot see the installed package list or patch versions inside an image;
-  these are candidates, not confirmed vulnerabilities, and do not cover packages added
-  by Dockerfile commands.
+- **Docker base images:** an alert when a fix for a short base-package list (including
+  OpenSSL, zlib, libc and curl) is published for the image's Debian, Ubuntu or Alpine
+  release, grouped per image with one action: rebuild on the latest tag, or migrate an
+  end-of-life distro. Briff cannot see the installed packages inside an image, so older
+  fixes are assumed to be in it and open issues are only counted; packages added by
+  Dockerfile commands are not covered.
 - **Curated news:** ecosystem feeds are scoped to streams whose repos use the matching
   ecosystem or runtime. See [docs/SOURCES.md](docs/SOURCES.md) for the feeds and rules.
 

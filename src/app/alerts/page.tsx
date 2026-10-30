@@ -97,81 +97,86 @@ export default async function AlertsPage({
         title="Alerts"
         sub="Same-day emails when a new critical or high advisory hits a package you run, plus the backlog from your first scan."
       />
-      <BaseImageAdvisories groups={baseImages} />
-      {rows.length === 0 && baseImages.length > 0 ? null : rows.length === 0 ? (
-        <Card className="rise [--i:1]">
-          <EmptyState
-            icon={<ShieldCheck strokeWidth={1.4} />}
-            title="No advisories"
-            action={<ConnectReposButton />}
-          >
-            When a package in one of {scopeName}&apos;s repos gets a security advisory, it shows up
-            here, and critical or high ones reach your inbox the same day.
-          </EmptyState>
-        </Card>
-      ) : (
-        <>
-          <section className="rise [--i:1]">
-            <SectionHeader title="New this week" count={plural(thisWeek.length, "package")} />
-            {thisWeek.length > 0 ? (
-              <AlertList groups={thisWeek} />
-            ) : (
-              <Card className="text-fg-muted px-[18px] py-5">No new advisories since Monday.</Card>
+      {/* One stack for every section, so each gets the same gap and container width. */}
+      <div className="flex flex-col gap-8">
+        <BaseImageAdvisories groups={baseImages} />
+        {rows.length === 0 && baseImages.length > 0 ? null : rows.length === 0 ? (
+          <Card className="rise [--i:1]">
+            <EmptyState
+              icon={<ShieldCheck strokeWidth={1.4} />}
+              title="No advisories"
+              action={<ConnectReposButton />}
+            >
+              When a package in one of {scopeName}&apos;s repos gets a security advisory, it shows
+              up here, and critical or high ones reach your inbox the same day.
+            </EmptyState>
+          </Card>
+        ) : (
+          <>
+            <section className="rise [--i:1]">
+              <SectionHeader title="New this week" count={plural(thisWeek.length, "package")} />
+              {thisWeek.length > 0 ? (
+                <AlertList groups={thisWeek} />
+              ) : (
+                <Card className="text-fg-muted px-[18px] py-5">
+                  No new advisories since Monday.
+                </Card>
+              )}
+            </section>
+            {earlier.length > 0 && (
+              <section className="rise [--i:2]">
+                <SectionHeader
+                  title="Earlier"
+                  count={`${plural(advisories(earlier), "advisory", "advisories")} · ${plural(earlier.length, "package")}`}
+                />
+                <AlertList groups={earlier} filters initialLimit={10} />
+              </section>
             )}
-          </section>
-          {earlier.length > 0 && (
-            <section className="rise mt-8 [--i:2]">
-              <SectionHeader
-                title="Earlier"
-                count={`${plural(advisories(earlier), "advisory", "advisories")} · ${plural(earlier.length, "package")}`}
-              />
-              <AlertList groups={earlier} filters initialLimit={10} />
-            </section>
-          )}
-          {backlog.length > 0 && (
-            <section className="rise mt-8 [--i:3]">
-              <SectionHeader
-                title="First-scan backlog"
-                count={`${plural(advisories(backlog), "advisory", "advisories")} · ${plural(backlog.length, "package")}`}
-                action={<MarkBacklogReviewed />}
-              />
-              <p className="text-fg-muted mb-3.5 max-w-[72ch] text-[13px]">
-                Known advisories found the first time a repo was scanned. They were summed up in one
-                email, not sent one by one. Mark them as reviewed once you have looked; new
-                advisories always stay listed.
+            {backlog.length > 0 && (
+              <section className="rise [--i:3]">
+                <SectionHeader
+                  title="First-scan backlog"
+                  count={`${plural(advisories(backlog), "advisory", "advisories")} · ${plural(backlog.length, "package")}`}
+                  action={<MarkBacklogReviewed />}
+                />
+                <p className="text-fg-muted mb-3.5 max-w-[72ch] text-[13px]">
+                  Known advisories found the first time a repo was scanned. They were summed up in
+                  one email, not sent one by one. Mark them as reviewed once you have looked; new
+                  advisories always stay listed.
+                </p>
+                <AlertList groups={backlog} filters initialLimit={25} review />
+              </section>
+            )}
+            {reviewedGroups.length > 0 && !showReviewed && (
+              <p className="rise text-fg-muted text-[13px] [--i:4]">
+                {plural(
+                  advisories(reviewedGroups),
+                  "reviewed backlog advisory",
+                  "reviewed backlog advisories"
+                )}{" "}
+                hidden.{" "}
+                <Link href="/alerts?reviewed=1" className="text-brand font-medium hover:underline">
+                  Show reviewed
+                </Link>
               </p>
-              <AlertList groups={backlog} filters initialLimit={25} review />
-            </section>
-          )}
-          {reviewedGroups.length > 0 && !showReviewed && (
-            <p className="rise text-fg-muted mt-6 text-[13px] [--i:4]">
-              {plural(
-                advisories(reviewedGroups),
-                "reviewed backlog advisory",
-                "reviewed backlog advisories"
-              )}{" "}
-              hidden.{" "}
-              <Link href="/alerts?reviewed=1" className="text-brand font-medium hover:underline">
-                Show reviewed
-              </Link>
-            </p>
-          )}
-          {reviewedGroups.length > 0 && showReviewed && (
-            <section className="rise mt-8 [--i:4]">
-              <SectionHeader
-                title="Reviewed backlog"
-                count={`${plural(advisories(reviewedGroups), "advisory", "advisories")} · ${plural(reviewedGroups.length, "package")}`}
-                action={
-                  <Link href="/alerts" className="text-brand hover:underline">
-                    Hide reviewed
-                  </Link>
-                }
-              />
-              <AlertList groups={reviewedGroups} filters initialLimit={25} />
-            </section>
-          )}
-        </>
-      )}
+            )}
+            {reviewedGroups.length > 0 && showReviewed && (
+              <section className="rise [--i:4]">
+                <SectionHeader
+                  title="Reviewed backlog"
+                  count={`${plural(advisories(reviewedGroups), "advisory", "advisories")} · ${plural(reviewedGroups.length, "package")}`}
+                  action={
+                    <Link href="/alerts" className="text-brand hover:underline">
+                      Hide reviewed
+                    </Link>
+                  }
+                />
+                <AlertList groups={reviewedGroups} filters initialLimit={25} />
+              </section>
+            )}
+          </>
+        )}
+      </div>
     </AppShell>
   );
 }

@@ -15,6 +15,7 @@ import {
   DISPLAY,
   emailShell,
   esc,
+  fixBox,
   MONO,
   safeUrl,
   smallHeading,
@@ -184,6 +185,82 @@ ${firstScanHtml}`,
       : []),
     "--",
     t.alert_footer,
+  ].join("\n");
+
+  return { subject, html, text };
+}
+
+/** Advisories listed per image in the base image email; the rest are counted. */
+export const BASE_IMAGE_DETAIL_LIMIT = 10;
+
+/** One watched image in one repo with fixes published for its distro release. */
+export interface BaseImageEmailGroup {
+  image: string;
+  repo: string;
+  action: string;
+  advisories: { osvId: string; severity: string | null; packages: string[] }[];
+}
+
+/** The same-day base image email: one block per (repo, image), one action each. */
+export function renderBaseImageAlertEmail(
+  language: Language,
+  groups: BaseImageEmailGroup[],
+  baseUrl: string
+): RenderedEmail {
+  const t = strings(language);
+  const subject = subjectFor(t.base_image_subject, groups[0]?.image ?? "", groups.length - 1);
+  const alertsUrl = safeUrl(`${baseUrl.replace(/\/$/, "")}/alerts`);
+  const link = (href: string, text: string) =>
+    `<a class="b-link" href="${esc(href)}" style="color:${C.link};text-decoration:none;">${esc(text)}</a>`;
+  const line = (a: BaseImageEmailGroup["advisories"][number]) =>
+    [severityLabel(a.severity), a.packages.join(", ")].filter(Boolean).join(" · ");
+
+  const blocks = groups
+    .map((g) => {
+      const listed = g.advisories.slice(0, BASE_IMAGE_DETAIL_LIMIT);
+      const more = g.advisories.length - listed.length;
+      return `<div class="b-line" style="padding:16px 0;border-top:1px solid ${C.border};">
+<div style="margin:0;"><span class="b-text" style="font-family:${MONO};font-size:15px;font-weight:500;color:${C.text};margin:0 8px 0 0;">${esc(g.image)}</span><span class="b-muted" style="font-size:13px;color:${C.muted};">${esc(g.repo)}</span></div>
+${fixBox(t.todo, g.action, false)}
+<ul class="b-text" style="padding-left:18px;margin:12px 0 0;font-size:13px;line-height:1.6;color:${C.text};">${listed
+        .map(
+          (a) =>
+            `<li><span style="font-family:${MONO};">${link(osvLink(a.osvId), a.osvId)}</span> · ${esc(line(a))}</li>`
+        )
+        .join("")}</ul>
+${more > 0 ? `<div style="font-size:13px;margin:6px 0 0;">${arrowLink(alertsUrl, t.base_image_more(more))}</div>` : ""}
+</div>`;
+    })
+    .join("\n");
+
+  const html = emailShell({
+    language,
+    title: subject,
+    footer: t.base_image_footer,
+    assetBaseUrl: baseUrl,
+    body: `<div style="margin:0 0 10px;">${tag(t.section_security, "sec")}</div>
+<p class="b-text" style="font-family:${DISPLAY};font-size:21px;line-height:1.3;letter-spacing:-0.01em;margin:0 0 10px;font-weight:600;color:${C.text};">${esc(t.base_image_intro(groups.length))}</p>
+${blocks}`,
+  });
+
+  const text = [
+    `Briff · ${t.section_security}`,
+    "",
+    t.base_image_intro(groups.length),
+    "",
+    ...groups.flatMap((g) => {
+      const listed = g.advisories.slice(0, BASE_IMAGE_DETAIL_LIMIT);
+      const more = g.advisories.length - listed.length;
+      return [
+        `* ${g.image} · ${g.repo}`,
+        `  ${t.todo}: ${g.action}`,
+        ...listed.map((a) => `  - ${a.osvId} · ${line(a)} · ${osvLink(a.osvId)}`),
+        ...(more > 0 ? [`  ${t.base_image_more(more)}: ${alertsUrl}`] : []),
+        "",
+      ];
+    }),
+    "--",
+    t.base_image_footer,
   ].join("\n");
 
   return { subject, html, text };

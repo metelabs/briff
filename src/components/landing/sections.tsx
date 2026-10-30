@@ -358,14 +358,14 @@ export function CoverageSection() {
         </PathCard>
         <PathCard title="Docker base images" index={4}>
           <p className="text-[14px]">
-            Candidate OS advisories for detected Debian, Ubuntu and Alpine releases: a short
-            base-package list including OpenSSL, zlib, libc and curl. Advice: rebuild, or migrate an
-            end-of-life distro.
+            When Debian, Ubuntu or Alpine publishes a fix for a base package in your image’s release
+            (OpenSSL, zlib, libc, curl and a few more), one alert per image: rebuild on the latest
+            tag, or migrate an end-of-life distro.
           </p>
           <p className="text-fg-muted text-[13.5px]">
-            Briff cannot see the image’s installed package list or patch versions. These are
-            candidates to check, not confirmed vulnerabilities; packages added by Dockerfile
-            commands are outside this check.
+            Briff cannot see the packages inside an image, so it reports fixes from the last 14 days
+            only; older ones are assumed to be in your image. Packages added by Dockerfile commands
+            are outside this check.
           </p>
         </PathCard>
       </div>
