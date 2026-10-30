@@ -10,7 +10,7 @@ const SHOWN = 10;
 export function BaseImageAdvisories({ groups }: { groups: readonly BaseImageGroup[] }) {
   if (!groups.length) return null;
   return (
-    <section className="mt-8">
+    <section>
       <SectionHeader title="Base image fixes" count={plural(groups.length, "image")} />
       <p className="text-fg-muted mb-3 max-w-[72ch] text-[13px]">
         Fixes recently published for common base packages in each image&apos;s distro release. Briff
