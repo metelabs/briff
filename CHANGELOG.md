@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.3](https://github.com/metelabs/briff/compare/0.7.2...0.7.3) (2026-10-30)
+
+
+### Bug Fixes
+
+* **security:** alert on recently published base image fixes only ([#27](https://github.com/metelabs/briff/issues/27)) ([e1efb5c](https://github.com/metelabs/briff/commit/e1efb5c51552f1ed7e2a89fc2e89350152b7d079))
+
 ## [0.7.2](https://github.com/metelabs/briff/compare/0.7.1...0.7.2) (2026-10-29)
 
 
