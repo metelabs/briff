@@ -1,7 +1,23 @@
 name: CI
 
 on:
+  # Release PRs (release-please, opened with GITHUB_TOKEN) touch only these files. GitHub
+  # creates a run for them that waits for approval before any job condition is evaluated,
+  # and it expires as a failure; a path filter is evaluated before the run exists, so no run
+  # is created. Any PR that also changes other files is checked as before.
   pull_request:
+    paths-ignore:
+      - CHANGELOG.md
+      - .release-please-manifest.json
+      - package.json
+      - package-lock.json
+  # A PR changing only package.json/package-lock.json (a dependency bump) skips the PR run
+  # above, so these files are checked again on main after the merge.
+  push:
+    branches: [main]
+    paths:
+      - package.json
+      - package-lock.json
   workflow_dispatch:
 
 concurrency:
