@@ -107,6 +107,14 @@ const STRINGS = {
     bucket_security: "Güvenlik",
     test_subject: "Briff · deneme e-postası",
     test_body: "E-posta teslimatı çalışıyor. Bülten ve güvenlik uyarıları bu adrese gelecek.",
+    base_image_subject: "taban imaj düzeltmeleri",
+    base_image_intro: (n: number) =>
+      n === 1
+        ? "Bir taban imajın dağıtım sürümü için düzeltme yayımlandı."
+        : `${n} taban imajın dağıtım sürümü için düzeltme yayımlandı.`,
+    base_image_more: (n: number) => `ve ${n} tane daha`,
+    base_image_footer:
+      "Briff imajın içindeki paketleri göremez. Bunlar imajın dağıtım sürümünde izlenen taban paketler için son 14 günde yayımlanan düzeltmeler; imajı en son etiketle yeniden derlemek onları alır. Aynı düzeltme aynı imaj için bir kez gönderilir.",
   },
   en: {
     section_security: "Security",
@@ -205,6 +213,14 @@ const STRINGS = {
     bucket_security: "Security",
     test_subject: "Briff · test email",
     test_body: "Email delivery works. Bulletins and security alerts will arrive at this address.",
+    base_image_subject: "base image fixes",
+    base_image_intro: (n: number) =>
+      n === 1
+        ? "A fix was published for the distro release of one of your base images."
+        : `Fixes were published for the distro releases of ${n} of your base images.`,
+    base_image_more: (n: number) => `and ${n} more`,
+    base_image_footer:
+      "Briff cannot see the packages inside your images. These are fixes published in the last 14 days for the watched base packages of the image's distro release; rebuilding on the latest tag picks them up. Each fix is sent once per image.",
   },
 } as const;
 

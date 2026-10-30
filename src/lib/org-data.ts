@@ -88,6 +88,7 @@ export function orgExportSections(
         }),
     ],
     ["baseImageAlerts", () => scoped.baseImageAlert.findMany({ orderBy: { createdAt: "asc" } })],
+    ["baseImageWatches", () => scoped.baseImageWatch.findMany({ orderBy: { since: "asc" } })],
     [
       "repos",
       () =>

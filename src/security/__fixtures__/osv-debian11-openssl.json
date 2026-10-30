@@ -1,0 +1,739 @@
+{
+  "vulns": [
+    {
+      "id": "DLA-3942-1",
+      "summary": "openssl - security update",
+      "modified": "2026-03-09T01:22:40.686044Z",
+      "published": "2024-10-31T00:00:00Z",
+      "upstream": [
+        "CVE-2023-5678",
+        "CVE-2024-0727",
+        "CVE-2024-2511",
+        "CVE-2024-4741",
+        "CVE-2024-5535",
+        "CVE-2024-9143",
+        "DEBIAN-CVE-2023-5678",
+        "DEBIAN-CVE-2024-0727",
+        "DEBIAN-CVE-2024-2511",
+        "DEBIAN-CVE-2024-4741",
+        "DEBIAN-CVE-2024-5535",
+        "DEBIAN-CVE-2024-9143"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "openssl",
+            "ecosystem": "Debian:11",
+            "purl": "pkg:deb/debian/openssl?arch=source"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.1.1n-0+deb11u6"
+                }
+              ]
+            }
+          ],
+          "versions": [
+            "1.1.1k-1",
+            "1.1.1k-1+deb11u1",
+            "1.1.1k-1+deb11u2",
+            "1.1.1l-1",
+            "1.1.1m-0+deb11u1",
+            "1.1.1m-1",
+            "1.1.1n-0+deb11u1",
+            "1.1.1n-0+deb11u2",
+            "1.1.1n-0+deb11u3",
+            "1.1.1n-0+deb11u4",
+            "1.1.1n-0+deb11u5"
+          ],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/debian-osv/dla-osv/DLA-3942-1.json"
+          }
+        }
+      ],
+      "schema_version": "1.7.3"
+    },
+    {
+      "id": "DLA-3942-2",
+      "summary": "openssl - regression update",
+      "modified": "2026-03-09T01:21:01.728730Z",
+      "published": "2024-11-03T00:00:00Z",
+      "upstream": [
+        "CVE-2023-5678",
+        "CVE-2024-0727",
+        "CVE-2024-2511",
+        "CVE-2024-4741",
+        "CVE-2024-5535",
+        "CVE-2024-9143",
+        "DEBIAN-CVE-2023-5678",
+        "DEBIAN-CVE-2024-0727",
+        "DEBIAN-CVE-2024-2511",
+        "DEBIAN-CVE-2024-4741",
+        "DEBIAN-CVE-2024-5535",
+        "DEBIAN-CVE-2024-9143"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "openssl",
+            "ecosystem": "Debian:11",
+            "purl": "pkg:deb/debian/openssl?arch=source"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.1.1w-0+deb11u2"
+                }
+              ]
+            }
+          ],
+          "versions": [
+            "1.1.1k-1",
+            "1.1.1k-1+deb11u1",
+            "1.1.1k-1+deb11u2",
+            "1.1.1l-1",
+            "1.1.1m-0+deb11u1",
+            "1.1.1m-1",
+            "1.1.1n-0+deb11u1",
+            "1.1.1n-0+deb11u2",
+            "1.1.1n-0+deb11u3",
+            "1.1.1n-0+deb11u4",
+            "1.1.1n-0+deb11u5",
+            "1.1.1n-0+deb11u6",
+            "1.1.1n-1",
+            "1.1.1o-1",
+            "1.1.1v-0~deb11u1",
+            "1.1.1w-0+deb11u1",
+            "1.1.1w-0~deb11u1"
+          ],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/debian-osv/dla-osv/DLA-3942-2.json"
+          }
+        }
+      ],
+      "schema_version": "1.7.3"
+    },
+    {
+      "id": "DLA-4176-1",
+      "summary": "openssl - security update",
+      "modified": "2026-03-09T01:20:23.459313Z",
+      "published": "2025-05-24T00:00:00Z",
+      "upstream": ["CVE-2024-13176", "DEBIAN-CVE-2024-13176"],
+      "affected": [
+        {
+          "package": {
+            "name": "openssl",
+            "ecosystem": "Debian:11",
+            "purl": "pkg:deb/debian/openssl?arch=source"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.1.1w-0+deb11u3"
+                }
+              ]
+            }
+          ],
+          "versions": [
+            "1.1.1k-1",
+            "1.1.1k-1+deb11u1",
+            "1.1.1k-1+deb11u2",
+            "1.1.1l-1",
+            "1.1.1m-0+deb11u1",
+            "1.1.1m-1",
+            "1.1.1n-0+deb11u1",
+            "1.1.1n-0+deb11u2",
+            "1.1.1n-0+deb11u3",
+            "1.1.1n-0+deb11u4",
+            "1.1.1n-0+deb11u5",
+            "1.1.1n-0+deb11u6",
+            "1.1.1n-1",
+            "1.1.1o-1",
+            "1.1.1v-0~deb11u1",
+            "1.1.1w-0+deb11u1",
+            "1.1.1w-0+deb11u2",
+            "1.1.1w-0~deb11u1"
+          ],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/debian-osv/dla-osv/DLA-4176-1.json"
+          }
+        }
+      ],
+      "schema_version": "1.7.3"
+    },
+    {
+      "id": "DLA-4321-1",
+      "summary": "openssl - security update",
+      "modified": "2025-10-03T16:33:24.717173Z",
+      "published": "2025-10-03T00:00:00Z",
+      "upstream": ["CVE-2025-9230", "DEBIAN-CVE-2025-9230"],
+      "affected": [
+        {
+          "package": {
+            "name": "openssl",
+            "ecosystem": "Debian:11",
+            "purl": "pkg:deb/debian/openssl?arch=source"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.1.1w-0+deb11u4"
+                }
+              ]
+            }
+          ],
+          "versions": [
+            "1.1.1k-1",
+            "1.1.1k-1+deb11u1",
+            "1.1.1k-1+deb11u2",
+            "1.1.1l-1",
+            "1.1.1m-0+deb11u1",
+            "1.1.1m-1",
+            "1.1.1n-0+deb11u1",
+            "1.1.1n-0+deb11u2",
+            "1.1.1n-0+deb11u3",
+            "1.1.1n-0+deb11u4",
+            "1.1.1n-0+deb11u5",
+            "1.1.1n-0+deb11u6",
+            "1.1.1n-1",
+            "1.1.1o-1",
+            "1.1.1v-0~deb11u1",
+            "1.1.1w-0+deb11u1",
+            "1.1.1w-0+deb11u2",
+            "1.1.1w-0+deb11u3",
+            "1.1.1w-0~deb11u1"
+          ],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/debian-osv/dla-osv/DLA-4321-1.json"
+          }
+        }
+      ],
+      "schema_version": "1.7.3"
+    },
+    {
+      "id": "DLA-4490-1",
+      "summary": "openssl - security update",
+      "modified": "2026-02-23T10:30:28.927832Z",
+      "published": "2026-02-23T00:00:00Z",
+      "upstream": [
+        "CVE-2025-68160",
+        "CVE-2025-69418",
+        "CVE-2025-69419",
+        "CVE-2025-69420",
+        "CVE-2025-69421",
+        "CVE-2026-22795",
+        "CVE-2026-22796",
+        "DEBIAN-CVE-2025-68160",
+        "DEBIAN-CVE-2025-69418",
+        "DEBIAN-CVE-2025-69419",
+        "DEBIAN-CVE-2025-69420",
+        "DEBIAN-CVE-2025-69421",
+        "DEBIAN-CVE-2026-22795",
+        "DEBIAN-CVE-2026-22796"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "openssl",
+            "ecosystem": "Debian:11",
+            "purl": "pkg:deb/debian/openssl?arch=source"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.1.1w-0+deb11u5"
+                }
+              ]
+            }
+          ],
+          "versions": [
+            "1.1.1k-1",
+            "1.1.1k-1+deb11u1",
+            "1.1.1k-1+deb11u2",
+            "1.1.1l-1",
+            "1.1.1m-0+deb11u1",
+            "1.1.1m-1",
+            "1.1.1n-0+deb11u1",
+            "1.1.1n-0+deb11u2",
+            "1.1.1n-0+deb11u3",
+            "1.1.1n-0+deb11u4",
+            "1.1.1n-0+deb11u5",
+            "1.1.1n-0+deb11u6",
+            "1.1.1n-1",
+            "1.1.1o-1",
+            "1.1.1v-0~deb11u1",
+            "1.1.1w-0+deb11u1",
+            "1.1.1w-0+deb11u2",
+            "1.1.1w-0+deb11u3",
+            "1.1.1w-0+deb11u4",
+            "1.1.1w-0~deb11u1"
+          ],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/debian-osv/dla-osv/DLA-4490-1.json"
+          }
+        }
+      ],
+      "schema_version": "1.7.3"
+    },
+    {
+      "id": "DSA-4963-1",
+      "summary": "openssl - security update",
+      "modified": "2026-03-09T02:10:15.488747Z",
+      "published": "2021-08-24T00:00:00Z",
+      "upstream": [
+        "CVE-2021-3711",
+        "CVE-2021-3712",
+        "DEBIAN-CVE-2021-3711",
+        "DEBIAN-CVE-2021-3712"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "openssl",
+            "ecosystem": "Debian:10",
+            "purl": "pkg:deb/debian/openssl?arch=source"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.1.1d-0+deb10u7"
+                }
+              ]
+            }
+          ],
+          "versions": [
+            "1.1.1c-1",
+            "1.1.1d-0+deb10u1",
+            "1.1.1d-0+deb10u2",
+            "1.1.1d-0+deb10u3",
+            "1.1.1d-0+deb10u4",
+            "1.1.1d-0+deb10u5",
+            "1.1.1d-0+deb10u6"
+          ],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/debian-osv/dsa-osv/DSA-4963-1.json"
+          }
+        },
+        {
+          "package": {
+            "name": "openssl",
+            "ecosystem": "Debian:11",
+            "purl": "pkg:deb/debian/openssl?arch=source"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.1.1k-1+deb11u1"
+                }
+              ]
+            }
+          ],
+          "versions": ["1.1.1k-1"],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/debian-osv/dsa-osv/DSA-4963-1.json"
+          }
+        }
+      ],
+      "schema_version": "1.7.3"
+    },
+    {
+      "id": "DSA-5103-1",
+      "summary": "openssl - security update",
+      "modified": "2026-03-09T02:09:42.407559Z",
+      "published": "2022-03-15T00:00:00Z",
+      "upstream": [
+        "CVE-2021-4160",
+        "CVE-2022-0778",
+        "DEBIAN-CVE-2021-4160",
+        "DEBIAN-CVE-2022-0778"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "openssl",
+            "ecosystem": "Debian:10",
+            "purl": "pkg:deb/debian/openssl?arch=source"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.1.1d-0+deb10u8"
+                }
+              ]
+            }
+          ],
+          "versions": [
+            "1.1.1c-1",
+            "1.1.1d-0+deb10u1",
+            "1.1.1d-0+deb10u2",
+            "1.1.1d-0+deb10u3",
+            "1.1.1d-0+deb10u4",
+            "1.1.1d-0+deb10u5",
+            "1.1.1d-0+deb10u6",
+            "1.1.1d-0+deb10u7"
+          ],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/debian-osv/dsa-osv/DSA-5103-1.json"
+          }
+        },
+        {
+          "package": {
+            "name": "openssl",
+            "ecosystem": "Debian:11",
+            "purl": "pkg:deb/debian/openssl?arch=source"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.1.1k-1+deb11u2"
+                }
+              ]
+            }
+          ],
+          "versions": ["1.1.1k-1", "1.1.1k-1+deb11u1"],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/debian-osv/dsa-osv/DSA-5103-1.json"
+          }
+        }
+      ],
+      "schema_version": "1.7.3"
+    },
+    {
+      "id": "DSA-5139-1",
+      "summary": "openssl - security update",
+      "modified": "2026-03-09T02:09:17.334653Z",
+      "published": "2022-05-17T00:00:00Z",
+      "upstream": ["CVE-2022-1292", "DEBIAN-CVE-2022-1292"],
+      "affected": [
+        {
+          "package": {
+            "name": "openssl",
+            "ecosystem": "Debian:10",
+            "purl": "pkg:deb/debian/openssl?arch=source"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.1.1n-0+deb10u2"
+                }
+              ]
+            }
+          ],
+          "versions": [
+            "1.1.1c-1",
+            "1.1.1d-0+deb10u1",
+            "1.1.1d-0+deb10u2",
+            "1.1.1d-0+deb10u3",
+            "1.1.1d-0+deb10u4",
+            "1.1.1d-0+deb10u5",
+            "1.1.1d-0+deb10u6",
+            "1.1.1d-0+deb10u7",
+            "1.1.1d-0+deb10u8",
+            "1.1.1d-1",
+            "1.1.1d-2",
+            "1.1.1e-1",
+            "1.1.1f-1",
+            "1.1.1g-1",
+            "1.1.1h-1",
+            "1.1.1i-1",
+            "1.1.1i-2",
+            "1.1.1i-3",
+            "1.1.1j-1",
+            "1.1.1k-1",
+            "1.1.1l-1",
+            "1.1.1m-1",
+            "1.1.1n-0+deb10u1"
+          ],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/debian-osv/dsa-osv/DSA-5139-1.json"
+          }
+        },
+        {
+          "package": {
+            "name": "openssl",
+            "ecosystem": "Debian:11",
+            "purl": "pkg:deb/debian/openssl?arch=source"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.1.1n-0+deb11u2"
+                }
+              ]
+            }
+          ],
+          "versions": [
+            "1.1.1k-1",
+            "1.1.1k-1+deb11u1",
+            "1.1.1k-1+deb11u2",
+            "1.1.1l-1",
+            "1.1.1m-0+deb11u1",
+            "1.1.1m-1",
+            "1.1.1n-0+deb11u1"
+          ],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/debian-osv/dsa-osv/DSA-5139-1.json"
+          }
+        }
+      ],
+      "schema_version": "1.7.3"
+    },
+    {
+      "id": "DSA-5169-1",
+      "summary": "openssl - security update",
+      "modified": "2026-03-09T02:09:37.692763Z",
+      "published": "2022-06-26T00:00:00Z",
+      "upstream": ["CVE-2022-2068", "DEBIAN-CVE-2022-2068"],
+      "affected": [
+        {
+          "package": {
+            "name": "openssl",
+            "ecosystem": "Debian:10",
+            "purl": "pkg:deb/debian/openssl?arch=source"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.1.1n-0+deb10u3"
+                }
+              ]
+            }
+          ],
+          "versions": [
+            "1.1.1c-1",
+            "1.1.1d-0+deb10u1",
+            "1.1.1d-0+deb10u2",
+            "1.1.1d-0+deb10u3",
+            "1.1.1d-0+deb10u4",
+            "1.1.1d-0+deb10u5",
+            "1.1.1d-0+deb10u6",
+            "1.1.1d-0+deb10u7",
+            "1.1.1d-0+deb10u8",
+            "1.1.1d-1",
+            "1.1.1d-2",
+            "1.1.1e-1",
+            "1.1.1f-1",
+            "1.1.1g-1",
+            "1.1.1h-1",
+            "1.1.1i-1",
+            "1.1.1i-2",
+            "1.1.1i-3",
+            "1.1.1j-1",
+            "1.1.1k-1",
+            "1.1.1l-1",
+            "1.1.1m-1",
+            "1.1.1n-0+deb10u1",
+            "1.1.1n-0+deb10u2"
+          ],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/debian-osv/dsa-osv/DSA-5169-1.json"
+          }
+        },
+        {
+          "package": {
+            "name": "openssl",
+            "ecosystem": "Debian:11",
+            "purl": "pkg:deb/debian/openssl?arch=source"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.1.1n-0+deb11u3"
+                }
+              ]
+            }
+          ],
+          "versions": [
+            "1.1.1k-1",
+            "1.1.1k-1+deb11u1",
+            "1.1.1k-1+deb11u2",
+            "1.1.1l-1",
+            "1.1.1m-0+deb11u1",
+            "1.1.1m-1",
+            "1.1.1n-0+deb11u1",
+            "1.1.1n-0+deb11u2"
+          ],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/debian-osv/dsa-osv/DSA-5169-1.json"
+          }
+        }
+      ],
+      "schema_version": "1.7.3"
+    },
+    {
+      "id": "DSA-5343-1",
+      "summary": "openssl - security update",
+      "modified": "2026-03-09T02:09:47.149297Z",
+      "published": "2023-02-07T00:00:00Z",
+      "upstream": [
+        "CVE-2022-2097",
+        "CVE-2022-4304",
+        "CVE-2022-4450",
+        "CVE-2023-0215",
+        "CVE-2023-0286",
+        "DEBIAN-CVE-2022-2097",
+        "DEBIAN-CVE-2022-4304",
+        "DEBIAN-CVE-2022-4450",
+        "DEBIAN-CVE-2023-0215",
+        "DEBIAN-CVE-2023-0286"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "openssl",
+            "ecosystem": "Debian:11",
+            "purl": "pkg:deb/debian/openssl?arch=source"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.1.1n-0+deb11u4"
+                }
+              ]
+            }
+          ],
+          "versions": [
+            "1.1.1k-1",
+            "1.1.1k-1+deb11u1",
+            "1.1.1k-1+deb11u2",
+            "1.1.1l-1",
+            "1.1.1m-0+deb11u1",
+            "1.1.1m-1",
+            "1.1.1n-0+deb11u1",
+            "1.1.1n-0+deb11u2",
+            "1.1.1n-0+deb11u3"
+          ],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/debian-osv/dsa-osv/DSA-5343-1.json"
+          }
+        }
+      ],
+      "schema_version": "1.7.3"
+    },
+    {
+      "id": "DSA-5417-1",
+      "summary": "openssl - security update",
+      "modified": "2026-03-09T02:09:39.950679Z",
+      "published": "2023-05-31T00:00:00Z",
+      "upstream": [
+        "CVE-2023-0464",
+        "CVE-2023-0465",
+        "CVE-2023-0466",
+        "CVE-2023-2650",
+        "DEBIAN-CVE-2023-0464",
+        "DEBIAN-CVE-2023-0465",
+        "DEBIAN-CVE-2023-0466",
+        "DEBIAN-CVE-2023-2650"
+      ],
+      "affected": [
+        {
+          "package": {
+            "name": "openssl",
+            "ecosystem": "Debian:11",
+            "purl": "pkg:deb/debian/openssl?arch=source"
+          },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.1.1n-0+deb11u5"
+                }
+              ]
+            }
+          ],
+          "versions": [
+            "1.1.1k-1",
+            "1.1.1k-1+deb11u1",
+            "1.1.1k-1+deb11u2",
+            "1.1.1l-1",
+            "1.1.1m-0+deb11u1",
+            "1.1.1m-1",
+            "1.1.1n-0+deb11u1",
+            "1.1.1n-0+deb11u2",
+            "1.1.1n-0+deb11u3",
+            "1.1.1n-0+deb11u4"
+          ],
+          "database_specific": {
+            "source": "https://storage.googleapis.com/debian-osv/dsa-osv/DSA-5417-1.json"
+          }
+        }
+      ],
+      "schema_version": "1.7.3"
+    }
+  ]
+}

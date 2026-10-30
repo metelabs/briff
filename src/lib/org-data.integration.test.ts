@@ -78,6 +78,9 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
         modifiedAt: new Date(),
       },
     });
+    await scoped.baseImageWatch.create({
+      data: { orgId, repoId: repo.id, image: "debian:12", since: new Date() },
+    });
     const bulletin = await scoped.bulletin.create({
       data: {
         orgId,
@@ -134,6 +137,8 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
       repoRuntime: await s.repoRuntime.count(),
       itemMatch: await s.itemMatch.count(),
       alert: await s.alert.count(),
+      baseImageAlert: await s.baseImageAlert.count(),
+      baseImageWatch: await s.baseImageWatch.count(),
       bulletin: await s.bulletin.count(),
       bulletinItem: await s.bulletinItem.count(),
       feedback: await s.feedback.count(),
@@ -201,6 +206,7 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
       "bulletinItems",
       "alerts",
       "baseImageAlerts",
+      "baseImageWatches",
       "feedback",
       "deadlines",
       "scanTokens",

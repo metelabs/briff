@@ -174,7 +174,7 @@ ${view.know.map((item) => knowRow(item, t, view.language, detailsUrl(item))).joi
     footerLines.push(t.backlog_line(advisoryCount(view.backlogAlerts)));
   if (view.baseImageAlerts?.length)
     footerLines.push(
-      `${view.baseImageAlerts.length} base images have candidate distro advisories; installed OS packages and versions are unverified. See the bulletin page before acting.`
+      `${view.baseImageAlerts.length === 1 ? "1 base image" : `${view.baseImageAlerts.length} base images`} got distro fixes this week; rebuild on the latest tag. The bulletin page lists them.`
     );
   const restHtml =
     footerLines.length > 0

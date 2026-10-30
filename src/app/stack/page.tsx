@@ -6,9 +6,11 @@ import { ConnectReposButton } from "@/components/shell/connect-sheet";
 import { Card } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/ui/section-header";
 import { requireOrgContext } from "@/lib/auth/session";
+import { getDb } from "@/lib/db/client";
 import { plural } from "@/lib/format";
 import { loadDrift } from "@/lib/stack-load";
-import { loadStreamScope } from "@/lib/stream-scope";
+import { loadStreamScope, repoScope } from "@/lib/stream-scope";
+import { loadUnfixedDistros } from "@/security/base-image-view";
 
 import { DriftTable } from "./_client";
 
@@ -17,7 +19,10 @@ export const metadata: Metadata = { title: "Stack · Briff" };
 export default async function StackPage() {
   const ctx = await requireOrgContext();
   const scope = await loadStreamScope(ctx.orgId);
-  const { repos, drift } = await loadDrift(ctx.orgId, scope);
+  const [{ repos, drift }, unfixed] = await Promise.all([
+    loadDrift(ctx.orgId, scope),
+    loadUnfixedDistros(getDb(), ctx.orgId, repoScope(scope)),
+  ]);
 
   return (
     <AppShell ctx={ctx} active="/stack">
@@ -40,6 +45,12 @@ export default async function StackPage() {
       ) : (
         <DriftTable columns={drift.columns} rows={drift.rows} />
       )}
+      {unfixed.map((d) => (
+        <p key={d.distro} className="text-fg-muted mt-3 text-[13px]">
+          {d.distro}: {plural(d.unfixed, "known unfixed issue")} in the watched base packages. No
+          fix is published for this release yet, so rebuilding does not help.
+        </p>
+      ))}
     </AppShell>
   );
 }

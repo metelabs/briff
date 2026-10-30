@@ -93,6 +93,7 @@ model Org {
   githubRepoLimitReached Boolean @default(false)
   baseImageAlerts Boolean @default(true)
   baseAlerts BaseImageAlert[]
+  baseWatches BaseImageWatch[]
   id                  String               @id @default(cuid())
   name                String
   createdAt           DateTime             @default(now())
@@ -193,6 +194,7 @@ enum RepoSource {
 model Repo {
   baseImageScannedAt DateTime?
   baseAlerts BaseImageAlert[]
+  baseWatches BaseImageWatch[]
   id                   String              @id @default(cuid())
   orgId                String
   org                  Org                 @relation(fields: [orgId], references: [id], onDelete: Cascade)
@@ -807,9 +809,52 @@ model BaseImageAlert {
   kind AlertKind @default(new)
   publishedAt DateTime?
   modifiedAt DateTime
+  // When the fix for the distro release was published (BaseImageFix.fixedAt).
+  fixedAt DateTime?
   deliveredAt DateTime?
   createdAt DateTime @default(now())
   @@unique([repoId, image, osvId])
   @@index([orgId])
   @@map("base_image_alert")
+}
+
+// When Briff first saw an image in a repo. Fixes published before that are assumed to be in
+// the image already, so a newly seen image starts without a backlog.
+model BaseImageWatch {
+  id String @id @default(cuid())
+  orgId String
+  org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  repoId String
+  repo Repo @relation(fields: [repoId], references: [id], onDelete: Cascade)
+  image String
+  since DateTime
+  @@unique([repoId, image])
+  @@index([orgId])
+  @@map("base_image_watch")
+}
+
+// Global catalog: one row per distro release that the base image scan has queried. Its
+// existence marks the release's baseline (fixed versions seen in that run are not news).
+model BaseImageDistro {
+  ecosystem String @id
+  // Advisories for the watched packages with no fix for this release yet.
+  unfixed Int
+  checkedAt DateTime
+  createdAt DateTime @default(now())
+  @@map("base_image_distro")
+}
+
+// Global catalog: when a fixed version of a watched package first appeared for a release.
+// OSV regenerates distro records daily, so `modified` says nothing about the fix date.
+model BaseImageFix {
+  id String @id @default(cuid())
+  ecosystem String
+  package String
+  version String
+  // Fix announcement date (DSA/DLA/USN `published`) or first sighting after the baseline;
+  // null for fixes already published when the release was first queried.
+  fixedAt DateTime?
+  firstSeenAt DateTime @default(now())
+  @@unique([ecosystem, package, version])
+  @@map("base_image_fix")
 }
