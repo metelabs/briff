@@ -93,7 +93,7 @@ export async function loadHome(orgId: string, scope: StreamScope, now: Date) {
       select: { name: true, included: true, lastScannedAt: true },
     }),
     loadDrift(orgId, scope),
-    loadActivity(orgId),
+    loadActivity(orgId, since),
   ]);
 
   const latestRows = (
@@ -233,7 +233,6 @@ export async function loadHome(orgId: string, scope: StreamScope, now: Date) {
   };
 }
 
-const SOURCE_TAKE = 50;
 const SCAN_FOLD_MS = 60 * 60_000;
 
 function names(list: readonly string[], shown = 2): string {
@@ -245,14 +244,14 @@ function names(list: readonly string[], shown = 2): string {
 /**
  * The org's last events from the tables that carry a timestamp. A scan is a repo's last
  * one only (`Repo.lastScannedAt`): uploads are not kept, so older scans have no row.
+ * Folded sources are read whole (repos) or for the chart's 12 weeks (resolved alerts), never
+ * cut by a row limit, so a burst is counted in full before the last ten are picked.
  */
-async function loadActivity(orgId: string): Promise<Activity[]> {
+async function loadActivity(orgId: string, since: Date): Promise<Activity[]> {
   const db = withOrg(getDb(), orgId);
-  const [resolved, sent, added, scanned, members] = await Promise.all([
+  const [resolved, sent, repos, members] = await Promise.all([
     db.alert.findMany({
-      where: { resolvedAt: { not: null } },
-      orderBy: { resolvedAt: "desc" },
-      take: SOURCE_TAKE,
+      where: { resolvedAt: { gte: since } },
       select: {
         id: true,
         resolvedAt: true,
@@ -266,17 +265,7 @@ async function loadActivity(orgId: string): Promise<Activity[]> {
       take: 10,
       select: { id: true, emailSentAt: true, weekStart: true, stream: { select: { name: true } } },
     }),
-    db.repo.findMany({
-      orderBy: { firstSeenAt: "desc" },
-      take: SOURCE_TAKE,
-      select: { id: true, name: true, firstSeenAt: true },
-    }),
-    db.repo.findMany({
-      where: { lastScannedAt: { not: null } },
-      orderBy: { lastScannedAt: "desc" },
-      take: SOURCE_TAKE,
-      select: { id: true, name: true, firstSeenAt: true, lastScannedAt: true },
-    }),
+    db.repo.findMany({ select: { id: true, name: true, firstSeenAt: true, lastScannedAt: true } }),
     db.orgEvent.findMany({
       where: { type: { in: ["invite_accepted", "org_created"] } },
       orderBy: { createdAt: "desc" },
@@ -325,7 +314,7 @@ async function loadActivity(orgId: string): Promise<Activity[]> {
   );
 
   const addedEvents = foldBursts(
-    added.map((r) => ({ at: r.firstSeenAt, key: `a:${r.id}`, name: r.name })),
+    repos.map((r) => ({ at: r.firstSeenAt, key: `a:${r.id}`, name: r.name })),
     (g) =>
       g.length === 1
         ? `${g[0].name} added`
@@ -339,7 +328,7 @@ async function loadActivity(orgId: string): Promise<Activity[]> {
   }));
 
   const scanEvents = foldBursts(
-    scanned.flatMap((r) =>
+    repos.flatMap((r) =>
       r.lastScannedAt && isFollowUpScan(r.firstSeenAt, r.lastScannedAt)
         ? [{ at: r.lastScannedAt, key: `s:${r.id}`, name: r.name }]
         : []
