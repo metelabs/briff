@@ -87,6 +87,25 @@ export function AuthForm({ mode, allowSignup, signup = false }: AuthFormProps) {
         <Button type="submit" variant="primary" size="lg" disabled={pending} className="w-full">
           {signingUp ? "Create account" : "Sign in"}
         </Button>
+        {signingUp && mode !== "bootstrap" && (
+          <p className="text-fg-muted text-center text-[12.5px]">
+            By creating an account you agree to the{" "}
+            <Link
+              href="/terms"
+              className="text-brand font-medium underline-offset-4 hover:underline"
+            >
+              Terms
+            </Link>{" "}
+            and{" "}
+            <Link
+              href="/privacy"
+              className="text-brand font-medium underline-offset-4 hover:underline"
+            >
+              Privacy Policy
+            </Link>
+            .
+          </p>
+        )}
       </form>
       {footer === "toggle" && (
         <p className="text-fg-muted mt-[18px] text-center text-[12.5px]">

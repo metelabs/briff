@@ -50,6 +50,7 @@ const ALLOWED_EMAIL_DOMAINS = new Set([
   "python.org",
   "lists.php.net",
   "studio.dev",
+  "briff.dev",
 ]);
 // Recorded GitHub API responses of a public repo (vercel/ms) carry its committers' addresses.
 const EMAIL_EXEMPT_DIRS = ["src/lib/github/__fixtures__/"];

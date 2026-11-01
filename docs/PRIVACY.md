@@ -4,6 +4,10 @@ Briff runs on your server (or ours, at app.briff.dev). This page lists every out
 connection the web app and the worker make, and exactly what each one carries. If something
 is not listed here, Briff does not send it. Every claim points at the code that does it.
 
+The hosted service's privacy policy for people (controller, legal bases, sub-processors,
+retention, rights) is the `/privacy` page (`src/components/legal/privacy.tsx`); it points back
+here for the technical detail. Keep its sub-processor list in step with the table below.
+
 ## What Briff holds
 
 - From the scanner (`POST /api/scan`, docs/SCANNER.md): repo names, and per repo the
