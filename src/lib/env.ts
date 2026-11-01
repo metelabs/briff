@@ -2,6 +2,8 @@ import "server-only";
 
 import { z } from "zod";
 
+import { catalogComplete } from "@/lib/billing/catalog";
+
 // Runtime configuration. Everything is read at request/job time, never at build
 // time: the Docker image is built in CI without any of these values.
 
@@ -88,6 +90,7 @@ const cloudEnvSchema = serverEnvSchema.pick({ BRIFF_CLOUD: true });
 const billingEnvSchema = serverEnvSchema.pick({
   NODE_ENV: true,
   BRIFF_CLOUD: true,
+  PADDLE_ENV: true,
   PADDLE_API_KEY: true,
   PADDLE_CLIENT_TOKEN: true,
   BRIFF_PADDLE_FAKE: true,
@@ -119,12 +122,13 @@ export function isCloud(): boolean {
 }
 
 /**
- * Whether checkout can open on this instance (hosted, with the Paddle API key and client token,
- * or the development fake). Narrow like isCloud(): the public pricing page reads it.
+ * Whether checkout can open on this instance: hosted, with the Paddle API key and client token
+ * (or the development fake) and every price id for PADDLE_ENV. Narrow like isCloud(): the
+ * public pricing page reads it.
  */
 export function isBillingConfigured(): boolean {
   const env = cached ?? billingEnvSchema.parse(process.env);
-  if (!env.BRIFF_CLOUD) return false;
+  if (!env.BRIFF_CLOUD || !catalogComplete(env.PADDLE_ENV)) return false;
   if (env.BRIFF_PADDLE_FAKE) return env.NODE_ENV !== "production";
   return !!env.PADDLE_API_KEY && !!env.PADDLE_CLIENT_TOKEN;
 }
