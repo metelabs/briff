@@ -37,7 +37,19 @@ const serverEnvSchema = z.object({
   SMTP_USER: optionalString,
   SMTP_PASS: optionalString,
   FROM_EMAIL: optionalString.pipe(z.email().optional()),
+  // Error reporting (worker and web server; src/lib/sentry.ts). Unset: Sentry is never loaded.
   SENTRY_DSN: optionalString.pipe(z.url().optional()),
+  // Operator alerts (docs/OPERATIONS.md): job failures and stale scheduled jobs.
+  ALERT_WEBHOOK_URL: optionalString.pipe(z.url({ protocol: /^https?$/ }).optional()),
+  // Comma-separated; default: the instance admin's email.
+  OPS_ALERT_EMAIL: optionalString
+    .transform((v) =>
+      (v ?? "")
+        .split(",")
+        .map((e) => e.trim())
+        .filter(Boolean)
+    )
+    .pipe(z.array(z.email())),
   GITHUB_TOKEN: optionalString,
   // Briff GitHub App (docs/GITHUB-APP.md). All six or none; web and worker both need them.
   GITHUB_APP_ID: optionalString,

@@ -778,6 +778,28 @@ model Run {
   @@map("run")
 }
 
+enum OpsAlertKind {
+  failed
+  stale
+}
+
+// Operator alerts (job failed for good, scheduled job stale): one per (jobType, kind) per 24h.
+// Instance-level, not tenant data.
+model OpsAlert {
+  id          String       @id @default(cuid())
+  jobType     String
+  kind        OpsAlertKind
+  lastSentAt  DateTime
+  lastMessage String
+  // Alerts swallowed by the 24h window since lastSentAt.
+  suppressed  Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([jobType, kind])
+  @@map("ops_alert")
+}
+
 model RuntimeLifecycle {
   product String
   cycle String

@@ -39,6 +39,7 @@
     "@base-ui/react": "^1.9.0",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "@sentry/node": "^11.10.0",
     "better-auth": "^1.7.9",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",

@@ -1,6 +1,6 @@
 // Renders the latest bulletin email of each stream (or the one given), a security
-// alert email, an urgent email, the test email and the account emails (reset, verification,
-// email change) from the local database into files, without
+// alert email, an urgent email, the test email, the account emails (reset, verification,
+// email change) and the operator alert emails from the local database into files, without
 // sending anything.
 //   npm run email:preview -- [--bulletin <id>] [--out <dir>]
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -17,6 +17,7 @@ import {
 } from "@/lib/email/alert-email";
 import { renderPasswordResetEmail, renderVerificationEmail } from "@/lib/email/account-email";
 import { renderBulletinEmail } from "@/lib/email/bulletin-email";
+import { renderOpsAlertEmail } from "@/lib/email/ops-email";
 import { signFeedbackToken } from "@/lib/feedback-token";
 import { PRODUCT_LANGUAGE } from "@/lib/i18n";
 import { loadBulletinView } from "@/pipeline/bulletin-view";
@@ -36,6 +37,36 @@ async function main(): Promise<void> {
     writeFileSync(path.join(out, `${name}.txt`), `Subject: ${email.subject}\n\n${email.text}`);
     console.log(`${name}: ${email.subject}`);
   };
+
+  // Operator alerts need no org: rendered first, from fixed sample values.
+  const opsSample = {
+    jobType: "security-scan",
+    at: new Date("2026-11-02T04:03:12Z"),
+    lastSuccessAt: new Date("2026-11-01T04:02:40Z"),
+    baseUrl: env.BETTER_AUTH_URL,
+  };
+  write(
+    "ops-failed",
+    renderOpsAlertEmail({
+      ...opsSample,
+      kind: "failed",
+      attempts: 5,
+      suppressed: 0,
+      error:
+        "Error: OSV querybatch failed: 503 Service Unavailable\n    at queryBatch (src/sources/osv.ts:212:11)\n    at async securityScan (src/security/scan.ts:88:5)\n    at async runJob (src/worker/runner.ts:61:20)",
+    })
+  );
+  write(
+    "ops-stale",
+    renderOpsAlertEmail({
+      ...opsSample,
+      jobType: "collect-sources",
+      kind: "stale",
+      at: new Date("2026-11-02T07:02:40Z"),
+      error: null,
+      suppressed: 0,
+    })
+  );
 
   const org = await db.org.findFirstOrThrow({
     orderBy: { createdAt: "asc" },

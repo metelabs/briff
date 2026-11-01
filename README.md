@@ -123,6 +123,8 @@ connecting repos, a Caddy example, updates, backups, health, logs and troublesho
 [docs/UPGRADING.md](docs/UPGRADING.md) covers versions and breaking changes.
 `scripts/smoke.sh` checks a stack end to end. There is no separate self-hosted tier; the image
 builds from this repository with `docker build .` without secrets or env.
+Health, job failure alerts (email and an optional webhook) and optional Sentry are described in
+[docs/OPERATIONS.md](docs/OPERATIONS.md).
 
 Password reset ("Forgot password?" on the sign-in page), email verification and changing the
 sign-in email or password (Settings → Account) need no extra variables: their links are built

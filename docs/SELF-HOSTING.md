@@ -162,10 +162,15 @@ line `0 2 * * * cd /opt/briff && docker compose exec -T postgres pg_dump -U brif
 
 ## Health and logs
 
-- `GET /api/health` (no auth): `ok`, `db`, the last run of every job type (`lastRuns`, with
-  `error` when it failed), pending and failed job counts, and `warnings`. HTTP 503 when the
-  database is unreachable. The `web` container healthcheck calls it; the `worker` healthcheck
-  checks a heartbeat file the worker refreshes every few seconds (unhealthy after 180 s).
+- `GET /api/health` (no auth): `ok`, `db`, whether every scheduled job ran on time
+  (`freshness`, `stale`), the oldest due job (`queue.oldestPendingSeconds`), the last run of
+  every job type (`lastRuns`, with `error` when it failed), pending and failed job counts, and
+  `warnings`. HTTP 503 when the database is unreachable, a scheduled job is overdue or a due job
+  has waited over an hour; point an uptime monitor at it. The `web` container healthcheck calls
+  `/api/health?probe=live` (database only), so an overdue job never restarts the web container;
+  the `worker` healthcheck checks a heartbeat file the worker refreshes every 30 s, also during
+  long jobs (unhealthy after 180 s). The full body, job failure alerts (`OPS_ALERT_EMAIL`,
+  `ALERT_WEBHOOK_URL`), Admin → Runs and optional Sentry: [OPERATIONS.md](OPERATIONS.md).
 - Logs are JSON lines (secrets redacted), kept by Docker (10 MB × 5 per container):
   ```bash
   docker compose logs -f web worker

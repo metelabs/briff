@@ -3,6 +3,7 @@ import { refreshRuntimeLifecycle } from "@/lib/runtime-eol-catalog";
 import { baseImageScan } from "@/security/base-images";
 import { githubScan } from "@/lib/github/scan";
 import type { JobType } from "@/lib/jobs/types";
+import { opsCheck } from "@/lib/ops/check";
 import { bulletinPreview } from "@/pipeline/preview";
 import { triageItems } from "@/pipeline/triage";
 import { weeklyBulletin } from "@/pipeline/weekly";
@@ -20,6 +21,7 @@ export const handlers: Record<JobType, JobHandler> = {
   "triage-items": triageItems,
   "weekly-bulletin": weeklyBulletin,
   "refresh-packages": refreshPackages,
+  "ops-check": opsCheck,
   "bulletin-preview": bulletinPreview,
   "github-scan": githubScan,
 };

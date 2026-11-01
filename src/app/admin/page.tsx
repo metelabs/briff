@@ -185,7 +185,15 @@ export default async function AdminPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Last run per job</CardTitle>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle>Last run per job</CardTitle>
+              <Link
+                href="/admin/runs"
+                className="text-brand text-[13px] font-medium hover:underline"
+              >
+                All runs →
+              </Link>
+            </div>
             {queued.length > 0 && (
               <CardDescription>
                 Queued:{" "}

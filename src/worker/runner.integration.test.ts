@@ -1,14 +1,23 @@
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "@/generated/prisma/client";
 import { claimNextJob, completeJob, enqueueJob, JobLockLostError } from "@/lib/jobs/queue";
 import type { JobType } from "@/lib/jobs/types";
+import { resetEnvCache } from "@/lib/env";
 import { log } from "@/lib/log";
 
 import { runJob } from "./runner";
 import type { JobHandler } from "./types";
+
+const mail = vi.hoisted(() => ({ subjects: [] as string[] }));
+vi.mock("@/lib/email/mailer", () => ({
+  sendMail: async (message: { subject: string }) => {
+    mail.subjects.push(message.subject);
+    return { status: "sent", messageId: "m" };
+  },
+}));
 
 // Runs only when TEST_DATABASE_URL points at a migrated, disposable database.
 const url = process.env.TEST_DATABASE_URL;
@@ -81,5 +90,36 @@ describe.skipIf(!url)("runner and job locks against Postgres", () => {
     expect((await db.job.findUniqueOrThrow({ where: { id: job.id } })).status).toBe("running");
     expect(await completeJob(db, { id: job.id, lockedBy: "w-other" })).toBe(true);
     expect(new JobLockLostError("x").name).toBe("JobLockLostError");
+  });
+
+  it("alerts the operators once a job fails for good, not on a retry", async () => {
+    vi.stubEnv("DATABASE_URL", url ?? "");
+    vi.stubEnv("BETTER_AUTH_SECRET", "synthetic-test-secret-with-at-least-32-characters");
+    vi.stubEnv("BETTER_AUTH_URL", "https://briff.example.com");
+    vi.stubEnv("OPS_ALERT_EMAIL", "ops@example.com");
+    resetEnvCache();
+    mail.subjects = [];
+    const slot = { jobType_kind: { jobType: "weekly-bulletin", kind: "failed" as const } };
+    await db.opsAlert.deleteMany({ where: slot.jobType_kind });
+    const failing = handlersWith(async () => {
+      throw new Error("synthesis exploded");
+    });
+    try {
+      const first = await claimOwn("weekly-bulletin", "w-fail");
+      await db.job.update({ where: { id: first.id }, data: { maxAttempts: 2 } });
+      expect(await runJob(db, failing, { ...first, maxAttempts: 2 }, log)).toBe("retry");
+      expect(await db.opsAlert.findUnique({ where: slot })).toBeNull();
+
+      const last = await claimOwn("weekly-bulletin", "w-fail-last");
+      await db.job.update({ where: { id: last.id }, data: { maxAttempts: 1 } });
+      expect(await runJob(db, failing, { ...last, maxAttempts: 1 }, log)).toBe("failed");
+      const row = await db.opsAlert.findUniqueOrThrow({ where: slot });
+      expect(row.lastMessage).toBe("Job failed: weekly-bulletin");
+      expect(mail.subjects).toEqual(["Briff · Job failed: weekly-bulletin"]);
+    } finally {
+      await db.opsAlert.deleteMany({ where: slot.jobType_kind });
+      vi.unstubAllEnvs();
+      resetEnvCache();
+    }
   });
 });
