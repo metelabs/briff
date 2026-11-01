@@ -4,7 +4,7 @@ import nodemailer from "nodemailer";
 
 import { getEnv } from "@/lib/env";
 
-// Brevo SMTP relay (a 535 means a wrong SMTP_PASS).
+// SMTP relay (Resend on the hosted service; a 535 means a wrong SMTP_PASS).
 
 export interface SmtpConfig {
   host: string;
