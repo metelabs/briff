@@ -107,7 +107,9 @@ export default async function HomePage({
         <div className="grid grid-cols-1 gap-8">
           <TopStrip data={data} now={now} scopeName={scopeName} />
 
-          {anyBulletin ? (
+          {!anyBulletin && <FirstMonday data={data} now={now} />}
+
+          {(anyBulletin || hasTrend(data.trend)) && (
             <section aria-labelledby="trend" className="rise [--i:2]">
               <SectionHeader
                 id="trend"
@@ -125,8 +127,6 @@ export default async function HomePage({
                 )}
               </Card>
             </section>
-          ) : (
-            <FirstMonday data={data} now={now} />
           )}
 
           <Streams streams={data.streams} weeks={data.weeks} next={data.nextBulletin} />
