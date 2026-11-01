@@ -49,6 +49,7 @@ export const PRIVATE_PREFIXES = [
   "/b/",
   "/bulletins",
   "/forgot-password",
+  "/invite/",
   "/landing",
   "/login",
   "/onboarding",

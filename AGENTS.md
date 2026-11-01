@@ -35,7 +35,7 @@ This file is the project guide for every coding agent and for people; `CLAUDE.md
 ## Layout
 
 ```
-src/app/                 pages (/ home overview, /bulletins, /b/[id], /alerts, /stack, /repos, /streams, /settings, /settings/billing, /onboarding, /admin, /login, /pricing) + route
+src/app/                 pages (/ home overview, /bulletins, /b/[id], /alerts, /stack, /repos, /streams, /settings, /settings/billing, /onboarding, /admin, /login, /pricing, /invite/[token]) + route
                          handlers (/api/health, /api/scan, /api/export, /api/auth/[...all])
 src/proxy.ts             `/` without a session cookie -> rewrite to /landing (docs/LANDING.md)
 src/app/landing, replay/ public pages (no session, no tenant imports: src/test/public-routes.test.ts),
@@ -83,12 +83,14 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
 - **Tenant data only through `withOrg(getDb(), orgId)`.** It pins `orgId` into every
   where/data clause and throws on conflicts. Tenant models: OrgMember, Repo, Dependency,
   RepoRuntime, ItemMatch, Alert, Bulletin, BulletinItem, Feedback, InterestProfile, Deadline,
-  BulletinStream, StreamRepo, ScanToken, GithubInstallation. Creates
+  BulletinStream, StreamRepo, ScanToken, GithubInstallation, OrgInvite, OrgEvent. Creates
   still pass `orgId` explicitly (Prisma types require it; the layer verifies it). Nested
   relation writes and raw SQL bypass the layer, so do not use them for tenant tables.
   Global catalog tables (Package, Service, Source, Item, Advisory, Job, Run, OpsAlert) use `getDb()`.
-  Two reads run before the org is known and are the only tenant reads outside the layer:
-  the session's membership (`getOrgContext`) and the scan token lookup by hash
+  These reads run before the org is known and are the only tenant reads outside the layer:
+  the session's memberships (`getOrgContext`, the account menu's `listUserOrgs`, and
+  `ensureUserHasOrg`'s count, all keyed by the user), the invite lookup by token hash
+  (`findInviteByToken`, `src/lib/members.ts`) and the scan token lookup by hash
   (`findScanTokenByHash`, `src/lib/scan/token-store.ts`), and the GitHub App's installation
   lookup by GitHub id from webhooks and scan jobs (`findInstallation`, `src/lib/github/installations.ts`). Deleting an org (`deleteOrg`,
   `src/lib/org-data.ts`) also counts the user's remaining memberships through `user._count` to
@@ -106,6 +108,21 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   typed name matches (owners only), its pending jobs, and the user when it has no other org, then
   drops the session cookies. Every tenant table cascades from `Org`; a new tenant table must too
   (`org-data.integration.test.ts` checks every one).
+- Organisations and roles (`src/lib/members.ts`, Settings → Organisation and Members, docs/SELF-HOSTING.md
+  "Inviting teammates"): a user can belong to several orgs; `getOrgContext` picks the one in the
+  `briff-org` cookie only when the user is a member of it, else the oldest membership (switching
+  clears the stream cookie). Roles: `owner` invites, changes roles, removes members, renames and
+  deletes the org (and owns any limits-related setting); `member` uses everything else (repos,
+  streams, alerts, bulletins, own profile and delivery). Checks run inside the membership
+  transaction (per-org advisory lock), never only in the UI; the last owner can never be removed,
+  demoted or leave. Invites (`OrgInvite`): sha256 of a 32-byte token, 7 days, one per pending
+  address, 20 sends a day per org (resends included, counted from `OrgEvent`); accepting needs an
+  account with the invited email. An invite sign-up runs inside `withInviteSignup`
+  (`src/lib/auth/invite-signup.ts`), so the user hook allows it on a closed instance and joins
+  the invite's org instead of creating one. A user left with no org (removed, left, org deleted by
+  another owner) gets a fresh one (`ensureUserHasOrg`). Seats in use (members + pending invites)
+  are counted only by `countMembers`. Every membership change writes an `OrgEvent` (audit, last
+  50 on Settings → Members).
 - Account emails (`src/lib/auth/auth.ts`, `auth-email.ts`, templates `src/lib/email/account-email.ts`
   built from the reusable pieces in `src/lib/email/components.ts`): password reset (`/forgot-password`
   → Better Auth link, 1 h → `/reset-password`; all sessions revoked), email verification on sign-up
@@ -591,7 +608,8 @@ like, and this section says how a review reports deviations from them.
 
 ### Repository invariants
 
-- Tenant data (OrgMember, Repo, Dependency, RepoRuntime, ItemMatch, Alert, Bulletin, BulletinItem, Feedback, InterestProfile, Deadline, BulletinStream, StreamRepo, ScanToken, GithubInstallation) must be read and written through `withOrg(getDb(), orgId)`. A nested relation write or raw SQL on these tables is a finding. The only reads outside the layer are the ones listed under Conventions (`getOrgContext`, `findScanTokenByHash`, `findInstallation`, the `deleteOrg` membership count, the admin's `loadOrgDirectory`). `scripts/smoke.sh` is outside this rule (Conventions: it uses `psql` against its own throw-away stack). A new tenant table that does not cascade from `Org` is a finding (`org-data.integration.test.ts` must cover it).
+- Tenant data (OrgMember, Repo, Dependency, RepoRuntime, ItemMatch, Alert, Bulletin, BulletinItem, Feedback, InterestProfile, Deadline, BulletinStream, StreamRepo, ScanToken, GithubInstallation, OrgInvite, OrgEvent) must be read and written through `withOrg(getDb(), orgId)`. A nested relation write or raw SQL on these tables is a finding. The only reads outside the layer are the ones listed under Conventions (`getOrgContext`, `listUserOrgs`, `ensureUserHasOrg`, `findInviteByToken`, `findScanTokenByHash`, `findInstallation`, the `deleteOrg` membership count, the admin's `loadOrgDirectory`).
+- Owner-only actions (invite, resend, revoke, change role, remove member, rename, delete org) check the role on the server inside the membership transaction; a check only in the page or UI is a finding, and so is any path that lets the last owner be removed, demoted or leave. `scripts/smoke.sh` is outside this rule (Conventions: it uses `psql` against its own throw-away stack). A new tenant table that does not cascade from `Org` is a finding (`org-data.integration.test.ts` must cover it).
 - Fix commands and derived actions never recommend a higher major than the installed release line. A command or sentence that crosses the line is a finding, with one exception: An end-of-life line gets the EOL sentence, which names the lowest supported line; that is the only derived action allowed to name a higher major, and it is worded as a migration, not a fix command. (`src/pipeline/runtime-fixes.ts`, "node 18 is end-of-life and will not get this fix; move to 22.23.4 or later"; an EOL line has no fix on its own major, so naming the supported line is the only truthful action.) An EOL sentence in command form (`npm i ...`, a `FROM`/image tag, "set node X") is a finding.
 - An item's repos have one source: `BulletinItem.affectedRepos` is the item's `affected_repos` in the synthesis input (match repos in the stream, plus repos with an alert on the item's security package), and `BulletinItem.upgrades` names exactly those repos (`alignUpgrades`; a repo without a version on record reads "installed version unknown"). A path that builds upgrades, actions or lines from another repo list is a finding. A model line or action that names only some of the affected repos is repaired after the alias restore (`completeRepoNames`, `chooseAction`), never stored as written.
 - Model output is accepted only for refs present in the synthesis input; any path where model text adds a URL, a version or a package the input did not contain is a finding.

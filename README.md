@@ -43,6 +43,8 @@ Briff is a Next.js app and a worker on Postgres. Two ways to start:
 - **Runtime and end-of-life view**: what every repo runs (Dockerfile `FROM`, compose images,
   `.nvmrc`, `engines`, `go.mod`, ...) against the end-of-life table and the newest release.
 - **Streams**: named repo sets with their own bulletin, e.g. one per client or team.
+- **Teams**: invite teammates by email as members or owners; everyone gets the bulletins and
+  alerts, and one account can switch between several organisations.
 
 Sources are official feeds only (release feeds, vendor blogs, security advisories, OSV); no
 HTML scraping. The list and the matching rules are in [docs/SOURCES.md](docs/SOURCES.md).

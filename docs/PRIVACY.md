@@ -21,6 +21,9 @@ here for the technical detail. Keep its sub-processor list in step with the tabl
 - Derived: matches, alerts, bulletins, job runs.
 - Scan tokens are stored as a sha256 hash plus an 8-character display prefix; the secret is
   shown once and never stored.
+- Invites: the invited email, role, who sent it and its dates; the link's token only as a
+  sha256 hash. An audit log of membership changes (who invited, joined, left, was removed or
+  changed role, and org renames).
 
 ## Outbound connections
 
@@ -99,14 +102,16 @@ Settings → Your data.
 
 - **Export** (`GET /api/export`, `src/lib/org-data.ts`): one JSON file for the signed-in member's
   org, streamed section by section: `org`, `members` (name, email, language, delivery address,
-  role), `profile`, `scanTokens` (name, 8-character prefix, dates; never the hash), `repos`,
+  role), `invites` (email, role, dates; never the link's hash), `events` (the audit log),
+  `profile`, `scanTokens` (name, 8-character prefix, dates; never the hash), `repos`,
   `dependencies`, `runtimes`, `streams` (with repo ids), `bulletins`, `bulletinItems`, `alerts`
   (with the advisory id, severity and package), `feedback`, `deadlines`, `githubInstallations`. Sessions, accounts and
   password hashes are not in it, nor anything of another org.
 - **Delete organisation**: owners only, after typing the org's name. The instance admin (the
   first account) cannot delete their own account this way while other accounts exist. Deleted at once: the org
   and every row that belongs to it, and its pending jobs. If you belong to no other org, your
-  user goes too (sessions, sign-in accounts, your feedback) and you are signed out.
+  user goes too (sessions, sign-in accounts, your feedback) and you are signed out. Other
+  members keep their accounts; one left without any org gets a new, empty one.
   Shared catalog data stays: packages, sources, collected items, advisories (public data, not
   yours) and finished jobs and run logs (ids and counts only).
 
@@ -115,9 +120,9 @@ Settings → Your data.
 Every tenant table carries `orgId` and cascades from `Org`; the auth tables cascade from `User`
 (`prisma/schema.prisma`):
 
-| Deleted with the org                                                                                                                                                                                            | Deleted with the user                                                          | Kept                                                                                                   |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| OrgMember, Repo, Dependency, RepoRuntime, ItemMatch, Alert, Bulletin, BulletinItem, Feedback, InterestProfile, Deadline, BulletinStream, StreamRepo, ScanToken, GithubInstallation, pending jobs naming the org | Session, Account, OrgMember, Feedback (a token they created loses its creator) | Package, Service, Source, Item, ItemTriage, Advisory, finished jobs and run logs (ids and counts only) |
+| Deleted with the org                                                                                                                                                                                                                 | Deleted with the user                                                                                | Kept                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| OrgMember, Repo, Dependency, RepoRuntime, ItemMatch, Alert, Bulletin, BulletinItem, Feedback, InterestProfile, Deadline, BulletinStream, StreamRepo, ScanToken, GithubInstallation, OrgInvite, OrgEvent, pending jobs naming the org | Session, Account, OrgMember, Feedback (a token, invite or audit event they created loses its author) | Package, Service, Source, Item, ItemTriage, Advisory, finished jobs and run logs (ids and counts only) |
 
 `src/lib/org-data.integration.test.ts` fills every tenant table, deletes the org and checks each
 one is empty; a new tenant table must cascade from `Org` too.

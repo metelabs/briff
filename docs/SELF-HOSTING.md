@@ -69,9 +69,22 @@ own account right after the first start, before you share the URL.
   `security-scan`, `weekly-bulletin`, ...).
 - Sign-up is open by default. To close it after your account exists, set
   `ALLOW_SIGNUP=false` in `.env` and run `docker compose up -d`. The first account can always
-  be created, even with `ALLOW_SIGNUP=false`. There is no invite system.
+  be created, even with `ALLOW_SIGNUP=false`, and so can an account opened from an invite
+  link (see below).
 - Sign-ups are limited to 5 per hour per client IP, read from the `X-Real-IP` header (the
   Caddy example sets it).
+
+### Inviting teammates
+
+An owner invites people from **Settings → Members**: email and role (member or owner). The
+invite email links to `/invite/<token>`; the link works once, for 7 days, and only for an
+account with that address (sign in, or create the account from the link, also on a closed
+instance). Members use repos, streams, alerts and bulletins and get every bulletin and alert
+email; owners also invite, change roles, remove members and rename or delete the organisation.
+The last owner cannot leave or be demoted. Without SMTP the invite is not emailed: Settings
+shows the link so you can pass it on yourself. An organisation can send 20 invites a day. One
+account can belong to several organisations and switches between them in the account menu
+(where **Create organisation** starts a new one).
 
 ## What works without the optional parts
 

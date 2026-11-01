@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { flashFor, flashStep, LINK_ERROR_FALLBACK, strippedUrl } from "./flash";
+import {
+  flashFor,
+  flashStep,
+  LINK_ERROR_FALLBACK,
+  membershipFlashQuery,
+  strippedUrl,
+} from "./flash";
 
 const q = (s: string) => new URLSearchParams(s);
 
@@ -34,6 +40,16 @@ describe("flashFor", () => {
       "Your password was changed. Sign in with the new one."
     );
     expect(flashFor("/login", q("deleted=1"))?.strip).toEqual(["deleted"]);
+  });
+
+  it("joining or leaving an org, on Home or onboarding", () => {
+    expect(flashFor("/", q("joined=1"))?.message).toContain("You joined the organisation.");
+    expect(flashFor("/onboarding", q("joined=1"))?.kind).toBe("ok");
+    expect(flashFor("/", q("left=1"))?.message).toBe("You left the organisation.");
+    expect(flashFor("/settings", q("joined=1"))).toBeNull();
+    expect(membershipFlashQuery({ joined: "1" })).toBe("?joined=1");
+    expect(membershipFlashQuery({ left: "1" })).toBe("?left=1");
+    expect(membershipFlashQuery({ joined: ["1", "1"] })).toBe("");
   });
 
   it("ignores other pages, values and params", () => {

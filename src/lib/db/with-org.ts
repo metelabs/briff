@@ -25,6 +25,8 @@ export const TENANT_MODELS = [
   "StreamRepo",
   "ScanToken",
   "GithubInstallation",
+  "OrgInvite",
+  "OrgEvent",
 ] as const;
 
 export type TenantModel = (typeof TENANT_MODELS)[number];

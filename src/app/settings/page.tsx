@@ -14,6 +14,8 @@ import { withOrg } from "@/lib/db/with-org";
 import { smtpConfig } from "@/lib/email/mailer";
 import { plural, shortDate, shortDateTime } from "@/lib/format";
 import { listScanTokens } from "@/lib/scan/token-store";
+import { loadMembers, loadOpenInvites, loadOrgEvents, ORG_NAME_MAX } from "@/lib/members";
+import { eventSentence } from "@/lib/org-events";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { EXCLUDE_AT, parseWeights } from "@/pipeline/weights";
@@ -31,6 +33,7 @@ import {
   SectionIndex,
   SignOutButton,
 } from "./_client";
+import { InviteForm, MemberList, OrgNameForm, PendingInvites } from "./_members";
 
 export const metadata: Metadata = { title: "Settings · Briff" };
 
@@ -40,6 +43,8 @@ const SECTIONS = [
   { id: "delivery", label: "Delivery" },
   { id: "github", label: "GitHub App" },
   { id: "scan-tokens", label: "Scan tokens" },
+  { id: "organisation", label: "Organisation" },
+  { id: "members", label: "Members" },
   { id: "your-data", label: "Your data" },
   { id: "account", label: "Account" },
 ];
@@ -85,24 +90,30 @@ export default async function SettingsPage() {
   const ctx = await requireOrgContext();
   const db = getDb();
   const scoped = withOrg(db, ctx.orgId);
-  const [profile, user, streams, tokens, org, github, capacity] = await Promise.all([
-    scoped.interestProfile.findFirst({
-      select: { text: true, weights: true, refreshedAt: true, model: true, promptVersion: true },
-    }),
-    // The user row is the signed-in user's own (not tenant data).
-    db.user.findUniqueOrThrow({
-      where: { id: ctx.userId },
-      select: { email: true, deliveryEmail: true },
-    }),
-    scoped.bulletinStream.findMany({
-      orderBy: { createdAt: "asc" },
-      select: { id: true, name: true, _count: { select: { repos: true } } },
-    }),
-    listScanTokens(db, ctx.orgId),
-    db.org.findUniqueOrThrow({ where: { id: ctx.orgId }, select: { name: true } }),
-    loadGithubAppState(ctx.orgId),
-    loadOrgCapacity(db, ctx.orgId),
-  ]);
+  const owner = ctx.role === "owner";
+  const [profile, user, streams, tokens, org, github, capacity, members, invites, events] =
+    await Promise.all([
+      scoped.interestProfile.findFirst({
+        select: { text: true, weights: true, refreshedAt: true, model: true, promptVersion: true },
+      }),
+      // The user row is the signed-in user's own (not tenant data).
+      db.user.findUniqueOrThrow({
+        where: { id: ctx.userId },
+        select: { email: true, deliveryEmail: true },
+      }),
+      scoped.bulletinStream.findMany({
+        orderBy: { createdAt: "asc" },
+        select: { id: true, name: true, _count: { select: { repos: true } } },
+      }),
+      listScanTokens(db, ctx.orgId),
+      db.org.findUniqueOrThrow({ where: { id: ctx.orgId }, select: { name: true } }),
+      loadGithubAppState(ctx.orgId),
+      loadOrgCapacity(db, ctx.orgId),
+      loadMembers(db, ctx.orgId),
+      owner ? loadOpenInvites(db, ctx.orgId) : Promise.resolve([]),
+      owner ? loadOrgEvents(db, ctx.orgId) : Promise.resolve([]),
+    ]);
+  const ownerCount = members.filter((m) => m.role === "owner").length;
   const weights = Object.entries(parseWeights(profile?.weights));
   const emailReady = smtpConfig() !== null;
 
@@ -313,8 +324,96 @@ export default async function SettingsPage() {
           </Block>
 
           <Block
-            id="your-data"
+            id="organisation"
             index={5}
+            title="Organisation"
+            sub={
+              owner
+                ? "Everything in Briff belongs to an organisation: repos, streams, bulletins, alerts. Switch between yours in the account menu."
+                : "Everything in Briff belongs to an organisation. Only its owners can rename it."
+            }
+          >
+            {owner ? (
+              <OrgNameForm name={org.name} maxLength={ORG_NAME_MAX} />
+            ) : (
+              <p className="font-medium [overflow-wrap:anywhere]">{org.name}</p>
+            )}
+          </Block>
+
+          <Block
+            id="members"
+            index={6}
+            title="Members"
+            sub={
+              owner
+                ? "Every member gets the bulletins and security alerts and can use repos, streams and alerts. Owners also invite, change roles, remove members and rename or delete the organisation."
+                : "Every member gets the bulletins and security alerts. Owners invite and manage members."
+            }
+          >
+            <MemberList
+              members={members.map((m) => ({
+                userId: m.userId,
+                name: m.name,
+                email: m.email,
+                role: m.role,
+                joined: shortDate(m.joinedAt),
+                verified: m.verified,
+              }))}
+              currentUserId={ctx.userId}
+              canManage={owner}
+              ownerCount={ownerCount}
+            />
+            {owner && (
+              <>
+                <div className="border-line mt-2 border-t pt-4">
+                  <h3 className="mb-3 text-[13px] font-medium">Invite someone</h3>
+                  <InviteForm />
+                </div>
+                <div className="border-line mt-5 border-t pt-4">
+                  <h3 className="mb-1 text-[13px] font-medium">Pending invites</h3>
+                  <PendingInvites
+                    invites={invites.map((i) => ({
+                      id: i.id,
+                      email: i.email,
+                      role: i.role,
+                      sent: shortDate(i.sentAt),
+                      expires: shortDate(i.expiresAt),
+                      expired: i.expired,
+                    }))}
+                  />
+                </div>
+                <div className="border-line mt-5 border-t pt-4">
+                  <h3 className="mb-1 text-[13px] font-medium">Activity</h3>
+                  {events.length === 0 ? (
+                    <p className="text-fg-muted text-[13.5px]">Nothing yet.</p>
+                  ) : (
+                    <ol>
+                      {events.map((e) => (
+                        <li
+                          key={e.id}
+                          className="border-line flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 border-t py-2 text-[13.5px] first:border-t-0"
+                        >
+                          <span className="min-w-0 [overflow-wrap:anywhere]">
+                            {eventSentence(e)}
+                          </span>
+                          <time
+                            dateTime={e.createdAt.toISOString()}
+                            className="text-fg-muted shrink-0 text-[12.5px] tabular-nums"
+                          >
+                            {shortDateTime(e.createdAt)}
+                          </time>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+              </>
+            )}
+          </Block>
+
+          <Block
+            id="your-data"
+            index={7}
             title="Your data"
             sub="Take a copy of everything Briff keeps for this organisation, or delete it."
           >
@@ -338,13 +437,17 @@ export default async function SettingsPage() {
                   only organisation.
                 </small>
               </div>
-              <DeleteOrgButton orgName={org.name} />
+              {owner ? (
+                <DeleteOrgButton orgName={org.name} />
+              ) : (
+                <span className="text-fg-muted text-[12.5px]">Only owners can delete it.</span>
+              )}
             </div>
           </Block>
 
           <Block
             id="account"
-            index={6}
+            index={8}
             title="Account"
             sub="Sign-in email, password and theme. The theme switch is in the menu under your initials."
           >

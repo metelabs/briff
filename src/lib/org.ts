@@ -25,6 +25,9 @@ export async function createOrgForUser(
     });
     await tx.orgMember.create({ data: { orgId, userId: args.userId, role: "owner" } });
     await tx.interestProfile.create({ data: { orgId } });
+    await tx.orgEvent.create({
+      data: { orgId, actorUserId: args.userId, type: "org_created", detail: args.name },
+    });
     await ensureDefaultStream(tx, orgId);
   });
   return orgId;

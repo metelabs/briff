@@ -3,13 +3,16 @@
 import { APIError } from "better-auth/api";
 import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { getAuth, VERIFIED_CALLBACK } from "@/lib/auth/auth";
-import { requireOrgContext } from "@/lib/auth/session";
+import { listUserOrgs, ORG_COOKIE, requireOrgContext } from "@/lib/auth/session";
 import { log } from "@/lib/log";
 import { getDb } from "@/lib/db/client";
 import { withOrg } from "@/lib/db/with-org";
+import { MAX_ORGS_PER_USER, ORG_NAME_MAX } from "@/lib/members";
+import { createOrgForUser } from "@/lib/org";
 import { STREAM_COOKIE } from "@/lib/stream-scope";
 import { THEME_COOKIE, THEMES, type Theme } from "@/lib/theme";
 
@@ -70,4 +73,62 @@ export async function resendVerificationAction(): Promise<ResendState> {
     return { ok: false, message: "Could not send the email. Try again in a minute." };
   }
   return { ok: true, message: `Sent. Check ${ctx.email}.` };
+}
+
+async function chooseOrg(orgId: string): Promise<void> {
+  const jar = await cookies();
+  jar.set(ORG_COOKIE, orgId, { path: "/", maxAge: YEAR, sameSite: "lax", httpOnly: true });
+  // The stream scope belongs to the previous org.
+  jar.delete(STREAM_COOKIE);
+}
+
+/** Org switcher (account menu): only an org the user is a member of can be chosen. */
+export async function switchOrgAction(orgId: string): Promise<{ ok: boolean }> {
+  const ctx = await requireOrgContext();
+  const parsed = z.string().min(1).max(100).safeParse(orgId);
+  if (!parsed.success) return { ok: false };
+  const member = await withOrg(getDb(), parsed.data).orgMember.findFirst({
+    where: { userId: ctx.userId },
+    select: { id: true },
+  });
+  if (!member) return { ok: false };
+  await chooseOrg(parsed.data);
+  log.info({ userId: ctx.userId, orgId: parsed.data }, "org switched");
+  redirect("/");
+}
+
+export interface CreateOrgState {
+  ok: boolean;
+  message: string | null;
+  saved?: string;
+}
+
+const orgNameSchema = z
+  .string()
+  .trim()
+  .min(1, "Give the organisation a name.")
+  .max(ORG_NAME_MAX, `At most ${ORG_NAME_MAX} characters.`);
+
+/** "Create organisation" in the switcher: a new org owned by the user, then switch to it. */
+export async function createOrgAction(
+  _prev: CreateOrgState,
+  form: FormData
+): Promise<CreateOrgState> {
+  const ctx = await requireOrgContext();
+  const raw = String(form.get("name") ?? "");
+  const parsed = orgNameSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "Invalid name.", saved: raw };
+  }
+  if ((await listUserOrgs(ctx.userId)).length >= MAX_ORGS_PER_USER) {
+    return {
+      ok: false,
+      message: `You belong to ${MAX_ORGS_PER_USER} organisations, the most one account can have.`,
+      saved: raw,
+    };
+  }
+  const orgId = await createOrgForUser(getDb(), { name: parsed.data, userId: ctx.userId });
+  log.info({ userId: ctx.userId, orgId }, "org created");
+  await chooseOrg(orgId);
+  redirect("/");
 }

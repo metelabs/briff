@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { isoWeekLabel, weekStartOf } from "@/pipeline/bulletin";
 import { splitReviewed } from "@/pipeline/alert-review";
 import { sectionOf } from "@/pipeline/bulletin-view";
+import { membershipFlashQuery } from "@/lib/flash";
 import { attentionSeries, lastWeeks, nextBulletinAt, severitySplit } from "@/pipeline/home";
 
 export const metadata: Metadata = { title: "Home · Briff" };
@@ -34,10 +35,16 @@ interface Counts {
  * Home: one overview with a way into every page. Bulletins per stream (all streams), then
  * alerts, stack health and repos for the stream chosen in the top bar, then what Briff did.
  */
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const ctx = await requireOrgContext();
   // Onboarding is shown once, on the first run; after that the top bar's sheet connects repos.
-  if (await shouldOnboard(getDb(), ctx.orgId, ctx.userId)) redirect("/onboarding");
+  if (await shouldOnboard(getDb(), ctx.orgId, ctx.userId)) {
+    redirect(`/onboarding${membershipFlashQuery(await searchParams)}`);
+  }
 
   const now = new Date();
   const weeks = lastWeeks(now);
