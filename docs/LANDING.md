@@ -2,15 +2,16 @@
 
 The app serves its own public pages, in the Triage design system, without a session:
 
-| Path                                         | What                                                                                   | Code                                               |
-| -------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `/` (no session cookie)                      | Landing page                                                                           | `src/proxy.ts` rewrites to `/landing`              |
-| `/` (session cookie)                         | The dashboard, unchanged (a stale cookie still ends at `/login`)                       | `src/app/page.tsx`                                 |
-| `/landing`                                   | The landing page itself (canonical `/`, closed in robots.txt)                          | `src/app/landing/page.tsx`                         |
-| `/replay/php2shell`, `/replay/node-oct-2026` | The replays, from the same scenarios and engine as `docs/replay/*.html`                | `src/app/replay/[id]/page.tsx`                     |
-| `/terms`, `/privacy`, `/refunds`, `/dpa`     | Legal pages of the hosted service (one layout, operator facts in `src/lib/legal.ts`)   | `src/app/<page>/page.tsx`, `src/components/legal/` |
-| `/.well-known/security.txt`                  | RFC 9116 contact file, static; renew `Expires` yearly (a test fails 30 days before)    | `public/.well-known/security.txt`                  |
-| `/robots.txt`, `/sitemap.xml`                | Allow `/`, `/replay/` and the legal pages, close every app route; list the public URLs | `src/app/robots.ts`, `src/app/sitemap.ts`          |
+| Path                                         | What                                                                                                        | Code                                               |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `/` (no session cookie)                      | Landing page                                                                                                | `src/proxy.ts` rewrites to `/landing`              |
+| `/` (session cookie)                         | The dashboard, unchanged (a stale cookie still ends at `/login`)                                            | `src/app/page.tsx`                                 |
+| `/landing`                                   | The landing page itself (canonical `/`, closed in robots.txt)                                               | `src/app/landing/page.tsx`                         |
+| `/replay/php2shell`, `/replay/node-oct-2026` | The replays, from the same scenarios and engine as `docs/replay/*.html`                                     | `src/app/replay/[id]/page.tsx`                     |
+| `/terms`, `/privacy`, `/refunds`, `/dpa`     | Legal pages of the hosted service (one layout, operator facts in `src/lib/legal.ts`)                        | `src/app/<page>/page.tsx`, `src/components/legal/` |
+| `/.well-known/security.txt`                  | RFC 9116 contact file, static; renew `Expires` yearly (a test fails 30 days before)                         | `public/.well-known/security.txt`                  |
+| `/pricing` (hosted service only)             | Plans from `PLANS`, monthly/yearly switch, beta banner, FAQ; 404 self-hosted                                | `src/app/pricing/page.tsx`                         |
+| `/robots.txt`, `/sitemap.xml`                | Allow `/`, `/replay/`, `/pricing` (hosted) and the legal pages, close every app route; list the public URLs | `src/app/robots.ts`, `src/app/sitemap.ts`          |
 
 - The proxy only checks whether Better Auth's session cookie is present; it reads no database.
   It runs for `/` alone (`matcher: "/"`), so no other request (uploads, webhooks) passes it.
@@ -34,6 +35,11 @@ The app serves its own public pages, in the Triage design system, without a sess
   Security, Status and the support address (`TRUST_LINKS` in `links.ts`); the sign-up
   form says that creating an account accepts the Terms and Privacy Policy (not on the first,
   instance-owning account).
+- Plans and prices exist only on the hosted service (`BRIFF_CLOUD=true`). The public header and
+  both footers link to `/pricing` and the hero names the Free plan only there; a self-hosted
+  instance renders none of it, answers 404 on `/pricing` and `/settings/billing`, and leaves
+  `/pricing` out of the sitemap and robots. Every number on the pricing page comes from `PLANS`
+  in `src/lib/plans.ts`, the table the limit checks read.
 - Links to the repository (Self-host, Docs, Source, Security) are built from `SOURCE_URL` in
   `src/components/landing/links.ts`. The repository is private, so they 404 for visitors until
   it is opened; change that one constant if the source moves.

@@ -25,12 +25,18 @@ export const LEGAL_PATHS = ["/terms", "/privacy", "/refunds", "/dpa"] as const;
 /** Social preview image (the brand's og-image, the same file as src/app/opengraph-image.png). */
 export const OG_IMAGE = { url: "/brand/og-image.png", width: 1200, height: 630, alt: "Briff" };
 
+/** The plans page; public on the hosted service only (BRIFF_CLOUD), a 404 when self-hosted. */
+export const PRICING_PATH = "/pricing";
+
 /** Public routes, in the order the sitemap lists them. */
-export const PUBLIC_PATHS: readonly string[] = [
-  "/",
-  ...PUBLIC_REPLAY_IDS.map((id) => `/replay/${id}`),
-  ...LEGAL_PATHS,
-];
+export function publicPaths({ pricing }: { pricing: boolean }): readonly string[] {
+  return [
+    "/",
+    ...(pricing ? [PRICING_PATH] : []),
+    ...PUBLIC_REPLAY_IDS.map((id) => `/replay/${id}`),
+    ...LEGAL_PATHS,
+  ];
+}
 
 /**
  * Everything else the app serves, closed to crawlers (robots.ts). A test keeps it in step with

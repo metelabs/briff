@@ -14,6 +14,7 @@ import { CodeBlock, CommandBox } from "@/components/ui/command-box";
 import { CountBadge } from "@/components/ui/section-header";
 import { Tag } from "@/components/ui/tag";
 import { shortDate } from "@/lib/format";
+import { limitLabel, PLANS } from "@/lib/plans";
 import { caps, strings } from "@/lib/i18n";
 import { localScanCommands, scanWorkflowYaml, WORKFLOW_PATH } from "@/lib/scan/workflow";
 import { cn } from "@/lib/utils";
@@ -61,7 +62,8 @@ export interface HeroStat {
   security: boolean;
 }
 
-export function Hero({ stats }: { stats: HeroStat[] }) {
+/** `pricing`: the hosted service (BRIFF_CLOUD) names its Free plan; a self-hosted instance does not. */
+export function Hero({ stats, pricing }: { stats: HeroStat[]; pricing: boolean }) {
   return (
     <section className="grid items-end gap-10 pt-10 pb-14 min-[980px]:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] min-[980px]:pb-20 md:pt-16">
       <div className="min-w-0">
@@ -100,8 +102,18 @@ export function Hero({ stats }: { stats: HeroStat[] }) {
           </a>
         </div>
         <p className="rise text-fg-muted mt-3 max-w-[56ch] text-[12.5px] [--i:4]">
-          Sign-ups are open. Hosted defaults: 10 repos and 2 streams per organisation. Self-host
-          with one Docker image and Postgres; raise the limits in Admin.
+          {pricing ? (
+            <>
+              Sign-ups are open. Free: {limitLabel(PLANS.free.repos, "repo")} and{" "}
+              {limitLabel(PLANS.free.streams, "stream")} per organisation;{" "}
+              <Link href="/pricing" className="text-brand underline-offset-4 hover:underline">
+                Pro and Team
+              </Link>{" "}
+              for more. Self-host with one Docker image and Postgres, free and unlimited.
+            </>
+          ) : (
+            "Sign-ups are open. Self-host with one Docker image and Postgres, free and unlimited."
+          )}
         </p>
       </div>
       <ul className="grid gap-2 min-[560px]:grid-cols-3 min-[980px]:grid-cols-1">

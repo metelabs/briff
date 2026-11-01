@@ -24,8 +24,9 @@ lockfiles and runtime files only; it never reads source code.
 Briff is a Next.js app and a worker on Postgres. Two ways to start:
 
 - **Hosted beta:** sign up at [app.briff.dev](https://app.briff.dev). Sign-ups are open: each
-  new organisation defaults to 10 repos and 2 streams, including the default stream.
-- **Self-hosted:** one Docker image and Postgres; the step-by-step guide is
+  new organisation starts on the Free plan (10 repos, 2 streams including the default one, 1
+  member); Pro and Team are on the pricing page and start when billing opens.
+- **Self-hosted:** one Docker image and Postgres, no plans and no limits; the step-by-step guide is
   [docs/SELF-HOSTING.md](docs/SELF-HOSTING.md), the short version is under
   [Self-hosting](#self-hosting) below.
 

@@ -61,9 +61,11 @@ The instance admin is the **oldest account** (`isInstanceAdmin` in `src/lib/auth
 the user with the earliest `createdAt`). There is no admin flag or role to set; create your
 own account right after the first start, before you share the URL.
 
-- Every account gets its own organisation with 10 repositories and 2 streams. The admin's
-  **Admin** page (`/admin`) shows instance totals, can raise an organisation's limits and
-  send a test email; **Admin → Runs** (`/admin/runs`) queues jobs by hand (`collect-sources`,
+- Every account gets its own organisation. A self-hosted instance has no plans and no
+  limits: repos, streams and members are unlimited as long as `BRIFF_CLOUD` stays `false`
+  (the default; `true` is only for the hosted service at app.briff.dev, where it turns on
+  plans, `/pricing` and Settings → Billing). The admin's **Admin** page (`/admin`) shows
+  instance totals and every organisation's usage and can send a test email; **Admin → Runs** (`/admin/runs`) queues jobs by hand (`collect-sources`,
   `security-scan`, `weekly-bulletin`, ...).
 - Sign-up is open by default. To close it after your account exists, set
   `ALLOW_SIGNUP=false` in `.env` and run `docker compose up -d`. The first account can always
@@ -223,4 +225,4 @@ another stack's data.
 | No email arrives                                              | `/api/health` `warnings` says `email delivery disabled: missing ...`; fill all five SMTP variables. A `535` in the worker log is a wrong SMTP password. Admin → Send test email checks the setup.                                               |
 | No weekly bulletin on Monday                                  | `ANTHROPIC_API_KEY` is empty (`LLM unavailable` in the worker log), or no repo is in a stream. Admin can queue `weekly-bulletin` by hand.                                                                                                       |
 | Scanner: `HTTP 401`                                           | Wrong or revoked token, or `BRIFF_API_URL` points at another instance. Create a new token in Settings → Scan tokens.                                                                                                                            |
-| Scanner: `HTTP 409` with `REPO_LIMIT`                         | The organisation reached its repository limit; the admin raises it on `/admin`.                                                                                                                                                                 |
+| Scanner: `HTTP 409` with `REPO_LIMIT`                         | Only with `BRIFF_CLOUD=true`, which a self-hosted instance should not set: the organisation reached its plan's repository limit. Set `BRIFF_CLOUD=false` (or remove the line) and run `docker compose up -d`.                                   |

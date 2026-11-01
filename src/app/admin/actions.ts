@@ -8,9 +8,10 @@ import { getDb } from "@/lib/db/client";
 import { renderTestEmail } from "@/lib/email/alert-email";
 import { sendMail } from "@/lib/email/mailer";
 import { PRODUCT_LANGUAGE } from "@/lib/i18n";
-import { getEnv } from "@/lib/env";
+import { getEnv, isCloud } from "@/lib/env";
 import { enqueueJob } from "@/lib/jobs/queue";
 import { log } from "@/lib/log";
+import { PLAN_IDS, PLANS, type PlanId } from "@/lib/plans";
 
 import { RUNNABLE_JOB_TYPES } from "./job-types";
 
@@ -53,37 +54,63 @@ export async function sendTestEmailAction(): Promise<AdminState> {
   return { ok: false, message: `Failed: ${result.error}` };
 }
 
-export interface LimitsState extends AdminState {
-  repoLimit?: number;
-  streamLimit?: number;
+export interface OrgPlanSettings {
+  plan: PlanId;
+  /** Overrides; null = the plan's limit. */
+  repoLimit: number | null;
+  streamLimit: number | null;
 }
 
-export async function raiseOrgLimitsAction(
-  _prev: LimitsState,
-  form: FormData
-): Promise<LimitsState> {
+export interface LimitsState extends AdminState {
+  /** What was saved, so the reopened dialog shows it (see FormState.saved in settings). */
+  saved?: OrgPlanSettings;
+}
+
+/** An empty or missing field clears the override. */
+const override = (max: number) =>
+  z.preprocess(
+    // A disabled field (the plan is unlimited there) is not submitted at all.
+    (v) => (v === undefined || (typeof v === "string" && v.trim() === "") ? null : v),
+    z.coerce.number().int().min(1).max(max).nullable()
+  );
+
+const planSchema = z.object({
+  orgId: z.string().min(1),
+  plan: z.enum(PLAN_IDS),
+  repoLimit: override(100000),
+  streamLimit: override(10000),
+});
+
+export async function saveOrgPlanAction(_prev: LimitsState, form: FormData): Promise<LimitsState> {
   await requireAdminContext();
-  const parsed = z
-    .object({
-      orgId: z.string().min(1),
-      repoLimit: z.coerce.number().int().min(1).max(100000),
-      streamLimit: z.coerce.number().int().min(1).max(10000),
-    })
-    .safeParse(Object.fromEntries(form));
-  if (!parsed.success) return { ok: false, message: "Enter positive whole-number limits." };
-  const { orgId, repoLimit, streamLimit } = parsed.data;
-  const changed = await getDb().org.updateMany({
-    where: { id: orgId, repoLimit: { lte: repoLimit }, streamLimit: { lte: streamLimit } },
-    data: { repoLimit, streamLimit },
+  if (!isCloud())
+    return { ok: false, message: "Plans and limits are off on this instance (BRIFF_CLOUD)." };
+  const parsed = planSchema.safeParse(Object.fromEntries(form));
+  if (!parsed.success)
+    return { ok: false, message: "Pick a plan; overrides are empty or positive whole numbers." };
+  const { orgId, plan, repoLimit, streamLimit } = parsed.data;
+  const db = getDb();
+  const saved = await db.$transaction(async (tx) => {
+    const org = await tx.org.findUnique({ where: { id: orgId }, select: { plan: true } });
+    if (!org) return false;
+    await tx.org.update({
+      where: { id: orgId },
+      data: {
+        plan,
+        repoLimit,
+        streamLimit,
+        ...(org.plan !== plan ? { planUpdatedAt: new Date() } : {}),
+      },
+    });
+    return true;
   });
-  if (!changed.count)
-    return { ok: false, message: "Organisation not found, or a limit would decrease." };
+  if (!saved) return { ok: false, message: "Organisation not found." };
   revalidatePath("/admin");
   revalidatePath("/repos");
+  revalidatePath("/settings");
   return {
     ok: true,
-    message: "Limits saved. Rescan any repositories previously skipped.",
-    repoLimit,
-    streamLimit,
+    message: `Saved: ${PLANS[plan].name} plan. Rescan any repositories previously skipped.`,
+    saved: { plan, repoLimit, streamLimit },
   };
 }

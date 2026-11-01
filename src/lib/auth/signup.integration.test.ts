@@ -57,8 +57,7 @@ describe.skipIf(!url)("open signup window", () => {
     expect((await signup("192.0.2.42")).status).toBe(200);
     const db = getDb();
     const org = await db.org.findFirstOrThrow({ where: { name: names[0] } });
-    expect(org.repoLimit).toBe(10);
-    expect(org.streamLimit).toBe(2);
+    expect(org).toMatchObject({ plan: "free", repoLimit: null, streamLimit: null });
     expect((await db.user.findUniqueOrThrow({ where: { email: emails[0] } })).emailVerified).toBe(
       false
     );

@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/ui/section-header";
 import { TruncatedText } from "@/components/ui/tooltip";
 import { requireAdminContext } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
-import { envWarnings } from "@/lib/env";
+import { envWarnings, isCloud } from "@/lib/env";
 import { plural } from "@/lib/format";
 import { caps } from "@/lib/i18n";
 import { loadJobHealth } from "@/lib/ops/health";
@@ -23,6 +23,7 @@ import {
   type OrgFilter,
   type OrgRow,
 } from "@/lib/org-directory-view";
+import { atLimit as reached, PLANS } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 
 import { EditLimitsButton, OrgSearch, TestEmailButton } from "./_client";
@@ -40,12 +41,12 @@ function Stat({ value, caption }: { value: number; caption: string }) {
   );
 }
 
-/** "4 / 10", in ochre with the words "at limit" once the limit is reached. */
-function Usage({ used, limit }: { used: number; limit: number }) {
-  const full = used >= limit;
+/** "4 / 10", in ochre with the words "at limit" once the limit is reached; "4" when unlimited. */
+function Usage({ used, limit }: { used: number; limit: number | null }) {
+  const full = reached(used, limit);
   return (
     <span className={cn("tabular-nums", full && "text-upgrade font-medium")}>
-      {used} / {limit}
+      {limit === null ? used : `${used} / ${limit}`}
       {full && <span className="ml-1.5 text-[12px]">at limit</span>}
     </span>
   );
@@ -55,7 +56,8 @@ const TH = "bg-surface-2 text-fg-muted type-label px-3.5 py-2.5 text-left whites
 const TD =
   "group-hover/row:bg-surface-2 border-line border-t px-3.5 py-2.5 whitespace-nowrap transition-colors";
 
-function OrgTable({ rows }: { rows: OrgRow[] }) {
+/** `cloud` false (self-hosted): no plans and no limits, so no plan column and no Edit limits. */
+function OrgTable({ rows, cloud }: { rows: OrgRow[]; cloud: boolean }) {
   return (
     <div className="bg-surface border-line rounded-card overflow-x-auto border">
       <table className="w-full min-w-[820px] border-separate border-spacing-0 text-[13px]">
@@ -67,6 +69,11 @@ function OrgTable({ rows }: { rows: OrgRow[] }) {
             <th scope="col" className={TH}>
               {caps("Owner")}
             </th>
+            {cloud && (
+              <th scope="col" className={TH}>
+                {caps("Plan")}
+              </th>
+            )}
             <th scope="col" className={TH}>
               {caps("Members")}
             </th>
@@ -79,9 +86,11 @@ function OrgTable({ rows }: { rows: OrgRow[] }) {
             <th scope="col" className={TH}>
               {caps("Created")}
             </th>
-            <th scope="col" className={cn(TH, "max-[767px]:hidden")}>
-              <span className="sr-only">Actions</span>
-            </th>
+            {cloud && (
+              <th scope="col" className={cn(TH, "max-[767px]:hidden")}>
+                <span className="sr-only">Actions</span>
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -92,16 +101,19 @@ function OrgTable({ rows }: { rows: OrgRow[] }) {
                 className="bg-surface group-hover/row:bg-surface-2 border-line sticky left-0 z-1 max-w-[220px] border-t border-r px-3.5 py-2.5 text-left font-medium transition-colors"
               >
                 <TruncatedText>{org.name}</TruncatedText>
-                {customLimits(org) && (
+                {cloud && customLimits(org) && (
                   <span className="text-fg-muted block text-[12px] font-normal">custom limits</span>
                 )}
-                <span className="mt-1.5 block min-[768px]:hidden">
-                  <EditLimitsButton org={org} />
-                </span>
+                {cloud && (
+                  <span className="mt-1.5 block min-[768px]:hidden">
+                    <EditLimitsButton org={org} />
+                  </span>
+                )}
               </th>
               <td className={cn(TD, "text-fg-muted max-w-[240px]")}>
                 <TruncatedText>{org.ownerEmail ?? "no owner"}</TruncatedText>
               </td>
+              {cloud && <td className={TD}>{PLANS[org.plan].name}</td>}
               <td className={cn(TD, "tabular-nums")}>{org.members}</td>
               <td className={TD}>
                 <Usage used={org.repos} limit={org.repoLimit} />
@@ -112,14 +124,19 @@ function OrgTable({ rows }: { rows: OrgRow[] }) {
               <td className={cn(TD, "text-fg-muted tabular-nums")}>
                 {org.createdAt.toISOString().slice(0, 10)}
               </td>
-              <td className={cn(TD, "py-1.5 text-right max-[767px]:hidden")}>
-                <EditLimitsButton org={org} />
-              </td>
+              {cloud && (
+                <td className={cn(TD, "py-1.5 text-right max-[767px]:hidden")}>
+                  <EditLimitsButton org={org} />
+                </td>
+              )}
             </tr>
           ))}
           {rows.length === 0 && (
             <tr>
-              <td colSpan={7} className="text-fg-muted border-line border-t px-3.5 py-5">
+              <td
+                colSpan={cloud ? 8 : 6}
+                className="text-fg-muted border-line border-t px-3.5 py-5"
+              >
                 No organisation matches.
               </td>
             </tr>
@@ -138,10 +155,11 @@ export default async function AdminPage({
   const ctx = await requireAdminContext();
   const db = getDb();
   const query = parseOrgQuery(await searchParams);
+  const cloud = isCloud();
   const now = new Date();
   const since = new Date(now.getTime() - RUNS_WINDOW_DAYS * 86_400_000);
   const [orgs, users, failedRuns, health] = await Promise.all([
-    loadOrgDirectory(db),
+    loadOrgDirectory(db, { cloud }),
     db.user.count(),
     db.run.count({ where: { status: "failed", startedAt: { gte: since } } }),
     loadJobHealth(db, now),
@@ -160,11 +178,13 @@ export default async function AdminPage({
   ]
     .filter(Boolean)
     .join("; ");
-  const filters: { value: OrgFilter; label: string }[] = [
-    { value: "all", label: "All" },
-    { value: "at-limit", label: "At limit" },
-    { value: "custom", label: "Custom limits" },
-  ];
+  const filters: { value: OrgFilter; label: string }[] = cloud
+    ? [
+        { value: "all", label: "All" },
+        { value: "at-limit", label: "At limit" },
+        { value: "custom", label: "Custom limits" },
+      ]
+    : [{ value: "all", label: "All" }];
   const first = (page.page - 1) * ORG_PAGE_SIZE + 1;
 
   return (
@@ -172,7 +192,11 @@ export default async function AdminPage({
       <PageHeader
         eyebrow="This instance"
         title="Admin"
-        sub="Who uses this instance, what the worker did, and organisation limits."
+        sub={
+          cloud
+            ? "Who uses this instance, what the worker did, and organisation plans and limits."
+            : "Who uses this instance and what the worker did."
+        }
       />
       <div className="grid gap-3">
         <div className="grid grid-cols-2 gap-2 min-[560px]:grid-cols-4">
@@ -217,10 +241,10 @@ export default async function AdminPage({
           <div>
             <h2 className="type-h2">Organisations</h2>
             <p className="text-fg-muted mt-1 max-w-[72ch] text-[13.5px]">
-              The instance admin view: every organisation on this instance and its repository and
-              stream limits (10 and 2 by default; Edit limits raises them for one organisation).
-              Only the instance admin, the first account, sees it; on a self-hosted instance this is
-              usually just your own organisation.
+              {cloud
+                ? `The instance admin view: every organisation, its plan and the repos and streams it uses (Free: ${PLANS.free.repos} repos, ${PLANS.free.streams} streams). Edit limits sets the plan, or raises one organisation's limits above it; Unlimited is for your own organisation and friends.`
+                : "The instance admin view: every organisation on this instance and the repos and streams it uses. A self-hosted instance has no plans or limits."}{" "}
+              Only the instance admin, the first account, sees it.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -235,7 +259,7 @@ export default async function AdminPage({
             />
             <OrgSearch initial={query.q} />
           </div>
-          <OrgTable rows={page.rows} />
+          <OrgTable rows={page.rows} cloud={cloud} />
           <div className="text-fg-muted flex flex-wrap items-center justify-between gap-2 text-[13px] tabular-nums">
             <span>
               {page.total === 0

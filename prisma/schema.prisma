@@ -88,8 +88,13 @@ model Verification {
 // ---------------------------------------------------------------------------
 
 model Org {
-  repoLimit Int @default(10)
-  streamLimit Int @default(2)
+  // Plans and limits (src/lib/plans.ts). Only BRIFF_CLOUD instances read the plan; self-hosted
+  // orgs are unlimited. repoLimit/streamLimit are the admin's overrides: null = the plan's limit,
+  // a value counts only where it is above it.
+  plan OrgPlan @default(free)
+  planUpdatedAt DateTime?
+  repoLimit Int?
+  streamLimit Int?
   githubRepoLimitReached Boolean @default(false)
   baseImageAlerts Boolean @default(true)
   // Last "Re-check now" on Alerts: GitHub App rescans are limited to one per 10 minutes.
@@ -117,6 +122,13 @@ model Org {
   githubInstallations GithubInstallation[]
 
   @@map("org")
+}
+
+enum OrgPlan {
+  free
+  pro
+  team
+  unlimited
 }
 
 enum OrgRole {

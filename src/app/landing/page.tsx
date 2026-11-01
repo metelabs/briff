@@ -13,6 +13,7 @@ import {
   type ReplayCardData,
 } from "@/components/landing/sections";
 import { PageContainer } from "@/components/shell/page-container";
+import { isCloud } from "@/lib/env";
 import { publicSiteUrl } from "@/lib/public-site";
 import { delayLabel } from "@/replay/render";
 import { PUBLIC_REPLAY_IDS, publicReplay, replayEmails, replayHighlights } from "@/replay/public";
@@ -52,6 +53,7 @@ function lead(summary: string): string {
 }
 
 export default function LandingPage() {
+  const cloud = isCloud();
   const replays = PUBLIC_REPLAY_IDS.map((id) => publicReplay(id));
   const cards: ReplayCardData[] = replays.map((r) => ({
     id: r.scenario.id,
@@ -93,16 +95,16 @@ export default function LandingPage() {
 
   return (
     <div className="flex min-h-svh flex-col">
-      <PublicHeader />
+      <PublicHeader pricing={cloud} />
       <PageContainer as="main">
-        <Hero stats={stats} />
+        <Hero stats={stats} pricing={cloud} />
         <ReplaysSection cards={cards} />
         <CoverageSection />
         <ReadsSection files={files} apiUrl={publicSiteUrl()} />
         <SampleSection view={weekly.view} alert={fixEmail} replayId="php2shell" />
         <PrivacySection />
       </PageContainer>
-      <PublicFooter />
+      <PublicFooter pricing={cloud} />
     </div>
   );
 }

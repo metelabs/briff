@@ -67,7 +67,12 @@ const serverEnvSchema = z.object({
   BRIFF_LLM_BATCH: booleanFlag(true),
   // Development only: a deterministic stand-in for the Anthropic API (refused in production).
   BRIFF_LLM_FAKE: booleanFlag(false),
+  // The hosted service (app.briff.dev): plans, limits, pricing and billing. Off for self-hosted
+  // instances, where every org is unlimited and nothing plan-related renders (src/lib/plans.ts).
+  BRIFF_CLOUD: booleanFlag(false),
 });
+
+const cloudEnvSchema = serverEnvSchema.pick({ BRIFF_CLOUD: true });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
 
@@ -82,6 +87,16 @@ export function getEnv(): ServerEnv {
   }
   cached = parsed.data;
   return cached;
+}
+
+/**
+ * BRIFF_CLOUD alone, with the same schema getEnv() uses. Limits are checked deep in scan
+ * ingestion and stream writes, which must not fail on an unrelated variable (the DB-backed tests
+ * call them without auth config); once getEnv() has parsed, its value is used.
+ */
+export function isCloud(): boolean {
+  if (cached) return cached.BRIFF_CLOUD;
+  return cloudEnvSchema.parse(process.env).BRIFF_CLOUD;
 }
 
 /** Test hook: forget the parsed env so the next getEnv() re-reads process.env. */

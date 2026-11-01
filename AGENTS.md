@@ -35,7 +35,7 @@ This file is the project guide for every coding agent and for people; `CLAUDE.md
 ## Layout
 
 ```
-src/app/                 pages (/ home overview, /bulletins, /b/[id], /alerts, /stack, /repos, /streams, /settings, /onboarding, /admin, /login) + route
+src/app/                 pages (/ home overview, /bulletins, /b/[id], /alerts, /stack, /repos, /streams, /settings, /settings/billing, /onboarding, /admin, /login, /pricing) + route
                          handlers (/api/health, /api/scan, /api/export, /api/auth/[...all])
 src/proxy.ts             `/` without a session cookie -> rewrite to /landing (docs/LANDING.md)
 src/app/landing, replay/ public pages (no session, no tenant imports: src/test/public-routes.test.ts),
@@ -51,6 +51,7 @@ src/lib/scan/            /api/scan schema + ingest, scan tokens (tokens.ts pure,
 src/lib/rss/, platforms/ ported from an earlier feed aggregator (SSRF-safe fetch, RSS/Atom parser, HN/GH/PH)
 src/lib/match/           deterministic item -> org matcher + stack loader
 src/lib/streams.ts       bulletin streams: slugs, membership writes, Repo.included sync
+src/lib/plans.ts         plans (PLANS: prices, limits) and limitsFor; checks in org-limits.ts, usage in org-capacity.ts
 src/lib/services.ts      package -> service mapping table (extend here)
 src/sources/             adapters (curated + runtime feeds, GitHub releases, GitHub security advisories, npm, OSV,
                          changelog.md) and job handlers
@@ -93,9 +94,9 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   `src/lib/org-data.ts`) also counts the user's remaining memberships through `user._count` to
   decide whether the user goes too.
   The instance admin's organisation table (`loadOrgDirectory`, `src/lib/org-directory.ts`, only
-  `/admin` behind `requireAdminContext`) reads per-org counts of members, repos and streams and
-  each org's first owner's email across orgs in a fixed number of grouped queries; it reads
-  nothing else and is never shown to anyone but the instance admin.
+  `/admin` behind `requireAdminContext`) reads per-org counts of members, repos and streams, each
+  org's plan and overrides, and each org's first owner's email across orgs in a fixed number of
+  grouped queries; it reads nothing else and is never shown to anyone but the instance admin.
   These rules cover the application (`src/`, `packages/`). `scripts/smoke.sh` is an external
   black-box check of a throw-away compose stack: it cannot reach `withOrg` from a shell, so it
   inserts its scan token and reads its assertions with `psql` (scan tokens are only created
@@ -242,6 +243,16 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   `computeDrift` (`src/pipeline/stack-drift.ts`: one card per repo, most urgent first; runtimes vs
   the lifecycle table with a target on the installed line, or the EOL migration sentence naming the
   lowest supported line; packages vs `Package.latestVersion`).
+- Plans and limits (`src/lib/plans.ts`): `Org.plan` (free | pro | team | unlimited) sets the repo,
+  stream and member limits; `Org.repoLimit` / `streamLimit` are the instance admin's overrides
+  (null = the plan's, a value counts only above it). Every check reads `loadOrgLimits` →
+  `limitsFor` inside the org's advisory-lock transaction (`src/lib/org-limits.ts`; members:
+  `assertMemberCapacity`, seats from `countMembers` in `src/lib/org-members.ts`). Over a limit
+  nothing is deleted; new repos, streams or members are refused. Only the hosted service sets
+  `BRIFF_CLOUD=true` (`isCloud()`); otherwise every org is unlimited and nothing plan-related
+  renders: no capacity line, no plan column or Edit limits in Admin, `/pricing` and
+  `/settings/billing` are 404, no pricing link on the public pages, sitemap or robots. Prices and
+  limits shown anywhere come from `PLANS`, never typed twice.
 - Streams: a `BulletinStream` is a named repo set with its own weekly bulletin and email.
   `Repo.included` means "in at least one stream" and stays the gate for triage and security
   alerts; change membership only through `src/lib/streams.ts`, which writes the membership and
@@ -296,7 +307,8 @@ Checks before a PR: `npm run typecheck && npm run lint && npm test`. DB-backed t
   admin (`findInstanceAdmin`, same rule as `/admin`) and POSTs `ALERT_WEBHOOK_URL`, once per
   (job type, kind) per 24h (`OpsAlert`). `/api/health` returns 503 on a stale type or a due job
   older than 1h; the container healthcheck uses `?probe=live` (database only). `/admin` is a hub
-  (instance totals, the organisation table: search, filters, 25 per page, Edit limits dialog;
+  (instance totals, the organisation table: search, filters, 25 per page, plan column and the Edit
+  limits dialog (plan + overrides) on the hosted service only;
   test email); Admin → Runs is `/admin/runs` (Run now
   per job). Sentry (`src/lib/sentry.ts`) loads only with `SENTRY_DSN`.
 - GitHub App (docs/GITHUB-APP.md): `/api/github/install` → GitHub → `/api/github/setup` (signed state)

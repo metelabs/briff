@@ -5,17 +5,18 @@ import { useActionState, useEffect, useReducer, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DialogClose, FormDialog } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { FormStatus, Label } from "@/components/ui/label";
+import { Input, Select } from "@/components/ui/input";
+import { FieldHelp, FormStatus, Label } from "@/components/ui/label";
 import { SearchField } from "@/components/ui/search-field";
 import { useToast } from "@/components/ui/toast";
+import { isPlanId, limitLabel, PLAN_IDS, PLANS, type PlanId } from "@/lib/plans";
 import { initialSearch, searchSync, withSearch } from "@/lib/search-sync";
 
 import {
   type AdminState,
   type LimitsState,
-  raiseOrgLimitsAction,
   runJobAction,
+  saveOrgPlanAction,
   sendTestEmailAction,
 } from "./actions";
 
@@ -58,16 +59,27 @@ export function TestEmailButton() {
   );
 }
 
+function planSummary(plan: PlanId): string {
+  const p = PLANS[plan];
+  return `${p.name} · ${limitLabel(p.repos, "repo")}, ${limitLabel(p.streams, "stream")}, ${limitLabel(p.members, "member")}`;
+}
+
 export function EditLimitsButton({
   org,
 }: {
-  org: { id: string; name: string; repoLimit: number; streamLimit: number };
+  org: {
+    id: string;
+    name: string;
+    plan: PlanId;
+    repoOverride: number | null;
+    streamOverride: number | null;
+  };
 }) {
   const [open, setOpen] = useState(false);
   const toast = useToast();
   const [state, action, pending] = useActionState(
     async (prev: LimitsState, form: FormData) => {
-      const res = await raiseOrgLimitsAction(prev, form);
+      const res = await saveOrgPlanAction(prev, form);
       if (res.ok) {
         setOpen(false);
         if (res.message) toast(res.message);
@@ -76,50 +88,83 @@ export function EditLimitsButton({
     },
     { ok: true, message: null }
   );
+  const current = state.saved ?? {
+    plan: org.plan,
+    repoLimit: org.repoOverride,
+    streamLimit: org.streamOverride,
+  };
+  const [plan, setPlan] = useState<PlanId>(current.plan);
+  const base = PLANS[plan];
   return (
     <FormDialog
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={(next) => {
+        if (next) setPlan(current.plan);
+        setOpen(next);
+      }}
       trigger={
         <Button variant="secondary" size="sm" aria-label={`Edit limits of ${org.name}`}>
           Edit limits
         </Button>
       }
       title="Edit limits"
-      description={`${org.name}: limits can only be raised. Repositories past the old limit need a rescan.`}
+      description={`${org.name}: the plan sets the limits; an override only raises one. Lowering deletes nothing, it refuses new repos and streams past the limit.`}
     >
       <form action={action} className="grid gap-3">
         <input type="hidden" name="orgId" value={org.id} />
+        <div className="grid gap-1.5">
+          <Label htmlFor={`plan-${org.id}`}>Plan</Label>
+          <Select
+            id={`plan-${org.id}`}
+            name="plan"
+            value={plan}
+            onChange={(e) => {
+              if (isPlanId(e.target.value)) setPlan(e.target.value);
+            }}
+            autoFocus
+          >
+            {PLAN_IDS.map((id) => (
+              <option key={id} value={id}>
+                {planSummary(id)}
+              </option>
+            ))}
+          </Select>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="grid gap-1.5">
-            <Label htmlFor={`repo-limit-${org.id}`}>Repositories</Label>
+            <Label htmlFor={`repo-limit-${org.id}`}>Repositories override</Label>
             <Input
               id={`repo-limit-${org.id}`}
               type="number"
               name="repoLimit"
-              min={org.repoLimit}
-              defaultValue={state.repoLimit ?? org.repoLimit}
-              required
-              autoFocus
+              min={1}
+              defaultValue={current.repoLimit ?? ""}
+              placeholder={base.repos === null ? "unlimited" : `plan: ${base.repos}`}
+              disabled={base.repos === null}
             />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor={`stream-limit-${org.id}`}>Streams</Label>
+            <Label htmlFor={`stream-limit-${org.id}`}>Streams override</Label>
             <Input
               id={`stream-limit-${org.id}`}
               type="number"
               name="streamLimit"
-              min={org.streamLimit}
-              defaultValue={state.streamLimit ?? org.streamLimit}
-              required
+              min={1}
+              defaultValue={current.streamLimit ?? ""}
+              placeholder={base.streams === null ? "unlimited" : `plan: ${base.streams}`}
+              disabled={base.streams === null}
             />
           </div>
         </div>
+        <FieldHelp>
+          Leave an override empty to use the plan&apos;s limit. It counts only above the plan&apos;s
+          limit.
+        </FieldHelp>
         {!state.ok && <FormStatus ok={false} message={state.message} />}
         <div className="mt-1 flex flex-wrap justify-end gap-2">
           <DialogClose render={<Button variant="secondary">Cancel</Button>} />
           <Button type="submit" variant="primary" disabled={pending}>
-            Save limits
+            Save
           </Button>
         </div>
       </form>

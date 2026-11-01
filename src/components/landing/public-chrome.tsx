@@ -21,14 +21,16 @@ const NAV = [
   { href: "/#privacy", label: "Privacy" },
 ] as const;
 
-export function PublicHeader() {
+/** `pricing`: the hosted service (BRIFF_CLOUD); a self-hosted instance never links to plans. */
+export function PublicHeader({ pricing = false }: { pricing?: boolean }) {
+  const nav = pricing ? [...NAV, { href: "/pricing", label: "Pricing" }] : NAV;
   return (
     <PageContainer as="header" className="flex min-h-14 items-center justify-between md:min-h-16">
       <Link href="/" aria-label="Briff home" className="rounded-[6px]">
         <Logo size={24} />
       </Link>
       <nav aria-label="Sections" className="flex items-center gap-1">
-        {NAV.map((item) => (
+        {nav.map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -59,7 +61,7 @@ function FooterLink({ href, children }: { href: string; children: ReactNode }) {
 }
 
 /** One muted line, like the shell's footer (DESIGN.md §8), with the public links. */
-export function PublicFooter() {
+export function PublicFooter({ pricing = false }: { pricing?: boolean }) {
   return (
     <footer className="border-line mt-auto border-t">
       <PageContainer className="text-fg-muted flex flex-wrap items-center gap-x-5 gap-y-1 py-5 text-[12.5px]">
@@ -70,6 +72,7 @@ export function PublicFooter() {
         ))}
         <span>Contact: {SUPPORT_EMAIL}</span>
         <FooterLink href={DOCS_URL}>Docs</FooterLink>
+        {pricing && <FooterLink href="/pricing">Pricing</FooterLink>}
         <FooterLink href={SOURCE_URL}>Source</FooterLink>
         <FooterLink href={METELABS_URL}>Made by Metelabs</FooterLink>
         <span className="font-mono tabular-nums">Briff {packageJson.version}</span>

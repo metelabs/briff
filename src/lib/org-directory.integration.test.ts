@@ -29,7 +29,9 @@ describe.skipIf(!url)("loadOrgDirectory against Postgres", () => {
       return id;
     };
     const [ann, ben, cy] = [await user("ann"), await user("ben"), await user("cy")];
-    const busy = (await db.org.create({ data: { name: `busy-${suffix}`, repoLimit: 2 } })).id;
+    const busy = (
+      await db.org.create({ data: { name: `busy-${suffix}`, plan: "pro", repoLimit: 60 } })
+    ).id;
     const quiet = (await db.org.create({ data: { name: `quiet-${suffix}` } })).id;
     orgIds.push(busy, quiet);
     const scoped = withOrg(db, busy);
@@ -44,19 +46,31 @@ describe.skipIf(!url)("loadOrgDirectory against Postgres", () => {
     });
     await withOrg(db, quiet).orgMember.create({ data: { orgId: quiet, userId: cy } });
 
-    const rows = await loadOrgDirectory(db);
+    const rows = await loadOrgDirectory(db, { cloud: true });
     expect(rows.find((r) => r.id === busy)).toMatchObject({
       ownerEmail: `ann-${suffix}@example.com`,
       members: 2,
       repos: 2,
-      repoLimit: 2,
       streams: 1,
+      plan: "pro",
+      repoOverride: 60,
+      streamOverride: null,
+      repoLimit: 60,
+      streamLimit: 10,
     });
     expect(rows.find((r) => r.id === quiet)).toMatchObject({
       ownerEmail: `cy-${suffix}@example.com`,
       members: 1,
       repos: 0,
       streams: 0,
+      plan: "free",
+      repoLimit: 10,
+      streamLimit: 2,
+    });
+    const selfHosted = await loadOrgDirectory(db, { cloud: false });
+    expect(selfHosted.find((r) => r.id === busy)).toMatchObject({
+      repoLimit: null,
+      streamLimit: null,
     });
   });
 });
