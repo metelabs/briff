@@ -79,7 +79,11 @@ describe.skipIf(!url)("ops alerts against Postgres", () => {
 
   it("emails every operator and posts the webhook once, then dedupes for 24h", async () => {
     const now = new Date("2026-11-02T04:00:00Z");
-    expect(await sendOpsAlert(db, failure, log, now)).toBe("sent");
+    let beats = 0;
+    const heartbeat = async () => void beats++;
+    expect(await sendOpsAlert(db, failure, log, now, heartbeat)).toBe("sent");
+    // Before each of the two emails and the webhook.
+    expect(beats).toBe(3);
     expect(mail.sent.map((m) => m.to)).toEqual(["ops@example.com", "oncall@example.com"]);
     expect(mail.sent[0].subject).toBe(`Briff · Job failed: ${jobType}`);
     expect(posts).toEqual([

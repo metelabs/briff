@@ -141,7 +141,9 @@ export async function sendOpsAlert(
   db: PrismaClient,
   alert: OpsAlertInput,
   log: Logger,
-  now: Date = new Date()
+  now: Date = new Date(),
+  /** The calling job's heartbeat, before every send (slow SMTP must not cost the job lock). */
+  heartbeat: () => Promise<void> = async () => {}
 ): Promise<OpsAlertOutcome> {
   const env = getEnv();
   const headline = opsAlertHeadline(alert);
@@ -154,7 +156,7 @@ export async function sendOpsAlert(
   }
   let results: ("sent" | "skipped" | "failed")[];
   try {
-    results = await deliver(alert, recipients, claim.previous?.suppressed ?? 0, log);
+    results = await deliver(alert, recipients, claim.previous?.suppressed ?? 0, log, heartbeat);
   } catch (err) {
     await releaseOpsAlert(db, claim, now);
     throw err;
@@ -171,7 +173,8 @@ async function deliver(
   alert: OpsAlertInput,
   recipients: string[],
   suppressed: number,
-  log: Logger
+  log: Logger,
+  heartbeat: () => Promise<void>
 ): Promise<("sent" | "skipped" | "failed")[]> {
   const env = getEnv();
   const email = renderOpsAlertEmail({
@@ -191,11 +194,13 @@ async function deliver(
   );
   const results: ("sent" | "skipped" | "failed")[] = [];
   for (const to of recipients) {
+    await heartbeat();
     const result = await sendMail({ to, ...email });
     if (result.status === "failed") log.error({ error: result.error }, "ops alert: email failed");
     results.push(result.status);
   }
   if (env.ALERT_WEBHOOK_URL) {
+    await heartbeat();
     const result = await postWebhook(
       env.ALERT_WEBHOOK_URL,
       webhookPayload(alert, env.BETTER_AUTH_URL)

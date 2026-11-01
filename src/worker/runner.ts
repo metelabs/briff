@@ -21,7 +21,10 @@ function errorMessage(err: unknown): string {
 }
 
 /** Runs one claimed job and records a Run row. Never throws. */
-/** Alerts the operators about a job that failed for good. Never throws. */
+/**
+ * Alerts the operators about a job that failed for good. Never throws. The job is no longer
+ * locked here (failJob released it), so there is no job heartbeat to keep alive.
+ */
 async function reportFinalFailure(
   db: PrismaClient,
   job: ClaimedJob,

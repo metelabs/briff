@@ -44,7 +44,8 @@ export async function opsCheck(ctx: JobContext): Promise<JobResult> {
         lastSuccessAt: row?.lastSuccessAt ?? null,
       },
       log,
-      now
+      now,
+      ctx.heartbeat
     );
     counts[outcome]++;
   }
@@ -76,7 +77,8 @@ export async function opsCheck(ctx: JobContext): Promise<JobResult> {
         lastSuccessAt: health.freshness[job.type]?.lastSuccessAt ?? null,
       },
       log,
-      now
+      now,
+      ctx.heartbeat
     );
     counts[outcome]++;
   }
