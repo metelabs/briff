@@ -6,6 +6,7 @@ import type { CSSProperties, ReactNode } from "react";
 
 import { AppShell } from "@/components/shell/app-shell";
 import { ConnectReposButton } from "@/components/shell/connect-sheet";
+import { Callout, type CalloutTone } from "@/components/ui/callout";
 import { PageHeader } from "@/components/ui/section-header";
 import { Tag } from "@/components/ui/tag";
 import { requireOrgContext } from "@/lib/auth/session";
@@ -93,14 +94,18 @@ export default async function SettingsPage({
 }) {
   const ctx = await requireOrgContext();
   const { verified, error, password } = await searchParams;
-  const accountNotice =
+  const accountNotice: { tone: CalloutTone; message: string } | null =
     password === "changed"
-      ? "Password changed. Other devices were signed out."
+      ? { tone: "ok", message: "Password changed. Other devices were signed out." }
       : verified === "1"
         ? error
-          ? (VERIFY_ERRORS[error] ?? "That verification link did not work. Send a new one.")
+          ? {
+              tone: "warn",
+              message:
+                VERIFY_ERRORS[error] ?? "That verification link did not work. Send a new one.",
+            }
           : ctx.emailVerified
-            ? "Your email address is verified."
+            ? { tone: "ok", message: "Your email address is verified." }
             : null
         : null;
   const db = getDb();
@@ -369,9 +374,7 @@ export default async function SettingsPage({
             sub="Sign-in email, password and theme. The theme switch is in the menu under your initials."
           >
             {accountNotice && (
-              <p role="status" className="bg-surface-2 rounded-card mb-4 p-3 text-[13.5px]">
-                {accountNotice}
-              </p>
+              <Callout tone={accountNotice.tone} message={accountNotice.message} className="mb-4" />
             )}
             <div className="border-line flex flex-wrap items-center justify-between gap-3 border-b pb-4">
               <div className="min-w-0">

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { MinimalHeader } from "@/components/shell/page-container";
+import { Callout } from "@/components/ui/callout";
 import { getOrgContext } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { getEnv } from "@/lib/env";
@@ -24,20 +25,18 @@ export default async function LoginPage({
       <MinimalHeader />
       <main className="gutter mx-auto w-full max-w-[432px] pt-6 pb-20 md:pt-10">
         {deleted === "1" && (
-          <p
-            role="status"
-            className="bg-surface border-line rounded-card mb-6 border p-4 text-[13.5px]"
-          >
-            Your organisation and account were deleted.
-          </p>
+          <Callout
+            tone="ok"
+            message="Your organisation and account were deleted."
+            className="mb-6"
+          />
         )}
         {reset === "1" && (
-          <p
-            role="status"
-            className="bg-surface border-line rounded-card mb-6 border p-4 text-[13.5px]"
-          >
-            Your password was changed. Sign in with the new one.
-          </p>
+          <Callout
+            tone="ok"
+            message="Your password was changed. Sign in with the new one."
+            className="mb-6"
+          />
         )}
         <AuthForm
           mode={mode}

@@ -4,7 +4,7 @@ import { MailCheck } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
-import { FormStatus } from "@/components/ui/label";
+import { FormCallout } from "@/components/ui/callout";
 
 import { resendVerificationAction, type ResendState } from "./actions";
 
@@ -24,7 +24,7 @@ export function VerifyEmailBanner({ email }: { email: string }) {
           We sent a link to {email}. Open it to keep getting bulletins and alerts: an unverified
           account stops receiving them 7 days after sign-up.
         </p>
-        <FormStatus ok={state.ok} message={state.message} />
+        <FormCallout ok={state.ok} message={state.message} className="mt-2.5" />
       </div>
       <Button
         variant="secondary"

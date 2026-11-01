@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState, useTransition } from "reac
 
 import { signOutAction } from "@/app/login/actions";
 import { Button } from "@/components/ui/button";
+import { FormCallout } from "@/components/ui/callout";
 import { ConfirmDialog, DialogClose, FormDialog } from "@/components/ui/dialog";
 import { Input, Textarea } from "@/components/ui/input";
 import { FieldHelp, FormStatus, Label } from "@/components/ui/label";
@@ -104,7 +105,12 @@ export function DeliveryForm({
 export function ChangePasswordForm() {
   const [state, action, pending] = useActionState(changePasswordAction, INITIAL);
   return (
-    <form action={action} className="grid gap-4 min-[560px]:grid-cols-2">
+    // From 560px: both fields and the button on one row, the button bottom-aligned with the
+    // inputs; the help line goes under the fields. Below: one column, full-width button last.
+    <form
+      action={action}
+      className="grid gap-4 min-[560px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] min-[560px]:gap-x-3 min-[560px]:gap-y-1.5"
+    >
       <div className="grid content-start gap-1.5">
         <Label htmlFor="currentPassword">Current password</Label>
         <Input
@@ -125,40 +131,69 @@ export function ChangePasswordForm() {
           minLength={12}
           maxLength={128}
           required
+          aria-describedby="newPasswordHelp"
         />
-        <FieldHelp>At least 12 characters. Other devices are signed out.</FieldHelp>
       </div>
-      <div className="flex flex-wrap items-center gap-3 min-[560px]:col-span-2">
-        <Button type="submit" variant="secondary" disabled={pending}>
-          Change password
-        </Button>
-        <FormStatus ok={state.ok} message={state.message} />
-      </div>
+      <FieldHelp
+        id="newPasswordHelp"
+        className="-mt-2.5 min-[560px]:col-span-2 min-[560px]:row-start-2 min-[560px]:mt-0"
+      >
+        At least 12 characters. Other devices are signed out.
+      </FieldHelp>
+      <Button
+        type="submit"
+        variant="primary"
+        disabled={pending}
+        className="h-10 w-full min-[560px]:col-start-3 min-[560px]:row-start-1 min-[560px]:w-auto min-[560px]:self-end"
+      >
+        Change password
+      </Button>
+      <FormCallout
+        ok={state.ok}
+        message={state.message}
+        className="min-[560px]:col-span-3 min-[560px]:mt-2.5"
+      />
     </form>
   );
 }
 
 export function ChangeEmailForm({ email }: { email: string }) {
   const [state, action, pending] = useActionState(changeEmailAction, INITIAL);
+  // Same row layout as ChangePasswordForm.
   return (
-    <form action={action} className="grid gap-1.5">
-      <Label htmlFor="newEmail">New account email</Label>
-      <Input
-        id="newEmail"
-        name="newEmail"
-        type="email"
-        autoComplete="email"
-        defaultValue={state.saved ?? ""}
-        placeholder={email}
-        required
-      />
-      <FieldHelp>We send a link to the new address; the change happens once you open it.</FieldHelp>
-      <div className="mt-2.5 flex flex-wrap items-center gap-3">
-        <Button type="submit" variant="secondary" disabled={pending}>
-          Change email
-        </Button>
-        <FormStatus ok={state.ok} message={state.message} />
+    <form
+      action={action}
+      className="grid gap-4 min-[560px]:grid-cols-[minmax(0,1fr)_auto] min-[560px]:gap-x-3 min-[560px]:gap-y-1.5"
+    >
+      <div className="grid content-start gap-1.5">
+        <Label htmlFor="newEmail">New account email</Label>
+        <Input
+          id="newEmail"
+          name="newEmail"
+          type="email"
+          autoComplete="email"
+          defaultValue={state.saved ?? ""}
+          placeholder={email}
+          required
+          aria-describedby="newEmailHelp"
+        />
       </div>
+      <FieldHelp id="newEmailHelp" className="-mt-2.5 min-[560px]:row-start-2 min-[560px]:mt-0">
+        We send a link to the new address; the change happens once you open it.
+      </FieldHelp>
+      <Button
+        type="submit"
+        variant="primary"
+        disabled={pending}
+        className="h-10 w-full min-[560px]:col-start-2 min-[560px]:row-start-1 min-[560px]:w-auto min-[560px]:self-end"
+      >
+        Change email
+      </Button>
+      <FormCallout
+        ok={state.ok}
+        message={state.message}
+        className="min-[560px]:col-span-2 min-[560px]:mt-2.5"
+      />
     </form>
   );
 }

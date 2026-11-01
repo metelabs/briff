@@ -149,7 +149,7 @@ shadcn: map `--background`→`--bg`, `--card`/`--popover`→`--surface`, `--prim
 - **Coral means security, nothing else.** It is not used for destructive buttons in normal flows, form errors or
   decoration. Destructive actions (delete account) use `--sec` only inside a confirm dialog.
 - **Petrol means "you can act here"**: primary button, active tab or pill, links, focus ring. At most **one** filled
-  petrol button per view.
+  petrol button per view; on Settings, where each section holds its own forms, one per form.
 - Severity in tables: CRITICAL/HIGH use `--sec`; MODERATE uses `--upgrade`; LOW uses `--wait`. These labels are
   always text, never colour alone.
 - Drift cells: current = `--ok` text; minor behind = `--fg`; major behind = `--upgrade` on `--upgrade-soft`;
@@ -292,6 +292,18 @@ states are noted where they apply.
   tooltip (and a tab stop) only when it is actually cut or abbreviated. Inside a menu popup or a link,
   `TruncatedText` stays out of the tab order. Icon-only buttons keep `aria-label` (and may keep `title` as a fallback)
   next to the tooltip.
+- **Callout:** a status the user must not miss after a form or a link (reset link sent, password changed, email
+  change started, a failed submit). `Callout` / `FormCallout` in `src/components/ui/callout.tsx`: radius 12,
+  12×14px padding, 13.5px `--fg` text with the first sentence semibold, an 18px icon. Success: `--ok-soft` with a
+  `--ok` border at 30% and a check icon (`role="status"`). Failure: `--upgrade-soft`, `--upgrade` border at 30%
+  and an alert icon (`role="alert"`); never coral. It sits under the form's button or replaces the form when
+  the form is done (forgot password). Quiet inline lines (`FormStatus`) stay for routine saves.
+- **Account menu theme row:** one line: "Theme" label (12.5px muted) and three 32px icon buttons in a
+  `--surface-2` pill (System `Monitor`, Light `Sun`, Dark `Moon`). The current one is `--brand-soft` with
+  `--brand` icon; each has an `aria-label` and a tooltip.
+- **Settings account forms:** fields and the primary button share one row from 560px, the button at the right,
+  bottom-aligned with the inputs (40px tall), help text under the fields. Below 560px: one column, the button full
+  width under the fields.
 - **Toast:** bottom-centre (bottom-right ≥ 768px), surface + line + raised shadow, radius 12, 13px, an icon in its
   kind colour. One at a time.
 - **Dialog:** surface, radius 16, max-width 440px, raised shadow + scrim. Title display 19px, body 14px, actions
@@ -335,7 +347,7 @@ Don't:
 
 - No sidebar, no breadcrumb trail, no avatar stacks, no "welcome back" banners.
 - No purple, no gradients, no glow, no glass cards, no emoji, no illustrations of people.
-- No icon on every heading. Icons only where they carry meaning (nav on mobile, empty states, toasts).
+- No icon on every heading. Icons only where they carry meaning (nav on mobile, empty states, toasts, callouts).
 - No coral outside security. No second accent colour.
 - No charts for the sake of charts. Briff's data is lists and versions; a number beats a donut.
   The two charts that earn a place are on Home: a 12-week "needs your attention" sparkline per stream

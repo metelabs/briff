@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { FormCallout } from "@/components/ui/callout";
 import { Input } from "@/components/ui/input";
-import { FormStatus, Label } from "@/components/ui/label";
+import { Label } from "@/components/ui/label";
 
 import { type AuthFormState, signInAction, signUpAction } from "./actions";
 import { type AuthMode, initialSignup, signupFooter } from "./signup-state";
@@ -82,7 +83,7 @@ export function AuthForm({ mode, allowSignup, signup = false }: AuthFormProps) {
           />
           {signingUp && <p className="text-fg-muted text-[12.5px]">At least 12 characters.</p>}
         </div>
-        <FormStatus ok={false} message={state.error} />
+        <FormCallout ok={false} message={state.error} />
         <Button type="submit" variant="primary" size="lg" disabled={pending} className="w-full">
           {signingUp ? "Create account" : "Sign in"}
         </Button>

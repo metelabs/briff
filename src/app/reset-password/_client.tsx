@@ -3,8 +3,9 @@
 import { useActionState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { FormCallout } from "@/components/ui/callout";
 import { Input } from "@/components/ui/input";
-import { FieldHelp, FormStatus, Label } from "@/components/ui/label";
+import { FieldHelp, Label } from "@/components/ui/label";
 
 import { type AuthFormState, resetPasswordAction } from "../login/actions";
 
@@ -35,7 +36,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
           />
           <FieldHelp>At least 12 characters.</FieldHelp>
         </div>
-        <FormStatus ok={false} message={state.error} />
+        <FormCallout ok={false} message={state.error} />
         <Button type="submit" variant="primary" size="lg" disabled={pending} className="w-full">
           Save new password
         </Button>
