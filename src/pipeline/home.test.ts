@@ -185,12 +185,21 @@ describe("repo and stack helpers", () => {
   });
 
   it("puts each repo in its most urgent drift bucket", () => {
-    expect(stackHealth([{ urgency: 3 }, { urgency: 2 }, { urgency: 2 }, { urgency: 0 }])).toEqual({
-      eol: 1,
-      major: 2,
-      minor: 0,
-      current: 1,
+    const repo = (urgency: number, ...statuses: string[]) => ({
+      urgency,
+      entries: statuses.map((status) => ({ status })),
     });
+    expect(
+      stackHealth([
+        repo(3, "eol"),
+        repo(2, "major"),
+        repo(2, "major", "current"),
+        repo(0, "current", "unknown"),
+        repo(0, "supported"),
+        repo(0, "unknown"),
+        repo(0),
+      ])
+    ).toEqual({ eol: 1, major: 2, minor: 0, current: 2, unknown: 2 });
   });
 
   it("does not count the upload that added a repo as a separate scan", () => {

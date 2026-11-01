@@ -199,17 +199,38 @@ export function isStale(lastScannedAt: Date | null, now: Date, days = 7): boolea
   return lastScannedAt === null || now.getTime() - lastScannedAt.getTime() > days * DAY_MS;
 }
 
-export type HealthBucket = "eol" | "major" | "minor" | "current";
+export type HealthBucket = "eol" | "major" | "minor" | "current" | "unknown";
 
-export const HEALTH_ORDER: readonly HealthBucket[] = ["eol", "major", "minor", "current"];
+export const HEALTH_ORDER: readonly HealthBucket[] = [
+  "eol",
+  "major",
+  "minor",
+  "current",
+  "unknown",
+];
 
-/** Repos per drift bucket, each repo once by its most urgent finding (stack-drift urgency). */
-export function stackHealth(drift: readonly { urgency: number }[]): Record<HealthBucket, number> {
-  const out: Record<HealthBucket, number> = { eol: 0, major: 0, minor: 0, current: 0 };
+/**
+ * Repos per drift bucket, each repo once by its most urgent finding (stack-drift urgency).
+ * Urgency 0 is only "up to date" when something was judged current or supported; a repo whose
+ * versions could not be judged (unresolved, no registry data, nothing scanned) is `unknown`.
+ */
+export function stackHealth(
+  drift: readonly { urgency: number; entries: readonly { status: string }[] }[]
+): Record<HealthBucket, number> {
+  const out: Record<HealthBucket, number> = { eol: 0, major: 0, minor: 0, current: 0, unknown: 0 };
   for (const r of drift) {
-    out[
-      r.urgency >= 3 ? "eol" : r.urgency === 2 ? "major" : r.urgency === 1 ? "minor" : "current"
-    ] += 1;
+    const judged = r.entries.some((e) => e.status === "current" || e.status === "supported");
+    const bucket: HealthBucket =
+      r.urgency >= 3
+        ? "eol"
+        : r.urgency === 2
+          ? "major"
+          : r.urgency === 1
+            ? "minor"
+            : judged
+              ? "current"
+              : "unknown";
+    out[bucket] += 1;
   }
   return out;
 }

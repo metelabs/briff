@@ -590,15 +590,14 @@ const HEALTH_PART: Record<HealthBucket, { label: string; color: string }> = {
   major: { label: "majors behind", color: "var(--upgrade)" },
   minor: { label: "minor behind", color: "var(--wait)" },
   current: { label: "up to date", color: "var(--ok)" },
+  unknown: { label: "not judged", color: "var(--fg-subtle)" },
 };
 
 function StackCard({ data, scopeName }: { data: HomeData; scopeName: string }) {
   const { stack } = data;
-  const parts: SharePart[] = HEALTH_ORDER.map((b) => ({
-    key: b,
-    count: stack.health[b],
-    ...HEALTH_PART[b],
-  }));
+  const parts: SharePart[] = HEALTH_ORDER.filter(
+    (b) => b !== "unknown" || stack.health.unknown > 0
+  ).map((b) => ({ key: b, count: stack.health[b], ...HEALTH_PART[b] }));
   return (
     <HealthCard
       title="Stack health"
