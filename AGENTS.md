@@ -72,6 +72,8 @@ scripts/                 scan-local.ts (tsx; thin wrapper: briff-scan --all-repo
                          build-worker.mjs (esbuild), replay.ts
 deploy/systemd/          systemd user units for the scanner
 docs/                    SCANNER.md (runbook), SOURCES.md (feeds and matching), DESIGN.md (UI system), design/ (mocks)
+compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhost.example, docs/SELF-HOSTING.md,
+                         docs/UPGRADING.md, smoke test scripts/smoke.sh); docker-compose.dev.yml = dev Postgres only
 ```
 
 ## Conventions
@@ -89,6 +91,10 @@ docs/                    SCANNER.md (runbook), SOURCES.md (feeds and matching), 
   lookup by GitHub id from webhooks and scan jobs (`findInstallation`, `src/lib/github/installations.ts`). Deleting an org (`deleteOrg`,
   `src/lib/org-data.ts`) also counts the user's remaining memberships through `user._count` to
   decide whether the user goes too.
+  These rules cover the application (`src/`, `packages/`). `scripts/smoke.sh` is an external
+  black-box check of a throw-away compose stack: it cannot reach `withOrg` from a shell, so it
+  inserts its scan token and reads its assertions with `psql` (scan tokens are only created
+  by a Server Action). It never runs against a database it did not create.
 - Your data (Settings): `GET /api/export` streams the session's org as JSON section by section
   (`orgExportSections`, no token hashes, no auth rows); `deleteOrgAction` deletes the org after the
   typed name matches (owners only), its pending jobs, and the user when it has no other org, then
@@ -224,7 +230,7 @@ docs/                    SCANNER.md (runbook), SOURCES.md (feeds and matching), 
 ## Run locally
 
 ```bash
-docker compose up -d                  # Postgres 16 on 127.0.0.1:55432
+docker compose -f docker-compose.dev.yml up -d   # Postgres 16 on 127.0.0.1:55432
 cp .env.example .env                  # fill BETTER_AUTH_SECRET; DATABASE_URL is preset
 npm ci                                # runs prisma generate
 npm run db:migrate                    # prisma migrate dev
@@ -489,6 +495,9 @@ Checks before a PR: `npm run typecheck && npm run lint && npm test`. DB-backed t
   `MIGRATE_ON_START=false` to skip). The Prisma CLI lives isolated in `/app/migrate`.
 - Healthcheck script handles both roles: web → `GET http://127.0.0.1:3000/api/health`,
   worker → heartbeat file younger than 180s.
+- Self-hosters run `compose.yaml` (pulls the image, builds nothing); CI validates it with
+  `docker compose config` against `.env.selfhost.example`. A new env variable goes into both
+  `.env.example` and `.env.selfhost.example`.
 
 ## Do not (all hit in production)
 
@@ -535,7 +544,7 @@ like, and this section says how a review reports deviations from them.
 
 ### Repository invariants
 
-- Tenant data (OrgMember, Repo, Dependency, RepoRuntime, ItemMatch, Alert, Bulletin, BulletinItem, Feedback, InterestProfile, Deadline, BulletinStream, StreamRepo, ScanToken, GithubInstallation) must be read and written through `withOrg(getDb(), orgId)`. A nested relation write or raw SQL on these tables is a finding. The only reads outside the layer are the ones listed under Conventions (`getOrgContext`, `findScanTokenByHash`, `findInstallation`, the `deleteOrg` membership count). A new tenant table that does not cascade from `Org` is a finding (`org-data.integration.test.ts` must cover it).
+- Tenant data (OrgMember, Repo, Dependency, RepoRuntime, ItemMatch, Alert, Bulletin, BulletinItem, Feedback, InterestProfile, Deadline, BulletinStream, StreamRepo, ScanToken, GithubInstallation) must be read and written through `withOrg(getDb(), orgId)`. A nested relation write or raw SQL on these tables is a finding. The only reads outside the layer are the ones listed under Conventions (`getOrgContext`, `findScanTokenByHash`, `findInstallation`, the `deleteOrg` membership count). `scripts/smoke.sh` is outside this rule (Conventions: it uses `psql` against its own throw-away stack). A new tenant table that does not cascade from `Org` is a finding (`org-data.integration.test.ts` must cover it).
 - Fix commands and derived actions never recommend a higher major than the installed release line. A command or sentence that crosses the line is a finding, with one exception: An end-of-life line gets the EOL sentence, which names the lowest supported line; that is the only derived action allowed to name a higher major, and it is worded as a migration, not a fix command. (`src/pipeline/runtime-fixes.ts`, "node 18 is end-of-life and will not get this fix; move to 22.23.4 or later"; an EOL line has no fix on its own major, so naming the supported line is the only truthful action.) An EOL sentence in command form (`npm i ...`, a `FROM`/image tag, "set node X") is a finding.
 - An item's repos have one source: `BulletinItem.affectedRepos` is the item's `affected_repos` in the synthesis input (match repos in the stream, plus repos with an alert on the item's security package), and `BulletinItem.upgrades` names exactly those repos (`alignUpgrades`; a repo without a version on record reads "installed version unknown"). A path that builds upgrades, actions or lines from another repo list is a finding. A model line or action that names only some of the affected repos is repaired after the alias restore (`completeRepoNames`, `chooseAction`), never stored as written.
 - Model output is accepted only for refs present in the synthesis input; any path where model text adds a URL, a version or a package the input did not contain is a finding.
