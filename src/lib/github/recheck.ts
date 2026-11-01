@@ -3,7 +3,7 @@ import "server-only";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
 
-import { githubScanKey } from "./scan";
+import { githubScanKeyPrefix } from "./scan";
 
 // "Re-check now" on Alerts: which installations it rescans, and whether their scan is done.
 
@@ -15,7 +15,10 @@ export async function activeInstallationIds(db: PrismaClient, orgId: string): Pr
   return rows.map((r) => r.installationId);
 }
 
-/** Whether a full scan of any of the installations is queued or running. */
+/**
+ * Whether any scan of the installations is queued or running: the full scan a re-check
+ * queues and the per-repo follow-ups it leaves for rate-limited or failed repos.
+ */
 export async function githubScanInFlight(
   db: PrismaClient,
   installationIds: readonly string[]
@@ -25,13 +28,10 @@ export async function githubScanInFlight(
   const job = await db.job.findFirst({
     where: {
       type: "github-scan",
-      dedupeKey: {
-        in: installationIds.flatMap((installationId) => [
-          githubScanKey({ installationId }),
-          githubScanKey({ installationId, force: true }),
-        ]),
-      },
       status: { in: ["pending", "running"] },
+      OR: installationIds.map((installationId) => ({
+        dedupeKey: { startsWith: githubScanKeyPrefix(installationId) },
+      })),
     },
     select: { id: true },
   });

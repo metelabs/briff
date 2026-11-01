@@ -93,8 +93,9 @@ describe("planAlertResolution", () => {
     });
   });
 
-  it("leaves an alert open while another package of the same OSV record is installed", () => {
-    // payload's advisory also covers its db driver; only the stored package's ranges are known.
+  it("never resolves an advisory whose OSV record covers several packages", () => {
+    // The stored ranges may be another covered package's (security-scan projects the record
+    // onto the package it was found for).
     const covered = [
       { ecosystem: "npm", name: "lodash" },
       { ecosystem: "npm", name: "lodash-driver" },
@@ -104,7 +105,9 @@ describe("planAlertResolution", () => {
     expect(
       planAlertResolution([alert({ covered })], before, true, [fixed, driver]).resolve
     ).toEqual([]);
-    expect(planAlertResolution([alert({ covered })], before, true, [fixed]).resolve).toEqual([
+    expect(planAlertResolution([alert({ covered })], before, true, [fixed]).resolve).toEqual([]);
+    const own = [{ ecosystem: "npm", name: "lodash" }];
+    expect(planAlertResolution([alert({ covered: own })], before, true, [fixed]).resolve).toEqual([
       "a1",
     ]);
   });

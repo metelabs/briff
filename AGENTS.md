@@ -216,15 +216,16 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   has an affected version of an alert's package sets `Alert.resolvedAt` (never deletes; a package
   that is gone counts only from a complete snapshot, i.e. the GitHub App (`completeSnapshots`), as
   a briff-scan lockfile can fail to parse; only when
-  the previous upload had the package, the new one carries its ecosystem and none of the other
-  packages the OSV record covers (`Advisory.packages`; rows stored before it are refetched by
+  the previous upload had the package, the new one carries its ecosystem and the OSV record covers no
+  other package (`Advisory.packages`; a multi-package record's stored ranges may be another
+  package's, so those are never resolved on upload; rows stored before it are refetched by
   security-scan, 500 per run, also when OSV no longer answers with them; withdrawn ones get `[]`); versions the ranges cannot place keep it open), and an affected version coming back clears it, as does a
   security-scan that OSV says is at risk again (no second email). Resolved alerts leave the Alerts
   lists, Home counts, the Alerts dot, Repos counts and the weekly bulletin input; stored bulletin
   pages keep theirs. Alerts shows "Resolved: N this week" and per section "Fixed since your last
   visit" (resolved after the previous `alertsSeenAt`). "Re-check now" (`recheckAction`) queues a
   forced `github-scan` per GitHub App installation (own dedupe key `...:force`), once per 10 minutes per org
-  (`Org.recheckRequestedAt`), polls until the jobs are done and reloads; briff-scan repos get the
+  (`Org.recheckRequestedAt`), polls until no scan of the installations (follow-ups included) is pending or running and reloads; briff-scan repos get the
   upload command instead. The sticky section bar (`AlertSectionNav`) is `data-sticky-top`;
   `stickyOffset` counts a stacked bar from its CSS `top`.
 - In-page scrolls from buttons and section links go through `scrollToElement`

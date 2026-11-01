@@ -157,6 +157,12 @@ describe.skipIf(!url)("re-check action against Postgres", () => {
     // Done, but within the interval: refused with the wait.
     await db.job.updateMany({ where: { id: queued[0].id }, data: { status: "succeeded" } });
     expect(await recheckStatusAction()).toEqual({ checking: false });
+    // A follow-up for repos the scan could not read yet still counts as checking.
+    const followUp = await db.job.create({
+      data: { type: "github-scan", dedupeKey: `github-scan:${installationId}:abc`, payload: {} },
+    });
+    expect(await recheckStatusAction()).toEqual({ checking: true });
+    await db.job.delete({ where: { id: followUp.id } });
     expect(await recheckAction()).toMatchObject({
       ok: false,
       checking: false,

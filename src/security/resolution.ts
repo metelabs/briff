@@ -51,22 +51,17 @@ function coveredList(covered: unknown): { ecosystem: string; name: string }[] | 
 }
 
 /**
- * Whether the upload has another package the OSV record covers. Its ranges are not stored
- * (Advisory.affected is the advisory's own package), so such an alert is left to the
- * security scan. Unknown coverage counts as covered.
+ * Whether the OSV record covers only the advisory's own package. A record covering several
+ * stores one package's ranges (Advisory.affected), and not necessarily the stored package's
+ * (the security scan projects it onto whichever package it was found for), so such alerts
+ * are never resolved here. Unknown coverage counts as several.
  */
-function otherCoveredInstalled(
-  alert: Pick<ResolvableAlert, "ecosystem" | "packageName" | "covered">,
-  installed: readonly InstalledDependency[]
+function coversOnlyOwnPackage(
+  alert: Pick<ResolvableAlert, "ecosystem" | "packageName" | "covered">
 ): boolean {
   const covered = coveredList(alert.covered);
-  if (covered === null) return true;
-  const others = new Set(
-    covered
-      .filter((c) => !(c.ecosystem === alert.ecosystem && c.name === alert.packageName))
-      .map((c) => `${c.ecosystem}\0${c.name}`)
-  );
-  return installed.some((d) => others.has(`${d.ecosystem}\0${d.name}`));
+  if (covered === null) return false;
+  return covered.every((c) => c.ecosystem === alert.ecosystem && c.name === alert.packageName);
 }
 
 /**
@@ -88,8 +83,8 @@ export function stillAffected(
  * when the previous upload had its package (so the alert was about this package and not
  * another one the same OSV record covers) and the new upload carries the package's
  * ecosystem at all (an empty or partial upload, e.g. a lockfile that failed to parse,
- * says nothing about it), and no other package of the same OSV record is installed (its
- * ranges are unknown here). A package that is gone resolves only from a snapshot known to
+ * says nothing about it), and the OSV record covers no other package
+ * (`coversOnlyOwnPackage`). A package that is gone resolves only from a snapshot known to
  * be complete (`completeSnapshot`, the GitHub App): in a briff-scan upload a lockfile that
  * failed to parse looks the same as a removal. A resolved alert reopens when an affected
  * install is back.
@@ -111,7 +106,7 @@ export function planAlertResolution(
         (stillInstalled || completeSnapshot) &&
         previousPackageIds.has(alert.packageId) &&
         ecosystems.has(alert.ecosystem) &&
-        !otherCoveredInstalled(alert, installed)
+        coversOnlyOwnPackage(alert)
       )
         plan.resolve.push(alert.id);
     } else if (affected) {

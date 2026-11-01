@@ -50,6 +50,11 @@ export const githubScanPayloadSchema = z.object({
 });
 export type GithubScanPayload = z.infer<typeof githubScanPayloadSchema>;
 
+/** Every scan key of an installation starts with this. */
+export function githubScanKeyPrefix(installationId: string): string {
+  return `github-scan:${installationId}:`;
+}
+
 /** One pending scan per installation and repo set. */
 export function githubScanKey(payload: GithubScanPayload): string {
   const repos = payload.repos
@@ -58,7 +63,7 @@ export function githubScanKey(payload: GithubScanPayload): string {
         .digest("hex")
     : "*";
   // A forced scan keeps its own key: deduped into a pending ordinary scan it would lose `force`.
-  return `github-scan:${payload.installationId}:${repos}${payload.force ? ":force" : ""}`;
+  return `${githubScanKeyPrefix(payload.installationId)}${repos}${payload.force ? ":force" : ""}`;
 }
 
 /** Per repo: blobs fetched at most, and the largest blob read (tree entry size). */
