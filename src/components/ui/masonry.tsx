@@ -55,7 +55,7 @@ export function Masonry({ items, className }: { items: MasonryItem[]; className?
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 min-[980px]:grid min-[980px]:auto-rows-[minmax(1px,auto)] min-[980px]:grid-cols-2 min-[980px]:gap-x-3 min-[980px]:gap-y-0 min-[980px]:-mb-3",
+        "flex flex-col gap-3 min-[980px]:-mb-3 min-[980px]:grid min-[980px]:auto-rows-[minmax(1px,auto)] min-[980px]:grid-cols-2 min-[980px]:gap-x-3 min-[980px]:gap-y-0",
         className
       )}
     >

@@ -14,7 +14,8 @@ import { Input } from "@/components/ui/input";
 import { FieldHelp, FormStatus, Label } from "@/components/ui/label";
 import { Tooltip, TruncatedText, useIsTruncated } from "@/components/ui/tooltip";
 import type { StreamOption } from "@/lib/stream-scope";
-import { themeAttribute, THEMES, type Theme } from "@/lib/theme";
+import { THEMES, type Theme } from "@/lib/theme";
+import { switchTheme } from "@/lib/theme-switch";
 import { cn } from "@/lib/utils";
 
 import {
@@ -36,32 +37,16 @@ export const menuItemClass =
 const THEME_LABELS: Record<Theme, string> = { system: "System", light: "Light", dark: "Dark" };
 const THEME_ICONS: Record<Theme, LucideIcon> = { system: Monitor, light: Sun, dark: Moon };
 
-// A 200ms crossfade of the page snapshot (View Transitions) instead of transitioning every
-// element's colours, which restyled the whole tree for 300ms. Element transitions are off while
-// the attribute flips, so nothing lags behind the snapshot; without the API it is instant.
-// Resolves once the switch has painted.
 function applyTheme(theme: Theme): Promise<void> {
-  const root = document.documentElement;
-  const attr = themeAttribute(theme);
-  const flip = () => {
-    root.setAttribute("data-theme-switching", "");
-    if (attr) root.setAttribute("data-theme", attr);
-    else root.removeAttribute("data-theme");
-  };
-  const done = () => root.removeAttribute("data-theme-switching");
-  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (!reduced && typeof document.startViewTransition === "function") {
-    return document.startViewTransition(flip).finished.then(done, done);
-  }
-  flip();
-  return new Promise((resolve) =>
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => {
-        done();
-        resolve();
-      })
-    )
-  );
+  return switchTheme(theme, {
+    root: document.documentElement,
+    reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    startViewTransition:
+      typeof document.startViewTransition === "function"
+        ? (update) => document.startViewTransition(update)
+        : undefined,
+    nextFrame: (cb) => requestAnimationFrame(cb),
+  });
 }
 
 export function TopBar({
