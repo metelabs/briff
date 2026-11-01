@@ -35,7 +35,7 @@ Edit `.env` (every variable is documented in it). The required ones:
 sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$(openssl rand -hex 24)|" .env
 sed -i "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=$(openssl rand -base64 48 | tr -d '\n')|" .env
 sed -i "s|^BETTER_AUTH_URL=.*|BETTER_AUTH_URL=https://briff.example.com|" .env   # your origin
-sed -i "s|^BRIFF_VERSION=.*|BRIFF_VERSION=0.7.3|" .env   # a release from the GitHub releases page
+sed -i "s|^BRIFF_VERSION=.*|BRIFF_VERSION=0.8.0|" .env   # a release from the GitHub releases page
 ```
 
 Start it:
