@@ -8,8 +8,10 @@ import { nextCookies } from "better-auth/next-js";
 import { getDb } from "@/lib/db/client";
 import { getEnv } from "@/lib/env";
 import { log } from "@/lib/log";
+import { acceptInvite } from "@/lib/members";
 import { createOrgForUser } from "@/lib/org";
 import { sendPasswordResetEmail, sendVerificationEmailTo } from "./auth-email";
+import { inviteSignupFor } from "./invite-signup";
 import { authAttemptAllowed, authRateLimitRules, isLimitedAuthPath } from "./signup-limit";
 
 /** Where Better Auth sends the browser after an email link; relative to BETTER_AUTH_URL. */
@@ -70,14 +72,32 @@ function createAuth() {
     databaseHooks: {
       user: {
         create: {
-          // The first account can always bootstrap a closed instance.
+          // The first account can always bootstrap a closed instance, and an invite is
+          // always a way in.
           before: async (user) => {
+            if (inviteSignupFor(user.email)) return { data: user };
             if (!getEnv().ALLOW_SIGNUP && (await db.user.count()) > 0) {
               throw new APIError("FORBIDDEN", { message: "Sign-up is disabled." });
             }
             return { data: user };
           },
           after: async (user) => {
+            const invite = inviteSignupFor(user.email);
+            if (invite) {
+              const joined = await acceptInvite(db, { token: invite.token, userId: user.id });
+              if (joined.ok) {
+                log.info(
+                  { userId: user.id, orgId: joined.orgId },
+                  "auth: new user joined by invite"
+                );
+                return;
+              }
+              // Revoked or used between the page and the sign-up: the account still needs an org.
+              log.warn(
+                { userId: user.id, reason: joined.reason },
+                "auth: invite sign-up not joined"
+              );
+            }
             await createOrgForUser(db, { name: user.name || user.email, userId: user.id });
             log.info({ userId: user.id }, "auth: created org for new user");
           },

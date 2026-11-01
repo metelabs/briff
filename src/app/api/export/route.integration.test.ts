@@ -37,7 +37,7 @@ describe.skipIf(!url)("GET /api/export", () => {
   });
 
   it("downloads the session's org as a JSON attachment", async () => {
-    session = { userId, email: "e", name: "n", emailVerified: true, orgId };
+    session = { userId, email: "e", name: "n", emailVerified: true, orgId, role: "owner" };
     const res = await GET();
     expect(res.status).toBe(200);
     expect(res.headers.get("content-disposition")).toMatch(

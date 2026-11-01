@@ -13,25 +13,44 @@ import { type AuthMode, initialSignup, signupFooter } from "./signup-state";
 
 const INITIAL: AuthFormState = { error: null };
 
+/** An invite link's sign-in / sign-up: the address is the invite's and cannot change. */
+export interface AuthInvite {
+  token: string;
+  email: string;
+  orgName: string;
+  inviterName: string | null;
+}
+
 interface AuthFormProps {
   mode: AuthMode;
   allowSignup: boolean;
   signup?: boolean;
+  invite?: AuthInvite;
 }
 
-export function AuthForm({ mode, allowSignup, signup = false }: AuthFormProps) {
+export function AuthForm({ mode, allowSignup, signup = false, invite }: AuthFormProps) {
   const [signingUp, setSigningUp] = useState(initialSignup(mode, allowSignup, signup));
   const [signInState, signIn, signInPending] = useActionState(signInAction, INITIAL);
   const [signUpState, signUp, signUpPending] = useActionState(signUpAction, INITIAL);
 
   const state = signingUp ? signUpState : signInState;
-  const footer = signupFooter(mode, allowSignup);
+  const footer = invite ? null : signupFooter(mode, allowSignup);
   const pending = signingUp ? signUpPending : signInPending;
   useResultToast(state, { ok: false, message: state.error });
-  const title =
-    mode === "bootstrap" ? "Set up Briff" : signingUp ? "Create your account" : "Sign in to Briff";
-  const lead =
-    mode === "bootstrap"
+  const title = invite
+    ? `Join ${invite.orgName} on Briff`
+    : mode === "bootstrap"
+      ? "Set up Briff"
+      : signingUp
+        ? "Create your account"
+        : "Sign in to Briff";
+  const lead = invite
+    ? `${invite.inviterName ? `${invite.inviterName} invited` : "You were invited as"} ${invite.email}. ${
+        signingUp
+          ? "Create an account with this address to accept."
+          : "You already have an account: sign in to accept."
+      }`
+    : mode === "bootstrap"
       ? "Create the first account. It owns this instance."
       : "A weekly bulletin built from your own stack: what to fix, what to know, and nothing else.";
 
@@ -45,6 +64,7 @@ export function AuthForm({ mode, allowSignup, signup = false }: AuthFormProps) {
         // Switching modes swaps the action; remount so the fields start clean.
         key={signingUp ? "sign-up" : "sign-in"}
       >
+        {invite && <input type="hidden" name="invite" value={invite.token} />}
         {signingUp && (
           <div className="grid gap-1.5">
             <Label htmlFor="name">Name</Label>
@@ -60,6 +80,13 @@ export function AuthForm({ mode, allowSignup, signup = false }: AuthFormProps) {
             autoComplete="email"
             placeholder="you@studio.dev"
             required
+            {...(invite
+              ? {
+                  defaultValue: invite.email,
+                  readOnly: true,
+                  className: "bg-surface-2 text-fg-muted focus:shadow-none",
+                }
+              : {})}
           />
         </div>
         <div className="grid gap-1.5">
@@ -85,7 +112,13 @@ export function AuthForm({ mode, allowSignup, signup = false }: AuthFormProps) {
           {signingUp && <p className="text-fg-muted text-[12.5px]">At least 12 characters.</p>}
         </div>
         <Button type="submit" variant="primary" size="lg" disabled={pending} className="w-full">
-          {signingUp ? "Create account" : "Sign in"}
+          {invite
+            ? signingUp
+              ? "Create account and join"
+              : "Sign in and join"
+            : signingUp
+              ? "Create account"
+              : "Sign in"}
         </Button>
         {signingUp && mode !== "bootstrap" && (
           <p className="text-fg-muted text-center text-[12.5px]">

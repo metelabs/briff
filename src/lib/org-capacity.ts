@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
 import { isCloud } from "@/lib/env";
-import { countMembers } from "@/lib/org-members";
+import { countMembers } from "@/lib/members";
 import { loadOrgLimits } from "@/lib/org-limits";
 import type { OrgLimits } from "@/lib/plans";
 
@@ -19,7 +19,7 @@ export async function loadOrgCapacity(db: PrismaClient, orgId: string): Promise<
     loadOrgLimits(db, orgId),
     scoped.repo.count(),
     scoped.bulletinStream.count(),
-    countMembers(orgId, db),
+    countMembers(db, orgId),
   ]);
   return { ...limits, cloud: isCloud(), repos, streams, members };
 }

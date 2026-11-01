@@ -56,7 +56,10 @@ export function ConfirmDialog({
   );
 }
 
-/** A form dialog (New stream). Controlled, so the caller can close it after its action. */
+/**
+ * A form dialog (New stream). Controlled, so the caller can close it after its action.
+ * Without a trigger it is opened from elsewhere (a menu item that closes its menu first).
+ */
 export function FormDialog({
   open,
   onOpenChange,
@@ -68,7 +71,7 @@ export function FormDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  trigger: ReactElement;
+  trigger?: ReactElement;
   title: string;
   description?: ReactNode;
   children: ReactNode;
@@ -76,7 +79,7 @@ export function FormDialog({
 }) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
-      <DialogPrimitive.Trigger render={trigger} />
+      {trigger && <DialogPrimitive.Trigger render={trigger} />}
       <DialogPrimitive.Portal>
         <DialogPrimitive.Backdrop className={backdropClass} />
         <DialogPrimitive.Popup className={cn(popupClass, className)}>

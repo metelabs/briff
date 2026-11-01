@@ -1,12 +1,18 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { APIError } from "better-auth/api";
 import { z } from "zod";
 
 import { getAuth, RESET_PASSWORD_PATH, VERIFIED_CALLBACK } from "@/lib/auth/auth";
+import { withInviteSignup } from "@/lib/auth/invite-signup";
+import { ORG_COOKIE } from "@/lib/auth/session";
+import { getDb } from "@/lib/db/client";
+import { isInviteToken } from "@/lib/invite-token";
 import { log } from "@/lib/log";
+import { acceptInvite, findInviteByToken, memberRole } from "@/lib/members";
+import { STREAM_COOKIE } from "@/lib/stream-scope";
 
 export interface AuthFormState {
   error: string | null;
@@ -28,14 +34,37 @@ function messageOf(err: unknown): string {
   return "Something went wrong.";
 }
 
+/** The invite token a form from /invite/<token> carries, or null. */
+function inviteOf(form: FormData): string | null {
+  const token = form.get("invite");
+  return typeof token === "string" && isInviteToken(token) ? token : null;
+}
+
+/** Lands in the invite's org once the account is a member of it. */
+async function openInvitedOrg(orgId: string): Promise<never> {
+  const jar = await cookies();
+  jar.set(ORG_COOKIE, orgId, { path: "/", maxAge: 31_536_000, sameSite: "lax", httpOnly: true });
+  jar.delete(STREAM_COOKIE);
+  redirect("/?joined=1");
+}
+
 export async function signInAction(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
   const parsed = signInSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) return { error: "Enter your email and password." };
+  let userId: string;
   try {
-    await getAuth().api.signInEmail({ body: parsed.data, headers: await headers() });
+    const res = await getAuth().api.signInEmail({ body: parsed.data, headers: await headers() });
+    userId = res.user.id;
   } catch (err) {
     log.warn({ err }, "auth: sign-in failed");
     return { error: "Invalid email or password." };
+  }
+  const invite = inviteOf(form);
+  if (invite) {
+    const joined = await acceptInvite(getDb(), { token: invite, userId });
+    if (joined.ok) await openInvitedOrg(joined.orgId);
+    // Wrong account, expired, already a member: the invite page explains it.
+    redirect(`/invite/${invite}`);
   }
   redirect("/");
 }
@@ -43,14 +72,32 @@ export async function signInAction(_prev: AuthFormState, form: FormData): Promis
 export async function signUpAction(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
   const parsed = signUpSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  const token = inviteOf(form);
+  const invite = token ? await findInviteByToken(getDb(), token) : null;
+  if (token && invite?.status !== "pending") {
+    return { error: "This invite is no longer valid. Ask for a new one." };
+  }
+  // An invite decides the address; the hooks in auth.ts let it in and join its org.
+  const body = {
+    ...parsed.data,
+    email: invite?.email ?? parsed.data.email,
+    callbackURL: VERIFIED_CALLBACK,
+  };
+  const requestHeaders = await headers();
+  const signUp = () => getAuth().api.signUpEmail({ body, headers: requestHeaders });
+  let userId: string;
   try {
-    await getAuth().api.signUpEmail({
-      body: { ...parsed.data, callbackURL: VERIFIED_CALLBACK },
-      headers: await headers(),
-    });
+    const res =
+      token && invite
+        ? await withInviteSignup({ token, email: invite.email }, signUp)
+        : await signUp();
+    userId = res.user.id;
   } catch (err) {
     log.warn({ err }, "auth: sign-up failed");
     return { error: messageOf(err) };
+  }
+  if (invite && (await memberRole(getDb(), invite.orgId, userId))) {
+    await openInvitedOrg(invite.orgId);
   }
   redirect("/");
 }

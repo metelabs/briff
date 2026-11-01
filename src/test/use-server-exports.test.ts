@@ -76,18 +76,20 @@ describe('"use server" modules', () => {
 
   it("each action authenticates before anything else, or is listed as public", () => {
     // Public on purpose: sign-in/up/out, password reset (its token, rate limited per IP), the
-    // theme cookie, feedback (bulletin token or session).
+    // theme cookie, feedback (bulletin token or session), signing out from an invite page.
     const PUBLIC = new Set([
       "signInAction",
       "signUpAction",
       "requestPasswordResetAction",
       "resetPasswordAction",
       "signOutAction",
+      "signOutForInviteAction",
       "setThemeAction",
       "giveFeedbackAction",
     ]);
+    // getSessionUser: a signed-in account that may not belong to the org yet (joining an invite).
     const AUTH =
-      /^(await )?(requireOrgContext|requireAdminContext)\(\)|^const ctx = await (requireOrgContext|requireAdminContext)\(\)/;
+      /^(await )?(requireOrgContext|requireAdminContext)\(\)|^const ctx = await (requireOrgContext|requireAdminContext)\(\)|^const user = await getSessionUser\(\)/;
     const missing: string[] = [];
     for (const { f, text } of files) {
       const file = ts.createSourceFile(f, text, ts.ScriptTarget.Latest, true);

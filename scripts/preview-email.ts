@@ -1,6 +1,6 @@
 // Renders the latest bulletin email of each stream (or the one given), a security
 // alert email, an urgent email, the test email, the account emails (reset, verification,
-// email change) and the operator alert emails from the local database into files, without
+// email change, invite) and the operator alert emails from the local database into files, without
 // sending anything.
 //   npm run email:preview -- [--bulletin <id>] [--out <dir>]
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -17,6 +17,7 @@ import {
 } from "@/lib/email/alert-email";
 import { renderPasswordResetEmail, renderVerificationEmail } from "@/lib/email/account-email";
 import { renderBulletinEmail } from "@/lib/email/bulletin-email";
+import { renderInviteEmail } from "@/lib/email/invite-email";
 import { renderOpsAlertEmail } from "@/lib/email/ops-email";
 import { signFeedbackToken } from "@/lib/feedback-token";
 import { PRODUCT_LANGUAGE } from "@/lib/i18n";
@@ -205,6 +206,17 @@ async function main(): Promise<void> {
   const verifyUrl = `${authBase}/verify-email?token=sample.token.value&callbackURL=%2Fsettings%3Fverified%3D1`;
   write("verify-email", renderVerificationEmail(verifyUrl, "sign-up", env.BETTER_AUTH_URL));
   write("change-email", renderVerificationEmail(verifyUrl, "change-email", env.BETTER_AUTH_URL));
+  write(
+    "invite",
+    renderInviteEmail({
+      inviterName: "Ada Lovelace",
+      orgName: "Acme Studio",
+      role: "member",
+      url: `${env.BETTER_AUTH_URL}/invite/${"x".repeat(43)}`,
+      expiresAt: new Date("2026-11-09T12:00:00Z"),
+      instanceUrl: env.BETTER_AUTH_URL,
+    })
+  );
   await db.$disconnect();
 }
 

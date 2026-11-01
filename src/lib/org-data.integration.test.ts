@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "@/generated/prisma/client";
-import { withOrg } from "@/lib/db/with-org";
+import { TENANT_MODELS, withOrg } from "@/lib/db/with-org";
 import { createOrgForUser } from "@/lib/org";
 
 import { deleteOrg, orgExportStream } from "./org-data";
@@ -117,6 +117,15 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
       },
     });
     await scoped.interestProfile.updateMany({ data: { text: `profile ${name}` } });
+    await scoped.orgInvite.create({
+      data: {
+        orgId,
+        email: `invitee-${name}@example.com`,
+        tokenHash: `invite-hash-${name}-${suffix}`,
+        invitedByUserId: userId,
+        expiresAt: new Date(Date.now() + 86_400_000),
+      },
+    });
     await scoped.githubInstallation.create({
       data: {
         orgId,
@@ -148,6 +157,9 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
       streamRepo: await s.streamRepo.count(),
       scanToken: await s.scanToken.count(),
       githubInstallation: await s.githubInstallation.count(),
+      orgInvite: await s.orgInvite.count(),
+      // createOrgForUser writes the org.created event.
+      orgEvent: await s.orgEvent.count(),
     };
   }
 
@@ -179,6 +191,8 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
 
   afterAll(async () => {
     await db.org.deleteMany({ where: { id: { in: orgs } } });
+    // Orgs made for members left without one (deleteOrg -> ensureUserHasOrg).
+    await db.org.deleteMany({ where: { members: { some: { userId: { in: users } } } } });
     await db.user.deleteMany({ where: { id: { in: users } } });
     await db.source.deleteMany({ where: { id: sourceId } });
     await db.package.deleteMany({ where: { id: packageId } });
@@ -212,6 +226,8 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
       "scanTokens",
       "githubInstallations",
       "members",
+      "invites",
+      "events",
     ]) {
       expect(data[key], key).toHaveLength(1);
     }
@@ -226,6 +242,7 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
     expect(text).not.toContain(`other-${suffix}`);
     expect(text).not.toContain("tokenHash");
     expect(text).not.toContain(`hash-mine-${suffix}`);
+    expect(text).not.toContain(`invite-hash-mine-${suffix}`);
     expect(text).not.toContain("hash:secret");
     expect(text).not.toContain(`tok-alice-${suffix}`);
     expect(text).not.toContain(bob);
@@ -235,6 +252,10 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
     const carol = await user("carol");
     const orgId = await populatedOrg(carol, `carol-${suffix}`);
     const before = await tenantCounts(orgId);
+    // Every tenant model is counted here, so a new one must be added (and cascade).
+    expect(Object.keys(before).sort()).toEqual(
+      TENANT_MODELS.map((m) => m[0].toLowerCase() + m.slice(1)).sort()
+    );
     expect(Object.values(before).every((n) => n > 0)).toBe(true);
     await db.job.create({
       data: { type: "bulletin-preview", dedupeKey: `p-${suffix}`, payload: { orgId } },
@@ -290,6 +311,14 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
       await deleteOrg(db, { orgId: first, userId: dave, confirmName: `dave-${suffix}` })
     ).toEqual({ ok: true, userDeleted: false });
     expect(await db.user.count({ where: { id: { in: [dave, erin] } } })).toBe(2);
+    // Erin had no other org: she gets a fresh one of her own instead of being stranded.
+    const erinOrgs = await db.user.findUniqueOrThrow({
+      where: { id: erin },
+      select: { memberships: { select: { role: true, orgId: true } } },
+    });
+    expect(erinOrgs.memberships).toHaveLength(1);
+    expect(erinOrgs.memberships[0]?.role).toBe("owner");
+    expect(erinOrgs.memberships[0]?.orgId).not.toBe(first);
     expect(await db.org.count({ where: { id: second } })).toBe(1);
     expect((await tenantCounts(second)).repo).toBe(1);
   });

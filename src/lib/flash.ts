@@ -55,6 +55,24 @@ const RULES: Rule[] = [
     value: "1",
     flash: () => ({ kind: "ok", message: "Your password was changed. Sign in with the new one." }),
   },
+  // Joining or leaving lands on Home, or on onboarding when the org has no repos yet.
+  ...["/", "/onboarding"].flatMap((path): Rule[] => [
+    {
+      path,
+      param: "joined",
+      value: "1",
+      flash: () => ({
+        kind: "ok",
+        message: "You joined the organisation. Its bulletins and alerts come to you from now on.",
+      }),
+    },
+    {
+      path,
+      param: "left",
+      value: "1",
+      flash: () => ({ kind: "ok", message: "You left the organisation." }),
+    },
+  ]),
   {
     path: "/login",
     param: "deleted",
@@ -99,4 +117,13 @@ export function flashStep(
   if (!flash) return { show: null, key: null };
   const key = `${pathname}?${params.toString()}`;
   return key === shownKey ? { show: null, key } : { show: flash, key };
+}
+
+/** Home's redirect to onboarding keeps a join/leave notice: `?joined=1`, else "". */
+export function membershipFlashQuery(
+  params: Record<string, string | string[] | undefined>
+): string {
+  if (params.joined === "1") return "?joined=1";
+  if (params.left === "1") return "?left=1";
+  return "";
 }

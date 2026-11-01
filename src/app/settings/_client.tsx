@@ -424,9 +424,9 @@ export function DeleteOrgButton({ orgName }: { orgName: string }) {
       description={
         <>
           Repos, dependencies, streams, bulletins, alerts, feedback, the profile and scan tokens of{" "}
-          <b className="text-fg font-medium">{orgName}</b> are deleted now. If you belong to no
-          other organisation, your account goes too and you are signed out. This cannot be undone;
-          export your data first if you want a copy.
+          <b className="text-fg font-medium">{orgName}</b> are deleted now, and its other members
+          lose access. If you belong to no other organisation, your account goes too and you are
+          signed out. This cannot be undone; export your data first if you want a copy.
         </>
       }
     >

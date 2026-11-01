@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import type { OrgContext } from "@/lib/auth/session";
 import { isCloud } from "@/lib/env";
-import { isInstanceAdmin } from "@/lib/auth/session";
+import { isInstanceAdmin, listUserOrgs } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { hasUnseenAlerts } from "@/lib/member-state";
 import { loadStreamScope, repoScope } from "@/lib/stream-scope";
@@ -29,10 +29,11 @@ export async function AppShell({
   active: NavHref;
   children: ReactNode;
 }) {
-  const [admin, scope, theme] = await Promise.all([
+  const [admin, scope, theme, orgs] = await Promise.all([
     isInstanceAdmin(ctx.userId),
     loadStreamScope(ctx.orgId),
     readTheme(),
+    listUserOrgs(ctx.userId),
   ]);
   const alertsDot = await hasUnseenAlerts(getDb(), ctx.orgId, ctx.userId, repoScope(scope));
 
@@ -47,6 +48,8 @@ export async function AppShell({
           user={{ name: ctx.name, email: ctx.email }}
           streams={scope.streams}
           currentStreamId={scope.current?.id ?? null}
+          orgs={orgs}
+          currentOrgId={ctx.orgId}
         />
         <PageContainer as="main" className="flex flex-1 flex-col pb-16">
           {!ctx.emailVerified && (

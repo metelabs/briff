@@ -32,6 +32,8 @@ model User {
   memberships   OrgMember[]
   feedback      Feedback[]
   scanTokens    ScanToken[]
+  invitesSent   OrgInvite[]
+  orgEvents     OrgEvent[]
 
   @@map("user")
 }
@@ -120,6 +122,8 @@ model Org {
   repoRuntimes        RepoRuntime[]
   scanTokens          ScanToken[]
   githubInstallations GithubInstallation[]
+  invites             OrgInvite[]
+  events              OrgEvent[]
 
   @@map("org")
 }
@@ -152,6 +156,57 @@ model OrgMember {
   @@unique([orgId, userId])
   @@index([userId])
   @@map("org_member")
+}
+
+// An emailed invitation to join an org (Settings -> Members). Only the sha256 of the link's
+// token is stored; a resend replaces it. Pending = not accepted, not revoked, not expired.
+model OrgInvite {
+  id              String    @id @default(cuid())
+  orgId           String
+  org             Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  // Lower-cased; only an account with this address can accept.
+  email           String
+  role            OrgRole   @default(member)
+  tokenHash       String    @unique
+  invitedByUserId String?
+  invitedBy       User?     @relation(fields: [invitedByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime  @default(now())
+  sentAt          DateTime  @default(now())
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  revokedAt       DateTime?
+
+  @@index([orgId, email])
+  @@map("org_invite")
+}
+
+enum OrgEventType {
+  member_invited  @map("member.invited")
+  invite_accepted @map("invite.accepted")
+  invite_revoked  @map("invite.revoked")
+  member_removed  @map("member.removed")
+  role_changed    @map("role.changed")
+  org_renamed     @map("org.renamed")
+  org_created     @map("org.created")
+}
+
+// Audit log of membership and org changes, shown to owners under Settings -> Members.
+model OrgEvent {
+  id           String       @id @default(cuid())
+  orgId        String
+  org          Org          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  actorUserId  String?
+  actor        User?        @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  type         OrgEventType
+  targetEmail  String?
+  // No foreign key: the event outlives the user it names.
+  targetUserId String?
+  // Short human detail: the new role, the old and new org name.
+  detail       String?
+  createdAt    DateTime     @default(now())
+
+  @@index([orgId, createdAt])
+  @@map("org_event")
 }
 
 // Bearer secret a scanner sends to POST /api/scan; the token decides the org. Only the

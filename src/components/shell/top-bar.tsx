@@ -1,19 +1,29 @@
 "use client";
 
 import { Menu } from "@base-ui/react/menu";
-import { Check, ChevronDown, type LucideIcon, Monitor, Moon, Sun } from "lucide-react";
+import { Check, ChevronDown, type LucideIcon, Monitor, Moon, Plus, Sun } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 
 import { signOutAction } from "@/app/login/actions";
 import { Logo } from "@/components/logo/Logo";
+import { Button } from "@/components/ui/button";
+import { DialogClose, FormDialog } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { FieldHelp, FormStatus, Label } from "@/components/ui/label";
 import { Tooltip, TruncatedText, useIsTruncated } from "@/components/ui/tooltip";
 import type { StreamOption } from "@/lib/stream-scope";
 import { themeAttribute, THEMES, type Theme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
-import { selectStreamAction, setThemeAction } from "./actions";
+import {
+  createOrgAction,
+  type CreateOrgState,
+  selectStreamAction,
+  setThemeAction,
+  switchOrgAction,
+} from "./actions";
 import { ConnectReposBarButton } from "./connect-sheet";
 import { initialsOf, NAV, type NavHref } from "./nav";
 import { PageContainer } from "./page-container";
@@ -45,6 +55,8 @@ export function TopBar({
   user,
   streams,
   currentStreamId,
+  orgs,
+  currentOrgId,
 }: {
   active: NavHref;
   admin: boolean;
@@ -54,6 +66,8 @@ export function TopBar({
   user: { name: string; email: string };
   streams: StreamOption[];
   currentStreamId: string | null;
+  orgs: OrgOption[];
+  currentOrgId: string;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const navRef = useRef<HTMLElement>(null);
@@ -127,7 +141,13 @@ export function TopBar({
         <div className="ml-auto flex min-w-0 items-center gap-2.5">
           <ConnectReposBarButton />
           <StreamPicker streams={streams} currentStreamId={currentStreamId} />
-          <AccountMenu user={user} admin={admin} theme={theme} />
+          <AccountMenu
+            user={user}
+            admin={admin}
+            theme={theme}
+            orgs={orgs}
+            currentOrgId={currentOrgId}
+          />
         </div>
       </PageContainer>
     </header>
@@ -221,93 +241,193 @@ function StreamPicker({
   );
 }
 
+export interface OrgOption {
+  id: string;
+  name: string;
+  role: "owner" | "member";
+}
+
 function AccountMenu({
   user,
   admin,
   theme,
+  orgs,
+  currentOrgId,
 }: {
   user: { name: string; email: string };
   admin: boolean;
   theme: Theme;
+  orgs: OrgOption[];
+  currentOrgId: string;
 }) {
   const [shownTheme, setShownTheme] = useState(theme);
   const [, startTransition] = useTransition();
+  const [switching, startSwitch] = useTransition();
+  const [optimisticOrg, setOptimisticOrg] = useState(currentOrgId);
+  const [creating, setCreating] = useState(false);
+  // A new key per opening, so the dialog starts empty.
+  const [round, setRound] = useState(0);
 
   return (
-    <Menu.Root>
-      <Menu.Trigger
-        aria-label="Account and theme"
-        className="bg-brand-soft text-brand hover:ring-line-strong data-popup-open:ring-brand grid size-9 shrink-0 place-items-center rounded-full text-[12px] font-semibold ring-1 ring-transparent transition-shadow duration-150"
-      >
-        {initialsOf(user.name, user.email)}
-      </Menu.Trigger>
-      <Menu.Portal>
-        <Menu.Positioner sideOffset={8} align="end" className="z-50">
-          <Menu.Popup className={menuPopupClass}>
-            <div className="px-2.5 pt-1.5 pb-2">
-              <TruncatedText className="text-[14px] font-medium" focusable={false}>
-                {user.name || user.email}
-              </TruncatedText>
-              <TruncatedText className="text-fg-muted text-[12.5px]" focusable={false}>
-                {user.email}
-              </TruncatedText>
-            </div>
-            <Menu.Separator className="border-line my-1.5 border-t" />
-            <Menu.RadioGroup
-              value={shownTheme}
-              onValueChange={(value: Theme) => {
-                setShownTheme(value);
-                applyTheme(value);
-                startTransition(async () => {
-                  await setThemeAction(value);
-                });
-              }}
-              className="flex items-center justify-between gap-3 py-0.5 pr-0.5 pl-2.5"
-            >
-              <Menu.GroupLabel className="text-fg-muted text-[12.5px] font-medium">
-                Theme
-              </Menu.GroupLabel>
-              <div className="bg-surface-2 border-line flex gap-0.5 rounded-full border p-0.5">
-                {THEMES.map((t) => {
-                  const Icon = THEME_ICONS[t];
-                  return (
-                    <Tooltip key={t} content={THEME_LABELS[t]} describe={false} toggleOnTap={false}>
-                      <Menu.RadioItem
-                        value={t}
-                        closeOnClick={false}
-                        aria-label={`${THEME_LABELS[t]} theme`}
-                        title={THEME_LABELS[t]}
-                        className="text-fg-muted data-highlighted:ring-line-strong data-highlighted:not-data-checked:bg-surface data-highlighted:not-data-checked:text-fg data-checked:bg-brand-soft data-checked:text-brand grid size-8 cursor-default place-items-center rounded-full transition-colors duration-[120ms] outline-none select-none data-highlighted:ring-1"
-                      >
-                        <Icon aria-hidden className="size-4" />
-                      </Menu.RadioItem>
-                    </Tooltip>
-                  );
-                })}
+    <>
+      <Menu.Root>
+        <Menu.Trigger
+          aria-label="Account and theme"
+          className="bg-brand-soft text-brand hover:ring-line-strong data-popup-open:ring-brand grid size-9 shrink-0 place-items-center rounded-full text-[12px] font-semibold ring-1 ring-transparent transition-shadow duration-150"
+        >
+          {initialsOf(user.name, user.email)}
+        </Menu.Trigger>
+        <Menu.Portal>
+          <Menu.Positioner sideOffset={8} align="end" className="z-50">
+            <Menu.Popup className={menuPopupClass}>
+              <div className="px-2.5 pt-1.5 pb-2">
+                <TruncatedText className="text-[14px] font-medium" focusable={false}>
+                  {user.name || user.email}
+                </TruncatedText>
+                <TruncatedText className="text-fg-muted text-[12.5px]" focusable={false}>
+                  {user.email}
+                </TruncatedText>
               </div>
-            </Menu.RadioGroup>
-            <Menu.Separator className="border-line my-1.5 border-t" />
-            <Menu.LinkItem render={<Link href="/settings" />} className={menuItemClass}>
-              Settings
-            </Menu.LinkItem>
-            {admin && (
-              <Menu.LinkItem render={<Link href="/admin" />} className={menuItemClass}>
-                Admin
+              <Menu.Separator className="border-line my-1.5 border-t" />
+              <Menu.RadioGroup
+                value={switching ? optimisticOrg : currentOrgId}
+                onValueChange={(value: string) => {
+                  if (value === currentOrgId) return;
+                  setOptimisticOrg(value);
+                  startSwitch(async () => {
+                    await switchOrgAction(value);
+                  });
+                }}
+              >
+                <Menu.GroupLabel className="text-fg-muted px-2.5 pt-1 pb-1.5 text-[12px] font-medium">
+                  Organisation
+                </Menu.GroupLabel>
+                {orgs.map((o) => (
+                  <Menu.RadioItem key={o.id} value={o.id} className={menuItemClass}>
+                    <span className="flex w-4 shrink-0 justify-center">
+                      <Menu.RadioItemIndicator>
+                        <Check aria-hidden className="text-brand size-4" />
+                      </Menu.RadioItemIndicator>
+                    </span>
+                    <TruncatedText className="flex-1" focusable={false}>
+                      {o.name}
+                    </TruncatedText>
+                    <span className="text-fg-muted text-[12.5px]">
+                      {o.role === "owner" ? "Owner" : "Member"}
+                    </span>
+                  </Menu.RadioItem>
+                ))}
+              </Menu.RadioGroup>
+              <Menu.Item
+                className={cn(menuItemClass, "text-brand text-[13px] font-medium")}
+                onClick={() => {
+                  setRound((r) => r + 1);
+                  setCreating(true);
+                }}
+              >
+                <span className="flex w-4 shrink-0 justify-center">
+                  <Plus aria-hidden className="size-4" />
+                </span>
+                Create organisation
+              </Menu.Item>
+              <Menu.Separator className="border-line my-1.5 border-t" />
+              <Menu.RadioGroup
+                value={shownTheme}
+                onValueChange={(value: Theme) => {
+                  setShownTheme(value);
+                  applyTheme(value);
+                  startTransition(async () => {
+                    await setThemeAction(value);
+                  });
+                }}
+                className="flex items-center justify-between gap-3 py-0.5 pr-0.5 pl-2.5"
+              >
+                <Menu.GroupLabel className="text-fg-muted text-[12.5px] font-medium">
+                  Theme
+                </Menu.GroupLabel>
+                <div className="bg-surface-2 border-line flex gap-0.5 rounded-full border p-0.5">
+                  {THEMES.map((t) => {
+                    const Icon = THEME_ICONS[t];
+                    return (
+                      <Tooltip
+                        key={t}
+                        content={THEME_LABELS[t]}
+                        describe={false}
+                        toggleOnTap={false}
+                      >
+                        <Menu.RadioItem
+                          value={t}
+                          closeOnClick={false}
+                          aria-label={`${THEME_LABELS[t]} theme`}
+                          title={THEME_LABELS[t]}
+                          className="text-fg-muted data-highlighted:ring-line-strong data-highlighted:not-data-checked:bg-surface data-highlighted:not-data-checked:text-fg data-checked:bg-brand-soft data-checked:text-brand grid size-8 cursor-default place-items-center rounded-full transition-colors duration-[120ms] outline-none select-none data-highlighted:ring-1"
+                        >
+                          <Icon aria-hidden className="size-4" />
+                        </Menu.RadioItem>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
+              </Menu.RadioGroup>
+              <Menu.Separator className="border-line my-1.5 border-t" />
+              <Menu.LinkItem render={<Link href="/settings" />} className={menuItemClass}>
+                Settings
               </Menu.LinkItem>
-            )}
-            <Menu.Item
-              className={menuItemClass}
-              onClick={() => {
-                startTransition(async () => {
-                  await signOutAction();
-                });
-              }}
-            >
-              Sign out
-            </Menu.Item>
-          </Menu.Popup>
-        </Menu.Positioner>
-      </Menu.Portal>
-    </Menu.Root>
+              {admin && (
+                <Menu.LinkItem render={<Link href="/admin" />} className={menuItemClass}>
+                  Admin
+                </Menu.LinkItem>
+              )}
+              <Menu.Item
+                className={menuItemClass}
+                onClick={() => {
+                  startTransition(async () => {
+                    await signOutAction();
+                  });
+                }}
+              >
+                Sign out
+              </Menu.Item>
+            </Menu.Popup>
+          </Menu.Positioner>
+        </Menu.Portal>
+      </Menu.Root>
+      <FormDialog
+        open={creating}
+        onOpenChange={setCreating}
+        title="Create organisation"
+        description="A separate workspace with its own repos, streams, bulletins and members. You are its owner."
+      >
+        <CreateOrgForm key={round} />
+      </FormDialog>
+    </>
+  );
+}
+
+const CREATE_INITIAL: CreateOrgState = { ok: true, message: null };
+
+function CreateOrgForm() {
+  const [state, action, pending] = useActionState(createOrgAction, CREATE_INITIAL);
+  return (
+    <form action={action} className="grid gap-1.5">
+      <Label htmlFor="new-org-name">Name</Label>
+      <Input
+        id="new-org-name"
+        name="name"
+        placeholder="e.g. Acme Studio"
+        maxLength={100}
+        defaultValue={state.saved ?? ""}
+        required
+        autoFocus
+      />
+      <FieldHelp>You can rename it later in Settings.</FieldHelp>
+      <FormStatus ok={state.ok} message={state.message} />
+      <div className="mt-3 flex flex-wrap justify-end gap-2">
+        <DialogClose render={<Button variant="secondary">Cancel</Button>} />
+        <Button type="submit" variant="primary" disabled={pending}>
+          Create organisation
+        </Button>
+      </div>
+    </form>
   );
 }
