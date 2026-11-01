@@ -4,10 +4,11 @@ import type { ReactNode } from "react";
 import { Logo } from "@/components/logo/Logo";
 import { PageContainer } from "@/components/shell/page-container";
 import { buttonVariants } from "@/components/ui/button";
+import { SUPPORT_EMAIL } from "@/lib/legal";
 import { cn } from "@/lib/utils";
 
 import packageJson from "../../../package.json";
-import { DOCS_URL, METELABS_URL, PRIVACY_URL, SOURCE_URL } from "./links";
+import { DOCS_URL, METELABS_URL, SOURCE_URL, TRUST_LINKS } from "./links";
 
 // Header and footer of the public pages (landing, replays): the minimal header's logo
 // position (DESIGN.md §2) plus a few section links and Sign in; no session, no shell.
@@ -62,8 +63,13 @@ export function PublicFooter() {
   return (
     <footer className="border-line mt-auto border-t">
       <PageContainer className="text-fg-muted flex flex-wrap items-center gap-x-5 gap-y-1 py-5 text-[12.5px]">
+        {TRUST_LINKS.map((link) => (
+          <FooterLink key={link.label} href={link.href}>
+            {link.label}
+          </FooterLink>
+        ))}
+        <span>Contact: {SUPPORT_EMAIL}</span>
         <FooterLink href={DOCS_URL}>Docs</FooterLink>
-        <FooterLink href={PRIVACY_URL}>Privacy</FooterLink>
         <FooterLink href={SOURCE_URL}>Source</FooterLink>
         <FooterLink href={METELABS_URL}>Made by Metelabs</FooterLink>
         <span className="font-mono tabular-nums">Briff {packageJson.version}</span>

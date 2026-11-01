@@ -16,5 +16,8 @@ export default defineConfig({
     // DB-backed tests share one database, and the urgent pass and collect-sources work on
     // every org and source in it: run files one at a time when that database is in play.
     fileParallelism: !process.env.TEST_DATABASE_URL,
+    // The legal pages still carry the operator placeholders of src/lib/legal.ts. Remove this
+    // once they are filled in: src/components/legal/legal-placeholders.test.ts then fails on any.
+    env: { LEGAL_PLACEHOLDERS_ALLOWED: "true" },
   },
 });

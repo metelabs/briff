@@ -6,6 +6,7 @@ Please report vulnerabilities privately, not in a public issue:
 
 1. Open https://github.com/metelabs/briff/security/advisories/new (repository → **Security**
    → **Report a vulnerability**).
+   Or email security@briff.dev (also listed in `/.well-known/security.txt` on app.briff.dev).
 2. Describe the issue, the affected version or commit, and how to reproduce it. A proof of
    concept against your own instance is welcome; do not test against other people's data on
    app.briff.dev.

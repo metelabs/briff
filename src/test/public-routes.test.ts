@@ -19,6 +19,10 @@ const ROOT = path.resolve(__dirname, "../..");
 const ENTRIES = [
   "src/app/landing/page.tsx",
   "src/app/replay/[id]/page.tsx",
+  "src/app/terms/page.tsx",
+  "src/app/privacy/page.tsx",
+  "src/app/refunds/page.tsx",
+  "src/app/dpa/page.tsx",
   "src/app/robots.ts",
   "src/app/sitemap.ts",
   "src/proxy.ts",
@@ -93,7 +97,7 @@ describe("public routes", () => {
 
 describe("robots", () => {
   it("closes every app route folder except the public ones", () => {
-    const PUBLIC = new Set(["replay"]);
+    const PUBLIC = new Set(["replay", "terms", "privacy", "refunds", "dpa"]);
     const folders = readdirSync(path.join(ROOT, "src/app"), { withFileTypes: true })
       .filter((e) => e.isDirectory() && !e.name.startsWith("_") && e.name !== "fonts")
       .map((e) => e.name)

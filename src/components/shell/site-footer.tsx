@@ -1,13 +1,18 @@
+import { TRUST_LINKS } from "@/components/landing/links";
+import { SUPPORT_EMAIL } from "@/lib/legal";
+
 import packageJson from "../../../package.json";
 
 import { PageContainer } from "./page-container";
 
 const LINKS = [
+  ...TRUST_LINKS.map((link) =>
+    link.href === "/api/health" ? { ...link, label: `Status · ${packageJson.version}` } : link
+  ),
   { href: "https://www.npmjs.com/package/briff-scan", label: "Docs" },
   { href: "https://github.com/metelabs/briff/releases", label: "Changelog" },
-  { href: "/api/health", label: `Status · ${packageJson.version}` },
   { href: "https://metelabs.dev", label: "Made by Metelabs" },
-] as const;
+];
 
 /** One muted line of links under every shell page. */
 export function SiteFooter() {
@@ -24,6 +29,7 @@ export function SiteFooter() {
             {link.label}
           </a>
         ))}
+        <span>Contact: {SUPPORT_EMAIL}</span>
       </PageContainer>
     </footer>
   );

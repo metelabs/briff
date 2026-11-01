@@ -2,13 +2,15 @@
 
 The app serves its own public pages, in the Triage design system, without a session:
 
-| Path                                         | What                                                                        | Code                                      |
-| -------------------------------------------- | --------------------------------------------------------------------------- | ----------------------------------------- |
-| `/` (no session cookie)                      | Landing page                                                                | `src/proxy.ts` rewrites to `/landing`     |
-| `/` (session cookie)                         | The dashboard, unchanged (a stale cookie still ends at `/login`)            | `src/app/page.tsx`                        |
-| `/landing`                                   | The landing page itself (canonical `/`, closed in robots.txt)               | `src/app/landing/page.tsx`                |
-| `/replay/php2shell`, `/replay/node-oct-2026` | The replays, from the same scenarios and engine as `docs/replay/*.html`     | `src/app/replay/[id]/page.tsx`            |
-| `/robots.txt`, `/sitemap.xml`                | Allow `/` and `/replay/`, close every app route; list the three public URLs | `src/app/robots.ts`, `src/app/sitemap.ts` |
+| Path                                         | What                                                                                   | Code                                               |
+| -------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `/` (no session cookie)                      | Landing page                                                                           | `src/proxy.ts` rewrites to `/landing`              |
+| `/` (session cookie)                         | The dashboard, unchanged (a stale cookie still ends at `/login`)                       | `src/app/page.tsx`                                 |
+| `/landing`                                   | The landing page itself (canonical `/`, closed in robots.txt)                          | `src/app/landing/page.tsx`                         |
+| `/replay/php2shell`, `/replay/node-oct-2026` | The replays, from the same scenarios and engine as `docs/replay/*.html`                | `src/app/replay/[id]/page.tsx`                     |
+| `/terms`, `/privacy`, `/refunds`, `/dpa`     | Legal pages of the hosted service (one layout, operator facts in `src/lib/legal.ts`)   | `src/app/<page>/page.tsx`, `src/components/legal/` |
+| `/.well-known/security.txt`                  | RFC 9116 contact file, static; renew `Expires` yearly (a test fails 30 days before)    | `public/.well-known/security.txt`                  |
+| `/robots.txt`, `/sitemap.xml`                | Allow `/`, `/replay/` and the legal pages, close every app route; list the public URLs | `src/app/robots.ts`, `src/app/sitemap.ts`          |
 
 - The proxy only checks whether Better Auth's session cookie is present; it reads no database.
   It runs for `/` alone (`matcher: "/"`), so no other request (uploads, webhooks) passes it.
@@ -23,7 +25,16 @@ The app serves its own public pages, in the Triage design system, without a sess
 - The file list under "How it reads your repos" is `SCANNED_FILE_NAMES` / `SCANNED_NAME_PATTERNS`
   from `packages/scan/src/files.ts`, the lists `isScannedPath` (the GitHub App's filter) uses. A
   scanner change shows up in `src/components/landing/__snapshots__/scanned-files.test.ts.snap`.
-- Links to the repository (Self-host, Docs, Privacy, Source) are built from `SOURCE_URL` in
+- Legal pages: the operator's legal name, address, registration number and the backup and log
+  retention are placeholders in `src/lib/legal.ts` (`[LEGAL_NAME]`, ...). Fill them there once;
+  then remove `LEGAL_PLACEHOLDERS_ALLOWED` from `vitest.config.mts`, and
+  `src/components/legal/legal-placeholders.test.ts` fails if a placeholder comes back. The
+  sub-processor list (`src/components/legal/subprocessors.ts`) must stay in step with
+  docs/PRIVACY.md. Both footers (public pages and the app shell) start with Terms, Privacy,
+  Pricing, Security, Status and the support address (`TRUST_LINKS` in `links.ts`); the sign-up
+  form says that creating an account accepts the Terms and Privacy Policy (not on the first,
+  instance-owning account).
+- Links to the repository (Self-host, Docs, Source, Security) are built from `SOURCE_URL` in
   `src/components/landing/links.ts`. The repository is private, so they 404 for visitors until
   it is opened; change that one constant if the source moves.
 - Every page stays rendered per request: the root layout reads the theme cookie (no inline
@@ -110,7 +121,7 @@ lists `Allow: /`.
    curl -sI https://www.briff.dev/replay/php2shell | grep -i '^location'
    # location: https://app.briff.dev/replay/php2shell
    curl -s https://app.briff.dev/sitemap.xml | grep -c '<loc>'
-   # 3
+   # 7
    ```
    Then in a private window open `https://briff.dev`: you end on `https://app.briff.dev/` with
    the landing page. In your normal window (signed in) the same URL shows your dashboard.
