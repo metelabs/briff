@@ -1,10 +1,12 @@
 "use server";
 
+import { APIError } from "better-auth/api";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { getAuth, VERIFIED_CALLBACK } from "@/lib/auth/auth";
 import { requireOrgContext } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { withOrg } from "@/lib/db/with-org";
@@ -119,4 +121,69 @@ export async function deleteOrgAction(_prev: FormState, form: FormData): Promise
   const jar = await cookies();
   for (const c of jar.getAll()) if (c.name.includes("better-auth")) jar.delete(c.name);
   redirect("/login?deleted=1");
+}
+
+function authError(err: unknown, fallback: string): string {
+  if (err instanceof APIError) {
+    if (err.status === "TOO_MANY_REQUESTS") return "Too many attempts. Try again in one hour.";
+    if (err.body?.code === "INVALID_PASSWORD") return "The current password is wrong.";
+  }
+  return fallback;
+}
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Enter your current password.").max(128),
+  newPassword: z
+    .string()
+    .min(12, "The new password needs at least 12 characters.")
+    .max(128, "At most 128 characters."),
+});
+
+export async function changePasswordAction(_prev: FormState, form: FormData): Promise<FormState> {
+  const ctx = await requireOrgContext();
+  const parsed = changePasswordSchema.safeParse({
+    currentPassword: String(form.get("currentPassword") ?? ""),
+    newPassword: String(form.get("newPassword") ?? ""),
+  });
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+  try {
+    await getAuth().api.changePassword({
+      body: { ...parsed.data, revokeOtherSessions: true },
+      headers: await headers(),
+    });
+  } catch (err) {
+    log.warn({ err, userId: ctx.userId }, "auth: change password failed");
+    return { ok: false, message: authError(err, "Could not change the password.") };
+  }
+  log.info({ userId: ctx.userId }, "auth: password changed");
+  // The request's session was revoked with the others; re-rendering here would read it and
+  // bounce through /login. Navigate instead, so the next render carries the new cookie.
+  redirect("/settings?password=changed#account");
+}
+
+export async function changeEmailAction(_prev: FormState, form: FormData): Promise<FormState> {
+  const ctx = await requireOrgContext();
+  const raw = String(form.get("newEmail") ?? "").trim();
+  const parsed = z.email().safeParse(raw);
+  if (!parsed.success) return { ok: false, message: "Enter a valid email address.", saved: raw };
+  if (parsed.data.toLowerCase() === ctx.email.toLowerCase()) {
+    return { ok: false, message: "That is already your account email.", saved: raw };
+  }
+  try {
+    await getAuth().api.changeEmail({
+      body: { newEmail: parsed.data, callbackURL: VERIFIED_CALLBACK },
+      headers: await headers(),
+    });
+  } catch (err) {
+    log.warn({ err, userId: ctx.userId }, "auth: change email failed");
+    return { ok: false, message: authError(err, "Could not start the change."), saved: raw };
+  }
+  log.info({ userId: ctx.userId }, "auth: email change requested");
+  return {
+    ok: true,
+    message: `We sent a link to ${parsed.data}. Your email changes once you open it.`,
+    saved: "",
+  };
 }

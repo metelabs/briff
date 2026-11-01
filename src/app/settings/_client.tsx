@@ -21,6 +21,8 @@ import {
 import { cn } from "@/lib/utils";
 
 import {
+  changeEmailAction,
+  changePasswordAction,
   createScanTokenAction,
   deleteOrgAction,
   type FormState,
@@ -92,6 +94,68 @@ export function DeliveryForm({
       <div className="flex flex-wrap items-center gap-3 min-[560px]:col-span-2">
         <Button type="submit" variant="secondary" disabled={pending}>
           Save delivery address
+        </Button>
+        <FormStatus ok={state.ok} message={state.message} />
+      </div>
+    </form>
+  );
+}
+
+export function ChangePasswordForm() {
+  const [state, action, pending] = useActionState(changePasswordAction, INITIAL);
+  return (
+    <form action={action} className="grid gap-4 min-[560px]:grid-cols-2">
+      <div className="grid content-start gap-1.5">
+        <Label htmlFor="currentPassword">Current password</Label>
+        <Input
+          id="currentPassword"
+          name="currentPassword"
+          type="password"
+          autoComplete="current-password"
+          required
+        />
+      </div>
+      <div className="grid content-start gap-1.5">
+        <Label htmlFor="newPassword">New password</Label>
+        <Input
+          id="newPassword"
+          name="newPassword"
+          type="password"
+          autoComplete="new-password"
+          minLength={12}
+          maxLength={128}
+          required
+        />
+        <FieldHelp>At least 12 characters. Other devices are signed out.</FieldHelp>
+      </div>
+      <div className="flex flex-wrap items-center gap-3 min-[560px]:col-span-2">
+        <Button type="submit" variant="secondary" disabled={pending}>
+          Change password
+        </Button>
+        <FormStatus ok={state.ok} message={state.message} />
+      </div>
+    </form>
+  );
+}
+
+export function ChangeEmailForm({ email }: { email: string }) {
+  const [state, action, pending] = useActionState(changeEmailAction, INITIAL);
+  return (
+    <form action={action} className="grid gap-1.5">
+      <Label htmlFor="newEmail">New account email</Label>
+      <Input
+        id="newEmail"
+        name="newEmail"
+        type="email"
+        autoComplete="email"
+        defaultValue={state.saved ?? ""}
+        placeholder={email}
+        required
+      />
+      <FieldHelp>We send a link to the new address; the change happens once you open it.</FieldHelp>
+      <div className="mt-2.5 flex flex-wrap items-center gap-3">
+        <Button type="submit" variant="secondary" disabled={pending}>
+          Change email
         </Button>
         <FormStatus ok={state.ok} message={state.message} />
       </div>

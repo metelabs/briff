@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -60,7 +61,17 @@ export function AuthForm({ mode, allowSignup, signup = false }: AuthFormProps) {
           />
         </div>
         <div className="grid gap-1.5">
-          <Label htmlFor="password">Password</Label>
+          <div className="flex items-baseline justify-between gap-3">
+            <Label htmlFor="password">Password</Label>
+            {!signingUp && (
+              <Link
+                href="/forgot-password"
+                className="text-brand rounded-[4px] text-[12.5px] font-medium underline-offset-4 hover:underline"
+              >
+                Forgot password?
+              </Link>
+            )}
+          </div>
           <Input
             id="password"
             name="password"

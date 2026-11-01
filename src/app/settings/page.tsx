@@ -21,6 +21,8 @@ import { EXCLUDE_AT, parseWeights } from "@/pipeline/weights";
 import { loadGithubAppState } from "../onboarding/loaders";
 
 import {
+  ChangeEmailForm,
+  ChangePasswordForm,
   DeleteOrgButton,
   DeliveryForm,
   NewScanTokenButton,
@@ -79,8 +81,28 @@ function formatWeight(value: number): string {
   return value > 0 ? `+${value}` : String(value);
 }
 
-export default async function SettingsPage() {
+const VERIFY_ERRORS: Record<string, string> = {
+  TOKEN_EXPIRED: "That verification link has expired. Send a new one from the banner above.",
+  INVALID_TOKEN: "That verification link is not valid. Send a new one from the banner above.",
+};
+
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ verified?: string; error?: string; password?: string }>;
+}) {
   const ctx = await requireOrgContext();
+  const { verified, error, password } = await searchParams;
+  const accountNotice =
+    password === "changed"
+      ? "Password changed. Other devices were signed out."
+      : verified === "1"
+        ? error
+          ? (VERIFY_ERRORS[error] ?? "That verification link did not work. Send a new one.")
+          : ctx.emailVerified
+            ? "Your email address is verified."
+            : null
+        : null;
   const db = getDb();
   const scoped = withOrg(db, ctx.orgId);
   const [profile, user, streams, tokens, org, github, capacity] = await Promise.all([
@@ -344,14 +366,36 @@ export default async function SettingsPage() {
             id="account"
             index={6}
             title="Account"
-            sub="Sign-in and theme. The theme switch is in the menu under your initials."
+            sub="Sign-in email, password and theme. The theme switch is in the menu under your initials."
           >
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
+            {accountNotice && (
+              <p role="status" className="bg-surface-2 rounded-card mb-4 p-3 text-[13.5px]">
+                {accountNotice}
+              </p>
+            )}
+            <div className="border-line flex flex-wrap items-center justify-between gap-3 border-b pb-4">
+              <div className="min-w-0">
                 <p>{ctx.name || ctx.email}</p>
-                <small className="text-fg-muted text-[12.5px]">{ctx.email}</small>
+                <div className="flex flex-wrap items-center gap-2">
+                  <small className="text-fg-muted text-[12.5px] [overflow-wrap:anywhere]">
+                    {ctx.email}
+                  </small>
+                  {ctx.emailVerified ? (
+                    <Tag kind="ok">Verified</Tag>
+                  ) : (
+                    <Tag kind="upgrade">Not verified</Tag>
+                  )}
+                </div>
               </div>
               <SignOutButton />
+            </div>
+            <div className="border-line border-b py-4">
+              <h3 className="mb-3 text-[13px] font-medium">Change email</h3>
+              <ChangeEmailForm email={ctx.email} />
+            </div>
+            <div className="pt-4">
+              <h3 className="mb-3 text-[13px] font-medium">Change password</h3>
+              <ChangePasswordForm />
             </div>
           </Block>
         </div>

@@ -141,6 +141,13 @@ to fit your own capacity. There is no separate self-hosted tier. There is no inv
 system. Point scanners at your instance with `BRIFF_API_URL`, and create your own
 GitHub App if you want "Connect GitHub" ([docs/GITHUB-APP.md](docs/GITHUB-APP.md)).
 
+Password reset ("Forgot password?" on the sign-in page), email verification and changing the
+sign-in email or password (Settings → Account) need no extra variables: their links are built
+from `BETTER_AUTH_URL` and sent through the SMTP relay above (without SMTP they are not sent;
+outside production the link is logged instead). Verification does not block sign-in, but an
+account that has not verified its email 7 days after sign-up stops receiving bulletins and
+alerts. Accounts that existed before verification was added count as verified.
+
 Operator notes for the hosted instance at app.briff.dev (its servers, deploy hooks and
 credentials) are kept outside this repository; everything a self-hosted instance needs is here.
 

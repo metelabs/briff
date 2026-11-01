@@ -9,7 +9,12 @@ import { getDb } from "@/lib/db/client";
 import { getEnv } from "@/lib/env";
 import { log } from "@/lib/log";
 import { createOrgForUser } from "@/lib/org";
-import { signupAllowed } from "./signup-limit";
+import { sendPasswordResetEmail, sendVerificationEmailTo } from "./auth-email";
+import { authAttemptAllowed, authRateLimitRules, isLimitedAuthPath } from "./signup-limit";
+
+/** Where Better Auth sends the browser after an email link; relative to BETTER_AUTH_URL. */
+export const RESET_PASSWORD_PATH = "/reset-password";
+export const VERIFIED_CALLBACK = "/settings?verified=1";
 
 function createAuth() {
   const env = getEnv();
@@ -23,19 +28,45 @@ function createAuth() {
     rateLimit: {
       enabled: true,
       storage: "memory",
-      customRules: { "/sign-up/email": { window: 3600, max: 5 } },
+      customRules: authRateLimitRules(),
     },
     advanced: { ipAddress: { ipAddressHeaders: ["x-real-ip"] } },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
-        if (ctx.path === "/sign-up/email" && !signupAllowed(ctx.headers?.get("x-real-ip"))) {
+        if (!isLimitedAuthPath(ctx.path)) return;
+        if (!authAttemptAllowed(ctx.path, ctx.headers?.get("x-real-ip"))) {
           throw new APIError("TOO_MANY_REQUESTS", {
-            message: "Too many sign-up attempts. Try again in one hour.",
+            message:
+              ctx.path === "/sign-up/email"
+                ? "Too many sign-up attempts. Try again in one hour."
+                : "Too many attempts. Try again in one hour.",
           });
         }
       }),
     },
-    emailAndPassword: { enabled: true, minPasswordLength: 12, autoSignIn: true },
+    emailAndPassword: {
+      enabled: true,
+      minPasswordLength: 12,
+      autoSignIn: true,
+      requireEmailVerification: false,
+      resetPasswordTokenExpiresIn: 3600,
+      revokeSessionsOnPasswordReset: true,
+      // Not awaited: a send that takes as long as SMTP would tell apart existing accounts.
+      sendResetPassword: async ({ user, url }) => {
+        void sendPasswordResetEmail(user, url).catch((err: unknown) =>
+          log.error({ err, userId: user.id }, "auth: reset email failed")
+        );
+      },
+    },
+    emailVerification: {
+      sendOnSignUp: true,
+      autoSignInAfterVerification: true,
+      expiresIn: 24 * 3600,
+      sendVerificationEmail: async ({ user, url }) => {
+        await sendVerificationEmailTo(db, user, url);
+      },
+    },
+    user: { changeEmail: { enabled: true } },
     databaseHooks: {
       user: {
         create: {
