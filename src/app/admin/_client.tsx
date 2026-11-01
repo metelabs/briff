@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DialogClose, FormDialog } from "@/components/ui/dialog";
@@ -130,21 +130,32 @@ export function EditLimitsButton({
 export function OrgSearch({ initial, hrefFor }: { initial: string; hrefFor: string }) {
   const router = useRouter();
   const [value, setValue] = useState(initial);
-  useEffect(() => {
-    if (value.trim() === initial) return;
-    const t = window.setTimeout(() => {
+  const [synced, setSynced] = useState(initial);
+  const [pushed, setPushed] = useState(initial);
+  const timer = useRef<number | undefined>(undefined);
+  // Back/forward restores another ?q=: show it, unless it is the one this field just pushed.
+  if (initial !== synced) {
+    setSynced(initial);
+    if (initial !== pushed) setValue(initial);
+  }
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+  const onChange = (next: string) => {
+    setValue(next);
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => {
+      const q = next.trim();
+      setPushed(q);
       const url = new URL(hrefFor, window.location.origin);
-      if (value.trim()) url.searchParams.set("q", value.trim());
+      if (q) url.searchParams.set("q", q);
       else url.searchParams.delete("q");
       url.searchParams.delete("page");
       router.replace(`${url.pathname}${url.search}`, { scroll: false });
     }, 300);
-    return () => window.clearTimeout(t);
-  }, [value, initial, hrefFor, router]);
+  };
   return (
     <SearchField
       value={value}
-      onChange={setValue}
+      onChange={onChange}
       placeholder="Search name or owner email"
       label="Search organisations"
     />
