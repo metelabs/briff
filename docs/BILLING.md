@@ -90,8 +90,9 @@ failure or a processing error alerts the instance admin through the ops alert pa
 (`OPS_ALERT_EMAIL` / `ALERT_WEBHOOK_URL`, docs/OPERATIONS.md), at most once per 24 h each. The
 secret is never logged.
 
-Emails (owners' account addresses, `billing-notify` job) are queued in the same transaction as the
-change that causes them, so each goes out once.
+Emails go to each owner's account address through one `billing-notify` job per owner, queued
+in the same transaction as the change that causes them: a failed send retries only that owner's
+email, and a delivered one is never sent again.
 
 ## billing-check (daily, 05:45 UTC)
 

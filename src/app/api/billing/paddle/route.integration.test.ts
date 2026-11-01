@@ -10,6 +10,7 @@ import {
 import { checkoutCustomData } from "@/lib/billing/org-link";
 import { getDb } from "@/lib/db/client";
 import { withOrg } from "@/lib/db/with-org";
+import { createOrgForUser } from "@/lib/org";
 import { resetEnvCache } from "@/lib/env";
 
 const hooks = vi.hoisted(() => ({
@@ -37,6 +38,7 @@ describe.skipIf(!url)("POST /api/billing/paddle", () => {
   const saved = { ...process.env };
   const suffix = Date.now().toString(36);
   const orgs: string[] = [];
+  const users: string[] = [];
   let seq = 0;
 
   const deliver = (body: unknown, signature?: string) => {
@@ -67,9 +69,16 @@ describe.skipIf(!url)("POST /api/billing/paddle", () => {
       planSource?: "default" | "admin" | "paddle";
     } = {}
   ) {
-    const row = await getDb().org.create({ data: { name: `${name}-${suffix}`, ...data } });
-    orgs.push(row.id);
-    return row.id;
+    // With an owner: billing emails are queued per owner.
+    const userId = `u-${name}-${suffix}`;
+    await getDb().user.create({
+      data: { id: userId, name, email: `${name}-${suffix}@example.com` },
+    });
+    users.push(userId);
+    const id = await createOrgForUser(getDb(), { name: `${name}-${suffix}`, userId });
+    await getDb().org.update({ where: { id }, data });
+    orgs.push(id);
+    return id;
   }
   const notices = (orgId: string) =>
     getDb().job.findMany({
@@ -97,6 +106,7 @@ describe.skipIf(!url)("POST /api/billing/paddle", () => {
     await db.job.deleteMany({ where: { dedupeKey: { contains: suffix } } });
     await db.billingEvent.deleteMany({ where: { id: { contains: suffix } } });
     await db.org.deleteMany({ where: { id: { in: orgs } } });
+    await db.user.deleteMany({ where: { id: { in: users } } });
     process.env = saved;
     resetEnvCache();
   });

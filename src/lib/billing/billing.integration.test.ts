@@ -24,9 +24,10 @@ import {
 import { snapshotOf, type PaddleSubscriptionLike } from "./state";
 import { applySubscription } from "./sync";
 
-const mail = vi.hoisted(() => ({ sent: [] as { to: string; subject: string }[] }));
+const mail = vi.hoisted(() => ({ sent: [] as { to: string; subject: string }[], fail: false }));
 vi.mock("@/lib/email/mailer", () => ({
   sendMail: async (m: { to: string; subject: string }) => {
+    if (mail.fail) return { status: "failed", error: "smtp down" };
     mail.sent.push({ to: m.to, subject: m.subject });
     return { status: "sent" };
   },
@@ -287,6 +288,10 @@ describe.skipIf(!url)("billing management, tenant checks and billing-check", () 
     const kinds = jobs.map((j) => (j.payload as { kind: string }).kind).sort();
     // The seed queued nothing; the grace expiry is the one change.
     expect(kinds).toEqual(["plan-changed"]);
+    // One job per owner: a failed send throws so the runner retries that email alone.
+    mail.fail = true;
+    await expect(billingNotify({ ...ctx, payload: jobs[0].payload })).rejects.toThrow(/smtp down/);
+    mail.fail = false;
     for (const job of jobs) await billingNotify({ ...ctx, payload: job.payload });
     expect(mail.sent.every((m) => m.to === owner.email)).toBe(true);
     expect(mail.sent.map((m) => m.subject)).toContain(`D-${suffix} is on the Free plan now`);

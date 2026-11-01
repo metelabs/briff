@@ -22,7 +22,7 @@ import {
 
 export type BillingTx = Pick<
   OrgDb,
-  "subscription" | "org" | "orgEvent" | "job" | "$queryRaw" | "$executeRaw"
+  "subscription" | "org" | "orgEvent" | "orgMember" | "job" | "$queryRaw" | "$executeRaw"
 >;
 
 export type BillingNotice =
@@ -156,20 +156,31 @@ export async function applySubscription(
   return { outcome: "applied", notices };
 }
 
-/** Queues the owner emails in the same transaction, once per (ref, kind). */
+/**
+ * Queues the owner emails in the same transaction: one job per (ref, kind, owner), so a retry
+ * resends only the email that failed and never one that went out.
+ */
 export async function queueNotices(
   tx: BillingTx,
   orgId: string,
   ref: string,
   notices: readonly BillingNotice[]
 ): Promise<void> {
+  if (notices.length === 0) return;
+  const owners = await tx.orgMember.findMany({
+    where: { role: "owner" },
+    orderBy: { createdAt: "asc" },
+    select: { userId: true },
+  });
   for (const notice of notices) {
-    await tx.job.create({
-      data: {
-        type: "billing-notify",
-        dedupeKey: `billing-notify:${ref}:${notice.kind}`,
-        payload: { orgId, ...notice },
-      },
-    });
+    for (const { userId } of owners) {
+      await tx.job.create({
+        data: {
+          type: "billing-notify",
+          dedupeKey: `billing-notify:${ref}:${notice.kind}:${userId}`,
+          payload: { orgId, userId, ...notice },
+        },
+      });
+    }
   }
 }

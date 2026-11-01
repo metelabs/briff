@@ -21,7 +21,7 @@ export const EVENT_RETENTION_MS = 180 * DAY_MS;
 
 const plan = z.enum(PLAN_IDS);
 const noticeSchema = z
-  .object({ orgId: z.string().min(1) })
+  .object({ orgId: z.string().min(1), userId: z.string().min(1) })
   .and(
     z.discriminatedUnion("kind", [
       z.object({ kind: z.literal("plan-changed"), from: plan, to: plan }),
@@ -31,15 +31,21 @@ const noticeSchema = z
   );
 
 /**
- * billing-notify: one billing email to each owner of the org. Queued by the webhook and
- * billing-check in the transaction that made the change, so it exists once per change. Throws
- * only when every send failed, so a retry never repeats a delivered email.
+ * billing-notify: one billing email to one owner of the org (queueNotices makes one job per
+ * owner in the transaction that made the change). A failed send throws, so the runner retries
+ * this owner's email only; an owner who left or lost the role since is skipped.
  */
 export async function billingNotify(ctx: JobContext): Promise<JobResult> {
   const notice = noticeSchema.parse(ctx.payload);
   const scoped = withOrg(ctx.db, notice.orgId);
-  const org = await ctx.db.org.findUnique({ where: { id: notice.orgId }, select: { name: true } });
-  if (!org) return { counts: { skipped: 1 } };
+  const [org, owner] = await Promise.all([
+    ctx.db.org.findUnique({ where: { id: notice.orgId }, select: { name: true } }),
+    scoped.orgMember.findFirst({
+      where: { userId: notice.userId, role: "owner" },
+      select: { user: { select: { email: true } } },
+    }),
+  ]);
+  if (!org || !owner) return { counts: { skipped: 1 } };
   let email: BillingEmail;
   if (notice.kind === "payment-failed") {
     const sub = await scoped.subscription.findFirst({
@@ -57,25 +63,14 @@ export async function billingNotify(ctx: JobContext): Promise<JobResult> {
   } else {
     email = { kind: "plan-changed", from: notice.from, to: notice.to };
   }
-  const owners = await scoped.orgMember.findMany({
-    where: { role: "owner" },
-    orderBy: { createdAt: "asc" },
-    select: { user: { select: { email: true } } },
-  });
   const rendered = renderBillingEmail(email, {
     orgName: org.name,
     instanceUrl: getEnv().BETTER_AUTH_URL,
   });
-  const counts = { sent: 0, skipped: 0, failed: 0 };
-  for (const { user } of owners) {
-    await ctx.heartbeat();
-    const result = await sendMail({ to: user.email, ...rendered });
-    counts[result.status]++;
-    if (result.status === "failed")
-      ctx.log.error({ error: result.error }, "billing-notify: send failed");
-  }
-  if (counts.failed > 0 && counts.sent === 0) throw new Error("billing-notify: every send failed");
-  return { counts };
+  await ctx.heartbeat();
+  const result = await sendMail({ to: owner.user.email, ...rendered });
+  if (result.status === "failed") throw new Error(`billing-notify: send failed: ${result.error}`);
+  return { counts: { [result.status]: 1 } };
 }
 
 /**
