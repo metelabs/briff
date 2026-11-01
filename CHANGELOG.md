@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.10.0](https://github.com/metelabs/briff/compare/0.9.0...0.10.0) (2026-11-01)
+
+
+### Features
+
+* **legal:** terms, privacy, refunds, DPA summary and security.txt ([#42](https://github.com/metelabs/briff/issues/42)) ([ccf8698](https://github.com/metelabs/briff/commit/ccf8698a71a502c366c3089ba44d0d277464b47c))
+* multi-user organisations with invites, roles, org switching and audit ([#46](https://github.com/metelabs/briff/issues/46)) ([33e1c56](https://github.com/metelabs/briff/commit/33e1c56b928188ab61891e4231032566f77ade49))
+* plans and limits model, pricing page and billing placeholder ([#44](https://github.com/metelabs/briff/issues/44)) ([f6ad663](https://github.com/metelabs/briff/commit/f6ad66321f0f6504d8f0e0fa96c459d84bd2a06a))
+
 ## [0.9.0](https://github.com/metelabs/briff/compare/0.8.0...0.9.0) (2026-11-01)
 
 
