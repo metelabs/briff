@@ -18,6 +18,9 @@ env:
 
 jobs:
   release-build-deploy:
+    # A fork's own main has neither the release history nor the deploy hooks; skip there
+    # instead of opening release PRs or pushing images to the fork owner's registry.
+    if: ${{ github.repository == 'metelabs/briff' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write

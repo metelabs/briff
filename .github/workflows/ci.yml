@@ -20,6 +20,11 @@ on:
       - package-lock.json
   workflow_dispatch:
 
+# Read-only token and no secrets: a pull request from a fork gets the same run as one from
+# a branch here (CONTRIBUTING.md, "CI for forks").
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
