@@ -132,8 +132,8 @@ export default async function HomePage() {
   const backlogTotal = new Set(backlogAlerts.map((a) => a.advisoryId)).size;
   const allAdvisories = new Set(alerts.map((a) => a.advisoryId)).size;
 
-  const eolRepos = drift.rows.filter((r) => r.eol);
-  const behindRepos = drift.rows.filter((r) => r.majorsBehind > 0);
+  const eolRepos = drift.filter((r) => r.eol);
+  const behindRepos = drift.filter((r) => r.majorsBehind > 0);
   const unassigned = repos.filter((r) => !r.included).length;
   const lastScan = repos.reduce<Date | null>(
     (latest, r) =>
@@ -238,7 +238,7 @@ export default async function HomePage() {
                 label="End-of-life"
                 names={eolRepos.map((r) => r.repo)}
                 fallback={
-                  drift.rows.length === 0
+                  drift.length === 0
                     ? `No repo in ${scopeName} yet.`
                     : "Every runtime is on a supported line."
                 }

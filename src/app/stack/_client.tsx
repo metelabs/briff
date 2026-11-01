@@ -1,99 +1,242 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { EcosystemTag } from "@/components/ui/ecosystem-tag";
 import { FilterChips } from "@/components/ui/filter-chips";
 import { SearchField } from "@/components/ui/search-field";
-import { Tooltip, TruncatedText } from "@/components/ui/tooltip";
+import { Tag, type TagKind } from "@/components/ui/tag";
+import { plural } from "@/lib/format";
 import { caps } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import type { DriftCell, DriftColumn, DriftRow } from "@/pipeline/stack-drift";
+import type { EntryStatus, StackEntry, StackRepo } from "@/pipeline/stack-drift";
+
+export interface StackCardView extends StackRepo {
+  id: string;
+  connection: string;
+  lastScan: string;
+}
 
 type Filter = "all" | "drift" | "major" | "eol";
 
-const CELL_CLASS: Record<DriftCell["status"], string> = {
-  ok: "text-ok",
-  minor: "text-fg",
-  plain: "text-fg",
-  major: "bg-upgrade-soft text-upgrade",
-  eol: "bg-sec-soft text-sec",
-  none: "text-fg-subtle",
+const STATUS_KIND: Record<EntryStatus, TagKind> = {
+  eol: "eol",
+  major: "upgrade",
+  minor: "wait",
+  supported: "ok",
+  current: "ok",
+  unknown: "wait",
 };
 
-function Cell({ cell, column }: { cell: DriftCell; column: DriftColumn }) {
-  if (cell.status === "none") {
-    return (
-      <span className="text-fg-subtle px-[7px]" aria-label="not used">
-        –
-      </span>
-    );
+function statusText(e: StackEntry): string {
+  switch (e.status) {
+    case "eol":
+      return e.until ? `EOL since ${e.until}` : "EOL";
+    case "supported":
+      return e.until ? `Supported until ${e.until}` : "Supported";
+    case "current":
+      return "Current";
+    case "minor":
+    case "major":
+      return "Behind";
+    case "unknown":
+      return "Not judged";
   }
-  const title = [
-    cell.source,
-    cell.status === "ok" && "current",
-    cell.status === "minor" && `minor behind ${column.latest}`,
-    cell.status === "major" && `${cell.behind} behind ${column.latest}`,
-    cell.status === "eol" && "end of life",
-  ]
-    .filter(Boolean)
-    .join(" · ");
-  return (
-    <Tooltip content={title} disabled={!title}>
-      <span
-        tabIndex={title ? 0 : undefined}
-        className={cn(
-          "inline-flex items-center gap-1.5 rounded-[6px] px-[7px] py-0.5 font-mono",
-          CELL_CLASS[cell.status]
-        )}
-      >
-        {cell.version}
-        {cell.status === "eol" && (
-          <small className="font-sans text-[11px] font-semibold">
-            {cell.eolDate ? `EOL on ${cell.eolDate}` : "EOL"}
-          </small>
-        )}
-        {cell.status === "major" && (
-          <small className="font-sans text-[11px] font-semibold">−{cell.behind}</small>
-        )}
-      </span>
-    </Tooltip>
-  );
 }
 
-function matchesQuery(row: DriftRow, columns: DriftColumn[], q: string): boolean {
+/** Header chips: end-of-life count, majors behind, minor drift, or "Up to date". */
+function repoChips(r: StackRepo): { kind: TagKind; text: string }[] {
+  const minor = r.entries.filter((e) => e.status === "minor").length;
+  const chips: { kind: TagKind; text: string }[] = [];
+  if (r.eolCount > 0) chips.push({ kind: "eol", text: `${r.eolCount} EOL` });
+  if (r.majorsBehind > 0) {
+    chips.push({ kind: "upgrade", text: plural(r.majorsBehind, "major", "majors") + " behind" });
+  }
+  if (chips.length === 0 && minor > 0) chips.push({ kind: "wait", text: `${minor} behind` });
+  if (chips.length > 0) return chips;
+  if (r.entries.length === 0) return [{ kind: "wait", text: "No runtime data" }];
+  return r.entries.some((e) => e.status !== "unknown")
+    ? [{ kind: "ok", text: "Up to date" }]
+    : [{ kind: "wait", text: "Not judged" }];
+}
+
+function matchesQuery(r: StackRepo, q: string): boolean {
   if (!q) return true;
   const query = q.toLowerCase();
-  if (row.repo.toLowerCase().includes(query)) return true;
-  return columns.some(
-    (c) =>
-      (c.label.toLowerCase().includes(query) || c.ecosystem?.toLowerCase() === query) &&
-      row.cells[c.key]?.status !== "none"
+  return (
+    r.repo.toLowerCase().includes(query) ||
+    r.entries.some(
+      (e) => e.label.toLowerCase().includes(query) || e.ecosystem?.toLowerCase() === query
+    )
   );
 }
 
-/** Repo x runtime / package table; first column sticky, scrolls inside its card. */
-export function DriftTable({ columns, rows }: { columns: DriftColumn[]; rows: DriftRow[] }) {
+function EntryRow({ entry }: { entry: StackEntry }) {
+  return (
+    <li className="border-line border-t py-2.5 first:border-t-0">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+        <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <span className="text-[14px] font-medium">{entry.label}</span>
+          {entry.ecosystem && <EcosystemTag>{entry.ecosystem}</EcosystemTag>}
+          {entry.version && (
+            <span className="font-mono text-[13px] break-all">{entry.version}</span>
+          )}
+          {entry.status === "major" && (
+            <small className="text-upgrade text-[11.5px] font-semibold whitespace-nowrap tabular-nums">
+              {plural(entry.behind, "major", "majors")} behind
+            </small>
+          )}
+          {entry.source && (
+            <span className="text-fg-muted font-mono text-[12px] break-all">{entry.source}</span>
+          )}
+        </span>
+        <Tag kind={STATUS_KIND[entry.status]} className="ml-auto">
+          {statusText(entry)}
+        </Tag>
+      </div>
+      {entry.target && (
+        <p
+          className={cn(
+            "mt-1 text-[13px]",
+            entry.status === "eol" ? "text-fg font-medium" : "text-fg-muted"
+          )}
+        >
+          <span aria-hidden className="text-fg-subtle mr-1.5">
+            →
+          </span>
+          {entry.target}
+        </p>
+      )}
+      {entry.note && <p className="text-fg-muted mt-1 text-[12.5px]">{entry.note}</p>}
+    </li>
+  );
+}
+
+function EntryGroup({ title, entries }: { title: string; entries: StackEntry[] }) {
+  if (entries.length === 0) return null;
+  return (
+    <div className="mt-3.5">
+      <h4 className="type-label text-fg-muted">{caps(title)}</h4>
+      <ul className="mt-1">
+        {entries.map((e) => (
+          <EntryRow key={e.key} entry={e} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function RepoCard({ card, index }: { card: StackCardView; index: number }) {
+  return (
+    <article
+      aria-labelledby={`stack-${card.id}`}
+      className="rise bg-surface border-line rounded-card min-w-0 border p-[18px] max-[560px]:p-[15px]"
+      style={{ ["--i" as string]: Math.min(index + 3, 10) }}
+    >
+      <header className="flex flex-wrap items-start gap-x-3 gap-y-2">
+        <div className="min-w-0 grow basis-64">
+          <h3 id={`stack-${card.id}`} className="font-mono text-[14.5px] font-medium break-all">
+            <Link
+              href={`/repos?show=all#repo-${card.id}`}
+              className="hover:text-brand underline-offset-4 hover:underline"
+            >
+              {card.repo}
+            </Link>
+          </h3>
+          <p className="text-fg-muted mt-0.5 text-[12.5px]">
+            {card.connection} · last scan {card.lastScan}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {repoChips(card).map((c) => (
+            <Tag key={c.text} kind={c.kind}>
+              {c.text}
+            </Tag>
+          ))}
+        </div>
+      </header>
+      {card.entries.length === 0 ? (
+        <p className="text-fg-muted mt-3 text-[13px]">
+          No runtime or key package on record for this repo.
+        </p>
+      ) : (
+        <>
+          <EntryGroup title="Runtimes" entries={card.entries.filter((e) => e.kind === "runtime")} />
+          <EntryGroup
+            title="Key packages"
+            entries={card.entries.filter((e) => e.kind === "package")}
+          />
+        </>
+      )}
+    </article>
+  );
+}
+
+function Stat({
+  value,
+  caption,
+  alarm = false,
+}: {
+  value: number;
+  caption: string;
+  alarm?: boolean;
+}) {
+  return (
+    <div className="bg-surface border-line rounded-tile border px-4 py-3.5">
+      <b className={cn("type-stat block tabular-nums", alarm ? "text-sec" : "text-fg")}>{value}</b>
+      <span className="text-fg-muted mt-1.5 block text-[12px]">{caption}</span>
+    </div>
+  );
+}
+
+/** Summary strip, filters and one card per repo, most urgent first (computeDrift's order). */
+export function StackCards({ cards }: { cards: StackCardView[] }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const counts = {
-    all: rows.length,
-    drift: rows.filter((r) => r.drift).length,
-    major: rows.filter((r) => r.majorsBehind > 0).length,
-    eol: rows.filter((r) => r.eol).length,
+    all: cards.length,
+    drift: cards.filter((r) => r.drift).length,
+    major: cards.filter((r) => r.majorsBehind > 0).length,
+    eol: cards.filter((r) => r.eol).length,
   };
-  const visible = rows.filter(
+  const eolRuntimes = cards.reduce((n, r) => n + r.eolCount, 0);
+  const majorPackages = cards.reduce(
+    (n, r) => n + r.entries.filter((e) => e.status === "major").length,
+    0
+  );
+  const upToDate = cards.filter((r) => repoChips(r)[0]?.kind === "ok").length;
+  const visible = cards.filter(
     (r) =>
       (filter === "all" ||
         (filter === "drift" && r.drift) ||
         (filter === "major" && r.majorsBehind > 0) ||
         (filter === "eol" && r.eol)) &&
-      matchesQuery(r, columns, query)
+      matchesQuery(r, query)
   );
 
   return (
     <>
-      <div className="rise mb-3.5 flex flex-wrap items-center gap-2 [--i:1]">
+      <section
+        aria-label="Summary"
+        className="rise mb-6 grid grid-cols-4 gap-3 [--i:1] max-[560px]:grid-cols-2"
+      >
+        <Stat
+          value={cards.length}
+          caption={cards.length === 1 ? "repo scanned" : "repos scanned"}
+        />
+        <Stat
+          value={eolRuntimes}
+          caption={eolRuntimes === 1 ? "end-of-life runtime" : "end-of-life runtimes"}
+          alarm={eolRuntimes > 0}
+        />
+        <Stat
+          value={majorPackages}
+          caption={majorPackages === 1 ? "package a major behind" : "packages a major behind"}
+        />
+        <Stat value={upToDate} caption={upToDate === 1 ? "repo up to date" : "repos up to date"} />
+      </section>
+      <div className="rise mb-3.5 flex flex-wrap items-center gap-2 [--i:2]">
         <FilterChips<Filter>
           label="Filter repos"
           value={filter}
@@ -106,100 +249,29 @@ export function DriftTable({ columns, rows }: { columns: DriftColumn[]; rows: Dr
           ]}
         />
         <SearchField
-          className="ml-auto"
+          className="ml-auto max-[560px]:ml-0 max-[560px]:w-full"
           value={query}
           onChange={setQuery}
-          placeholder="Repo or package"
-          label="Filter repos or packages"
+          placeholder="Repo, runtime or package"
+          label="Filter repos, runtimes or packages"
         />
       </div>
-      <div className="rise bg-surface border-line rounded-card overflow-x-auto border [--i:2]">
-        <table className="w-full min-w-[720px] border-separate border-spacing-0 text-[13px]">
-          <thead>
-            <tr>
-              <th className="bg-surface-2 border-line text-fg-muted type-label sticky left-0 z-1 border-r px-3.5 py-2.5 text-left">
-                {caps("Repo")}
-              </th>
-              {columns.map((c) => (
-                <th
-                  key={c.key}
-                  scope="col"
-                  className="bg-surface-2 text-fg-muted px-3.5 py-2.5 text-left align-bottom whitespace-nowrap"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <span className="type-label">{caps(c.label)}</span>
-                    {c.ecosystem && <EcosystemTag>{c.ecosystem}</EcosystemTag>}
-                  </span>
-                  <small className="text-fg block font-mono text-[11.5px] font-normal">
-                    {c.kind === "runtime"
-                      ? "end-of-life check"
-                      : c.latest
-                        ? `latest ${c.latest}`
-                        : "latest: no data"}
-                  </small>
-                </th>
-              ))}
-              <th className="bg-surface-2 text-fg-muted type-label px-3.5 py-2.5 text-left whitespace-nowrap">
-                {caps("Majors behind")}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {visible.map((r) => (
-              <tr key={r.repo} className="group/row">
-                <th
-                  scope="row"
-                  className="bg-surface group-hover/row:bg-surface-2 border-line sticky left-0 z-1 max-w-[220px] border-t border-r px-3.5 py-2.5 text-left font-mono font-medium transition-colors"
-                >
-                  <TruncatedText>{r.repo}</TruncatedText>
-                </th>
-                {columns.map((c) => (
-                  <td
-                    key={c.key}
-                    className="group-hover/row:bg-surface-2 border-line border-t px-3.5 py-2.5 whitespace-nowrap transition-colors"
-                  >
-                    <Cell cell={r.cells[c.key]} column={c} />
-                  </td>
-                ))}
-                <td className="group-hover/row:bg-surface-2 border-line border-t px-3.5 py-2.5 transition-colors">
-                  <span
-                    className={cn(
-                      "font-display text-[17px] font-semibold tabular-nums",
-                      r.eol ? "text-sec" : r.majorsBehind > 0 ? "text-upgrade" : "text-ok"
-                    )}
-                  >
-                    {r.majorsBehind}
-                  </span>
-                </td>
-              </tr>
-            ))}
-            {visible.length === 0 && (
-              <tr>
-                <td
-                  colSpan={columns.length + 2}
-                  className="text-fg-muted border-line border-t px-3.5 py-5"
-                >
-                  No repo matches.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-      <div className="text-fg-muted mt-3 flex flex-wrap items-center gap-3.5 text-[12.5px]">
-        <span className="text-ok font-mono">current</span>
-        <span className="text-fg font-mono">minor behind</span>
-        <span className="bg-upgrade-soft text-upgrade rounded-[6px] px-[7px] py-0.5 font-mono">
-          major behind <small className="font-sans font-semibold">−n</small>
-        </span>
-        <span className="bg-sec-soft text-sec rounded-[6px] px-[7px] py-0.5 font-mono">
-          end of life <small className="font-sans font-semibold">EOL</small>
-        </span>
-        <span>
-          Runtimes are checked against end-of-life dates; packages against the latest release on
-          their registry (npm, Packagist, PyPI, the Go module proxy).
-        </span>
-      </div>
+      {visible.length === 0 ? (
+        <p className="bg-surface border-line rounded-card text-fg-muted border px-[18px] py-5">
+          No repo matches.
+        </p>
+      ) : (
+        <div className="grid items-start gap-3 min-[980px]:grid-cols-2">
+          {visible.map((c, i) => (
+            <RepoCard key={c.id} card={c} index={i} />
+          ))}
+        </div>
+      )}
+      <p className="text-fg-muted mt-3 max-w-[72ch] text-[12.5px]">
+        Runtimes are checked against end-of-life dates (endoflife.date); a target stays on your
+        release line unless the line is past end of life. Packages are checked against the latest
+        release on their registry (npm, Packagist, PyPI, the Go module proxy).
+      </p>
     </>
   );
 }

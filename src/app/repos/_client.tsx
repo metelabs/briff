@@ -61,7 +61,8 @@ export function RepoList({ rows }: { rows: RepoListRow[] }) {
         {visible.map((r) => (
           <div
             key={r.id}
-            className="border-line grid items-center gap-x-4 gap-y-2 border-t px-[18px] py-3.5 first:border-t-0 max-[980px]:grid-cols-[minmax(0,1fr)_auto] min-[980px]:grid-cols-[minmax(170px,1fr)_minmax(0,2fr)_150px_140px_auto]"
+            id={`repo-${r.id}`}
+            className="border-line target:bg-brand-soft grid scroll-mt-[calc(var(--bar-h,64px)+12px)] items-center gap-x-4 gap-y-2 border-t px-[18px] py-3.5 transition-colors first:border-t-0 max-[980px]:grid-cols-[minmax(0,1fr)_auto] min-[980px]:grid-cols-[minmax(170px,1fr)_minmax(0,2fr)_150px_140px_auto]"
           >
             <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-2">

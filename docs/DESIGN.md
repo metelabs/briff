@@ -33,7 +33,7 @@ bulletin, not like a monitoring console.
 Why:
 
 - Six destinations fit on one line, so a sidebar's main benefit (room for many items) doesn't apply here.
-- The widest pages (Stack drift table, By-repo grid) need the 220–240px a sidebar would use up on every page.
+- The widest pages (Stack repo cards, By-repo grid) need the 220–240px a sidebar would use up on every page.
 - Briff is visited weekly, not all day. Its chrome should be light and step back for the bulletin.
 - The stream is a _scope_, not a destination. It sits at the top right as a picker (like an org switcher), and
   every page reads it.
@@ -191,7 +191,7 @@ Numbers in tables and tiles are always `tabular-nums`. Do not use Bricolage belo
 - **One container for everything:** max-width 1200px, centred, with the page gutter from §5. The top bar's inner
   row, every page body and the minimal header all use it (`PageContainer` / `PAGE_CONTAINER` in
   `src/components/shell/page-container.tsx`); never set a page's own max-width or gutter. Content wider than the
-  container (the Stack table, long commands) scrolls inside its card; the container never widens.
+  container (long commands) scrolls inside its card; the container never widens.
 - `html` has `scrollbar-gutter: stable`, so a short page and a long page centre at the same x with classic
   scrollbars.
 - The bulletin hero is 2 columns (1.25fr / 1fr): headline + summary, then the 4 stat tiles. It stacks below 980px.
@@ -202,6 +202,13 @@ Numbers in tables and tiles are always `tabular-nums`. Do not use Bricolage belo
   sections; each section shows 5 items and folds the rest behind "Show N more". Every item carries that
   repo's own command or step with a small Copy button. A jump from a repo chip highlights the card for 3s
   (brand outline + `--brand-soft`, fading; reduced motion: no fade).
+- Stack: a summary strip (repos scanned, end-of-life runtimes, packages a major behind, repos up to
+  date), filter chips + search, then one card per repo, most urgent first (end of life > majors behind
+  > minor behind > current), at most 2 columns (1 below 980px). A card lists only what the repo uses:
+  > one row per runtime, then its key packages, each with version, source, a status label ("EOL since
+  > 2025-04-30", "Supported until 2027-04-30", "Current", "Behind" + "2 majors behind") and the target
+  > line ("Move to 22.x (LTS, supported until 2027-04)", "Latest in your line: 20.19.4"). Rows wrap;
+  > nothing scrolls sideways.
 - List pages (Bulletins, Alerts, Repos) use a single column of rows inside a card. Filters sit above the card.
 - Settings: 220px section index on the left (sticky) + 1 form column (max 640px); the index becomes a pill row on mobile.
 
