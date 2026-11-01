@@ -131,6 +131,14 @@ describe("/settings/billing", () => {
     expect(text).toContain("MANAGE 2026-12-02");
   });
 
+  it("manages a paused subscription instead of offering a second checkout", async () => {
+    state.sub = { ...PRO_SUB, status: "paused" };
+    const text = await render();
+    expect(text).toContain("Paused in Paddle");
+    expect(text).toContain("MANAGE renews");
+    expect(text).not.toContain("CHECKOUT");
+  });
+
   it("tells a member to ask an owner and shows no controls", async () => {
     state.role = "member";
     const text = await render();

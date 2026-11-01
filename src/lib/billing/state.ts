@@ -228,7 +228,12 @@ export function planDecision(
   return { write: true, plan: target };
 }
 
-/** A subscription that still bills: the one the billing page manages. */
+/** A subscription that has not ended: the one the billing page manages (paused included). */
+export function isOpen(status: string): boolean {
+  return status !== "canceled";
+}
+
+/** A subscription that still bills. */
 export function isLive(status: string): boolean {
   return status === "active" || status === "trialing" || status === "past_due";
 }

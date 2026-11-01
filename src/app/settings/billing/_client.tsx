@@ -265,6 +265,8 @@ export interface ManageView {
   interval: BillingInterval;
   /** A scheduled cancel's date; null when the subscription renews. */
   cancelAt: string | null;
+  /** Paused in Paddle: resumed from the portal; no plan change. */
+  paused: boolean;
   periodEnd: string | null;
 }
 
@@ -335,7 +337,7 @@ export function ManagePanel({ view }: { view: ManageView }) {
       const res = await cancelSubscriptionAction();
       if (!res.ok) return toast(res.message, "error");
       toast(
-        view.periodEnd
+        !view.paused && view.periodEnd
           ? `Canceled. ${PLANS[view.plan].name} stays until ${longDate(view.periodEnd)}.`
           : "Canceled."
       );
@@ -378,6 +380,13 @@ export function ManagePanel({ view }: { view: ManageView }) {
             options={INTERVALS}
           />
         </div>
+        {view.paused && (
+          <Callout
+            tone="warn"
+            className="mt-4"
+            message="This subscription is paused in Paddle. Resume it from the payment portal below, or cancel it."
+          />
+        )}
         {view.cancelAt && (
           <Callout
             tone="warn"
@@ -395,7 +404,7 @@ export function ManagePanel({ view }: { view: ManageView }) {
           <Button
             variant="primary"
             onClick={review}
-            disabled={pending || unchanged || !!view.cancelAt}
+            disabled={pending || unchanged || !!view.cancelAt || view.paused}
           >
             Review change
           </Button>
@@ -426,11 +435,13 @@ export function ManagePanel({ view }: { view: ManageView }) {
               }
               title="Cancel the subscription?"
               description={
-                view.periodEnd
-                  ? `${PLANS[view.plan].name} stays until ${longDate(view.periodEnd)}, the end of the period you paid for. Then the organisation moves to Free; nothing is deleted.`
-                  : "The plan stays until the end of the period you paid for. Then the organisation moves to Free; nothing is deleted."
+                view.paused
+                  ? "The paused subscription ends now and the organisation stays on Free; nothing is deleted."
+                  : view.periodEnd
+                    ? `${PLANS[view.plan].name} stays until ${longDate(view.periodEnd)}, the end of the period you paid for. Then the organisation moves to Free; nothing is deleted.`
+                    : "The plan stays until the end of the period you paid for. Then the organisation moves to Free; nothing is deleted."
               }
-              confirmLabel="Cancel at period end"
+              confirmLabel={view.paused ? "Cancel now" : "Cancel at period end"}
               onConfirm={cancel}
               pending={pending}
             />

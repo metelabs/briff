@@ -12,6 +12,7 @@ import { getBillingApi } from "./api";
 import { priceFor, type PaddleEnv } from "./catalog";
 import {
   isLive,
+  isOpen,
   prorationMode,
   snapshotOf,
   stateTime,
@@ -49,10 +50,13 @@ export interface PlanChangePreview {
   nextBilledAt: string | null;
 }
 
-/** The subscription the billing page manages: the newest live one. */
+/**
+ * The subscription the billing page manages: the newest one that has not ended. A paused one
+ * counts (it can resume on its own), so the page never offers a second checkout next to it.
+ */
 export async function liveSubscription(db: PrismaClient, orgId: string) {
   const rows = await withOrg(db, orgId).subscription.findMany({ orderBy: { stateAt: "desc" } });
-  return rows.find((r) => isLive(r.status)) ?? null;
+  return rows.find((r) => isLive(r.status)) ?? rows.find((r) => isOpen(r.status)) ?? null;
 }
 
 type Live = NonNullable<Awaited<ReturnType<typeof liveSubscription>>>;
@@ -95,6 +99,12 @@ async function mirror(
 }
 
 function target(env: PaddleEnv, sub: Live, to: PlanTerms) {
+  if (sub.status === "paused") {
+    return {
+      ok: false as const,
+      message: "The subscription is paused. Resume it in the payment portal, or cancel it.",
+    };
+  }
   const price = priceFor(env, to.plan, to.interval);
   if (!price) return { ok: false as const, message: NOT_CONFIGURED };
   if (price.priceId === sub.paddlePriceId) {
@@ -174,7 +184,11 @@ export async function cancelSubscription(
   const owned = await ownersSubscription(db, actor);
   if (!owned.ok) return owned;
   try {
-    await mirror(db, actor.orgId, env, await api.cancelAtPeriodEnd(owned.sub.paddleSubscriptionId));
+    // A paused subscription has no running period to wait for.
+    const id = owned.sub.paddleSubscriptionId;
+    const remote =
+      owned.sub.status === "paused" ? await api.cancelNow(id) : await api.cancelAtPeriodEnd(id);
+    await mirror(db, actor.orgId, env, remote);
     log.info({ orgId: actor.orgId, userId: actor.userId }, "billing: cancel scheduled");
     return { ok: true };
   } catch (err) {
@@ -229,7 +243,7 @@ export async function portalUrl(
     orderBy: { stateAt: "desc" },
     select: { paddleSubscriptionId: true, paddleCustomerId: true, status: true },
   });
-  const current = subs.find((s) => isLive(s.status)) ?? subs[0];
+  const current = subs.find((s) => isOpen(s.status)) ?? subs[0];
   if (!current)
     return { ok: false, message: "There is nothing to manage yet: choose a plan first." };
   try {

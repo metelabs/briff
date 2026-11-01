@@ -385,7 +385,10 @@ export async function deleteOrg(
     orgId: string;
     userId: string;
     confirmName: string;
-    /** Runs after every check, before the delete; a message refuses it (endSubscriptions). */
+    /**
+     * Runs inside the delete transaction once the owner role is confirmed under the membership
+     * lock; a message refuses the delete (endSubscriptions).
+     */
     beforeDelete?: () => Promise<string | null>;
   }
 ): Promise<DeleteOrgResult> {
@@ -414,40 +417,44 @@ export async function deleteOrg(
   if (userGoes && admin?.id === args.userId && users > 1) {
     return { ok: false, reason: "instance-admin" };
   }
-  const refused = args.beforeDelete ? await args.beforeDelete() : null;
-  if (refused) return { ok: false, reason: "billing", message: refused };
-
   let others: string[] = [];
-  const result = await scoped.$transaction(async (tx): Promise<DeleteOrgResult> => {
-    // Under the membership lock: an owner demoted or removed since the check above may not
-    // delete the org.
-    await lockMembers(tx, args.orgId);
-    const still = await tx.orgMember.findFirst({
-      where: { userId: args.userId },
-      select: { role: true },
-    });
-    if (still?.role !== "owner") return { ok: false, reason: "not-owner" };
-    others = (
-      await tx.orgMember.findMany({
-        where: { userId: { not: args.userId } },
-        select: { userId: true },
-      })
-    ).map((m) => m.userId);
-    // Pending jobs that name this org (e.g. a legacy bulletin preview) would only fail on retry.
-    await tx.job.deleteMany({
-      where: { status: "pending", payload: { path: ["orgId"], equals: args.orgId } },
-    });
-    await tx.org.delete({ where: { id: args.orgId } });
-    // Like getOrgContext, a read of the user's own memberships across orgs: one elsewhere
-    // keeps the user.
-    const user = await tx.user.findUniqueOrThrow({
-      where: { id: args.userId },
-      select: { _count: { select: { memberships: true } } },
-    });
-    if (user._count.memberships > 0) return { ok: true, userDeleted: false };
-    await tx.user.delete({ where: { id: args.userId } });
-    return { ok: true, userDeleted: true };
-  });
+  const result = await scoped.$transaction(
+    async (tx): Promise<DeleteOrgResult> => {
+      // Under the membership lock: an owner demoted or removed since the check above may not
+      // delete the org.
+      await lockMembers(tx, args.orgId);
+      const still = await tx.orgMember.findFirst({
+        where: { userId: args.userId },
+        select: { role: true },
+      });
+      if (still?.role !== "owner") return { ok: false, reason: "not-owner" };
+      // Only now, with the role confirmed under the lock: canceling a subscription is not undone.
+      const refused = args.beforeDelete ? await args.beforeDelete() : null;
+      if (refused) return { ok: false, reason: "billing", message: refused };
+      others = (
+        await tx.orgMember.findMany({
+          where: { userId: { not: args.userId } },
+          select: { userId: true },
+        })
+      ).map((m) => m.userId);
+      // Pending jobs that name this org (e.g. a legacy bulletin preview) would only fail on retry.
+      await tx.job.deleteMany({
+        where: { status: "pending", payload: { path: ["orgId"], equals: args.orgId } },
+      });
+      await tx.org.delete({ where: { id: args.orgId } });
+      // Like getOrgContext, a read of the user's own memberships across orgs: one elsewhere
+      // keeps the user.
+      const user = await tx.user.findUniqueOrThrow({
+        where: { id: args.userId },
+        select: { _count: { select: { memberships: true } } },
+      });
+      if (user._count.memberships > 0) return { ok: true, userDeleted: false };
+      await tx.user.delete({ where: { id: args.userId } });
+      return { ok: true, userDeleted: true };
+    },
+    // beforeDelete may call the Paddle API inside the transaction.
+    { timeout: 30_000 }
+  );
   // The other members keep their accounts; one left without any org gets a new one.
   if (result.ok) for (const userId of others) await ensureUserHasOrg(db, userId);
   return result;

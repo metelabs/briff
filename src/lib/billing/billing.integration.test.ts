@@ -226,8 +226,9 @@ describe.skipIf(!url)("billing management, tenant checks and billing-check", () 
       entity(subscriptionData({ id, customerId: "ctm_b", status: "canceled" }))
     );
     setBillingApiForTests(api);
-    // A paused subscription can resume on its own: it is canceled too.
+    // A paused subscription can resume on its own: deleting the org cancels it too.
     await seed(orgB, `sub_b_paused_${suffix}`, "ctm_b", "paused", new Date());
+    calls.length = 0;
     expect(await endSubscriptions(db, orgB)).toBeNull();
     expect(calls.sort()).toEqual(
       [`cancelNow sub_b_live`, `cancelNow sub_b_paused_${suffix}`].sort()
@@ -237,6 +238,24 @@ describe.skipIf(!url)("billing management, tenant checks and billing-check", () 
     orgs.push(live.id);
     await seed(live.id, `sub_c_${suffix}`, "ctm_c", "active", new Date());
     expect(await endSubscriptions(db, live.id)).toMatch(/billing is not configured/);
+  });
+
+  it("cancels a paused subscription at once and refuses plan changes on it", async () => {
+    const orgId = await createOrgForUser(db, { name: `E-${suffix}`, userId: owner.userId });
+    orgs.push(orgId);
+    await seed(orgId, `sub_e_${suffix}`, "ctm_e", "paused", new Date());
+    const { api, calls } = fakeApi((id) =>
+      entity(subscriptionData({ id, customerId: "ctm_e", status: "canceled" }))
+    );
+    const actor = { orgId, ...owner };
+    expect(
+      await changePlan(db, api, "sandbox", actor, { plan: "team", interval: "month" })
+    ).toMatchObject({
+      ok: false,
+      message: expect.stringContaining("paused"),
+    });
+    expect(await cancelSubscription(db, api, "sandbox", actor)).toEqual({ ok: true });
+    expect(calls).toEqual([`cancelNow sub_e_${suffix}`]);
   });
 
   it("billing-check reconciles stale subscriptions, ends expired grace, and emails owners", async () => {

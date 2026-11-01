@@ -148,6 +148,8 @@ export default async function BillingPage({
     status = "Unlimited is set by the instance admin; there is nothing to pay.";
   else if (live && cancelAt)
     status = `Canceled: ${plan.name} ends on ${longDate(cancelAt)}, then the organisation moves to Free.`;
+  else if (live?.status === "paused")
+    status = `Paused in Paddle: ${plan.name} is not billed, and the organisation is on Free until it resumes.`;
   else if (live && grace)
     status = `The last payment failed. ${plan.name} stays until ${longDate(grace)} while Paddle retries; update the payment method to keep it.`;
   else if (live?.nextBilledAt)
@@ -180,6 +182,7 @@ export default async function BillingPage({
           plan: live.plan === "team" ? "team" : "pro",
           interval: live.interval === "year" ? "year" : "month",
           cancelAt: cancelAt?.toISOString() ?? null,
+          paused: live.status === "paused",
           periodEnd: (live.currentPeriodEnd ?? live.nextBilledAt)?.toISOString() ?? null,
         }
       : null;
