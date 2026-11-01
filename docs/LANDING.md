@@ -2,16 +2,17 @@
 
 The app serves its own public pages, in the Triage design system, without a session:
 
-| Path                                         | What                                                                                                        | Code                                               |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `/` (no session cookie)                      | Landing page                                                                                                | `src/proxy.ts` rewrites to `/landing`              |
-| `/` (session cookie)                         | The dashboard, unchanged (a stale cookie still ends at `/login`)                                            | `src/app/page.tsx`                                 |
-| `/landing`                                   | The landing page itself (canonical `/`, closed in robots.txt)                                               | `src/app/landing/page.tsx`                         |
-| `/replay/php2shell`, `/replay/node-oct-2026` | The replays, from the same scenarios and engine as `docs/replay/*.html`                                     | `src/app/replay/[id]/page.tsx`                     |
-| `/terms`, `/privacy`, `/refunds`, `/dpa`     | Legal pages of the hosted service (one layout, operator facts in `src/lib/legal.ts`)                        | `src/app/<page>/page.tsx`, `src/components/legal/` |
-| `/.well-known/security.txt`                  | RFC 9116 contact file, static; renew `Expires` yearly (a test fails 30 days before)                         | `public/.well-known/security.txt`                  |
-| `/pricing` (hosted service only)             | Plans from `PLANS`, monthly/yearly switch, beta banner, FAQ; 404 self-hosted                                | `src/app/pricing/page.tsx`                         |
-| `/robots.txt`, `/sitemap.xml`                | Allow `/`, `/replay/`, `/pricing` (hosted) and the legal pages, close every app route; list the public URLs | `src/app/robots.ts`, `src/app/sitemap.ts`          |
+| Path                                         | What                                                                                                                   | Code                                               |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `/` (no session cookie)                      | Landing page                                                                                                           | `src/proxy.ts` rewrites to `/landing`              |
+| `/` (session cookie)                         | The dashboard, unchanged (a stale cookie still ends at `/login`)                                                       | `src/app/page.tsx`                                 |
+| `/landing`                                   | The landing page itself (canonical `/`, closed in robots.txt)                                                          | `src/app/landing/page.tsx`                         |
+| `/replay/php2shell`, `/replay/node-oct-2026` | The replays, from the same scenarios and engine as `docs/replay/*.html`                                                | `src/app/replay/[id]/page.tsx`                     |
+| `/terms`, `/privacy`, `/refunds`, `/dpa`     | Legal pages of the hosted service (one layout, operator facts in `src/lib/legal.ts`)                                   | `src/app/<page>/page.tsx`, `src/components/legal/` |
+| `/status`                                    | Status page: overall state, components, job freshness, queue lag, version, incidents (docs/OPERATIONS.md)              | `src/app/status/page.tsx`                          |
+| `/.well-known/security.txt`                  | RFC 9116 contact file, static; renew `Expires` yearly (a test fails 30 days before)                                    | `public/.well-known/security.txt`                  |
+| `/pricing` (hosted service only)             | Plans from `PLANS`, monthly/yearly switch, beta banner, FAQ; 404 self-hosted                                           | `src/app/pricing/page.tsx`                         |
+| `/robots.txt`, `/sitemap.xml`                | Allow `/`, `/replay/`, `/pricing` (hosted), `/status` and the legal pages, close every app route; list the public URLs | `src/app/robots.ts`, `src/app/sitemap.ts`          |
 
 - The proxy only checks whether Better Auth's session cookie is present; it reads no database.
   It runs for `/` alone (`matcher: "/"`), so no other request (uploads, webhooks) passes it.
@@ -19,10 +20,17 @@ The app serves its own public pages, in the Triage design system, without a sess
   `src/test/public-routes.test.ts` walks their imports and fails on the database client, the auth
   layer, `next/headers` or a Server Action module.
 - The replay pages run the committed scenarios through the engine (`src/replay/public.ts`), the
-  same output `npm run replay` writes to `docs/replay/*.html`.
-- The bulletin sample on the landing page is the PHP2Shell replay's Monday bulletin, rendered by
-  the same component as `/b/<id>` (`src/components/bulletin/bulletin-content.tsx`), and its fix
-  email in a frame.
+  same output `npm run replay` writes to `docs/replay/*.html`. Both share one page model
+  (`src/replay/render.ts`): a hero (incident, first sentence of the summary, dates, counts), a
+  sticky table of contents from 980px, the sample repos, a vertical timeline (time on the left,
+  a card per world event or email), and a table of what each sample repo was told by which
+  email. An email card shows its to-do lines and folds open into the email itself, inline (its
+  body as a `<div>` and its styles scoped to `.mail-body`, `src/lib/email/embed.ts`), not in a frame.
+- The bulletin sample on the landing page is a static Monday bulletin for three fictional repos
+  (`src/components/landing/sample-bulletin.ts`: a security fix per release line, a deadline,
+  three good-to-know items, three advisories with one transitive, five folded minor releases),
+  rendered by the same component as `/b/<id>` (`src/components/bulletin/bulletin-content.tsx`),
+  next to the PHP2Shell replay's fix email in a frame. Extend that fixture, not the renderer.
 - The file list under "How it reads your repos" is `SCANNED_FILE_NAMES` / `SCANNED_NAME_PATTERNS`
   from `packages/scan/src/files.ts`, the lists `isScannedPath` (the GitHub App's filter) uses. A
   scanner change shows up in `src/components/landing/__snapshots__/scanned-files.test.ts.snap`.
@@ -127,7 +135,7 @@ lists `Allow: /`.
    curl -sI https://www.briff.dev/replay/php2shell | grep -i '^location'
    # location: https://app.briff.dev/replay/php2shell
    curl -s https://app.briff.dev/sitemap.xml | grep -c '<loc>'
-   # 7
+   # 8
    ```
    Then in a private window open `https://briff.dev`: you end on `https://app.briff.dev/` with
    the landing page. In your normal window (signed in) the same URL shows your dashboard.

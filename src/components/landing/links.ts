@@ -11,12 +11,15 @@ export const PRIVACY_URL = `${SOURCE_URL}/blob/main/docs/PRIVACY.md`;
 export const METELABS_URL = "https://metelabs.dev";
 export const SECURITY_POLICY_URL = `${SOURCE_URL}/blob/main/SECURITY.md`;
 
+/** The public status page (src/app/status); /api/health stays the machine-readable check. */
+export const STATUS_PATH = "/status";
+
 /** The legal and trust links both footers (public pages and the app shell) start with. */
 export const TRUST_LINKS = [
   { href: "/terms", label: "Terms" },
   { href: "/privacy", label: "Privacy" },
   { href: SECURITY_POLICY_URL, label: "Security" },
-  { href: "/api/health", label: "Status" },
+  { href: STATUS_PATH, label: "Status" },
 ] as const;
 
 /** Legal pages, public and listed in the sitemap. */
@@ -35,6 +38,7 @@ export function publicPaths({ pricing }: { pricing: boolean }): readonly string[
     ...(pricing ? [PRICING_PATH] : []),
     ...PUBLIC_REPLAY_IDS.map((id) => `/replay/${id}`),
     ...LEGAL_PATHS,
+    STATUS_PATH,
   ];
 }
 

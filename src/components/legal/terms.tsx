@@ -147,7 +147,7 @@ export const TERMS: LegalDoc = {
           <p>
             Support is by email at <A href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</A>; we aim
             to answer within two business days. The current state of the service is at{" "}
-            <A href="/api/health">/api/health</A>.
+            <A href="/status">/status</A>.
           </p>
         </>
       ),

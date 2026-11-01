@@ -105,16 +105,21 @@ function colorDecl(r: DarkRule): string {
   return r.color ? `color:${r.color} !important` : "";
 }
 
+/** The dark palette's rules, each selector prefixed with `prefix` (empty for an email). */
+export function darkRules(prefix = ""): string[] {
+  return DARK.map((r) => {
+    const decl = [surfaceDecl(r), colorDecl(r)].filter(Boolean).join(";");
+    return `${prefix}${r.selector}{${decl}}`;
+  });
+}
+
 /**
  * The dark palette three times: under prefers-color-scheme, and for Outlook.com under
  * `[data-ogsb]` (backgrounds, borders) and `[data-ogsc]` (text), the attributes it puts on
  * the elements it recolours.
  */
 export function darkCss(): string {
-  const media = DARK.map((r) => {
-    const decl = [surfaceDecl(r), colorDecl(r)].filter(Boolean).join(";");
-    return `  ${r.selector}{${decl}}`;
-  });
+  const media = darkRules().map((rule) => `  ${rule}`);
   const ogsb = DARK.filter((r) => surfaceDecl(r)).map(
     (r) => `[data-ogsb] ${r.selector}{${surfaceDecl(r)}}`
   );
@@ -141,17 +146,22 @@ export const MOBILE_MAX_WIDTH = 480;
  * must survive next to the dark palette's attribute selectors. Clients that strip <style>
  * entirely keep the inline desktop layout.
  */
-export function mobileCss(): string {
+const MOBILE_RULES: readonly string[] = [
+  ".m-fixed{table-layout:fixed !important}",
+  ".m-page{padding:16px 8px 32px !important}",
+  ".m-frame{padding:18px 12px !important}",
+  ".m-flat{border-left-width:0 !important;border-right-width:0 !important;border-bottom-width:0 !important;border-radius:0 !important;margin:0 !important}",
+  ".m-flat-cell{padding:14px 0 16px !important;border-radius:0 !important}",
+  ".m-inset{padding:8px !important}",
+  ".m-body{font-size:16px !important;line-height:1.55 !important}",
+  ".m-cmd{padding:8px !important;white-space:pre !important;overflow-x:auto !important;word-break:normal !important;overflow-wrap:normal !important}",
+];
+
+/** `prefix` scopes every rule (an email embedded in a page); empty for an email. */
+export function mobileCss(prefix = ""): string {
   return `
 @media only screen and (max-width: ${MOBILE_MAX_WIDTH}px){
-  .m-fixed{table-layout:fixed !important}
-  .m-page{padding:16px 8px 32px !important}
-  .m-frame{padding:18px 12px !important}
-  .m-flat{border-left-width:0 !important;border-right-width:0 !important;border-bottom-width:0 !important;border-radius:0 !important;margin:0 !important}
-  .m-flat-cell{padding:14px 0 16px !important;border-radius:0 !important}
-  .m-inset{padding:8px !important}
-  .m-body{font-size:16px !important;line-height:1.55 !important}
-  .m-cmd{padding:8px !important;white-space:pre !important;overflow-x:auto !important;word-break:normal !important;overflow-wrap:normal !important}
+${MOBILE_RULES.map((rule) => `  ${prefix}${rule}`).join("\n")}
 }`;
 }
 
