@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { OG_IMAGE } from "@/components/landing/links";
 import { PublicFooter, PublicHeader } from "@/components/landing/public-chrome";
+import { SAMPLE_BULLETIN } from "@/components/landing/sample-bulletin";
 import { scannedFileList } from "@/components/landing/scanned-files";
 import {
   Hero,
@@ -15,7 +16,7 @@ import {
 import { PageContainer } from "@/components/shell/page-container";
 import { isCloud } from "@/lib/env";
 import { publicSiteUrl } from "@/lib/public-site";
-import { delayLabel } from "@/replay/render";
+import { delayLabel, summaryParts } from "@/replay/render";
 import { PUBLIC_REPLAY_IDS, publicReplay, replayEmails, replayHighlights } from "@/replay/public";
 
 // The public landing page. src/proxy.ts rewrites `/` here for a request without a session
@@ -46,28 +47,22 @@ export function generateMetadata(): Metadata {
   };
 }
 
-/** First sentence of a scenario summary, for the card. */
-function lead(summary: string): string {
-  const end = summary.indexOf(". ");
-  return end === -1 ? summary : summary.slice(0, end + 1);
-}
-
 export default function LandingPage() {
   const cloud = isCloud();
   const replays = PUBLIC_REPLAY_IDS.map((id) => publicReplay(id));
   const cards: ReplayCardData[] = replays.map((r) => ({
     id: r.scenario.id,
     title: r.scenario.title,
-    lead: lead(r.scenario.summary),
+    lead: summaryParts(r.scenario.summary).lead,
     emails: replayEmails(r).length,
     highlights: replayHighlights(r),
   }));
 
-  // The sample is the PHP2Shell replay: its fix email and the Monday bulletin after it.
-  const php = replayEmails(publicReplay("php2shell"));
-  const weekly = php.find((m) => m.kind === "weekly" && m.view);
-  const fixEmail = php.filter((m) => m.kind === "urgent").at(-1);
-  if (!weekly?.view || !fixEmail) throw new Error("landing: the PHP2Shell replay lost its emails");
+  // The sample: a static Monday bulletin (sample-bulletin.ts) and the PHP2Shell replay's fix email.
+  const fixEmail = replayEmails(publicReplay("php2shell"))
+    .filter((m) => m.kind === "urgent")
+    .at(-1);
+  if (!fixEmail) throw new Error("landing: the PHP2Shell replay lost its fix email");
 
   const files = scannedFileList();
   const fileCount = files.names.length + files.patterns.length;
@@ -101,7 +96,7 @@ export default function LandingPage() {
         <ReplaysSection cards={cards} />
         <CoverageSection />
         <ReadsSection files={files} apiUrl={publicSiteUrl()} />
-        <SampleSection view={weekly.view} alert={fixEmail} replayId="php2shell" />
+        <SampleSection view={SAMPLE_BULLETIN} alert={fixEmail} replayId="php2shell" />
         <PrivacySection />
       </PageContainer>
       <PublicFooter pricing={cloud} />

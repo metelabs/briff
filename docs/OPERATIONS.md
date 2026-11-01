@@ -3,6 +3,17 @@
 What an operator of a Briff instance (hosted or self-hosted) can watch, and what tells them when
 something is wrong. Configuration is runtime env (`.env.example`).
 
+## Status page
+
+`/status` (public, no session) is the human-readable view of the health endpoint below: overall
+state (Operational / Degraded / Down), the web, database and worker components, each scheduled
+job's last success ("on schedule" / "late" / "not run yet"), queue lag, the version, the check
+time and an incidents list (`INCIDENTS` in `src/lib/ops/incidents.ts`; add one when users were
+affected). It reads `/api/health` from the same server on every request
+(`http://127.0.0.1:$PORT`, `src/lib/ops/status-fetch.ts`), because a public page may not import
+the database client, and refreshes itself every minute. It shows no error text or warnings. Both
+footers' "Status" link points here; monitors keep using `/api/health`.
+
 ## Health endpoint
 
 `GET /api/health` (no auth, `Cache-Control: no-store`) answers **200** when everything is on time

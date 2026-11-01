@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { useActionState, useState, useTransition, type CSSProperties } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog, DialogClose, FormDialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -195,18 +196,16 @@ function StreamRepos({
                 key={r.id}
                 className="hover:bg-surface-2 flex min-w-0 cursor-pointer items-center gap-2.5 rounded-[10px] px-3 py-[9px] transition-colors duration-[120ms]"
               >
-                <input
-                  type="checkbox"
+                <Checkbox
                   name="repoId"
                   value={r.id}
                   checked={chosen.has(r.id)}
-                  onChange={(e) => {
+                  onCheckedChange={(checked) => {
                     const next = new Set(chosen);
-                    if (e.target.checked) next.add(r.id);
+                    if (checked) next.add(r.id);
                     else next.delete(r.id);
                     setChosen(next);
                   }}
-                  className="accent-brand size-4 shrink-0"
                 />
                 <TruncatedText className="font-mono text-[13px]">{r.name}</TruncatedText>
               </label>

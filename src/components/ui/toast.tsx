@@ -43,12 +43,14 @@ function ToastList() {
   return toasts.map((toast) => {
     const kind = kindOf(toast.type);
     const Icon = kind === "error" ? CircleAlert : kind === "info" ? Info : CircleCheck;
+    // Tailwind's translate-* set `translate`, not `transform`: transitioning `transform` let the
+    // slide jump while only the fade ran. Absolute, so removal never reflows the page.
     return (
       <Toast.Root
         key={toast.id}
         toast={toast}
         className={cn(
-          "text-fg shadow-raised absolute top-0 right-0 left-0 rounded-[12px] border transition-[opacity,transform] duration-200 ease-out data-ending-style:opacity-0 data-limited:opacity-0 data-starting-style:opacity-0 max-md:data-ending-style:-translate-y-2 max-md:data-starting-style:-translate-y-2 md:top-auto md:bottom-0 md:data-ending-style:translate-y-2 md:data-starting-style:translate-y-2",
+          "text-fg shadow-raised absolute top-0 right-0 left-0 rounded-[12px] border transition-[opacity,translate] duration-[180ms] ease-out will-change-[opacity,translate] data-ending-style:opacity-0 data-limited:opacity-0 data-starting-style:opacity-0 max-md:data-ending-style:-translate-y-2 max-md:data-starting-style:-translate-y-2 md:top-auto md:bottom-0 md:data-ending-style:translate-y-2 md:data-starting-style:translate-y-2",
           KINDS[kind].box
         )}
       >

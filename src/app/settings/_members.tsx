@@ -4,7 +4,8 @@ import { useActionState, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
-import { Input, Select } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { FieldHelp, Label } from "@/components/ui/label";
 import { SecretBox } from "@/components/ui/secret-box";
 import { Tag } from "@/components/ui/tag";
@@ -12,6 +13,7 @@ import { useResultToast, useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 import type { FormState } from "./actions";
+import { DEFAULT_INVITE_ROLE, type InviteRole, roleAfterInvite } from "./invite-role";
 import {
   changeRoleAction,
   type InviteFormState,
@@ -26,6 +28,7 @@ import {
 // Settings -> Organisation and Members (owners manage, members see the list and can leave).
 
 const INITIAL: FormState = { ok: true, message: null };
+
 const INVITE_INITIAL: InviteFormState = { ok: true, message: null };
 
 const ROW =
@@ -67,6 +70,12 @@ export function OrgNameForm({ name, maxLength }: { name: string; maxLength: numb
 
 export function InviteForm() {
   const [state, action, pending] = useActionState(inviteMemberAction, INVITE_INITIAL);
+  const [role, setRole] = useState<InviteRole>(DEFAULT_INVITE_ROLE);
+  const [seenState, setSeenState] = useState(state);
+  if (seenState !== state) {
+    setSeenState(state);
+    setRole(roleAfterInvite(role, state));
+  }
   useResultToast(state, state);
   return (
     <div className="grid gap-3">
@@ -89,10 +98,16 @@ export function InviteForm() {
         </div>
         <div className="grid content-start gap-1.5">
           <Label htmlFor="invite-role">Role</Label>
-          <Select id="invite-role" name="role" defaultValue="member">
-            <option value="member">Member</option>
-            <option value="owner">Owner</option>
-          </Select>
+          <Select
+            id="invite-role"
+            name="role"
+            value={role}
+            onValueChange={setRole}
+            options={[
+              { value: "member", label: "Member" },
+              { value: "owner", label: "Owner" },
+            ]}
+          />
         </div>
         <FieldHelp
           id="invite-help"

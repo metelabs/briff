@@ -87,11 +87,6 @@ export function PricingCards({ billing = false }: { billing?: boolean }) {
                 </li>
               ))}
             </ul>
-            {plan.planned.length > 0 && (
-              <p className="text-fg-muted mt-3 text-[12.5px]">
-                Planned for {plan.name}: {plan.planned.join(" · ")}
-              </p>
-            )}
             <div className="mt-auto pt-5">
               <Link
                 href={ctaFor(plan, period, billing).href}

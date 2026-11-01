@@ -28,8 +28,4 @@ function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
   );
 }
 
-function Select({ className, ...props }: React.ComponentProps<"select">) {
-  return <select className={cn(fieldControlClass, "h-10 pr-8", className)} {...props} />;
-}
-
-export { Input, Select, Textarea };
+export { Input, Textarea };

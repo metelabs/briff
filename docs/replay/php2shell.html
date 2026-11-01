@@ -6,460 +6,441 @@
 <title>Briff replay: PHP2Shell, October 2026</title>
 <meta name="description" content="What Briff would have sent during PHP2Shell, October 2026: the real dated items, sample repos, the real email templates.">
 <style>
-:root{color-scheme:light dark;--bg:#fafaf9;--fg:#1c1917;--muted:#57534e;--line:#e7e5e4;--card:#ffffff;--world:#0f766e;--world-bg:#f0fdfa;--briff:#b91c1c;--briff-bg:#fef2f2;--link:#1d4ed8;--code:#f5f5f4}
-@media (prefers-color-scheme:dark){:root{--bg:#0c0a09;--fg:#e7e5e4;--muted:#a8a29e;--line:#292524;--card:#1c1917;--world:#5eead4;--world-bg:#042f2e;--briff:#fca5a5;--briff-bg:#450a0a;--link:#93c5fd;--code:#292524}}
+:root{color-scheme:light dark;--bg:#f2f5f7;--surface:#ffffff;--surface-2:#f2f5f7;--line:#dde4e9;--line-strong:#b9c5ce;--fg:#0d1b24;--muted:#566874;--subtle:#8a99a3;--brand:#0b6b67;--brand-soft:#d9eeec;--sec:#b93522;--sec-soft:#fde6e0;--wait:#5a6973;--wait-soft:#e8edf0;--shadow:rgb(13 27 36 / .07)}
+@media (prefers-color-scheme:dark){:root{--bg:#0a1115;--surface:#111a20;--surface-2:#0d161b;--line:#21303a;--line-strong:#34495a;--fg:#e5edf1;--muted:#8d9faa;--subtle:#5d6f7a;--brand:#3ccfc2;--brand-soft:#0e2e2d;--sec:#ff7b64;--sec-soft:#3a1912;--wait:#93a3ad;--wait-soft:#1b252c;--shadow:rgb(0 0 0 / .35)}}
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-a{color:var(--link)}
-.wrap{max-width:1180px;margin:0 auto;padding:28px 16px 48px}
-.kicker{font-size:13px;letter-spacing:.02em;color:var(--muted);margin:0 0 6px}
-h1{font-size:28px;line-height:1.2;margin:0 0 10px}
-.summary{max-width:760px;margin:0 0 18px;color:var(--fg)}
-details.repos-box{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:10px 14px;margin:0 0 28px;max-width:760px}
-details.repos-box summary{cursor:pointer;font-weight:600}
-.repos{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:10px}
-.repos pre{margin:4px 0;padding:8px 10px;background:var(--code);border-radius:6px;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
-.runs{font-size:13px;color:var(--muted)}
-.cols{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:24px;position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 0;margin:0 0 8px}
-.cols h2{font-size:13px;letter-spacing:.06em;margin:0}
-.cols .c-world{color:var(--world)}.cols .c-briff{color:var(--briff)}
-.day-label{font-size:15px;margin:26px 0 10px;padding:0 0 6px;border-bottom:1px dashed var(--line);color:var(--muted);font-weight:600}
-.rows{list-style:none;margin:0;padding:0;display:grid;gap:14px}
-.row{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:24px}
-.row-world .card{grid-column:1}
-.row-briff .card{grid-column:2}
-.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
-.world{border-left:4px solid var(--world)}
-.briff{border-left:4px solid var(--briff)}
-.meta{display:flex;gap:10px;align-items:center;margin:0 0 6px;font-size:13px;color:var(--muted)}
-.meta time{font-variant-numeric:tabular-nums;font-weight:600;color:var(--fg)}
-.tag{display:none;font-size:11px;letter-spacing:.04em;font-weight:700;border-radius:4px;padding:1px 6px}
-.tag-world{background:var(--world-bg);color:var(--world)}.tag-briff{background:var(--briff-bg);color:var(--briff)}
-.card h3{font-size:16px;line-height:1.35;margin:0}
-.detail{margin:6px 0 0;font-size:14px;color:var(--muted)}
-.sources{margin:8px 0 0;font-size:13px}
-.timing{margin:0 0 10px;font-size:14px}
-.delay{font-weight:700;color:var(--briff)}
-.mail{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
-.mail-head{font-size:13px;line-height:1.5;padding:8px 12px;background:#f5f5f4;color:#1c1917;border-bottom:1px solid #e7e5e4;word-break:break-word}
-.mail-head .k{display:inline-block;min-width:4.2em;color:#78716c}
-.mail-frame{display:block;width:100%;height:560px;border:0;background:#fff}
-footer{margin:40px 0 0;padding:18px 0 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted);max-width:760px}
-footer pre{background:var(--code);color:var(--fg);padding:10px 12px;border-radius:6px;overflow-x:auto;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-@media (max-width:760px){
-.cols{display:none}
-.row{grid-template-columns:minmax(0,1fr);gap:0}
-.row-world .card,.row-briff .card{grid-column:1}
-.tag{display:inline-block}
-h1{font-size:23px}
-.card{padding:12px}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 Geist,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+a{color:var(--brand);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.wrap{max-width:1200px;margin:0 auto;padding:40px max(16px,env(safe-area-inset-left)) 64px}
+.display,h1,h2{font-family:"Bricolage Grotesque",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.kicker{font-size:13px;color:var(--muted);margin:0 0 10px}
+h1{font-size:clamp(34px,5vw,56px);line-height:1;letter-spacing:-.035em;font-weight:600;margin:0 0 16px;max-width:22ch;text-wrap:balance}
+.lead{font-size:18px;line-height:1.45;margin:0 0 10px;max-width:60ch}
+.dates{font-size:13px;color:var(--muted);margin:0;font-variant-numeric:tabular-nums}
+.stats{list-style:none;margin:24px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,200px));gap:8px}
+.stats li{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:6px}
+.stats .num{font-family:"Bricolage Grotesque",-apple-system,sans-serif;font-size:34px;line-height:1;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.stats .num.sec{color:var(--sec)}
+.stats .cap{font-size:12px;color:var(--muted)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:40px;margin-top:48px}
+.toc{display:none}
+@media (min-width:980px){
+.layout{grid-template-columns:200px minmax(0,1fr)}
+.toc{display:block;position:sticky;top:24px;align-self:start;font-size:13px}
+}
+.toc-title{font-size:11.5px;font-weight:600;letter-spacing:.04em;color:var(--muted);margin:0 0 10px}
+.toc ol{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.toc ol ol{margin:2px 0 4px 10px;padding-left:10px;border-left:1px solid var(--line)}
+.toc a{display:block;padding:4px 8px;border-radius:8px;color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--fg);background:var(--surface)}
+main>section{margin:0 0 56px;scroll-margin-top:16px}
+h2{font-size:19px;line-height:1.2;letter-spacing:-.02em;font-weight:600;margin:0 0 14px}
+.prose{max-width:72ch;margin:0 0 10px;font-size:15px;line-height:1.6}
+.muted{color:var(--muted)}
+.repos{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.repos li{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px;display:grid;gap:8px;align-content:start}
+.repos strong,pre,code,.ev-time,.runs,.when{font-family:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.repos strong{font-size:13px;font-weight:500}
+pre{margin:0;padding:8px 10px;background:var(--surface-2);border-radius:12px;font-size:12.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+.runs{font-size:12px;color:var(--muted)}
+.day{scroll-margin-top:16px}
+.day-label{font-size:13px;font-weight:600;color:var(--muted);margin:28px 0 12px;font-variant-numeric:tabular-nums}
+.day:first-child .day-label{margin-top:0}
+.events{list-style:none;margin:0;padding:0}
+.ev{display:grid;grid-template-columns:96px minmax(0,1fr)}
+.ev-time{padding:16px 16px 0 0;text-align:right;font-size:12.5px;font-weight:500;font-variant-numeric:tabular-nums}
+.ev-world .ev-time time{color:var(--muted)}
+.ev-body{position:relative;border-left:2px solid var(--line);padding:0 0 14px 22px;min-width:0}
+.ev-body::before{content:"";position:absolute;left:-7px;top:19px;width:12px;height:12px;border-radius:999px;background:var(--surface);border:2px solid var(--wait)}
+.ev-urgent .ev-body::before{background:var(--sec);border-color:var(--sec)}
+.ev-weekly .ev-body::before{background:var(--brand);border-color:var(--brand)}
+.ev:last-child .ev-body{padding-bottom:0}
+.ev-card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px;min-width:0}
+.mail-urgent{border-top:3px solid var(--sec)}
+.ev-meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:0 0 8px;font-size:13px}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;line-height:1;font-weight:600;letter-spacing:.04em;border-radius:6px;padding:4px 7px}
+.tag::before{content:"";width:6px;height:6px;border-radius:999px;background:currentColor}
+.tag-wait{background:var(--wait-soft);color:var(--wait)}
+.tag-sec{background:var(--sec-soft);color:var(--sec)}
+.tag-brand{background:var(--brand-soft);color:var(--brand)}
+.timing{color:var(--muted)}
+.delay{color:var(--sec);font-weight:600;font-variant-numeric:tabular-nums}
+.ev-card h4{font-size:15px;line-height:1.35;font-weight:500;margin:0;text-wrap:balance}
+.detail{margin:6px 0 0;font-size:13.5px;color:var(--muted);max-width:72ch}
+.sources{margin:10px 0 0;font-size:12.5px}
+.mail-card summary{list-style:none;cursor:pointer}
+.mail-card summary::-webkit-details-marker{display:none}
+.todo-label{margin:12px 0 4px;font-size:11.5px;font-weight:600;letter-spacing:.04em;color:var(--brand)}
+.todo{margin:0;padding:10px 12px 10px 28px;background:var(--surface-2);border-radius:12px;font-size:13px;display:grid;gap:4px}
+.toggle{display:inline-flex;align-items:center;gap:6px;margin-top:12px;font-size:13px;font-weight:500;color:var(--brand)}
+.toggle::after{content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:translateY(-2px) rotate(45deg)}
+.mail-card[open] .toggle::after{transform:translateY(1px) rotate(-135deg)}
+.mail-card .hide,.mail-card[open] .show{display:none}
+.mail-card[open] .hide{display:inline}
+.mail-card summary:hover .toggle{text-decoration:underline}
+.mail{margin-top:14px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.mail-head{font-size:13px;line-height:1.5;padding:9px 14px;background:var(--surface-2);border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.mail-head .k{display:inline-block;min-width:4.4em;color:var(--muted)}
+.mail-body{overflow-x:auto}
+.table-wrap{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow-x:auto}
+.outcome{border-collapse:collapse;table-layout:fixed;width:100%;min-width:720px;font-size:13px}
+.outcome th,.outcome td{text-align:left;vertical-align:top;padding:12px 14px;border-top:1px solid var(--line)}
+.outcome thead th{border-top:0;background:var(--surface-2);font-weight:500;color:var(--muted);display:table-cell}
+.outcome thead th .when{display:block;margin-top:6px;font-size:12px;font-variant-numeric:tabular-nums}
+.outcome tbody th{position:sticky;left:0;background:var(--surface);min-width:170px;font-weight:400}
+.outcome thead th:first-child{position:sticky;left:0;z-index:1;width:220px}
+.outcome tbody th strong{display:block;font-family:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;font-weight:500}
+.outcome ul{margin:0;padding-left:16px;display:grid;gap:4px}
+.outcome .none{color:var(--subtle)}
+.method pre{overflow-x:auto;white-space:pre}
+footer{max-width:72ch}
+@media (max-width:559px){
+.wrap{padding-top:28px}
+.lead{font-size:16px}
+.stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ev{grid-template-columns:minmax(0,1fr)}
+.ev-time{text-align:left;padding:0 0 6px 22px;border-left:2px solid var(--line)}
+.ev-body::before{top:-21px}
+.ev-card{padding:15px}
+.events>.ev:first-child .ev-time{padding-top:0}
+.outcome{min-width:600px}
+.outcome thead th:first-child{width:150px}
+.outcome tbody th{min-width:0}
+}
+
+@media only screen and (max-width: 480px){
+  .mail-body .m-fixed{table-layout:fixed !important}
+  .mail-body .m-page{padding:16px 8px 32px !important}
+  .mail-body .m-frame{padding:18px 12px !important}
+  .mail-body .m-flat{border-left-width:0 !important;border-right-width:0 !important;border-bottom-width:0 !important;border-radius:0 !important;margin:0 !important}
+  .mail-body .m-flat-cell{padding:14px 0 16px !important;border-radius:0 !important}
+  .mail-body .m-inset{padding:8px !important}
+  .mail-body .m-body{font-size:16px !important;line-height:1.55 !important}
+  .mail-body .m-cmd{padding:8px !important;white-space:pre !important;overflow-x:auto !important;word-break:normal !important;overflow-wrap:normal !important}
+}
+@media (prefers-color-scheme: dark){
+.mail-body .b-page{background:#0a1115 !important}
+.mail-body .b-card{background:#111a20 !important;border-color:#21303a !important}
+.mail-body .b-inset{background:#0d161b !important;border-color:#21303a !important}
+.mail-body .b-line{border-color:#21303a !important}
+.mail-body .b-text{color:#e5edf1 !important}
+.mail-body .b-muted{color:#8d9faa !important}
+.mail-body .b-link{color:#3ccfc2 !important}
+.mail-body .b-sec{color:#ff7b64 !important}
+.mail-body .b-sec-top{border-top-color:#ff7b64 !important}
+.mail-body .b-up-top{border-top-color:#f1b85b !important}
+.mail-body .t-sec{background:#3a1912 !important;color:#ff7b64 !important}
+.mail-body .t-upgrade{background:#32260f !important;color:#f1b85b !important}
+.mail-body .t-read{background:#192343 !important;color:#8eaaff !important}
+.mail-body .t-wait{background:#1b252c !important;color:#93a3ad !important}
+.mail-body .t-brand{background:#0e2e2d !important;color:#3ccfc2 !important}
+.mail-body .b-btn{background:#3ccfc2 !important;color:#04201e !important}
 }
 </style>
 </head>
 <body>
 <div class="wrap">
-<header>
+<header class="hero" id="top">
 <p class="kicker">Replay · real items, sample repos, no LLM involved</p>
-<h1>PHP2Shell, October 2026: what Briff would have sent</h1>
-<p class="summary">Two critical PHP remote code execution flaws leaked before their coordinated release. php.net gave a day&#39;s notice, then shipped 8.5.12, 8.4.27, 8.3.36 and 8.2.35. Three sample repos: a floating php:8.3-fpm image, a pinned php:8.1.31-apache image on an end-of-life line, and an api pinned to php 8.4.26 in .tool-versions. Below are the 3 emails Briff would have sent, each rendered by the production template.</p>
-<details class="repos-box"><summary>Sample repos (3)</summary>
+<h1>PHP2Shell, October 2026</h1>
+<p class="lead">Two critical PHP remote code execution flaws leaked before their coordinated release.</p>
+<p class="dates">Sat 17 Oct – Mon 26 Oct 2026 · 8 events · 3 sample repos</p>
+<ul class="stats">
+<li><span class="num">3</span><span class="cap">emails sent</span></li>
+<li><span class="num sec">+26 min</span><span class="cap">fastest urgent email after its trigger</span></li>
+<li><span class="num">3/3</span><span class="cap">sample repos given a step</span></li>
+</ul>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="On this page">
+<p class="toc-title">ON THIS PAGE</p>
+<ol>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#repos">Sample repos</a></li>
+<li><a href="#timeline">Timeline</a><ol><li><a href="#day-2026-10-17">Sat 17 Oct 2026</a></li><li><a href="#day-2026-10-20">Tue 20 Oct 2026</a></li><li><a href="#day-2026-10-21">Wed 21 Oct 2026</a></li><li><a href="#day-2026-10-26">Mon 26 Oct 2026</a></li></ol></li>
+<li><a href="#outcome">What each repo was told</a></li>
+<li><a href="#method">How this replay works</a></li>
+</ol>
+</nav>
+<main>
+<section id="overview">
+<h2>What Briff would have sent</h2>
+<p class="prose">php.net gave a day&#39;s notice, then shipped 8.5.12, 8.4.27, 8.3.36 and 8.2.35. Three sample repos: a floating php:8.3-fpm image, a pinned php:8.1.31-apache image on an end-of-life line, and an api pinned to php 8.4.26 in .tool-versions.</p>
+<p class="prose muted">Below are the 3 emails Briff would have sent, each rendered by the production template. Open an email card to read it as it arrived.</p>
+</section>
+<section id="repos">
+<h2>Sample repos</h2>
 <ul class="repos">
 <li><strong>garden.example</strong><pre>Dockerfile: FROM php:8.3-fpm
 composer.json: {&quot;require&quot;:{&quot;php&quot;:&quot;^8.3&quot;}}</pre><span class="runs">Scanned: debian 13 (Dockerfile base image php:8.3-fpm), php 8.3+ (composer.json require.php), php 8.3 (Dockerfile)</span></li>
 <li><strong>legacy-shop</strong><pre>Dockerfile: FROM php:8.1.31-apache</pre><span class="runs">Scanned: php 8.1.31 (Dockerfile)</span></li>
 <li><strong>api</strong><pre>.tool-versions: php 8.4.26</pre><span class="runs">Scanned: php 8.4.26 (.tool-versions)</span></li>
 </ul>
-</details>
-</header>
-<div class="cols" aria-hidden="true"><h2 class="c-world">WHAT HAPPENED</h2><h2 class="c-briff">WHAT BRIFF SENT</h2></div>
-<main>
-<section class="day">
-<h2 class="day-label">Sat 17 Oct 2026</h2>
-<ol class="rows">
-<li class="row row-world"><article class="card world">
-<p class="meta"><span class="tag tag-world">What happened</span><time datetime="2026-10-17T00:00:00.000Z">time not published</time></p>
-<h3>Amazon&#39;s MadPot honeypots log a PHP2Shell exploitation attempt</h3>
+</section>
+<section id="timeline">
+<h2>Timeline</h2>
+<section class="day" id="day-2026-10-17">
+<h3 class="day-label">Sat 17 Oct 2026</h3>
+<ol class="events">
+<li class="ev ev-world">
+<div class="ev-time"><time datetime="2026-10-17T00:00:00.000Z">time not published</time></div>
+<div class="ev-body"><article class="ev-card">
+<p class="ev-meta"><span class="tag tag-wait">WHAT HAPPENED</span></p>
+<h4>Amazon&#39;s MadPot honeypots log a PHP2Shell exploitation attempt</h4>
 <p class="detail">Four days before disclosure, while the flaws were still under embargo.</p>
 <p class="sources"><a href="https://aws.amazon.com/blogs/security/amazon-threat-intelligence-identifies-php2shell-exploitation-prior-to-public-disclosure-in-madpot/" rel="noopener">AWS Security Blog</a></p>
-</article></li>
+</article></div>
+</li>
 </ol>
 </section>
-<section class="day">
-<h2 class="day-label">Tue 20 Oct 2026</h2>
-<ol class="rows">
-<li class="row row-world"><article class="card world">
-<p class="meta"><span class="tag tag-world">What happened</span><time datetime="2026-10-20T00:00:00.000Z">time not published</time></p>
-<h3>A Hacker News post leaks two critical PHP RCEs ahead of the embargo</h3>
+<section class="day" id="day-2026-10-20">
+<h3 class="day-label">Tue 20 Oct 2026</h3>
+<ol class="events">
+<li class="ev ev-world">
+<div class="ev-time"><time datetime="2026-10-20T00:00:00.000Z">time not published</time></div>
+<div class="ev-body"><article class="ev-card">
+<p class="ev-meta"><span class="tag tag-wait">WHAT HAPPENED</span></p>
+<h4>A Hacker News post leaks two critical PHP RCEs ahead of the embargo</h4>
 <p class="detail">It quotes the CVE numbers and a 22 October disclosure date; the post is deleted.</p>
 <p class="sources"><a href="https://www.bleepingcomputer.com/news/security/php-warns-admins-of-two-critical-flaws-emergency-patches-coming-tomorrow/" rel="noopener">BleepingComputer</a><span aria-hidden="true"> · </span><a href="https://www.itnews.com.au/news/critical-flaws-strike-php-as-disclosure-embargo-is-broken-629794" rel="noopener">iTnews</a></p>
-</article></li>
-<li class="row row-world"><article class="card world">
-<p class="meta"><span class="tag tag-world">What happened</span><time datetime="2026-10-20T00:01:00.000Z">time not published</time></p>
-<h3>watchTowr confirms the vulnerabilities are real</h3>
+</article></div>
+</li>
+<li class="ev ev-world">
+<div class="ev-time"><time datetime="2026-10-20T00:01:00.000Z">time not published</time></div>
+<div class="ev-body"><article class="ev-card">
+<p class="ev-meta"><span class="tag tag-wait">WHAT HAPPENED</span></p>
+<h4>watchTowr confirms the vulnerabilities are real</h4>
 
 <p class="sources"><a href="https://x.com/watchtowrcyber/status/2112611507749982605" rel="noopener">watchTowr on X</a></p>
-</article></li>
-<li class="row row-world"><article class="card world">
-<p class="meta"><span class="tag tag-world">What happened</span><time datetime="2026-10-20T20:32:00.000Z">20:32 UTC</time></p>
-<h3>php.net posts advance notice of a critical security release</h3>
+</article></div>
+</li>
+<li class="ev ev-world">
+<div class="ev-time"><time datetime="2026-10-20T20:32:00.000Z">20:32 UTC</time></div>
+<div class="ev-body"><article class="ev-card">
+<p class="ev-meta"><span class="tag tag-wait">WHAT HAPPENED</span></p>
+<h4>php.net posts advance notice of a critical security release</h4>
 <p class="detail">Scheduled for Wednesday 21 October, 14:00 UTC. Two critical vulnerabilities, both CVSS v4.0 9.2; no versions or details yet.</p>
 <p class="sources"><a href="https://www.php.net/archive/2026.php#2026-10-20-1" rel="noopener">php.net</a></p>
-</article></li>
-<li class="row row-briff"><article class="card briff">
-<p class="meta"><span class="tag tag-briff">What Briff sent</span><time datetime="2026-10-20T21:00:00.000Z">21:00 UTC</time></p>
-<p class="timing">Urgent email · <span class="delay">+28 min</span> after “Upcoming Critical PHP Security Release” appeared</p>
+</article></div>
+</li>
+<li class="ev ev-urgent">
+<div class="ev-time"><time datetime="2026-10-20T21:00:00.000Z">21:00 UTC</time></div>
+<div class="ev-body"><details class="ev-card mail-card mail-urgent">
+<summary>
+<p class="ev-meta"><span class="tag tag-sec">URGENT EMAIL</span><span class="timing"><b class="delay">+28 min</b> after “Upcoming Critical PHP Security Release” appeared</span></p>
+<h4>Briff · urgent: Upcoming Critical PHP Security Release</h4>
+<p class="todo-label">TO DO</p>
+<ul class="todo">
+<li>Update PHP in api, garden.example as soon as the fixed release is out (announced for 21 Oct 2026, 14:00 UTC).</li>
+<li>legacy-shop: php 8.1 is end-of-life and will not get this fix; move to 8.2 or later</li>
+</ul>
+<span class="toggle"><span class="show">Show the email</span><span class="hide">Hide the email</span></span>
+</summary>
 <div class="mail">
 <div class="mail-head">
 <div><span class="k">From</span> Briff</div>
 <div><span class="k">Subject</span> <strong>Briff · urgent: Upcoming Critical PHP Security Release</strong></div>
 </div>
-<iframe class="mail-frame" title="Briff · urgent: Upcoming Critical PHP Security Release" loading="lazy" sandbox="allow-same-origin allow-popups" srcdoc="&lt;!doctype html&gt;
-&lt;html lang=&quot;en&quot;&gt;
-&lt;head&gt;
-&lt;meta charset=&quot;utf-8&quot;&gt;
-&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
-&lt;meta name=&quot;color-scheme&quot; content=&quot;light dark&quot;&gt;
-&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;light dark&quot;&gt;
-&lt;title&gt;Briff · urgent: Upcoming Critical PHP Security Release&lt;/title&gt;
-&lt;style&gt;
-@media only screen and (max-width: 480px){
-  .m-fixed{table-layout:fixed !important}
-  .m-page{padding:16px 8px 32px !important}
-  .m-frame{padding:18px 12px !important}
-  .m-flat{border-left-width:0 !important;border-right-width:0 !important;border-bottom-width:0 !important;border-radius:0 !important;margin:0 !important}
-  .m-flat-cell{padding:14px 0 16px !important;border-radius:0 !important}
-  .m-inset{padding:8px !important}
-  .m-body{font-size:16px !important;line-height:1.55 !important}
-  .m-cmd{padding:8px !important;white-space:pre !important;overflow-x:auto !important;word-break:normal !important;overflow-wrap:normal !important}
-}&lt;/style&gt;
-&lt;style&gt;
-:root{color-scheme:light dark;supported-color-schemes:light dark}
-@media (prefers-color-scheme: dark){
-  .b-page{background:#0a1115 !important}
-  .b-card{background:#111a20 !important;border-color:#21303a !important}
-  .b-inset{background:#0d161b !important;border-color:#21303a !important}
-  .b-line{border-color:#21303a !important}
-  .b-text{color:#e5edf1 !important}
-  .b-muted{color:#8d9faa !important}
-  .b-link{color:#3ccfc2 !important}
-  .b-sec{color:#ff7b64 !important}
-  .b-sec-top{border-top-color:#ff7b64 !important}
-  .b-up-top{border-top-color:#f1b85b !important}
-  .t-sec{background:#3a1912 !important;color:#ff7b64 !important}
-  .t-upgrade{background:#32260f !important;color:#f1b85b !important}
-  .t-read{background:#192343 !important;color:#8eaaff !important}
-  .t-wait{background:#1b252c !important;color:#93a3ad !important}
-  .t-brand{background:#0e2e2d !important;color:#3ccfc2 !important}
-  .b-btn{background:#3ccfc2 !important;color:#04201e !important}
-}
-[data-ogsb] .b-page{background:#0a1115 !important}
-[data-ogsb] .b-card{background:#111a20 !important;border-color:#21303a !important}
-[data-ogsb] .b-inset{background:#0d161b !important;border-color:#21303a !important}
-[data-ogsb] .b-line{border-color:#21303a !important}
-[data-ogsb] .b-sec-top{border-top-color:#ff7b64 !important}
-[data-ogsb] .b-up-top{border-top-color:#f1b85b !important}
-[data-ogsb] .t-sec{background:#3a1912 !important}
-[data-ogsb] .t-upgrade{background:#32260f !important}
-[data-ogsb] .t-read{background:#192343 !important}
-[data-ogsb] .t-wait{background:#1b252c !important}
-[data-ogsb] .t-brand{background:#0e2e2d !important}
-[data-ogsb] .b-btn{background:#3ccfc2 !important}
-[data-ogsc] .b-text{color:#e5edf1 !important}
-[data-ogsc] .b-muted{color:#8d9faa !important}
-[data-ogsc] .b-link{color:#3ccfc2 !important}
-[data-ogsc] .b-sec{color:#ff7b64 !important}
-[data-ogsc] .t-sec{color:#ff7b64 !important}
-[data-ogsc] .t-upgrade{color:#f1b85b !important}
-[data-ogsc] .t-read{color:#8eaaff !important}
-[data-ogsc] .t-wait{color:#93a3ad !important}
-[data-ogsc] .t-brand{color:#3ccfc2 !important}
-[data-ogsc] .b-btn{color:#04201e !important}&lt;/style&gt;
-&lt;/head&gt;
-&lt;body class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;margin:0;padding:0;background:#f2f5f7;color:#0d1b24;font-family:Geist,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;&quot;&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-fixed&quot; style=&quot;background:#f2f5f7;&quot;&gt;
-&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-page&quot; style=&quot;padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;&quot;&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-fixed&quot; style=&quot;max-width:600px;background:#f2f5f7;&quot;&gt;
-&lt;tr&gt;&lt;td class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:2px 4px 18px;background:#f2f5f7;&quot;&gt;&lt;img src=&quot;https://app.briff.dev/brand/lockup-email-tile.png&quot; width=&quot;88&quot; height=&quot;40&quot; alt=&quot;Briff&quot; style=&quot;display:block;border:0;outline:none;width:88px;height:40px;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;
-&lt;tr&gt;&lt;td class=&quot;b-card b-text m-frame&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;&quot;&gt;
-&lt;div style=&quot;margin:0 0 10px;&quot;&gt;&lt;span class=&quot;t-sec&quot; style=&quot;display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;&quot;&gt;SECURITY&lt;/span&gt;&lt;/div&gt;
-&lt;p class=&quot;b-text&quot; style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:21px;line-height:1.3;letter-spacing:-0.01em;margin:0 0 10px;font-weight:600;color:#0d1b24;&quot;&gt;Announcements about your stack that should not wait for the weekly briefing.&lt;/p&gt;
-&lt;div class=&quot;b-line&quot; style=&quot;padding:16px 0;border-top:1px solid #dde4e9;&quot;&gt;
-&lt;div style=&quot;margin:0 0 8px;&quot;&gt;&lt;span class=&quot;t-sec&quot; style=&quot;display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;&quot;&gt;SECURITY&lt;/span&gt;&lt;/div&gt;
-&lt;div style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:19px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;&quot;&gt;&lt;a class=&quot;b-text&quot; href=&quot;https://www.php.net/index.php#2026-10-20-1&quot; style=&quot;color:#0d1b24;text-decoration:none;&quot;&gt;Upcoming Critical PHP Security Release&lt;/a&gt;&lt;/div&gt;
-&lt;div class=&quot;b-sec&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#b93522;font-weight:600;margin:6px 0 0;&quot;&gt;CRITICAL&lt;/div&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:15px;line-height:1.5;color:#0d1b24;margin:8px 0 0;&quot;&gt;PHP announced a security release for 21 Oct 2026, 14:00 UTC.&lt;/div&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;api runs php 8.4.26 (.tool-versions).&lt;/div&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;garden.example runs php 8.3+ (composer.json require.php), php 8.3 (Dockerfile).&lt;/div&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;legacy-shop runs php 8.1.31 (Dockerfile).&lt;/div&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-inset&quot; style=&quot;margin:12px 0 0;background:#f2f5f7;border-radius:12px;&quot;&gt;&lt;tr&gt;&lt;td class=&quot;b-inset b-text m-inset&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;background:#f2f5f7;border-radius:12px;padding:10px 14px 12px;color:#0d1b24;&quot;&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: Update PHP in api, garden.example as soon as the fixed release is out (announced for 21 Oct 2026, 14:00 UTC). · legacy-shop: php 8.1 is end-of-life and will not get this fix; move to 8.2 or later&lt;/div&gt;
-&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;div style=&quot;font-size:13px;margin:10px 0 0;&quot;&gt;&lt;a class=&quot;b-link&quot; href=&quot;https://www.php.net/index.php#2026-10-20-1&quot; style=&quot;color:#0b6b67;text-decoration:none;&quot;&gt;Source: PHP news&lt;/a&gt;&lt;/div&gt;
-&lt;/div&gt;
-&lt;/td&gt;&lt;/tr&gt;
-&lt;tr&gt;&lt;td class=&quot;b-page b-muted&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:16px 6px 0;font-size:12px;line-height:1.5;background:#f2f5f7;color:#566874;&quot;&gt;They will also appear in the weekly briefing.&lt;/td&gt;&lt;/tr&gt;
-&lt;/table&gt;
-&lt;/td&gt;&lt;/tr&gt;
-&lt;/table&gt;
-&lt;/body&gt;
-&lt;/html&gt;"></iframe>
+<div class="mail-body"><div class="b-page" style="margin:0;padding:0;background:#f2f5f7;color:#0d1b24;font-family:Geist,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f2f5f7" class="b-page m-fixed" style="background:#f2f5f7;">
+<tr><td align="center" bgcolor="#f2f5f7" class="b-page m-page" style="padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f2f5f7" class="b-page m-fixed" style="max-width:600px;background:#f2f5f7;">
+<tr><td class="b-page" bgcolor="#f2f5f7" style="padding:2px 4px 18px;background:#f2f5f7;"><img src="https://app.briff.dev/brand/lockup-email-tile.png" width="88" height="40" alt="Briff" style="display:block;border:0;outline:none;width:88px;height:40px;"></td></tr>
+<tr><td class="b-card b-text m-frame" bgcolor="#fbfcfd" style="background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;">
+<div style="margin:0 0 10px;"><span class="t-sec" style="display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;">SECURITY</span></div>
+<p class="b-text" style="font-family:'Bricolage Grotesque',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:21px;line-height:1.3;letter-spacing:-0.01em;margin:0 0 10px;font-weight:600;color:#0d1b24;">Announcements about your stack that should not wait for the weekly briefing.</p>
+<div class="b-line" style="padding:16px 0;border-top:1px solid #dde4e9;">
+<div style="margin:0 0 8px;"><span class="t-sec" style="display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;">SECURITY</span></div>
+<div style="font-family:'Bricolage Grotesque',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:19px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;"><a class="b-text" href="https://www.php.net/index.php#2026-10-20-1" style="color:#0d1b24;text-decoration:none;">Upcoming Critical PHP Security Release</a></div>
+<div class="b-sec" style="font-size:13.5px;line-height:1.5;color:#b93522;font-weight:600;margin:6px 0 0;">CRITICAL</div>
+<div class="b-text" style="font-size:15px;line-height:1.5;color:#0d1b24;margin:8px 0 0;">PHP announced a security release for 21 Oct 2026, 14:00 UTC.</div>
+<div class="b-text" style="font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;">api runs php 8.4.26 (.tool-versions).</div>
+<div class="b-text" style="font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;">garden.example runs php 8.3+ (composer.json require.php), php 8.3 (Dockerfile).</div>
+<div class="b-text" style="font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;">legacy-shop runs php 8.1.31 (Dockerfile).</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f2f5f7" class="b-inset" style="margin:12px 0 0;background:#f2f5f7;border-radius:12px;"><tr><td class="b-inset b-text m-inset" bgcolor="#f2f5f7" style="background:#f2f5f7;border-radius:12px;padding:10px 14px 12px;color:#0d1b24;">
+<div class="b-text" style="font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;">To do: Update PHP in api, garden.example as soon as the fixed release is out (announced for 21 Oct 2026, 14:00 UTC). · legacy-shop: php 8.1 is end-of-life and will not get this fix; move to 8.2 or later</div>
+</td></tr></table>
+<div style="font-size:13px;margin:10px 0 0;"><a class="b-link" href="https://www.php.net/index.php#2026-10-20-1" style="color:#0b6b67;text-decoration:none;">Source: PHP news</a></div>
 </div>
-</article></li>
+</td></tr>
+<tr><td class="b-page b-muted" bgcolor="#f2f5f7" style="padding:16px 6px 0;font-size:12px;line-height:1.5;background:#f2f5f7;color:#566874;">They will also appear in the weekly briefing.</td></tr>
+</table>
+</td></tr>
+</table></div></div>
+</div>
+</details></div>
+</li>
 </ol>
 </section>
-<section class="day">
-<h2 class="day-label">Wed 21 Oct 2026</h2>
-<ol class="rows">
-<li class="row row-world"><article class="card world">
-<p class="meta"><span class="tag tag-world">What happened</span><time datetime="2026-10-21T03:02:00.000Z">03:02 UTC</time></p>
-<h3>Cloudflare turns on WAF rules for the known exploit paths</h3>
+<section class="day" id="day-2026-10-21">
+<h3 class="day-label">Wed 21 Oct 2026</h3>
+<ol class="events">
+<li class="ev ev-world">
+<div class="ev-time"><time datetime="2026-10-21T03:02:00.000Z">03:02 UTC</time></div>
+<div class="ev-body"><article class="ev-card">
+<p class="ev-meta"><span class="tag tag-wait">WHAT HAPPENED</span></p>
+<h4>Cloudflare turns on WAF rules for the known exploit paths</h4>
 <p class="detail">For every plan, Free included; described as a stopgap, not a fix.</p>
 <p class="sources"><a href="https://ppc.land/cloudflare-blocks-php2shell-exploits-9-hours-before-php-flaws-went-public/" rel="noopener">PPC Land</a></p>
-</article></li>
-<li class="row row-world"><article class="card world">
-<p class="meta"><span class="tag tag-world">What happened</span><time datetime="2026-10-21T13:34:13.000Z">13:34 UTC</time></p>
-<h3>GitHub advisories GHSA-6wmf-4rv5-p3rp and GHSA-w8hw-w9fx-j79w are published</h3>
+</article></div>
+</li>
+<li class="ev ev-world">
+<div class="ev-time"><time datetime="2026-10-21T13:34:13.000Z">13:34 UTC</time></div>
+<div class="ev-body"><article class="ev-card">
+<p class="ev-meta"><span class="tag tag-wait">WHAT HAPPENED</span></p>
+<h4>GitHub advisories GHSA-6wmf-4rv5-p3rp and GHSA-w8hw-w9fx-j79w are published</h4>
 <p class="detail">Both critical, CVSS 9.2, patched in 8.2.35, 8.3.36, 8.4.27 and 8.5.12.</p>
 <p class="sources"><a href="https://github.com/php/php-src/security/advisories/GHSA-w8hw-w9fx-j79w" rel="noopener">GHSA-w8hw-w9fx-j79w</a><span aria-hidden="true"> · </span><a href="https://github.com/php/php-src/security/advisories/GHSA-6wmf-4rv5-p3rp" rel="noopener">GHSA-6wmf-4rv5-p3rp</a></p>
-</article></li>
-<li class="row row-world"><article class="card world">
-<p class="meta"><span class="tag tag-world">What happened</span><time datetime="2026-10-21T13:40:00.000Z">13:40 UTC</time></p>
-<h3>PHP 8.5.12, 8.4.27, 8.3.36 and 8.2.35 are released</h3>
+</article></div>
+</li>
+<li class="ev ev-world">
+<div class="ev-time"><time datetime="2026-10-21T13:40:00.000Z">13:40 UTC</time></div>
+<div class="ev-body"><article class="ev-card">
+<p class="ev-meta"><span class="tag tag-wait">WHAT HAPPENED</span></p>
+<h4>PHP 8.5.12, 8.4.27, 8.3.36 and 8.2.35 are released</h4>
 <p class="detail">CVE-2026-109618 and CVE-2026-109619, CVSS 9.2. Every web SAPI is at risk (PHP-FPM, mod_php, php-cgi, FrankenPHP, LiteSpeed); mod_php is the worst. PHP 8.1 and older get no release.</p>
 <p class="sources"><a href="https://www.php.net/archive/2026.php#2026-10-21-5" rel="noopener">php.net advisory</a><span aria-hidden="true"> · </span><a href="https://www.enisa.europa.eu/news/joint-statement-on-critical-php-vulnerabilities" rel="noopener">ENISA joint statement</a></p>
-</article></li>
-<li class="row row-briff"><article class="card briff">
-<p class="meta"><span class="tag tag-briff">What Briff sent</span><time datetime="2026-10-21T14:00:00.000Z">14:00 UTC</time></p>
-<p class="timing">Urgent email · <span class="delay">+26 min</span> after “PHP security advisory: RCE via stale global state (CVE-2026-109619)” appeared</p>
+</article></div>
+</li>
+<li class="ev ev-urgent">
+<div class="ev-time"><time datetime="2026-10-21T14:00:00.000Z">14:00 UTC</time></div>
+<div class="ev-body"><details class="ev-card mail-card mail-urgent">
+<summary>
+<p class="ev-meta"><span class="tag tag-sec">URGENT EMAIL</span><span class="timing"><b class="delay">+26 min</b> after “PHP security advisory: RCE via stale global state (CVE-2026-109619)” appeared</span></p>
+<h4>Briff · urgent: Security advisory: Critical remote code execution vulnerabilities, update now</h4>
+<p class="todo-label">TO DO</p>
+<ul class="todo">
+<li>api: set php 8.4.27 in .tool-versions</li>
+<li>garden.example: rebuild to pick up PHP 8.3.36; the php:8.3-fpm tag already points to it</li>
+<li>legacy-shop: php 8.1 is end-of-life and will not get this fix; move to 8.2.35 or later</li>
+</ul>
+<span class="toggle"><span class="show">Show the email</span><span class="hide">Hide the email</span></span>
+</summary>
 <div class="mail">
 <div class="mail-head">
 <div><span class="k">From</span> Briff</div>
 <div><span class="k">Subject</span> <strong>Briff · urgent: Security advisory: Critical remote code execution vulnerabilities, update now</strong></div>
 </div>
-<iframe class="mail-frame" title="Briff · urgent: Security advisory: Critical remote code execution vulnerabilities, update now" loading="lazy" sandbox="allow-same-origin allow-popups" srcdoc="&lt;!doctype html&gt;
-&lt;html lang=&quot;en&quot;&gt;
-&lt;head&gt;
-&lt;meta charset=&quot;utf-8&quot;&gt;
-&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
-&lt;meta name=&quot;color-scheme&quot; content=&quot;light dark&quot;&gt;
-&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;light dark&quot;&gt;
-&lt;title&gt;Briff · urgent: Security advisory: Critical remote code execution vulnerabilities, update now&lt;/title&gt;
-&lt;style&gt;
-@media only screen and (max-width: 480px){
-  .m-fixed{table-layout:fixed !important}
-  .m-page{padding:16px 8px 32px !important}
-  .m-frame{padding:18px 12px !important}
-  .m-flat{border-left-width:0 !important;border-right-width:0 !important;border-bottom-width:0 !important;border-radius:0 !important;margin:0 !important}
-  .m-flat-cell{padding:14px 0 16px !important;border-radius:0 !important}
-  .m-inset{padding:8px !important}
-  .m-body{font-size:16px !important;line-height:1.55 !important}
-  .m-cmd{padding:8px !important;white-space:pre !important;overflow-x:auto !important;word-break:normal !important;overflow-wrap:normal !important}
-}&lt;/style&gt;
-&lt;style&gt;
-:root{color-scheme:light dark;supported-color-schemes:light dark}
-@media (prefers-color-scheme: dark){
-  .b-page{background:#0a1115 !important}
-  .b-card{background:#111a20 !important;border-color:#21303a !important}
-  .b-inset{background:#0d161b !important;border-color:#21303a !important}
-  .b-line{border-color:#21303a !important}
-  .b-text{color:#e5edf1 !important}
-  .b-muted{color:#8d9faa !important}
-  .b-link{color:#3ccfc2 !important}
-  .b-sec{color:#ff7b64 !important}
-  .b-sec-top{border-top-color:#ff7b64 !important}
-  .b-up-top{border-top-color:#f1b85b !important}
-  .t-sec{background:#3a1912 !important;color:#ff7b64 !important}
-  .t-upgrade{background:#32260f !important;color:#f1b85b !important}
-  .t-read{background:#192343 !important;color:#8eaaff !important}
-  .t-wait{background:#1b252c !important;color:#93a3ad !important}
-  .t-brand{background:#0e2e2d !important;color:#3ccfc2 !important}
-  .b-btn{background:#3ccfc2 !important;color:#04201e !important}
-}
-[data-ogsb] .b-page{background:#0a1115 !important}
-[data-ogsb] .b-card{background:#111a20 !important;border-color:#21303a !important}
-[data-ogsb] .b-inset{background:#0d161b !important;border-color:#21303a !important}
-[data-ogsb] .b-line{border-color:#21303a !important}
-[data-ogsb] .b-sec-top{border-top-color:#ff7b64 !important}
-[data-ogsb] .b-up-top{border-top-color:#f1b85b !important}
-[data-ogsb] .t-sec{background:#3a1912 !important}
-[data-ogsb] .t-upgrade{background:#32260f !important}
-[data-ogsb] .t-read{background:#192343 !important}
-[data-ogsb] .t-wait{background:#1b252c !important}
-[data-ogsb] .t-brand{background:#0e2e2d !important}
-[data-ogsb] .b-btn{background:#3ccfc2 !important}
-[data-ogsc] .b-text{color:#e5edf1 !important}
-[data-ogsc] .b-muted{color:#8d9faa !important}
-[data-ogsc] .b-link{color:#3ccfc2 !important}
-[data-ogsc] .b-sec{color:#ff7b64 !important}
-[data-ogsc] .t-sec{color:#ff7b64 !important}
-[data-ogsc] .t-upgrade{color:#f1b85b !important}
-[data-ogsc] .t-read{color:#8eaaff !important}
-[data-ogsc] .t-wait{color:#93a3ad !important}
-[data-ogsc] .t-brand{color:#3ccfc2 !important}
-[data-ogsc] .b-btn{color:#04201e !important}&lt;/style&gt;
-&lt;/head&gt;
-&lt;body class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;margin:0;padding:0;background:#f2f5f7;color:#0d1b24;font-family:Geist,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;&quot;&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-fixed&quot; style=&quot;background:#f2f5f7;&quot;&gt;
-&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-page&quot; style=&quot;padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;&quot;&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-fixed&quot; style=&quot;max-width:600px;background:#f2f5f7;&quot;&gt;
-&lt;tr&gt;&lt;td class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:2px 4px 18px;background:#f2f5f7;&quot;&gt;&lt;img src=&quot;https://app.briff.dev/brand/lockup-email-tile.png&quot; width=&quot;88&quot; height=&quot;40&quot; alt=&quot;Briff&quot; style=&quot;display:block;border:0;outline:none;width:88px;height:40px;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;
-&lt;tr&gt;&lt;td class=&quot;b-card b-text m-frame&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;&quot;&gt;
-&lt;div style=&quot;margin:0 0 10px;&quot;&gt;&lt;span class=&quot;t-sec&quot; style=&quot;display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;&quot;&gt;SECURITY&lt;/span&gt;&lt;/div&gt;
-&lt;p class=&quot;b-text&quot; style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:21px;line-height:1.3;letter-spacing:-0.01em;margin:0 0 10px;font-weight:600;color:#0d1b24;&quot;&gt;Announcements about your stack that should not wait for the weekly briefing.&lt;/p&gt;
-&lt;div class=&quot;b-line&quot; style=&quot;padding:16px 0;border-top:1px solid #dde4e9;&quot;&gt;
-&lt;div style=&quot;margin:0 0 8px;&quot;&gt;&lt;span class=&quot;t-sec&quot; style=&quot;display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;&quot;&gt;SECURITY&lt;/span&gt;&lt;/div&gt;
-&lt;div style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:19px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;&quot;&gt;&lt;a class=&quot;b-text&quot; href=&quot;https://www.php.net/index.php#2026-10-21-5&quot; style=&quot;color:#0d1b24;text-decoration:none;&quot;&gt;Security advisory: Critical remote code execution vulnerabilities, update now&lt;/a&gt;&lt;/div&gt;
-&lt;div class=&quot;b-sec&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#b93522;font-weight:600;margin:6px 0 0;&quot;&gt;CRITICAL · CVE-2026-109618 · CVE-2026-109619&lt;/div&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;api runs php 8.4.26 (.tool-versions).&lt;/div&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;garden.example runs php 8.3+ (composer.json require.php), php 8.3 (Dockerfile).&lt;/div&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;&quot;&gt;legacy-shop runs php 8.1.31 (Dockerfile).&lt;/div&gt;
-&lt;div class=&quot;b-muted&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#566874;margin:6px 0 0;&quot;&gt;Fixed in: 8.5.12, 8.4.27, 8.3.36, 8.2.35&lt;/div&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-inset&quot; style=&quot;margin:12px 0 0;background:#f2f5f7;border-radius:12px;&quot;&gt;&lt;tr&gt;&lt;td class=&quot;b-inset b-text m-inset&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;background:#f2f5f7;border-radius:12px;padding:10px 14px 12px;color:#0d1b24;&quot;&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: api: set php 8.4.27 in .tool-versions&lt;/div&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: garden.example: rebuild to pick up PHP 8.3.36; the php:8.3-fpm tag already points to it&lt;/div&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;&quot;&gt;To do: legacy-shop: php 8.1 is end-of-life and will not get this fix; move to 8.2.35 or later&lt;/div&gt;
-&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;div class=&quot;b-muted&quot; style=&quot;font-size:13px;color:#566874;margin:10px 0 0;&quot;&gt;Sources: &lt;a class=&quot;b-link&quot; href=&quot;https://www.php.net/index.php#2026-10-21-5&quot; style=&quot;color:#0b6b67;text-decoration:none;&quot;&gt;Security advisory: Critical remote code execution vulnerabilities, update now&lt;/a&gt; · &lt;a class=&quot;b-link&quot; href=&quot;https://www.php.net/index.php#2026-10-21-2&quot; style=&quot;color:#0b6b67;text-decoration:none;&quot;&gt;PHP 8.3.36 Released!&lt;/a&gt; · &lt;a class=&quot;b-link&quot; href=&quot;https://www.php.net/index.php#2026-10-21-3&quot; style=&quot;color:#0b6b67;text-decoration:none;&quot;&gt;PHP 8.4.27 Released!&lt;/a&gt; · &lt;a class=&quot;b-link&quot; href=&quot;https://github.com/php/php-src/security/advisories/GHSA-6wmf-4rv5-p3rp&quot; style=&quot;color:#0b6b67;text-decoration:none;&quot;&gt;GHSA-6wmf-4rv5-p3rp&lt;/a&gt; · &lt;a class=&quot;b-link&quot; href=&quot;https://github.com/php/php-src/security/advisories/GHSA-w8hw-w9fx-j79w&quot; style=&quot;color:#0b6b67;text-decoration:none;&quot;&gt;GHSA-w8hw-w9fx-j79w&lt;/a&gt;&lt;/div&gt;
-&lt;/div&gt;
-&lt;/td&gt;&lt;/tr&gt;
-&lt;tr&gt;&lt;td class=&quot;b-page b-muted&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:16px 6px 0;font-size:12px;line-height:1.5;background:#f2f5f7;color:#566874;&quot;&gt;They will also appear in the weekly briefing.&lt;/td&gt;&lt;/tr&gt;
-&lt;/table&gt;
-&lt;/td&gt;&lt;/tr&gt;
-&lt;/table&gt;
-&lt;/body&gt;
-&lt;/html&gt;"></iframe>
+<div class="mail-body"><div class="b-page" style="margin:0;padding:0;background:#f2f5f7;color:#0d1b24;font-family:Geist,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f2f5f7" class="b-page m-fixed" style="background:#f2f5f7;">
+<tr><td align="center" bgcolor="#f2f5f7" class="b-page m-page" style="padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f2f5f7" class="b-page m-fixed" style="max-width:600px;background:#f2f5f7;">
+<tr><td class="b-page" bgcolor="#f2f5f7" style="padding:2px 4px 18px;background:#f2f5f7;"><img src="https://app.briff.dev/brand/lockup-email-tile.png" width="88" height="40" alt="Briff" style="display:block;border:0;outline:none;width:88px;height:40px;"></td></tr>
+<tr><td class="b-card b-text m-frame" bgcolor="#fbfcfd" style="background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;">
+<div style="margin:0 0 10px;"><span class="t-sec" style="display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;">SECURITY</span></div>
+<p class="b-text" style="font-family:'Bricolage Grotesque',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:21px;line-height:1.3;letter-spacing:-0.01em;margin:0 0 10px;font-weight:600;color:#0d1b24;">Announcements about your stack that should not wait for the weekly briefing.</p>
+<div class="b-line" style="padding:16px 0;border-top:1px solid #dde4e9;">
+<div style="margin:0 0 8px;"><span class="t-sec" style="display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;">SECURITY</span></div>
+<div style="font-family:'Bricolage Grotesque',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:19px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;"><a class="b-text" href="https://www.php.net/index.php#2026-10-21-5" style="color:#0d1b24;text-decoration:none;">Security advisory: Critical remote code execution vulnerabilities, update now</a></div>
+<div class="b-sec" style="font-size:13.5px;line-height:1.5;color:#b93522;font-weight:600;margin:6px 0 0;">CRITICAL · CVE-2026-109618 · CVE-2026-109619</div>
+<div class="b-text" style="font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;">api runs php 8.4.26 (.tool-versions).</div>
+<div class="b-text" style="font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;">garden.example runs php 8.3+ (composer.json require.php), php 8.3 (Dockerfile).</div>
+<div class="b-text" style="font-size:13.5px;line-height:1.5;color:#0d1b24;margin:6px 0 0;">legacy-shop runs php 8.1.31 (Dockerfile).</div>
+<div class="b-muted" style="font-size:13.5px;line-height:1.5;color:#566874;margin:6px 0 0;">Fixed in: 8.5.12, 8.4.27, 8.3.36, 8.2.35</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f2f5f7" class="b-inset" style="margin:12px 0 0;background:#f2f5f7;border-radius:12px;"><tr><td class="b-inset b-text m-inset" bgcolor="#f2f5f7" style="background:#f2f5f7;border-radius:12px;padding:10px 14px 12px;color:#0d1b24;">
+<div class="b-text" style="font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;">To do: api: set php 8.4.27 in .tool-versions</div>
+<div class="b-text" style="font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;">To do: garden.example: rebuild to pick up PHP 8.3.36; the php:8.3-fpm tag already points to it</div>
+<div class="b-text" style="font-size:13.5px;line-height:1.5;color:#0d1b24;font-weight:600;margin:6px 0 0;">To do: legacy-shop: php 8.1 is end-of-life and will not get this fix; move to 8.2.35 or later</div>
+</td></tr></table>
+<div class="b-muted" style="font-size:13px;color:#566874;margin:10px 0 0;">Sources: <a class="b-link" href="https://www.php.net/index.php#2026-10-21-5" style="color:#0b6b67;text-decoration:none;">Security advisory: Critical remote code execution vulnerabilities, update now</a> · <a class="b-link" href="https://www.php.net/index.php#2026-10-21-2" style="color:#0b6b67;text-decoration:none;">PHP 8.3.36 Released!</a> · <a class="b-link" href="https://www.php.net/index.php#2026-10-21-3" style="color:#0b6b67;text-decoration:none;">PHP 8.4.27 Released!</a> · <a class="b-link" href="https://github.com/php/php-src/security/advisories/GHSA-6wmf-4rv5-p3rp" style="color:#0b6b67;text-decoration:none;">GHSA-6wmf-4rv5-p3rp</a> · <a class="b-link" href="https://github.com/php/php-src/security/advisories/GHSA-w8hw-w9fx-j79w" style="color:#0b6b67;text-decoration:none;">GHSA-w8hw-w9fx-j79w</a></div>
 </div>
-</article></li>
-<li class="row row-world"><article class="card world">
-<p class="meta"><span class="tag tag-world">What happened</span><time datetime="2026-10-21T23:00:00.000Z">time not published</time></p>
-<h3>UK NCSC: take the system offline if you cannot patch</h3>
+</td></tr>
+<tr><td class="b-page b-muted" bgcolor="#f2f5f7" style="padding:16px 6px 0;font-size:12px;line-height:1.5;background:#f2f5f7;color:#566874;">They will also appear in the weekly briefing.</td></tr>
+</table>
+</td></tr>
+</table></div></div>
+</div>
+</details></div>
+</li>
+<li class="ev ev-world">
+<div class="ev-time"><time datetime="2026-10-21T23:00:00.000Z">time not published</time></div>
+<div class="ev-body"><article class="ev-card">
+<p class="ev-meta"><span class="tag tag-wait">WHAT HAPPENED</span></p>
+<h4>UK NCSC: take the system offline if you cannot patch</h4>
 
 <p class="sources"><a href="https://www.ncsc.gov.uk/news/critical-security-issue-affecting-php" rel="noopener">NCSC</a></p>
-</article></li>
+</article></div>
+</li>
 </ol>
 </section>
-<section class="day">
-<h2 class="day-label">Mon 26 Oct 2026</h2>
-<ol class="rows">
-<li class="row row-briff"><article class="card briff">
-<p class="meta"><span class="tag tag-briff">What Briff sent</span><time datetime="2026-10-26T04:00:00.000Z">04:00 UTC</time></p>
-<p class="timing">Weekly bulletin · scheduled run, Monday 04:00 UTC</p>
+<section class="day" id="day-2026-10-26">
+<h3 class="day-label">Mon 26 Oct 2026</h3>
+<ol class="events">
+<li class="ev ev-weekly">
+<div class="ev-time"><time datetime="2026-10-26T04:00:00.000Z">04:00 UTC</time></div>
+<div class="ev-body"><details class="ev-card mail-card mail-weekly">
+<summary>
+<p class="ev-meta"><span class="tag tag-brand">WEEKLY BULLETIN</span><span class="timing">scheduled run, Monday 04:00 UTC</span></p>
+<h4>Briff · Weekly · W44: PHP</h4>
+<p class="todo-label">TO DO</p>
+<ul class="todo">
+<li>api: set php 8.4.27 in .tool-versions</li>
+<li>garden.example: rebuild to pick up PHP 8.3.36; the php:8.3-fpm tag already points to it</li>
+<li>legacy-shop: php 8.1 is end-of-life and will not get this fix; move to 8.2.35 or later</li>
+</ul>
+<span class="toggle"><span class="show">Show the email</span><span class="hide">Hide the email</span></span>
+</summary>
 <div class="mail">
 <div class="mail-head">
 <div><span class="k">From</span> Briff</div>
 <div><span class="k">Subject</span> <strong>Briff · Weekly · W44: PHP</strong></div>
 </div>
-<iframe class="mail-frame" title="Briff · Weekly · W44: PHP" loading="lazy" sandbox="allow-same-origin allow-popups" srcdoc="&lt;!doctype html&gt;
-&lt;html lang=&quot;en&quot;&gt;
-&lt;head&gt;
-&lt;meta charset=&quot;utf-8&quot;&gt;
-&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
-&lt;meta name=&quot;color-scheme&quot; content=&quot;light dark&quot;&gt;
-&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;light dark&quot;&gt;
-&lt;title&gt;Briff · Weekly · W44: PHP&lt;/title&gt;
-&lt;style&gt;
-@media only screen and (max-width: 480px){
-  .m-fixed{table-layout:fixed !important}
-  .m-page{padding:16px 8px 32px !important}
-  .m-frame{padding:18px 12px !important}
-  .m-flat{border-left-width:0 !important;border-right-width:0 !important;border-bottom-width:0 !important;border-radius:0 !important;margin:0 !important}
-  .m-flat-cell{padding:14px 0 16px !important;border-radius:0 !important}
-  .m-inset{padding:8px !important}
-  .m-body{font-size:16px !important;line-height:1.55 !important}
-  .m-cmd{padding:8px !important;white-space:pre !important;overflow-x:auto !important;word-break:normal !important;overflow-wrap:normal !important}
-}&lt;/style&gt;
-&lt;style&gt;
-:root{color-scheme:light dark;supported-color-schemes:light dark}
-@media (prefers-color-scheme: dark){
-  .b-page{background:#0a1115 !important}
-  .b-card{background:#111a20 !important;border-color:#21303a !important}
-  .b-inset{background:#0d161b !important;border-color:#21303a !important}
-  .b-line{border-color:#21303a !important}
-  .b-text{color:#e5edf1 !important}
-  .b-muted{color:#8d9faa !important}
-  .b-link{color:#3ccfc2 !important}
-  .b-sec{color:#ff7b64 !important}
-  .b-sec-top{border-top-color:#ff7b64 !important}
-  .b-up-top{border-top-color:#f1b85b !important}
-  .t-sec{background:#3a1912 !important;color:#ff7b64 !important}
-  .t-upgrade{background:#32260f !important;color:#f1b85b !important}
-  .t-read{background:#192343 !important;color:#8eaaff !important}
-  .t-wait{background:#1b252c !important;color:#93a3ad !important}
-  .t-brand{background:#0e2e2d !important;color:#3ccfc2 !important}
-  .b-btn{background:#3ccfc2 !important;color:#04201e !important}
-}
-[data-ogsb] .b-page{background:#0a1115 !important}
-[data-ogsb] .b-card{background:#111a20 !important;border-color:#21303a !important}
-[data-ogsb] .b-inset{background:#0d161b !important;border-color:#21303a !important}
-[data-ogsb] .b-line{border-color:#21303a !important}
-[data-ogsb] .b-sec-top{border-top-color:#ff7b64 !important}
-[data-ogsb] .b-up-top{border-top-color:#f1b85b !important}
-[data-ogsb] .t-sec{background:#3a1912 !important}
-[data-ogsb] .t-upgrade{background:#32260f !important}
-[data-ogsb] .t-read{background:#192343 !important}
-[data-ogsb] .t-wait{background:#1b252c !important}
-[data-ogsb] .t-brand{background:#0e2e2d !important}
-[data-ogsb] .b-btn{background:#3ccfc2 !important}
-[data-ogsc] .b-text{color:#e5edf1 !important}
-[data-ogsc] .b-muted{color:#8d9faa !important}
-[data-ogsc] .b-link{color:#3ccfc2 !important}
-[data-ogsc] .b-sec{color:#ff7b64 !important}
-[data-ogsc] .t-sec{color:#ff7b64 !important}
-[data-ogsc] .t-upgrade{color:#f1b85b !important}
-[data-ogsc] .t-read{color:#8eaaff !important}
-[data-ogsc] .t-wait{color:#93a3ad !important}
-[data-ogsc] .t-brand{color:#3ccfc2 !important}
-[data-ogsc] .b-btn{color:#04201e !important}&lt;/style&gt;
-&lt;/head&gt;
-&lt;body class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;margin:0;padding:0;background:#f2f5f7;color:#0d1b24;font-family:Geist,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;&quot;&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-fixed&quot; style=&quot;background:#f2f5f7;&quot;&gt;
-&lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-page&quot; style=&quot;padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;&quot;&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-page m-fixed&quot; style=&quot;max-width:600px;background:#f2f5f7;&quot;&gt;
-&lt;tr&gt;&lt;td class=&quot;b-page&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:2px 4px 18px;background:#f2f5f7;&quot;&gt;&lt;img src=&quot;https://app.briff.dev/brand/lockup-email-tile.png&quot; width=&quot;88&quot; height=&quot;40&quot; alt=&quot;Briff&quot; style=&quot;display:block;border:0;outline:none;width:88px;height:40px;&quot;&gt;&lt;/td&gt;&lt;/tr&gt;
-&lt;tr&gt;&lt;td class=&quot;b-card b-text m-frame&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;&quot;&gt;
-&lt;div class=&quot;b-muted&quot; style=&quot;font-size:13px;color:#566874;margin:0 0 8px;&quot;&gt;Briff · Weekly · Week 2026-W44&lt;/div&gt;
+<div class="mail-body"><div class="b-page" style="margin:0;padding:0;background:#f2f5f7;color:#0d1b24;font-family:Geist,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f2f5f7" class="b-page m-fixed" style="background:#f2f5f7;">
+<tr><td align="center" bgcolor="#f2f5f7" class="b-page m-page" style="padding:24px 12px 40px;background:#f2f5f7;color:#0d1b24;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f2f5f7" class="b-page m-fixed" style="max-width:600px;background:#f2f5f7;">
+<tr><td class="b-page" bgcolor="#f2f5f7" style="padding:2px 4px 18px;background:#f2f5f7;"><img src="https://app.briff.dev/brand/lockup-email-tile.png" width="88" height="40" alt="Briff" style="display:block;border:0;outline:none;width:88px;height:40px;"></td></tr>
+<tr><td class="b-card b-text m-frame" bgcolor="#fbfcfd" style="background:#fbfcfd;border:1px solid #dde4e9;border-radius:16px;padding:24px 22px;color:#0d1b24;">
+<div class="b-muted" style="font-size:13px;color:#566874;margin:0 0 8px;">Briff · Weekly · Week 2026-W44</div>
 
-&lt;h2 class=&quot;b-text&quot; style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:19px;line-height:1.25;font-weight:600;letter-spacing:-0.02em;color:#0d1b24;margin:28px 0 12px;&quot;&gt;Needs your attention &lt;span class=&quot;b-muted&quot; style=&quot;font-family:Geist,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:500;letter-spacing:0;color:#566874;border:1px solid #dde4e9;border-radius:999px;padding:1px 8px;vertical-align:3px;&quot;&gt;1&lt;/span&gt;&lt;/h2&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#fbfcfd&quot; class=&quot;b-card m-flat m-fixed b-sec-top&quot; style=&quot;border-collapse:separate;margin:0 0 12px;background:#fbfcfd;border:1px solid #dde4e9;border-top:3px solid #b93522;border-radius:14px;&quot;&gt;
-&lt;tr&gt;&lt;td class=&quot;b-card b-text m-flat-cell&quot; bgcolor=&quot;#fbfcfd&quot; style=&quot;padding:16px 16px 14px;background:#fbfcfd;color:#0d1b24;border-radius:14px;&quot;&gt;
-&lt;div style=&quot;margin:0 0 8px;&quot;&gt;&lt;span class=&quot;t-sec&quot; style=&quot;display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;&quot;&gt;SECURITY&lt;/span&gt;&lt;/div&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-family:&#39;Bricolage Grotesque&#39;,-apple-system,BlinkMacSystemFont,&#39;Segoe UI&#39;,Roboto,Helvetica,Arial,sans-serif;font-size:19px;line-height:1.25;font-weight:600;letter-spacing:-0.01em;color:#0d1b24;margin:0;&quot;&gt;Security advisory: Critical remote code execution vulnerabilities, update now&lt;/div&gt;
+<h2 class="b-text" style="font-family:'Bricolage Grotesque',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:19px;line-height:1.25;font-weight:600;letter-spacing:-0.02em;color:#0d1b24;margin:28px 0 12px;">Needs your attention <span class="b-muted" style="font-family:Geist,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:500;letter-spacing:0;color:#566874;border:1px solid #dde4e9;border-radius:999px;padding:1px 8px;vertical-align:3px;">1</span></h2>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#fbfcfd" class="b-card m-flat m-fixed b-sec-top" style="border-collapse:separate;margin:0 0 12px;background:#fbfcfd;border:1px solid #dde4e9;border-top:3px solid #b93522;border-radius:14px;">
+<tr><td class="b-card b-text m-flat-cell" bgcolor="#fbfcfd" style="padding:16px 16px 14px;background:#fbfcfd;color:#0d1b24;border-radius:14px;">
+<div style="margin:0 0 8px;"><span class="t-sec" style="display:inline-block;background:#fde6e0;color:#b93522;border-radius:6px;padding:2px 8px;font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.04em;">SECURITY</span></div>
+<div class="b-text" style="font-family:'Bricolage Grotesque',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:19px;line-height:1.25;font-weight:600;letter-spacing:-0.01em;color:#0d1b24;margin:0;">Security advisory: Critical remote code execution vulnerabilities, update now</div>
 
-&lt;div style=&quot;margin:10px 0 0;line-height:1.6;&quot;&gt;&lt;span class=&quot;b-inset b-text&quot; style=&quot;display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12px;color:#0d1b24;&quot;&gt;api&lt;/span&gt; &lt;span class=&quot;b-inset b-text&quot; style=&quot;display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12px;color:#0d1b24;&quot;&gt;garden.example&lt;/span&gt; &lt;span class=&quot;b-inset b-text&quot; style=&quot;display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12px;color:#0d1b24;&quot;&gt;legacy-shop&lt;/span&gt;&lt;/div&gt;
-&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2f5f7&quot; class=&quot;b-inset m-fixed&quot; style=&quot;margin:14px 0 0;background:#f2f5f7;border-radius:12px;&quot;&gt;&lt;tr&gt;&lt;td class=&quot;b-inset b-text m-inset&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;background:#f2f5f7;border-radius:12px;padding:12px 14px;color:#0d1b24;&quot;&gt;
-&lt;div class=&quot;b-link&quot; style=&quot;font-size:11px;letter-spacing:.06em;font-weight:600;color:#0b6b67;margin:0 0 8px;&quot;&gt;TO DO&lt;/div&gt;
-&lt;div class=&quot;b-text&quot; style=&quot;font-size:15px;line-height:1.5;font-weight:600;color:#0d1b24;&quot;&gt;api: set php 8.4.27 in .tool-versions · garden.example: rebuild to pick up PHP 8.3.36; the php:8.3-fpm tag already points to it · legacy-shop: php 8.1 is end-of-life and will not get this fix; move to 8.2.35 or later&lt;/div&gt;&lt;div style=&quot;margin:8px 0 0;font-family:&#39;Geist Mono&#39;,ui-monospace,SFMono-Regular,Menlo,Consolas,&#39;Liberation Mono&#39;,monospace;font-size:12.5px;line-height:1.5;word-break:break-word;&quot;&gt;&lt;div class=&quot;b-muted&quot; style=&quot;color:#566874;&quot;&gt;api runs php 8.4.26 (.tool-versions) → 8.4.27&lt;/div&gt;&lt;div class=&quot;b-muted&quot; style=&quot;color:#566874;&quot;&gt;garden.example runs php 8.3 (Dockerfile) → 8.3.36&lt;/div&gt;&lt;div class=&quot;b-muted&quot; style=&quot;color:#566874;&quot;&gt;legacy-shop runs php 8.1.31 (Dockerfile) → 8.2.35&lt;/div&gt;&lt;/div&gt;
-&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
-&lt;div class=&quot;b-muted&quot; style=&quot;font-size:12.5px;color:#566874;margin:10px 0 0;&quot;&gt;Related: PHP security advisory: RCE via OOM corruption (CVE-2026-109618), PHP security advisory: RCE via stale global state (CVE-2026-109619), PHP 8.5.12 Released!, PHP 8.4.27 Released!, PHP 8.3.36 Released!, PHP 8.2.35 Released!, Upcoming Critical PHP Security Release&lt;/div&gt;
-&lt;div style=&quot;font-size:14px;margin:12px 0 0;&quot;&gt;&lt;a class=&quot;b-link&quot; href=&quot;https://app.briff.dev/b/replay-php2shell?t=replay#item-d43a9f1370362a8b&quot; style=&quot;color:#0b6b67;text-decoration:none;font-weight:600;&quot;&gt;Details &amp;rarr;&lt;/a&gt;&lt;/div&gt;
-&lt;/td&gt;&lt;/tr&gt;
-&lt;/table&gt;
+<div style="margin:10px 0 0;line-height:1.6;"><span class="b-inset b-text" style="display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#0d1b24;">api</span> <span class="b-inset b-text" style="display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#0d1b24;">garden.example</span> <span class="b-inset b-text" style="display:inline-block;background:#f2f5f7;border:1px solid #dde4e9;border-radius:7px;padding:1px 7px;margin:0 2px 4px 0;font-family:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#0d1b24;">legacy-shop</span></div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f2f5f7" class="b-inset m-fixed" style="margin:14px 0 0;background:#f2f5f7;border-radius:12px;"><tr><td class="b-inset b-text m-inset" bgcolor="#f2f5f7" style="background:#f2f5f7;border-radius:12px;padding:12px 14px;color:#0d1b24;">
+<div class="b-link" style="font-size:11px;letter-spacing:.06em;font-weight:600;color:#0b6b67;margin:0 0 8px;">TO DO</div>
+<div class="b-text" style="font-size:15px;line-height:1.5;font-weight:600;color:#0d1b24;">api: set php 8.4.27 in .tool-versions · garden.example: rebuild to pick up PHP 8.3.36; the php:8.3-fpm tag already points to it · legacy-shop: php 8.1 is end-of-life and will not get this fix; move to 8.2.35 or later</div><div style="margin:8px 0 0;font-family:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12.5px;line-height:1.5;word-break:break-word;"><div class="b-muted" style="color:#566874;">api runs php 8.4.26 (.tool-versions) → 8.4.27</div><div class="b-muted" style="color:#566874;">garden.example runs php 8.3 (Dockerfile) → 8.3.36</div><div class="b-muted" style="color:#566874;">legacy-shop runs php 8.1.31 (Dockerfile) → 8.2.35</div></div>
+</td></tr></table>
+<div class="b-muted" style="font-size:12.5px;color:#566874;margin:10px 0 0;">Related: PHP security advisory: RCE via OOM corruption (CVE-2026-109618), PHP security advisory: RCE via stale global state (CVE-2026-109619), PHP 8.5.12 Released!, PHP 8.4.27 Released!, PHP 8.3.36 Released!, PHP 8.2.35 Released!, Upcoming Critical PHP Security Release</div>
+<div style="font-size:14px;margin:12px 0 0;"><a class="b-link" href="https://app.briff.dev/b/replay-php2shell?t=replay#item-d43a9f1370362a8b" style="color:#0b6b67;text-decoration:none;font-weight:600;">Details &rarr;</a></div>
+</td></tr>
+</table>
 
-&lt;p style=&quot;font-size:14px;margin:28px 0 0;&quot;&gt;&lt;a class=&quot;b-link&quot; href=&quot;https://app.briff.dev/b/replay-php2shell?t=replay&quot; style=&quot;color:#0b6b67;text-decoration:none;font-weight:600;&quot;&gt;Open in Briff &amp;rarr;&lt;/a&gt;&lt;/p&gt;
-&lt;/td&gt;&lt;/tr&gt;
-&lt;tr&gt;&lt;td class=&quot;b-page b-muted&quot; bgcolor=&quot;#f2f5f7&quot; style=&quot;padding:16px 6px 0;font-size:12px;line-height:1.5;background:#f2f5f7;color:#566874;&quot;&gt;This briefing is built from the repos you scan. Choose which repos go into each bulletin in Briff.&lt;/td&gt;&lt;/tr&gt;
-&lt;/table&gt;
-&lt;/td&gt;&lt;/tr&gt;
-&lt;/table&gt;
-&lt;/body&gt;
-&lt;/html&gt;"></iframe>
+<p style="font-size:14px;margin:28px 0 0;"><a class="b-link" href="https://app.briff.dev/b/replay-php2shell?t=replay" style="color:#0b6b67;text-decoration:none;font-weight:600;">Open in Briff &rarr;</a></p>
+</td></tr>
+<tr><td class="b-page b-muted" bgcolor="#f2f5f7" style="padding:16px 6px 0;font-size:12px;line-height:1.5;background:#f2f5f7;color:#566874;">This briefing is built from the repos you scan. Choose which repos go into each bulletin in Briff.</td></tr>
+</table>
+</td></tr>
+</table></div></div>
 </div>
-</article></li>
+</details></div>
+</li>
 </ol>
 </section>
-</main>
-<footer>
-<p>The items are the ones the sources published, with their dates, read by the same parsers and extractors Briff runs in production. The worker's hourly collect is replayed with a fake clock: an item is collected by the first run after it appeared, matched to the sample repos by runtime, and the urgent pass and the weekly assembly run unchanged. Urgent emails never use a model. In the weekly bulletin the model writes the headline and one line; here the item title stands in, and the action is the deterministic one in both cases.</p>
-<p>Run it yourself:</p>
+</section>
+<section id="outcome">
+<h2>What each repo was told, and when</h2>
+<div class="table-wrap"><table class="outcome">
+<thead><tr><th scope="col">Repo</th><th scope="col"><span class="tag tag-sec">URGENT EMAIL</span><span class="when">Tue 20 Oct · 21:00 UTC</span></th><th scope="col"><span class="tag tag-sec">URGENT EMAIL</span><span class="when">Wed 21 Oct · 14:00 UTC</span></th><th scope="col"><span class="tag tag-brand">WEEKLY BULLETIN</span><span class="when">Mon 26 Oct · 04:00 UTC</span></th></tr></thead>
+<tbody>
+<tr><th scope="row"><strong>garden.example</strong><span class="runs">debian 13 (Dockerfile base image php:8.3-fpm), php 8.3+ (composer.json require.php), php 8.3 (Dockerfile)</span></th><td><ul><li>Update PHP in api, garden.example as soon as the fixed release is out (announced for 21 Oct 2026, 14:00 UTC).</li></ul></td><td><ul><li>rebuild to pick up PHP 8.3.36; the php:8.3-fpm tag already points to it</li></ul></td><td><ul><li>rebuild to pick up PHP 8.3.36; the php:8.3-fpm tag already points to it</li></ul></td></tr>
+<tr><th scope="row"><strong>legacy-shop</strong><span class="runs">php 8.1.31 (Dockerfile)</span></th><td><ul><li>php 8.1 is end-of-life and will not get this fix; move to 8.2 or later</li></ul></td><td><ul><li>php 8.1 is end-of-life and will not get this fix; move to 8.2.35 or later</li></ul></td><td><ul><li>php 8.1 is end-of-life and will not get this fix; move to 8.2.35 or later</li></ul></td></tr>
+<tr><th scope="row"><strong>api</strong><span class="runs">php 8.4.26 (.tool-versions)</span></th><td><ul><li>Update PHP in api, garden.example as soon as the fixed release is out (announced for 21 Oct 2026, 14:00 UTC).</li></ul></td><td><ul><li>set php 8.4.27 in .tool-versions</li></ul></td><td><ul><li>set php 8.4.27 in .tool-versions</li></ul></td></tr>
+</tbody>
+</table></div>
+</section>
+<section id="method" class="method">
+<h2>How this replay works</h2>
+<p class="prose">The items are the ones the sources published, with their dates, read by the same parsers and extractors Briff runs in production. The worker&#39;s hourly collect is replayed with a fake clock: an item is collected by the first run after it appeared, matched to the sample repos by runtime, and the urgent pass and the weekly assembly run unchanged. Urgent emails never use a model. In the weekly bulletin the model writes the headline and one line; here the item title stands in, and the action is the deterministic one in both cases.</p>
+<p class="prose">Run it yourself:</p>
 <pre>npm run replay -- php2shell --out docs/replay/php2shell.html</pre>
-<p>Scenario: <code>src/replay/scenarios/php2shell.ts</code> · engine: <code>src/replay/engine.ts</code></p>
-</footer>
+<p class="prose muted">Scenario: <code>src/replay/scenarios/php2shell.ts</code> · engine: <code>src/replay/engine.ts</code></p>
+</section>
+</main>
 </div>
-<script>
-function fit(f){try{var d=f.contentDocument;if(d&&d.body){f.style.height=Math.max(d.documentElement.scrollHeight,d.body.scrollHeight)+2+"px";}}catch(e){}}
-document.querySelectorAll("iframe.mail-frame").forEach(function(f){f.addEventListener("load",function(){fit(f);});fit(f);});
-window.addEventListener("resize",function(){document.querySelectorAll("iframe.mail-frame").forEach(fit);});
-</script>
+</div>
 </body>
 </html>

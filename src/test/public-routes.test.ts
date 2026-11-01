@@ -7,7 +7,7 @@ import { PRIVATE_PREFIXES } from "@/components/landing/links";
 
 import { importGraph, runtimeImports } from "./import-graph";
 
-// The public pages (landing, replays, robots, sitemap) and the proxy that picks the landing
+// The public pages (landing, replays, status, robots, sitemap) and the proxy that picks the landing
 // page for `/` must not be able to read a session or tenant data. Walk their runtime imports
 // and fail on anything that opens the database, the auth layer, the request's cookies or a
 // Server Action module. Like the "use server" check next door, this reads source, not a build.
@@ -24,6 +24,7 @@ const ENTRIES = [
   "src/app/privacy/page.tsx",
   "src/app/refunds/page.tsx",
   "src/app/dpa/page.tsx",
+  "src/app/status/page.tsx",
   "src/app/robots.ts",
   "src/app/sitemap.ts",
   "src/proxy.ts",
@@ -98,7 +99,7 @@ describe("public routes", () => {
 
 describe("robots", () => {
   it("closes every app route folder except the public ones", () => {
-    const PUBLIC = new Set(["replay", "pricing", "terms", "privacy", "refunds", "dpa"]);
+    const PUBLIC = new Set(["replay", "pricing", "terms", "privacy", "refunds", "dpa", "status"]);
     const folders = readdirSync(path.join(ROOT, "src/app"), { withFileTypes: true })
       .filter((e) => e.isDirectory() && !e.name.startsWith("_") && e.name !== "fonts")
       .map((e) => e.name)

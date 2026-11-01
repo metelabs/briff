@@ -3,12 +3,21 @@ import { notFound } from "next/navigation";
 
 import { OG_IMAGE } from "@/components/landing/links";
 import { PublicFooter, PublicHeader } from "@/components/landing/public-chrome";
-import { ReplayMethod, ReplayTimeline, SampleRepos } from "@/components/replay/replay-timeline";
+import {
+  OutcomeTable,
+  ReplayEmailStyles,
+  ReplayHero,
+  ReplayLayout,
+  ReplayMethod,
+  ReplayOverview,
+  ReplayTimeline,
+  SampleRepos,
+} from "@/components/replay/replay-timeline";
 import { PageContainer } from "@/components/shell/page-container";
 import { isCloud } from "@/lib/env";
 import { publicSiteUrl } from "@/lib/public-site";
-import { isPublicReplayId, publicReplay, replayEmails } from "@/replay/public";
-import { REPLAY_KICKER, replayEmailsSentence, replayHeading } from "@/replay/render";
+import { isPublicReplayId, publicReplay } from "@/replay/public";
+import { replayHeading } from "@/replay/render";
 import { SCENARIOS } from "@/replay/scenarios";
 
 // Public: no session, no tenant data. The replay runs the pure pipeline over committed
@@ -47,27 +56,20 @@ export default async function ReplayPage({ params }: Params) {
   if (!isPublicReplayId(id)) notFound();
   const cloud = isCloud();
   const result = publicReplay(id);
-  const scenario = result.scenario;
-  const emails = replayEmails(result).length;
 
   return (
     <div className="flex min-h-svh flex-col">
+      <ReplayEmailStyles />
       <PublicHeader pricing={cloud} />
       <PageContainer as="main" className="pb-16">
-        <header className="rise pt-7 pb-6">
-          <p className="text-fg-muted text-[13px]">{REPLAY_KICKER}</p>
-          <h1 className="type-page mt-2 mb-3 max-w-[30ch] text-balance">
-            {replayHeading(scenario)}
-          </h1>
-          <p className="text-fg-muted max-w-[72ch] text-[15px]">
-            {scenario.summary} {replayEmailsSentence(emails)}
-          </p>
-        </header>
-        <div className="rise [--i:1]">
+        <ReplayHero result={result} />
+        <ReplayLayout result={result}>
+          <ReplayOverview result={result} />
           <SampleRepos result={result} />
-        </div>
-        <ReplayTimeline result={result} />
-        <ReplayMethod id={scenario.id} />
+          <ReplayTimeline result={result} />
+          <OutcomeTable result={result} />
+          <ReplayMethod id={result.scenario.id} />
+        </ReplayLayout>
       </PageContainer>
       <PublicFooter pricing={cloud} />
     </div>
