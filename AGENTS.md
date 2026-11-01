@@ -92,6 +92,10 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   lookup by GitHub id from webhooks and scan jobs (`findInstallation`, `src/lib/github/installations.ts`). Deleting an org (`deleteOrg`,
   `src/lib/org-data.ts`) also counts the user's remaining memberships through `user._count` to
   decide whether the user goes too.
+  The instance admin's organisation table (`loadOrgDirectory`, `src/lib/org-directory.ts`, only
+  `/admin` behind `requireAdminContext`) reads per-org counts of members, repos and streams and
+  each org's first owner's email across orgs in a fixed number of grouped queries; it reads
+  nothing else and is never shown to anyone but the instance admin.
   These rules cover the application (`src/`, `packages/`). `scripts/smoke.sh` is an external
   black-box check of a throw-away compose stack: it cannot reach `withOrg` from a shell, so it
   inserts its scan token and reads its assertions with `psql` (scan tokens are only created
@@ -275,7 +279,8 @@ Checks before a PR: `npm run typecheck && npm run lint && npm test`. DB-backed t
   admin (`findInstanceAdmin`, same rule as `/admin`) and POSTs `ALERT_WEBHOOK_URL`, once per
   (job type, kind) per 24h (`OpsAlert`). `/api/health` returns 503 on a stale type or a due job
   older than 1h; the container healthcheck uses `?probe=live` (database only). `/admin` is a hub
-  (instance totals, organisation limits, test email); Admin → Runs is `/admin/runs` (Run now
+  (instance totals, the organisation table: search, filters, 25 per page, Edit limits dialog;
+  test email); Admin → Runs is `/admin/runs` (Run now
   per job). Sentry (`src/lib/sentry.ts`) loads only with `SENTRY_DSN`.
 - GitHub App (docs/GITHUB-APP.md): `/api/github/install` → GitHub → `/api/github/setup` (signed state)
   → app OAuth → `/api/github/callback` links the installation only when the GitHub user can access
@@ -557,7 +562,7 @@ like, and this section says how a review reports deviations from them.
 
 ### Repository invariants
 
-- Tenant data (OrgMember, Repo, Dependency, RepoRuntime, ItemMatch, Alert, Bulletin, BulletinItem, Feedback, InterestProfile, Deadline, BulletinStream, StreamRepo, ScanToken, GithubInstallation) must be read and written through `withOrg(getDb(), orgId)`. A nested relation write or raw SQL on these tables is a finding. The only reads outside the layer are the ones listed under Conventions (`getOrgContext`, `findScanTokenByHash`, `findInstallation`, the `deleteOrg` membership count). `scripts/smoke.sh` is outside this rule (Conventions: it uses `psql` against its own throw-away stack). A new tenant table that does not cascade from `Org` is a finding (`org-data.integration.test.ts` must cover it).
+- Tenant data (OrgMember, Repo, Dependency, RepoRuntime, ItemMatch, Alert, Bulletin, BulletinItem, Feedback, InterestProfile, Deadline, BulletinStream, StreamRepo, ScanToken, GithubInstallation) must be read and written through `withOrg(getDb(), orgId)`. A nested relation write or raw SQL on these tables is a finding. The only reads outside the layer are the ones listed under Conventions (`getOrgContext`, `findScanTokenByHash`, `findInstallation`, the `deleteOrg` membership count, the admin's `loadOrgDirectory`). `scripts/smoke.sh` is outside this rule (Conventions: it uses `psql` against its own throw-away stack). A new tenant table that does not cascade from `Org` is a finding (`org-data.integration.test.ts` must cover it).
 - Fix commands and derived actions never recommend a higher major than the installed release line. A command or sentence that crosses the line is a finding, with one exception: An end-of-life line gets the EOL sentence, which names the lowest supported line; that is the only derived action allowed to name a higher major, and it is worded as a migration, not a fix command. (`src/pipeline/runtime-fixes.ts`, "node 18 is end-of-life and will not get this fix; move to 22.23.4 or later"; an EOL line has no fix on its own major, so naming the supported line is the only truthful action.) An EOL sentence in command form (`npm i ...`, a `FROM`/image tag, "set node X") is a finding.
 - An item's repos have one source: `BulletinItem.affectedRepos` is the item's `affected_repos` in the synthesis input (match repos in the stream, plus repos with an alert on the item's security package), and `BulletinItem.upgrades` names exactly those repos (`alignUpgrades`; a repo without a version on record reads "installed version unknown"). A path that builds upgrades, actions or lines from another repo list is a finding. A model line or action that names only some of the affected repos is repaired after the alias restore (`completeRepoNames`, `chooseAction`), never stored as written.
 - Model output is accepted only for refs present in the synthesis input; any path where model text adds a URL, a version or a package the input did not contain is a finding.

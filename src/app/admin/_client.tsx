@@ -1,11 +1,18 @@
 "use client";
 
-import { useActionState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { DialogClose, FormDialog } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { FormStatus, Label } from "@/components/ui/label";
+import { SearchField } from "@/components/ui/search-field";
+import { useToast } from "@/components/ui/toast";
 
 import {
   type AdminState,
+  type LimitsState,
   raiseOrgLimitsAction,
   runJobAction,
   sendTestEmailAction,
@@ -50,57 +57,96 @@ export function TestEmailButton() {
   );
 }
 
-export function LimitsForm({
+export function EditLimitsButton({
   org,
-  meta,
 }: {
   org: { id: string; name: string; repoLimit: number; streamLimit: number };
-  /** One muted line under the name (usage against the limits). */
-  meta?: string;
 }) {
-  const [state, action, pending] = useActionState(raiseOrgLimitsAction, {
-    ok: true,
-    message: null,
-  } as import("./actions").LimitsState);
+  const [open, setOpen] = useState(false);
+  const toast = useToast();
+  const [state, action, pending] = useActionState(
+    async (prev: LimitsState, form: FormData) => {
+      const res = await raiseOrgLimitsAction(prev, form);
+      if (res.ok) {
+        setOpen(false);
+        if (res.message) toast(res.message);
+      }
+      return res;
+    },
+    { ok: true, message: null }
+  );
   return (
-    <form action={action} className="flex flex-wrap items-end gap-3">
-      <input type="hidden" name="orgId" value={org.id} />
-      <p className="w-full text-[13px] font-medium">
-        {org.name}
-        {meta && (
-          <span className="text-fg-muted mt-0.5 block text-[12.5px] font-normal tabular-nums">
-            {meta}
-          </span>
-        )}
-      </p>
-      <label className="text-fg-muted text-[12px]">
-        Repositories
-        <input
-          aria-label="Repository limit"
-          className="border-line bg-surface mt-1 block w-28 rounded border p-2"
-          type="number"
-          name="repoLimit"
-          min={org.repoLimit}
-          defaultValue={state.repoLimit ?? org.repoLimit}
-          required
-        />
-      </label>
-      <label className="text-fg-muted text-[12px]">
-        Streams
-        <input
-          aria-label="Stream limit"
-          className="border-line bg-surface mt-1 block w-28 rounded border p-2"
-          type="number"
-          name="streamLimit"
-          min={org.streamLimit}
-          defaultValue={state.streamLimit ?? org.streamLimit}
-          required
-        />
-      </label>
-      <Button type="submit" disabled={pending}>
-        Save limits
-      </Button>
-      <Status state={state} />
-    </form>
+    <FormDialog
+      open={open}
+      onOpenChange={setOpen}
+      trigger={
+        <Button variant="secondary" size="sm" aria-label={`Edit limits of ${org.name}`}>
+          Edit limits
+        </Button>
+      }
+      title="Edit limits"
+      description={`${org.name}: limits can only be raised. Repositories past the old limit need a rescan.`}
+    >
+      <form action={action} className="grid gap-3">
+        <input type="hidden" name="orgId" value={org.id} />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-1.5">
+            <Label htmlFor={`repo-limit-${org.id}`}>Repositories</Label>
+            <Input
+              id={`repo-limit-${org.id}`}
+              type="number"
+              name="repoLimit"
+              min={org.repoLimit}
+              defaultValue={state.repoLimit ?? org.repoLimit}
+              required
+              autoFocus
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor={`stream-limit-${org.id}`}>Streams</Label>
+            <Input
+              id={`stream-limit-${org.id}`}
+              type="number"
+              name="streamLimit"
+              min={org.streamLimit}
+              defaultValue={state.streamLimit ?? org.streamLimit}
+              required
+            />
+          </div>
+        </div>
+        {!state.ok && <FormStatus ok={false} message={state.message} />}
+        <div className="mt-1 flex flex-wrap justify-end gap-2">
+          <DialogClose render={<Button variant="secondary">Cancel</Button>} />
+          <Button type="submit" variant="primary" disabled={pending}>
+            Save limits
+          </Button>
+        </div>
+      </form>
+    </FormDialog>
+  );
+}
+
+/** Name/email search for the organisation table; the query lives in the URL (`?q=`). */
+export function OrgSearch({ initial, hrefFor }: { initial: string; hrefFor: string }) {
+  const router = useRouter();
+  const [value, setValue] = useState(initial);
+  useEffect(() => {
+    if (value.trim() === initial) return;
+    const t = window.setTimeout(() => {
+      const url = new URL(hrefFor, window.location.origin);
+      if (value.trim()) url.searchParams.set("q", value.trim());
+      else url.searchParams.delete("q");
+      url.searchParams.delete("page");
+      router.replace(`${url.pathname}${url.search}`, { scroll: false });
+    }, 300);
+    return () => window.clearTimeout(t);
+  }, [value, initial, hrefFor, router]);
+  return (
+    <SearchField
+      value={value}
+      onChange={setValue}
+      placeholder="Search name or owner email"
+      label="Search organisations"
+    />
   );
 }
