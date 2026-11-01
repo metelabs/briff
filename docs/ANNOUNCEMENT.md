@@ -361,8 +361,12 @@ files` → Website `https://briff.dev` → Topics `dependencies`, `security`,
     topic chips in the About box.
 
 13. **Launch release notes.** Repository → **Releases** → `0.8.0` → **Edit** (pencil) → add
-    above the generated notes: `First public release. Self-hosting:
-docs/SELF-HOSTING.md; hosted beta: https://app.briff.dev.` → **Update release**.
+    this paragraph above the generated notes, then **Update release**:
+
+    ```
+    First public release. Self-hosting: docs/SELF-HOSTING.md; hosted beta: https://app.briff.dev.
+    ```
+
     You should see: the paragraph on the release page, the release marked **Latest**.
 
 ### After the switch
