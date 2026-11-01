@@ -26,7 +26,8 @@ export const MAX_ORGS_PER_USER = 20;
 
 type MembersTx = Pick<OrgDb, "orgMember" | "orgInvite" | "orgEvent" | "$queryRaw">;
 
-async function lockMembers(tx: MembersTx, orgId: string): Promise<void> {
+/** Serialises membership changes of one org; held until the transaction ends. */
+export async function lockMembers(tx: Pick<OrgDb, "$queryRaw">, orgId: string): Promise<void> {
   await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${`org-members:${orgId}`}))`;
 }
 
@@ -137,7 +138,10 @@ export async function createInvite(
 
 export type ResendInviteResult =
   | { ok: true; token: string; email: string; role: OrgRole; expiresAt: Date }
-  | { ok: false; reason: "not-owner" | "not-found" | "already-member" | "rate-limited" };
+  | {
+      ok: false;
+      reason: "not-owner" | "not-found" | "already-member" | "already-invited" | "rate-limited";
+    };
 
 /**
  * A new link for a pending or expired invite: the old link stops working, the 7 days start
@@ -159,6 +163,11 @@ export async function resendInvite(
     if ((await tx.orgMember.count({ where: { user: { email: invite.email } } })) > 0) {
       return { ok: false, reason: "already-member" };
     }
+    // An expired invite whose address got a newer one stays expired: one live link per address.
+    const newer = await tx.orgInvite.count({
+      where: { email: invite.email, id: { not: invite.id }, ...pendingWhere(now) },
+    });
+    if (newer > 0) return { ok: false, reason: "already-invited" };
     if (!(await underDailyLimit(tx, now))) return { ok: false, reason: "rate-limited" };
     const { token, tokenHash } = generateInviteToken();
     const expiresAt = new Date(now.getTime() + INVITE_TTL_MS);

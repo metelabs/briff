@@ -161,6 +161,18 @@ describe.skipIf(!url)("org members against Postgres", () => {
     });
     expect((await acceptInvite(db, { token: again.token, userId: bob.id })).ok).toBe(true);
     expect(await memberRole(db, orgId, bob.id)).toBe("owner");
+
+    // An expired invite cannot be renewed next to a newer pending one for the same address.
+    const old = await invite(orgId, ada.id, `twice-${suffix}@example.com`);
+    await withOrg(db, orgId).orgInvite.updateMany({
+      where: { id: old.inviteId },
+      data: { expiresAt: new Date(Date.now() - 1) },
+    });
+    await invite(orgId, ada.id, `twice-${suffix}@example.com`);
+    expect(await resendInvite(db, { orgId, actorUserId: ada.id, inviteId: old.inviteId })).toEqual({
+      ok: false,
+      reason: "already-invited",
+    });
   });
 
   it(`limits an org to ${INVITES_PER_DAY} invites a day, resends included`, async () => {

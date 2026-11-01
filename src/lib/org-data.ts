@@ -2,7 +2,7 @@ import "server-only";
 
 import type { PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
-import { ensureUserHasOrg } from "@/lib/members";
+import { ensureUserHasOrg, lockMembers } from "@/lib/members";
 
 // "Your data" (Settings): the org's export and its deletion. docs/PRIVACY.md lists what
 // each holds. Every tenant read goes through withOrg; the user rows are the members' own.
@@ -389,14 +389,22 @@ export async function deleteOrg(
     return { ok: false, reason: "instance-admin" };
   }
 
-  const others = (
-    await scoped.orgMember.findMany({
-      where: { userId: { not: args.userId } },
-      select: { userId: true },
-    })
-  ).map((m) => m.userId);
-
-  const result = await db.$transaction(async (tx): Promise<DeleteOrgResult> => {
+  let others: string[] = [];
+  const result = await scoped.$transaction(async (tx): Promise<DeleteOrgResult> => {
+    // Under the membership lock: an owner demoted or removed since the check above may not
+    // delete the org.
+    await lockMembers(tx, args.orgId);
+    const still = await tx.orgMember.findFirst({
+      where: { userId: args.userId },
+      select: { role: true },
+    });
+    if (still?.role !== "owner") return { ok: false, reason: "not-owner" };
+    others = (
+      await tx.orgMember.findMany({
+        where: { userId: { not: args.userId } },
+        select: { userId: true },
+      })
+    ).map((m) => m.userId);
     // Pending jobs that name this org (e.g. a legacy bulletin preview) would only fail on retry.
     await tx.job.deleteMany({
       where: { status: "pending", payload: { path: ["orgId"], equals: args.orgId } },
@@ -413,6 +421,6 @@ export async function deleteOrg(
     return { ok: true, userDeleted: true };
   });
   // The other members keep their accounts; one left without any org gets a new one.
-  for (const userId of others) await ensureUserHasOrg(db, userId);
+  if (result.ok) for (const userId of others) await ensureUserHasOrg(db, userId);
   return result;
 }

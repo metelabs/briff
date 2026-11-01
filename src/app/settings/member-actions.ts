@@ -124,6 +124,7 @@ export async function resendInviteAction(inviteId: string): Promise<InviteFormSt
       "not-owner": NOT_OWNER,
       "not-found": "That invite was already accepted or revoked.",
       "already-member": "That address is already a member.",
+      "already-invited": "That address has a newer pending invite. Resend that one instead.",
       "rate-limited": RATE_LIMITED,
     }[res.reason];
     revalidatePath("/settings");
