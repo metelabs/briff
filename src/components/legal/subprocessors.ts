@@ -22,10 +22,10 @@ export const SUBPROCESSORS: readonly Subprocessor[] = [
     location: "United States",
   },
   {
-    name: "Sendinblue SAS (Brevo)",
-    purpose: "Email delivery",
+    name: "Resend, Inc.",
+    purpose: "Email delivery (SMTP relay)",
     data: "Recipient address and the email's content, which names your repos and packages",
-    location: "EU (France)",
+    location: "United States",
   },
   {
     name: "Paddle.com Market Ltd",

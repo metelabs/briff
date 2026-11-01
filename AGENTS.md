@@ -11,7 +11,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 # Briff
 
 Weekly briefing built from the user's own stack, plus same-day security alerts.
-Delivery is **email only** (Brevo SMTP); there is no Telegram (founder decision, 15 Oct 2026).
+Delivery is **email only** (SMTP relay, Resend on the hosted service); there is no Telegram (founder decision, 15 Oct 2026).
 The product plan and founder decisions live in the maintainer's notes outside this repository. Next.js 16
 differs from older versions (see the block above); check `node_modules/next/dist/docs/` before guessing APIs.
 This file is the project guide for every coding agent and for people; `CLAUDE.md` only imports it.
@@ -63,7 +63,7 @@ src/llm/                 Anthropic client (structured output + zod), fake client
 src/llm/prompts/*.md     versioned prompts (`<!-- version: x-vN -->` first line); bump the version on edit
                          (synthesis is at `synthesis-v8`: text describes its own ref; action is a command or covers every affected repo; a security headline names `fix_versions`;
                          repo names are aliases, see `src/llm/pseudonym.ts`)
-src/lib/email/           mailer (nodemailer, Brevo), templates (bulletin, alerts, urgent, test), layout
+src/lib/email/           mailer (nodemailer, SMTP relay), templates (bulletin, alerts, urgent, test), layout
 src/worker/              worker entry, runner, scheduler, handler registry
 src/replay/              replay harness: scenarios of real incidents (items + sample repos + world
                          events), engine running the pure pipeline on a fake hourly clock, timeline page
