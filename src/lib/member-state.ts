@@ -20,7 +20,9 @@ export function needsOnboarding(includedRepos: number, onboardedAt: Date | null)
  * /alerts (every new-kind alert before the first visit). Backlog alerts never light it.
  */
 export function unseenAlertsWhere(alertsSeenAt: Date | null): Prisma.AlertWhereInput {
-  return alertsSeenAt ? { kind: "new", createdAt: { gt: alertsSeenAt } } : { kind: "new" };
+  return alertsSeenAt
+    ? { kind: "new", resolvedAt: null, createdAt: { gt: alertsSeenAt } }
+    : { kind: "new", resolvedAt: null };
 }
 
 export async function loadMemberState(

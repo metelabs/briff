@@ -306,6 +306,7 @@ export async function securityScan({ db, log, heartbeat }: JobContext): Promise<
     alertsBacklog: 0,
     alertsDelivered: 0,
     alertsHeld: 0,
+    alertsReopened: 0,
     emailsSent: 0,
     emailsFailed: 0,
   };
@@ -428,8 +429,27 @@ export async function securityScan({ db, log, heartbeat }: JobContext): Promise<
     const advisoryIds = [...new Set(orgMatches.flatMap((m) => m.advisoryIds))];
     const existing = await scoped.alert.findMany({
       where: { advisoryId: { in: advisoryIds } },
-      select: { advisoryId: true, repoId: true },
+      select: { id: true, advisoryId: true, repoId: true, resolvedAt: true },
     });
+    // OSV says a resolved pair is affected again (the advisory's ranges grew, or the
+    // ingest check could not see it): the alert is open again, without a second email.
+    const atRiskKeys = new Set(
+      orgMatches.flatMap((m) =>
+        m.advisoryIds.flatMap((advisoryId) =>
+          m.query.dependents.map((d) => alertKey(advisoryId, d.repoId))
+        )
+      )
+    );
+    const reopen = existing.filter(
+      (a) => a.resolvedAt !== null && atRiskKeys.has(alertKey(a.advisoryId, a.repoId))
+    );
+    if (reopen.length > 0) {
+      const res = await scoped.alert.updateMany({
+        where: { id: { in: reopen.map((a) => a.id) } },
+        data: { resolvedAt: null },
+      });
+      counts.alertsReopened += res.count;
+    }
     const candidates = newAlertCandidates(
       orgMatches,
       new Set(existing.map((a) => alertKey(a.advisoryId, a.repoId))),

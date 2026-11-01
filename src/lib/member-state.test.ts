@@ -13,10 +13,14 @@ describe("needsOnboarding", () => {
 describe("unseenAlertsWhere", () => {
   it("counts new-kind alerts created after the last visit to /alerts", () => {
     const seen = new Date("2026-10-22T08:00:00Z");
-    expect(unseenAlertsWhere(seen)).toEqual({ kind: "new", createdAt: { gt: seen } });
+    expect(unseenAlertsWhere(seen)).toEqual({
+      kind: "new",
+      resolvedAt: null,
+      createdAt: { gt: seen },
+    });
   });
 
   it("counts every new-kind alert before the first visit, never backlog ones", () => {
-    expect(unseenAlertsWhere(null)).toEqual({ kind: "new" });
+    expect(unseenAlertsWhere(null)).toEqual({ kind: "new", resolvedAt: null });
   });
 });

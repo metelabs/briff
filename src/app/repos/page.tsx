@@ -61,7 +61,11 @@ export default async function ReposPage({
       },
     }),
     db.dependency.groupBy({ by: ["repoId"], where: { direct: true }, _count: { _all: true } }),
-    db.alert.groupBy({ by: ["repoId"], where: { kind: "new" }, _count: { _all: true } }),
+    db.alert.groupBy({
+      by: ["repoId"],
+      where: { kind: "new", resolvedAt: null },
+      _count: { _all: true },
+    }),
     // Only the non-npm rows: npm is the rest of each repo's counts.
     db.dependency.findMany({
       where: { package: { ecosystem: { not: "npm" } } },

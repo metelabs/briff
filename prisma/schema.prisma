@@ -92,6 +92,8 @@ model Org {
   streamLimit Int @default(2)
   githubRepoLimitReached Boolean @default(false)
   baseImageAlerts Boolean @default(true)
+  // Last "Re-check now" on Alerts: GitHub App rescans are limited to one per 10 minutes.
+  recheckRequestedAt DateTime?
   baseAlerts BaseImageAlert[]
   baseWatches BaseImageWatch[]
   id                  String               @id @default(cuid())
@@ -530,6 +532,9 @@ model Alert {
   // hidden from the default Alerts view and the home counts. Never set on `new` alerts;
   // delivery (deliveredAt, urgent emails) does not read it.
   reviewedAt  DateTime?
+  // Set when a later scan of the repo no longer has an affected version of the advisory's
+  // package (src/security/resolution.ts); cleared when one comes back. Never deleted.
+  resolvedAt  DateTime?
   createdAt   DateTime  @default(now())
 
   @@unique([advisoryId, repoId])

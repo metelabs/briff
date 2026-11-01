@@ -12,6 +12,8 @@ import {
 } from "@scan/ecosystems";
 import { isConstraintRow } from "@scan/runtimes";
 
+import { planAlertResolution } from "@/security/resolution";
+
 import type { ScanBody, ScanDependency, ScanRuntime } from "./schema";
 
 export interface RepoIngestResult {
@@ -23,6 +25,9 @@ export interface RepoIngestResult {
   runtimes: number | null;
   /** A runtime or a runtime version appeared that the repo did not declare before. */
   runtimesChanged: boolean;
+  /** Alerts this upload resolved (no affected version left) or reopened. */
+  alertsResolved: number;
+  alertsReopened: number;
 }
 
 /** A dependency row as stored: ecosystem resolved (npm when absent), name normalised. */
@@ -193,6 +198,34 @@ export async function ingestScan(
             },
           });
 
+      const alerts = existing
+        ? await tx.alert.findMany({
+            where: { repoId: saved.id },
+            select: {
+              id: true,
+              resolvedAt: true,
+              advisory: {
+                select: {
+                  packageId: true,
+                  affected: true,
+                  package: { select: { ecosystem: true } },
+                },
+              },
+            },
+          })
+        : [];
+      const alertPackageIds = [...new Set(alerts.map((a) => a.advisory.packageId))];
+      const previousPackageIds = new Set(
+        alertPackageIds.length > 0
+          ? (
+              await tx.dependency.findMany({
+                where: { repoId: saved.id, packageId: { in: alertPackageIds } },
+                select: { packageId: true },
+              })
+            ).map((d) => d.packageId)
+          : []
+      );
+
       await tx.dependency.deleteMany({ where: { repoId: saved.id } });
       const rows = repo.dependencies.flatMap((dep) => {
         const packageId = packageIds.get(packageKey(dep.ecosystem, dep.name));
@@ -217,6 +250,41 @@ export async function ingestScan(
           : [];
       });
       if (rows.length > 0) await tx.dependency.createMany({ data: rows });
+
+      const plan = planAlertResolution(
+        alerts.map((a) => ({
+          id: a.id,
+          resolvedAt: a.resolvedAt,
+          packageId: a.advisory.packageId,
+          ecosystem: a.advisory.package.ecosystem,
+          affected: a.advisory.affected,
+        })),
+        previousPackageIds,
+        repo.dependencies.flatMap((dep) => {
+          const packageId = packageIds.get(packageKey(dep.ecosystem, dep.name));
+          return packageId
+            ? [
+                {
+                  packageId,
+                  ecosystem: dep.ecosystem,
+                  version: dep.version,
+                  unresolved: dep.unresolved,
+                  constraint: dep.constraint,
+                },
+              ]
+            : [];
+        })
+      );
+      if (plan.resolve.length > 0)
+        await tx.alert.updateMany({
+          where: { id: { in: plan.resolve } },
+          data: { resolvedAt: now },
+        });
+      if (plan.reopen.length > 0)
+        await tx.alert.updateMany({
+          where: { id: { in: plan.reopen } },
+          data: { resolvedAt: null },
+        });
 
       let runtimesChanged = false;
       if (repo.runtimes) {
@@ -250,6 +318,8 @@ export async function ingestScan(
         direct: rows.filter((r) => r.direct).length,
         runtimes: repo.runtimes ? repo.runtimes.length : null,
         runtimesChanged,
+        alertsResolved: plan.resolve.length,
+        alertsReopened: plan.reopen.length,
       };
     });
     if (result) results.push(result);

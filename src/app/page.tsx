@@ -56,7 +56,7 @@ export default async function HomePage() {
       select: { id: true, streamId: true, weekStart: true, createdAt: true },
     }),
     db.alert.findMany({
-      where: { repo: repoScope(scope) },
+      where: { repo: repoScope(scope), resolvedAt: null },
       select: {
         kind: true,
         createdAt: true,
