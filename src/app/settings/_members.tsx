@@ -13,6 +13,7 @@ import { useResultToast, useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 import type { FormState } from "./actions";
+import { DEFAULT_INVITE_ROLE, type InviteRole, roleAfterInvite } from "./invite-role";
 import {
   changeRoleAction,
   type InviteFormState,
@@ -27,7 +28,6 @@ import {
 // Settings -> Organisation and Members (owners manage, members see the list and can leave).
 
 const INITIAL: FormState = { ok: true, message: null };
-type InviteRole = "member" | "owner";
 
 const INVITE_INITIAL: InviteFormState = { ok: true, message: null };
 
@@ -70,13 +70,11 @@ export function OrgNameForm({ name, maxLength }: { name: string; maxLength: numb
 
 export function InviteForm() {
   const [state, action, pending] = useActionState(inviteMemberAction, INVITE_INITIAL);
-  // React resets the form after the action, but the Select keeps its own state: back to Member
-  // after a sent invite, so an Owner choice never carries over to the next invitee.
-  const [role, setRole] = useState<InviteRole>("member");
+  const [role, setRole] = useState<InviteRole>(DEFAULT_INVITE_ROLE);
   const [seenState, setSeenState] = useState(state);
   if (seenState !== state) {
     setSeenState(state);
-    if (state.ok) setRole("member");
+    setRole(roleAfterInvite(role, state));
   }
   useResultToast(state, state);
   return (
