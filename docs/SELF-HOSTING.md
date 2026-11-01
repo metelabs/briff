@@ -64,7 +64,8 @@ own account right after the first start, before you share the URL.
 - Every account gets its own organisation. A self-hosted instance has no plans and no
   limits: repos, streams and members are unlimited as long as `BRIFF_CLOUD` stays `false`
   (the default; `true` is only for the hosted service at app.briff.dev, where it turns on
-  plans, `/pricing` and Settings → Billing). The admin's **Admin** page (`/admin`) shows
+  plans, `/pricing` and Settings → Billing; the `PADDLE_*` billing variables are for the hosted
+  service too and never needed here). The admin's **Admin** page (`/admin`) shows
   instance totals and every organisation's usage and can send a test email; **Admin → Runs** (`/admin/runs`) queues jobs by hand (`collect-sources`,
   `security-scan`, `weekly-bulletin`, ...).
 - Sign-up is open by default. To close it after your account exists, set

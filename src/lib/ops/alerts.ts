@@ -23,6 +23,9 @@ export interface OpsAlertInput {
   lastSuccessAt?: Date | null;
   /** ops-check re-offering a failure that may already have been alerted: not a new failure. */
   revisit?: boolean;
+  /** Replaces "Job failed: <type>" and the lead sentence for alerts that are not job runs. */
+  headline?: string;
+  summary?: string;
 }
 
 type DeliveryResult = "sent" | "skipped" | "failed";
@@ -187,6 +190,8 @@ async function deliver(
     error: alert.error ?? null,
     attempts: alert.attempts,
     lastSuccessAt: alert.lastSuccessAt ?? null,
+    headline: alert.headline,
+    summary: alert.summary,
     suppressed,
     baseUrl: env.BETTER_AUTH_URL,
   });

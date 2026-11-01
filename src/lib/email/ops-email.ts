@@ -25,6 +25,9 @@ export interface OpsAlertEmail {
   /** Alerts of the same job and kind held back by the 24h window since the previous email. */
   suppressed: number;
   baseUrl: string;
+  /** Alerts that are not job runs (billing webhook): their own headline and lead. */
+  headline?: string;
+  summary?: string;
 }
 
 export function utcStamp(date: Date): string {
@@ -38,11 +41,15 @@ export function errorExcerpt(error: string | null, lines = 4, chars = 600): stri
   return text.length > chars ? `${text.slice(0, chars - 1)}…` : text;
 }
 
-export function opsAlertHeadline(alert: Pick<OpsAlertEmail, "kind" | "jobType">): string {
+export function opsAlertHeadline(
+  alert: Pick<OpsAlertEmail, "kind" | "jobType"> & { headline?: string }
+): string {
+  if (alert.headline) return alert.headline;
   return alert.kind === "failed" ? `Job failed: ${alert.jobType}` : `Job overdue: ${alert.jobType}`;
 }
 
 function lead(alert: OpsAlertEmail): string {
+  if (alert.summary) return alert.summary;
   if (alert.kind === "failed") {
     const tries = alert.attempts
       ? ` after ${alert.attempts} ${alert.attempts === 1 ? "attempt" : "attempts"}`

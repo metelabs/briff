@@ -66,4 +66,21 @@ describe("pricing on the hosted service only", () => {
     expect(html).toContain("Unlimited repos");
     expect(html).toContain("10 members");
   });
+
+  it("sends paid plans to Settings -> Billing once billing is configured", () => {
+    const html = (billing: boolean) =>
+      renderToStaticMarkup(createElement(PricingCards, { billing }));
+    expect(html(false)).not.toContain("/settings/billing");
+    expect(html(true)).toContain('href="/settings/billing?plan=pro&amp;interval=month"');
+    expect(html(true)).toContain('href="/settings/billing?plan=team&amp;interval=month"');
+    expect(html(true)).toContain('href="/login?mode=sign-up"');
+  });
+
+  it("drops the beta note when checkout is configured", () => {
+    useCloud("true");
+    vi.stubEnv("PADDLE_API_KEY", "pdl_sdbx_apikey_synthetic");
+    vi.stubEnv("PADDLE_CLIENT_TOKEN", "test_synthetic");
+    resetEnvCache();
+    expect(renderToStaticMarkup(PricingPage())).not.toContain("Free during the beta");
+  });
 });

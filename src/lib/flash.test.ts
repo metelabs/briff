@@ -79,3 +79,14 @@ describe("flashStep", () => {
     expect(flashStep("/settings", changed, stripped.key).show).not.toBeNull();
   });
 });
+
+describe("checkout flash", () => {
+  it("confirms the payment on the billing page and strips the param", () => {
+    expect(flashFor("/settings/billing", q("checkout=success"))).toEqual({
+      kind: "ok",
+      message: "Payment received, your plan updates in a moment.",
+      strip: ["checkout"],
+    });
+    expect(flashFor("/settings", q("checkout=success"))).toBeNull();
+  });
+});

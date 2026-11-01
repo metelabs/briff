@@ -70,9 +70,28 @@ const serverEnvSchema = z.object({
   // The hosted service (app.briff.dev): plans, limits, pricing and billing. Off for self-hosted
   // instances, where every org is unlimited and nothing plan-related renders (src/lib/plans.ts).
   BRIFF_CLOUD: booleanFlag(false),
+  // Billing through Paddle (docs/BILLING.md), hosted service only. Without the API key or the
+  // client token the billing page says billing is not configured; nothing else depends on them.
+  PADDLE_ENV: optionalString
+    .pipe(z.enum(["sandbox", "live"]).optional())
+    .transform((v) => v ?? "sandbox"),
+  PADDLE_API_KEY: optionalString,
+  // Public by design (Paddle.js runs in the browser with it); passed to the page as a prop.
+  PADDLE_CLIENT_TOKEN: optionalString,
+  // The notification destination's secret: verifies POST /api/billing/paddle.
+  PADDLE_WEBHOOK_SECRET: optionalString,
+  // Development only: canned Paddle API answers so the billing page renders without a key.
+  BRIFF_PADDLE_FAKE: booleanFlag(false),
 });
 
 const cloudEnvSchema = serverEnvSchema.pick({ BRIFF_CLOUD: true });
+const billingEnvSchema = serverEnvSchema.pick({
+  NODE_ENV: true,
+  BRIFF_CLOUD: true,
+  PADDLE_API_KEY: true,
+  PADDLE_CLIENT_TOKEN: true,
+  BRIFF_PADDLE_FAKE: true,
+});
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
 
@@ -97,6 +116,17 @@ export function getEnv(): ServerEnv {
 export function isCloud(): boolean {
   if (cached) return cached.BRIFF_CLOUD;
   return cloudEnvSchema.parse(process.env).BRIFF_CLOUD;
+}
+
+/**
+ * Whether checkout can open on this instance (hosted, with the Paddle API key and client token,
+ * or the development fake). Narrow like isCloud(): the public pricing page reads it.
+ */
+export function isBillingConfigured(): boolean {
+  const env = cached ?? billingEnvSchema.parse(process.env);
+  if (!env.BRIFF_CLOUD) return false;
+  if (env.BRIFF_PADDLE_FAKE) return env.NODE_ENV !== "production";
+  return !!env.PADDLE_API_KEY && !!env.PADDLE_CLIENT_TOKEN;
 }
 
 /** Test hook: forget the parsed env so the next getEnv() re-reads process.env. */
@@ -134,7 +164,20 @@ export function envWarnings(source: NodeJS.ProcessEnv = process.env): string[] {
     }
     return warnings;
   }
-  for (const group of FEATURE_GROUPS) {
+  const groups = parsed.data.BRIFF_CLOUD
+    ? [
+        ...FEATURE_GROUPS,
+        {
+          feature: "billing",
+          vars: [
+            "PADDLE_API_KEY",
+            "PADDLE_CLIENT_TOKEN",
+            "PADDLE_WEBHOOK_SECRET",
+          ] as (keyof ServerEnv)[],
+        },
+      ]
+    : FEATURE_GROUPS;
+  for (const group of groups) {
     const missing = group.vars.filter((name) => parsed.data[name] === undefined);
     if (missing.length > 0)
       warnings.push(`${group.feature} disabled: missing ${missing.join(", ")}`);

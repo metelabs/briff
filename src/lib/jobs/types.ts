@@ -10,6 +10,10 @@ export const JOB_TYPES = [
   "ops-check",
   // GitHub App: payload { installationId, repos?, force? } (src/lib/github/scan.ts).
   "github-scan",
+  // Daily: reconciles Paddle subscriptions, ends grace periods (src/lib/billing/jobs.ts).
+  "billing-check",
+  // Billing email to an org's owners: payload { orgId, kind, ... } (src/lib/billing/jobs.ts).
+  "billing-notify",
 ] as const;
 
 export type JobType = (typeof JOB_TYPES)[number];

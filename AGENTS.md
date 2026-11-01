@@ -36,7 +36,7 @@ This file is the project guide for every coding agent and for people; `CLAUDE.md
 
 ```
 src/app/                 pages (/ home overview, /bulletins, /b/[id], /alerts, /stack, /repos, /streams, /settings, /settings/billing, /onboarding, /admin, /login, /pricing, /invite/[token]) + route
-                         handlers (/api/health, /api/scan, /api/export, /api/auth/[...all])
+                         handlers (/api/health, /api/scan, /api/export, /api/auth/[...all], /api/billing/paddle)
 src/proxy.ts             `/` without a session cookie -> rewrite to /landing (docs/LANDING.md)
 src/app/landing, replay/ public pages (no session, no tenant imports: src/test/public-routes.test.ts),
                          robots.ts / sitemap.ts; parts in src/components/landing, src/components/replay
@@ -52,6 +52,8 @@ src/lib/rss/, platforms/ ported from an earlier feed aggregator (SSRF-safe fetch
 src/lib/match/           deterministic item -> org matcher + stack loader
 src/lib/streams.ts       bulletin streams: slugs, membership writes, Repo.included sync
 src/lib/plans.ts         plans (PLANS: prices, limits) and limitsFor; checks in org-limits.ts, usage in org-capacity.ts
+src/lib/billing/         Paddle billing (docs/BILLING.md): catalog (price ids per PADDLE_ENV), state.ts (pure rules),
+                         sync.ts (the only Org.plan writer besides Admin), webhook, manage.ts (owner actions), jobs
 src/lib/services.ts      package -> service mapping table (extend here)
 src/sources/             adapters (curated + runtime feeds, GitHub releases, GitHub security advisories, npm, OSV,
                          changelog.md) and job handlers
@@ -83,21 +85,23 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
 - **Tenant data only through `withOrg(getDb(), orgId)`.** It pins `orgId` into every
   where/data clause and throws on conflicts. Tenant models: OrgMember, Repo, Dependency,
   RepoRuntime, ItemMatch, Alert, Bulletin, BulletinItem, Feedback, InterestProfile, Deadline,
-  BulletinStream, StreamRepo, ScanToken, GithubInstallation, OrgInvite, OrgEvent. Creates
+  BulletinStream, StreamRepo, ScanToken, GithubInstallation, OrgInvite, OrgEvent, Subscription. Creates
   still pass `orgId` explicitly (Prisma types require it; the layer verifies it). Nested
   relation writes and raw SQL bypass the layer, so do not use them for tenant tables.
-  Global catalog tables (Package, Service, Source, Item, Advisory, Job, Run, OpsAlert) use `getDb()`.
+  Global catalog tables (Package, Service, Source, Item, Advisory, Job, Run, OpsAlert, BillingEvent) use `getDb()`.
   These reads run before the org is known and are the only tenant reads outside the layer:
   the session's memberships (`getOrgContext`, the account menu's `listUserOrgs`, and
   `ensureUserHasOrg`'s count, all keyed by the user), the invite lookup by token hash
   (`findInviteByToken`, `src/lib/members.ts`) and the scan token lookup by hash
   (`findScanTokenByHash`, `src/lib/scan/token-store.ts`), and the GitHub App's installation
-  lookup by GitHub id from webhooks and scan jobs (`findInstallation`, `src/lib/github/installations.ts`). Deleting an org (`deleteOrg`,
+  lookup by GitHub id from webhooks and scan jobs (`findInstallation`, `src/lib/github/installations.ts`), the
+  Paddle webhook's lookup of a subscription's org by Paddle's subscription id (`resolveSubscriptionOrg`,
+  `src/lib/billing/sync.ts`) and billing-check's list of org ids that have a subscription. Deleting an org (`deleteOrg`,
   `src/lib/org-data.ts`) also counts the user's remaining memberships through `user._count` to
   decide whether the user goes too.
   The instance admin's organisation table (`loadOrgDirectory`, `src/lib/org-directory.ts`, only
   `/admin` behind `requireAdminContext`) reads per-org counts of members, repos and streams, each
-  org's plan and overrides, and each org's first owner's email across orgs in a fixed number of
+  org's plan, plan source, overrides and subscription status, and each org's first owner's email across orgs in a fixed number of
   grouped queries; it reads nothing else and is never shown to anyone but the instance admin.
   These rules cover the application (`src/`, `packages/`). `scripts/smoke.sh` is an external
   black-box check of a throw-away compose stack: it cannot reach `withOrg` from a shell, so it
@@ -139,7 +143,17 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   instance-wide `SCANNER_TOKEN` (org from `SCANNER_ORG_ID` or the only org), which logs a
   warning per upload.
 - Mutations from the UI are Server Actions; route handlers only for external callers
-  (`/api/scan`, `/api/health`, auth) and the export download (`/api/export`).
+  (`/api/scan`, `/api/health`, auth, the Paddle webhook) and the export download (`/api/export`).
+- Billing (docs/BILLING.md, hosted only): `Org.plan` is written only by the billing module
+  (`applyOrgPlan`, `src/lib/billing/sync.ts`) and the admin's Edit limits action; both hold the
+  per-org billing advisory lock and record `Org.planSource` (billing never touches `unlimited` and
+  never lowers an `admin` plan) plus a `plan.changed` OrgEvent. Webhook events are idempotent by
+  Paddle's event id (`BillingEvent`, processed once under a row lock) and ordered by
+  `occurred_at` against `Subscription.stateAt`. Owner billing actions (`manage.ts`) re-read the
+  role and act only on the org's own subscription (found through withOrg); no subscription,
+  customer or org id is taken from the browser, an invoice id is checked against the org's
+  subscriptions, the portal opens only for the paying email, and checkout's `custom_data.orgId`
+  is trusted only with its HMAC (`org-link.ts`). Paddle API calls go through `getBillingApi()`.
 - Page shell: `page.tsx` is a server component; interactive parts live in a `_client.tsx` sibling.
 - Every external fetch of a URL that came from data (feeds, release URLs) goes through
   `safeFetch` / `fetchRssFeed`. Fixed API hosts (npm, OSV) may use `fetchWithRetry`.
@@ -318,7 +332,7 @@ Checks before a PR: `npm run typecheck && npm run lint && npm test`. DB-backed t
 ## Worker and jobs
 
 - Job types: `security-scan`, `collect-sources`, `triage-items`, `weekly-bulletin`,
-  `refresh-packages`, `ops-check`, `github-scan` (`src/lib/jobs/types.ts`); handlers in `src/worker/handlers.ts`.
+  `refresh-packages`, `ops-check`, `github-scan`, `billing-check`, `billing-notify` (`src/lib/jobs/types.ts`); handlers in `src/worker/handlers.ts`.
 - Observability (docs/OPERATIONS.md, `src/lib/ops/`): a job that fails for good (runner) or a
   scheduled type without a success within its cron interval + grace (`ops-check`, every 30 min;
   `jobFreshness`, never alerts on a type never queued) emails `OPS_ALERT_EMAIL` or the instance
@@ -336,7 +350,7 @@ Checks before a PR: `npm run typecheck && npm run lint && npm test`. DB-backed t
   builds the payload with `collectFromFiles` (same code as the CLI) and ingests through
   `acceptScan`; an unchanged head (`Repo.githubHeadSha`) is skipped.
 - Schedule (UTC, `src/lib/jobs/schedule.ts`, run by `src/worker/scheduler.ts`): refresh-packages 03:00 daily, security-scan
-  04:00 daily, weekly-bulletin Monday 04:00, ops-check :10 and :40, collect-sources **hourly** with payload `{ due: true }`
+  04:00 daily, weekly-bulletin Monday 04:00, ops-check :10 and :40, billing-check 05:45 daily (docs/BILLING.md), collect-sources **hourly** with payload `{ due: true }`
   (it enqueues triage-items when done; triage also runs at :30 every 6h as a catch-up). The systemd
   scanner (`deploy/systemd/`) runs 03:30 UTC and enqueues refresh-packages itself.
 - Source classes (`Source.class`): `security` sources are fetched on every hourly run, `releases`
@@ -609,7 +623,8 @@ like, and this section says how a review reports deviations from them.
 
 ### Repository invariants
 
-- Tenant data (OrgMember, Repo, Dependency, RepoRuntime, ItemMatch, Alert, Bulletin, BulletinItem, Feedback, InterestProfile, Deadline, BulletinStream, StreamRepo, ScanToken, GithubInstallation, OrgInvite, OrgEvent) must be read and written through `withOrg(getDb(), orgId)`. A nested relation write or raw SQL on these tables is a finding. The only reads outside the layer are the ones listed under Conventions (`getOrgContext`, `listUserOrgs`, `ensureUserHasOrg`, `findInviteByToken`, `findScanTokenByHash`, `findInstallation`, the `deleteOrg` membership count, the admin's `loadOrgDirectory`).
+- Tenant data (OrgMember, Repo, Dependency, RepoRuntime, ItemMatch, Alert, Bulletin, BulletinItem, Feedback, InterestProfile, Deadline, BulletinStream, StreamRepo, ScanToken, GithubInstallation, OrgInvite, OrgEvent, Subscription) must be read and written through `withOrg(getDb(), orgId)`. A nested relation write or raw SQL on these tables is a finding. The only reads outside the layer are the ones listed under Conventions (`getOrgContext`, `listUserOrgs`, `ensureUserHasOrg`, `findInviteByToken`, `findScanTokenByHash`, `findInstallation`, `resolveSubscriptionOrg`, billing-check's org id list, the `deleteOrg` membership count, the admin's `loadOrgDirectory`).
+- `Org.plan` is written only by the billing module (`applyOrgPlan`) and the admin's Edit limits action; any other writer is a finding, and so is a billing path that lowers an `admin` plan or touches `unlimited`. A Paddle webhook event must be processed at most once (BillingEvent id) and an older `occurred_at` must never overwrite a newer subscription state. A billing action that takes a subscription, customer or org id from the browser, or skips the owner check, is a finding (P0).
 - Owner-only actions (invite, resend, revoke, change role, remove member, rename, delete org) check the role on the server inside the membership transaction; a check only in the page or UI is a finding, and so is any path that lets the last owner be removed, demoted or leave. `scripts/smoke.sh` is outside this rule (Conventions: it uses `psql` against its own throw-away stack). A new tenant table that does not cascade from `Org` is a finding (`org-data.integration.test.ts` must cover it).
 - Fix commands and derived actions never recommend a higher major than the installed release line. A command or sentence that crosses the line is a finding, with one exception: An end-of-life line gets the EOL sentence, which names the lowest supported line; that is the only derived action allowed to name a higher major, and it is worded as a migration, not a fix command. (`src/pipeline/runtime-fixes.ts`, "node 18 is end-of-life and will not get this fix; move to 22.23.4 or later"; an EOL line has no fix on its own major, so naming the supported line is the only truthful action.) An EOL sentence in command form (`npm i ...`, a `FROM`/image tag, "set node X") is a finding.
 - An item's repos have one source: `BulletinItem.affectedRepos` is the item's `affected_repos` in the synthesis input (match repos in the stream, plus repos with an alert on the item's security package), and `BulletinItem.upgrades` names exactly those repos (`alignUpgrades`; a repo without a version on record reads "installed version unknown"). A path that builds upgrades, actions or lines from another repo list is a finding. A model line or action that names only some of the affected repos is repaired after the alias restore (`completeRepoNames`, `chooseAction`), never stored as written.

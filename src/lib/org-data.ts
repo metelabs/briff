@@ -32,6 +32,7 @@ export function orgExportSections(
             createdAt: true,
             plan: true,
             planUpdatedAt: true,
+            planSource: true,
             repoLimit: true,
             streamLimit: true,
             baseImageAlerts: true,
@@ -120,6 +121,24 @@ export function orgExportSections(
             lastUsedAt: true,
             revokedAt: true,
             createdByUserId: true,
+          },
+        }),
+    ],
+    [
+      "subscriptions",
+      () =>
+        scoped.subscription.findMany({
+          orderBy: { createdAt: "asc" },
+          select: {
+            paddleSubscriptionId: true,
+            plan: true,
+            interval: true,
+            status: true,
+            currentPeriodEnd: true,
+            nextBilledAt: true,
+            scheduledChange: true,
+            canceledAt: true,
+            createdAt: true,
           },
         }),
     ],
@@ -351,7 +370,8 @@ export function orgExportStream(
 
 export type DeleteOrgResult =
   | { ok: true; userDeleted: boolean }
-  | { ok: false; reason: "not-owner" | "name-mismatch" | "instance-admin" };
+  | { ok: false; reason: "not-owner" | "name-mismatch" | "instance-admin" }
+  | { ok: false; reason: "billing"; message: string };
 
 /**
  * Deletes the org and everything attached to it (every tenant table cascades from Org),
@@ -361,7 +381,13 @@ export type DeleteOrgResult =
  */
 export async function deleteOrg(
   db: PrismaClient,
-  args: { orgId: string; userId: string; confirmName: string }
+  args: {
+    orgId: string;
+    userId: string;
+    confirmName: string;
+    /** Runs after every check, before the delete; a message refuses it (endSubscriptions). */
+    beforeDelete?: () => Promise<string | null>;
+  }
 ): Promise<DeleteOrgResult> {
   const scoped = withOrg(db, args.orgId);
   const membership = await scoped.orgMember.findFirst({
@@ -388,6 +414,8 @@ export async function deleteOrg(
   if (userGoes && admin?.id === args.userId && users > 1) {
     return { ok: false, reason: "instance-admin" };
   }
+  const refused = args.beforeDelete ? await args.beforeDelete() : null;
+  if (refused) return { ok: false, reason: "billing", message: refused };
 
   let others: string[] = [];
   const result = await scoped.$transaction(async (tx): Promise<DeleteOrgResult> => {

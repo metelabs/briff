@@ -23,4 +23,6 @@ export const SCHEDULE: ScheduleEntry[] = [
   { type: "triage-items", cron: "30 */6 * * *" },
   // Staleness alerts (src/lib/ops/check.ts).
   { type: "ops-check", cron: "10,40 * * * *" },
+  // Paddle subscriptions: missed webhooks, past_due grace, canceled periods (docs/BILLING.md).
+  { type: "billing-check", cron: "45 5 * * *" },
 ];

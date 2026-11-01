@@ -37,6 +37,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.134.0",
     "@base-ui/react": "^1.9.0",
+    "@paddle/paddle-js": "^1.6.5",
+    "@paddle/paddle-node-sdk": "^3.10.0",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "@sentry/node": "^11.10.0",

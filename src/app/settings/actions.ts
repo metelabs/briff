@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { getAuth, VERIFIED_CALLBACK } from "@/lib/auth/auth";
 import { requireOrgContext } from "@/lib/auth/session";
+import { endSubscriptions } from "@/lib/billing/manage";
 import { getDb } from "@/lib/db/client";
 import { withOrg } from "@/lib/db/with-org";
 import { log } from "@/lib/log";
@@ -102,16 +103,23 @@ export async function revokeScanTokenAction(id: string): Promise<{ ok: boolean }
 export async function deleteOrgAction(_prev: FormState, form: FormData): Promise<FormState> {
   const ctx = await requireOrgContext();
   const confirmName = String(form.get("confirmName") ?? "");
-  const res = await deleteOrg(getDb(), { orgId: ctx.orgId, userId: ctx.userId, confirmName });
+  const res = await deleteOrg(getDb(), {
+    orgId: ctx.orgId,
+    userId: ctx.userId,
+    confirmName,
+    beforeDelete: () => endSubscriptions(getDb(), ctx.orgId),
+  });
   if (!res.ok) {
     return {
       ok: false,
       message:
-        res.reason === "not-owner"
-          ? "Only an owner can delete this organisation."
-          : res.reason === "instance-admin"
-            ? "You run this instance and other accounts exist on it. Deleting your account would make the next account its admin, so it is not possible here."
-            : "The name does not match.",
+        res.reason === "billing"
+          ? res.message
+          : res.reason === "not-owner"
+            ? "Only an owner can delete this organisation."
+            : res.reason === "instance-admin"
+              ? "You run this instance and other accounts exist on it. Deleting your account would make the next account its admin, so it is not possible here."
+              : "The name does not match.",
       saved: confirmName,
     };
   }

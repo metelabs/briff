@@ -1,4 +1,5 @@
 import type { OrgEventType } from "@/generated/prisma/enums";
+import { isPlanId, PLANS } from "@/lib/plans";
 
 // One sentence per audit event (Settings -> Members, "Activity").
 
@@ -33,5 +34,19 @@ export function eventSentence(event: OrgEventFacts): string {
       return `${actor} renamed the organisation (${event.detail ?? ""})`;
     case "org_created":
       return `${actor} created the organisation`;
+    case "plan_changed":
+      return planSentence(event.detail);
   }
+}
+
+/** `plan.changed` detail: "<source>:<from>:<to>", source paddle (billing) or admin. */
+export function planChangeDetail(source: "paddle" | "admin", from: string, to: string): string {
+  return `${source}:${from}:${to}`;
+}
+
+function planSentence(detail: string | null): string {
+  const [source, from, to] = (detail ?? "").split(":");
+  const name = (id: string | undefined) => (isPlanId(id) ? PLANS[id].name : "another plan");
+  const who = source === "admin" ? "The instance admin" : "Billing";
+  return `${who} changed the plan from ${name(from)} to ${name(to)}`;
 }
