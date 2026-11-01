@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { PublicFooter, PublicHeader } from "@/components/landing/public-chrome";
 import { PageContainer } from "@/components/shell/page-container";
 import { Card } from "@/components/ui/card";
+import { isCloud } from "@/lib/env";
 import { LEGAL_LAST_UPDATED } from "@/lib/legal";
 import { cn } from "@/lib/utils";
 
@@ -81,11 +82,11 @@ export function LegalArticle({ doc }: { doc: LegalDoc }) {
 export function LegalPage({ doc }: { doc: LegalDoc }) {
   return (
     <div className="flex min-h-svh flex-col">
-      <PublicHeader />
+      <PublicHeader pricing={isCloud()} />
       <PageContainer as="main">
         <LegalArticle doc={doc} />
       </PageContainer>
-      <PublicFooter />
+      <PublicFooter pricing={isCloud()} />
     </div>
   );
 }

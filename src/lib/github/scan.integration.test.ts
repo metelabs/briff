@@ -4,12 +4,13 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
+import { resetEnvCache } from "@/lib/env";
 import { log } from "@/lib/log";
 import { acceptScan } from "@/lib/scan/accept";
 import { collectRepos } from "@scan/collect";
@@ -114,10 +115,19 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
   }
 
   it("leaves over-limit GitHub repositories unlinked and records a Repos notice", async () => {
-    const org = await db.org.create({ data: { name: "acme-capacity", repoLimit: 1 } });
+    vi.stubEnv("BRIFF_CLOUD", "true");
+    resetEnvCache();
+    const org = await db.org.create({ data: { name: "acme-capacity" } });
     orgs.push(org.id);
     const scoped = withOrg(db, org.id);
-    await scoped.repo.create({ data: { orgId: org.id, name: "acme/existing", source: "local" } });
+    // Free plan: 10 repos, all taken.
+    await scoped.repo.createMany({
+      data: Array.from({ length: 10 }, (_, i) => ({
+        orgId: org.id,
+        name: `acme/existing-${i}`,
+        source: "local" as const,
+      })),
+    });
     const installationId = `7${Date.now()}`.slice(0, 12);
     await linkInstallation(db, {
       orgId: org.id,
@@ -138,11 +148,13 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
     if (!("counts" in result)) throw new Error("Unexpected skip");
     expect(result.counts.repoLimitSkipped).toBe(1);
     expect(result.counts.ingested).toBe(0);
-    expect(await scoped.repo.count()).toBe(1);
+    expect(await scoped.repo.count()).toBe(10);
     expect(await scoped.repo.count({ where: { githubInstallationId: { not: null } } })).toBe(0);
     expect((await db.org.findUniqueOrThrow({ where: { id: org.id } })).githubRepoLimitReached).toBe(
       true
     );
+    vi.unstubAllEnvs();
+    resetEnvCache();
   });
 
   it("fetches only the scanned blobs and stores the same repo record as the CLI upload", async () => {

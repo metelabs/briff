@@ -28,6 +28,8 @@ export function orgExportSections(
             id: true,
             name: true,
             createdAt: true,
+            plan: true,
+            planUpdatedAt: true,
             repoLimit: true,
             streamLimit: true,
             baseImageAlerts: true,

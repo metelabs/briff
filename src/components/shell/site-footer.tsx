@@ -14,12 +14,13 @@ const LINKS = [
   { href: "https://metelabs.dev", label: "Made by Metelabs" },
 ];
 
-/** One muted line of links under every shell page. */
-export function SiteFooter() {
+/** One muted line of links under every shell page; `pricing` on the hosted service only. */
+export function SiteFooter({ pricing = false }: { pricing?: boolean }) {
+  const links = pricing ? [...LINKS, { href: "/pricing", label: "Pricing" }] : LINKS;
   return (
     <footer className="border-line mt-auto border-t">
       <PageContainer className="text-fg-muted flex flex-wrap items-center gap-x-5 gap-y-1 py-5 text-[12.5px]">
-        {LINKS.map((link) => (
+        {links.map((link) => (
           <a
             key={link.label}
             href={link.href}

@@ -1,5 +1,6 @@
 import { BookMarked, CircleAlert, CircleCheck } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { AppShell } from "@/components/shell/app-shell";
 import { ConnectReposButton } from "@/components/shell/connect-sheet";
@@ -12,6 +13,8 @@ import { withOrg } from "@/lib/db/with-org";
 import { plural, shortDateTime } from "@/lib/format";
 import { connectionLabel, dependencySummary, isNewRepo, runtimeChips } from "@/lib/repos";
 import { GITHUB_FLOW_MESSAGES, isGithubFlowStatus } from "@/lib/github/status";
+import { loadOrgLimits } from "@/lib/org-limits";
+import { PLANS } from "@/lib/plans";
 import { loadStreamScope } from "@/lib/stream-scope";
 
 import { RepoList, type RepoListRow } from "./_client";
@@ -30,10 +33,13 @@ export default async function ReposPage({
   // Set by the GitHub App routes on their way back (src/lib/github/status.ts).
   const githubStatus = isGithubFlowStatus(query.github) ? GITHUB_FLOW_MESSAGES[query.github] : null;
   const scope = await loadStreamScope(ctx.orgId);
-  const limits = await getDb().org.findUniqueOrThrow({
-    where: { id: ctx.orgId },
-    select: { githubRepoLimitReached: true, repoLimit: true },
-  });
+  const [{ githubRepoLimitReached }, limits] = await Promise.all([
+    getDb().org.findUniqueOrThrow({
+      where: { id: ctx.orgId },
+      select: { githubRepoLimitReached: true },
+    }),
+    loadOrgLimits(getDb(), ctx.orgId),
+  ]);
   const db = withOrg(getDb(), ctx.orgId);
   const [repos, direct, open, otherEcosystems] = await Promise.all([
     db.repo.findMany({
@@ -146,11 +152,15 @@ export default async function ReposPage({
 
   return (
     <AppShell ctx={ctx} active="/repos">
-      {limits.githubRepoLimitReached && (
+      {githubRepoLimitReached && limits.repoLimit !== null && (
         <p role="status" className="text-upgrade mb-4 text-[13px]">
           Some GitHub repositories were previously left unlinked at capacity. Current repository
-          limit: {limits.repoLimit}. Rescan the installation after freeing space or asking the
-          instance admin to raise the limit.
+          limit: {limits.repoLimit} on the {PLANS[limits.plan].name} plan. Rescan the installation
+          after freeing space or moving to a larger plan in{" "}
+          <Link href="/settings/billing" className="underline underline-offset-4">
+            Settings → Billing
+          </Link>
+          .
         </p>
       )}
       <PageHeader

@@ -1,4 +1,4 @@
-import { OrgLimitError, repoLimitMessage } from "@/lib/org-limits";
+import { loadOrgLimits, OrgLimitError, repoLimitMessage } from "@/lib/org-limits";
 import { mergeActionMetadata } from "@scan/actions";
 import "server-only";
 
@@ -179,13 +179,10 @@ export async function ingestScan(
         select: { id: true },
       });
       if (!existing) {
-        const org = await tx.org.findUniqueOrThrow({
-          where: { id: orgId },
-          select: { repoLimit: true },
-        });
-        if ((await tx.repo.count()) >= org.repoLimit) {
+        const limits = await loadOrgLimits(tx, orgId);
+        if (limits.repoLimit !== null && (await tx.repo.count()) >= limits.repoLimit) {
           if (options.skipRepoLimit) return null;
-          throw new OrgLimitError(repoLimitMessage(org.repoLimit));
+          throw new OrgLimitError(repoLimitMessage(limits));
         }
       }
       const saved = existing

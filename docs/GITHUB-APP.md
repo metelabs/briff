@@ -243,10 +243,11 @@ references using the nearest central file. Imported MSBuild files are not fetche
 
 ## Organisation capacity
 
-New organisations have a 10-repository limit shared with CLI/Action uploads. A scan
-leaves extra GitHub repositories unlinked when capacity is exhausted; their existing
-installation permission on GitHub is unchanged. Repos displays a capacity note.
-Ask the instance admin to raise the limit in Admin, then rescan the installation.
+On the hosted service the plan's repository limit (Free: 10) is shared with CLI/Action
+uploads; a self-hosted instance has none. A scan leaves extra GitHub repositories
+unlinked when capacity is exhausted; their existing installation permission on GitHub is
+unchanged. Repos displays a capacity note. Move to a larger plan, or have the instance
+admin raise the limit in Admin, then rescan the installation.
 Concurrent scans enforce the same limit at the shared ingestion write boundary.
 
 Pub: the shared exported file list includes `pubspec.lock` and `pubspec.yaml` at the root

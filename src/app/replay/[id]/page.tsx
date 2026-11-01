@@ -5,6 +5,7 @@ import { OG_IMAGE } from "@/components/landing/links";
 import { PublicFooter, PublicHeader } from "@/components/landing/public-chrome";
 import { ReplayMethod, ReplayTimeline, SampleRepos } from "@/components/replay/replay-timeline";
 import { PageContainer } from "@/components/shell/page-container";
+import { isCloud } from "@/lib/env";
 import { publicSiteUrl } from "@/lib/public-site";
 import { isPublicReplayId, publicReplay, replayEmails } from "@/replay/public";
 import { REPLAY_KICKER, replayEmailsSentence, replayHeading } from "@/replay/render";
@@ -44,13 +45,14 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function ReplayPage({ params }: Params) {
   const { id } = await params;
   if (!isPublicReplayId(id)) notFound();
+  const cloud = isCloud();
   const result = publicReplay(id);
   const scenario = result.scenario;
   const emails = replayEmails(result).length;
 
   return (
     <div className="flex min-h-svh flex-col">
-      <PublicHeader />
+      <PublicHeader pricing={cloud} />
       <PageContainer as="main" className="pb-16">
         <header className="rise pt-7 pb-6">
           <p className="text-fg-muted text-[13px]">{REPLAY_KICKER}</p>
@@ -67,7 +69,7 @@ export default async function ReplayPage({ params }: Params) {
         <ReplayTimeline result={result} />
         <ReplayMethod id={scenario.id} />
       </PageContainer>
-      <PublicFooter />
+      <PublicFooter pricing={cloud} />
     </div>
   );
 }

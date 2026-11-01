@@ -492,15 +492,16 @@ reading advice rather than a guessed upgrade.
 
 ### Organisation capacity
 
-New organisations can store 10 repositories and 2 streams, including the default
-stream. All stored repos count, including excluded ones. Existing repositories can
-still refresh at capacity. A new repo over capacity gets HTTP 409 with
-`Repository limit reached (10)`; the CLI and GitHub Action print that message and
+On the hosted service an organisation's plan sets how many repositories and streams it
+can store (Free: 10 and 2, including the default stream; `src/lib/plans.ts`); a
+self-hosted instance has no limits. All stored repos count, including excluded ones.
+Existing repositories can still refresh at capacity. A new repo over capacity gets HTTP
+409 with `Repository limit reached (10 on the Free plan)`; the CLI and GitHub Action print that message and
 exit 1 after sending all chunks. Existing repos refresh even when a rejected new
 repo appears earlier in the upload; accepted repos are retained. The API reports
 capacity errors with `code: "REPO_LIMIT"`, the accepted `repos` and rejected names.
-Remove an unused repo or ask the instance admin to raise the limit, then
-rerun the scan. The Admin page can raise both limits.
+Remove an unused repo or move to a larger plan (Settings → Billing), then rerun the
+scan. The instance admin can also set the plan or raise a limit in Admin.
 
 ### Maven and Gradle
 

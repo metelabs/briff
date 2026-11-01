@@ -1,4 +1,4 @@
-import { repoLimitMessage } from "@/lib/org-limits";
+import { loadOrgLimits, repoLimitMessage } from "@/lib/org-limits";
 import { z } from "zod";
 
 import { getDb } from "@/lib/db/client";
@@ -77,14 +77,10 @@ export async function POST(request: Request): Promise<Response> {
     "scan: ingested"
   );
   if (rejected.length > 0) {
-    const org = await db.org.findUniqueOrThrow({
-      where: { id: orgId },
-      select: { repoLimit: true },
-    });
     return Response.json(
       {
         code: "REPO_LIMIT",
-        error: repoLimitMessage(org.repoLimit),
+        error: repoLimitMessage(await loadOrgLimits(db, orgId)),
         rejected,
         repos,
         refreshJob: job,

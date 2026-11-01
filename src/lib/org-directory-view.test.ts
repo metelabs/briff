@@ -9,8 +9,11 @@ const row = (i: number, over: Partial<OrgRow> = {}): OrgRow => ({
   ownerEmail: `owner${i}@example.com`,
   members: 1,
   repos: 3,
-  repoLimit: 10,
   streams: 1,
+  plan: "free",
+  repoOverride: null,
+  streamOverride: null,
+  repoLimit: 10,
   streamLimit: 2,
   ...over,
 });
@@ -18,7 +21,9 @@ const row = (i: number, over: Partial<OrgRow> = {}): OrgRow => ({
 describe("orgPage", () => {
   const rows = Array.from({ length: 30 }, (_, i) => row(i + 1));
   rows[4] = row(5, { repos: 10 });
-  rows[9] = row(10, { streamLimit: 5 });
+  rows[9] = row(10, { streamOverride: 5, streamLimit: 5 });
+  // Unlimited never counts as at the limit, however much it uses.
+  rows[14] = row(15, { plan: "unlimited", repos: 400, repoLimit: null, streamLimit: null });
   rows[19] = row(20, { name: "Acme Studio", ownerEmail: "Lead@Acme.example" });
 
   it("pages 25 rows at a time, newest first, and clamps the page", () => {

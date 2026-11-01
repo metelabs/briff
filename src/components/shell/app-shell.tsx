@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { OrgContext } from "@/lib/auth/session";
+import { isCloud } from "@/lib/env";
 import { isInstanceAdmin } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { hasUnseenAlerts } from "@/lib/member-state";
@@ -55,7 +56,7 @@ export async function AppShell({
           )}
           {children}
         </PageContainer>
-        <SiteFooter />
+        <SiteFooter pricing={isCloud()} />
       </div>
     </ConnectSheetProvider>
   );

@@ -1,9 +1,7 @@
 // The instance admin's organisation table: pure filtering, sorting and paging over the
 // rows loadOrgDirectory (org-directory.ts) reads. No database here, so it is testable.
 
-/** Prisma defaults of Org.repoLimit / Org.streamLimit; anything else is a custom limit. */
-export const DEFAULT_REPO_LIMIT = 10;
-export const DEFAULT_STREAM_LIMIT = 2;
+import { atLimit as reached, type PlanId } from "@/lib/plans";
 
 export const ORG_PAGE_SIZE = 25;
 
@@ -18,18 +16,23 @@ export interface OrgRow {
   ownerEmail: string | null;
   members: number;
   repos: number;
-  repoLimit: number;
   streams: number;
-  streamLimit: number;
+  plan: PlanId;
+  /** The admin's overrides (Org.repoLimit / streamLimit); null = the plan's limit. */
+  repoOverride: number | null;
+  streamOverride: number | null;
+  /** The limits in force (limitsFor); null = unlimited, as on every self-hosted org. */
+  repoLimit: number | null;
+  streamLimit: number | null;
 }
 
 /** Uploads beyond the repo limit are refused, so "at" the limit is where it bites. */
 export function atLimit(row: Pick<OrgRow, "repos" | "repoLimit" | "streams" | "streamLimit">) {
-  return row.repos >= row.repoLimit || row.streams >= row.streamLimit;
+  return reached(row.repos, row.repoLimit) || reached(row.streams, row.streamLimit);
 }
 
-export function customLimits(row: Pick<OrgRow, "repoLimit" | "streamLimit">): boolean {
-  return row.repoLimit !== DEFAULT_REPO_LIMIT || row.streamLimit !== DEFAULT_STREAM_LIMIT;
+export function customLimits(row: Pick<OrgRow, "repoOverride" | "streamOverride">): boolean {
+  return row.repoOverride !== null || row.streamOverride !== null;
 }
 
 export function parseOrgQuery(params: Record<string, string | string[] | undefined>): {
