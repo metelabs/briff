@@ -57,7 +57,8 @@ export function githubScanKey(payload: GithubScanPayload): string {
         .update([...payload.repos].sort().join("\n"))
         .digest("hex")
     : "*";
-  return `github-scan:${payload.installationId}:${repos}`;
+  // A forced scan keeps its own key: deduped into a pending ordinary scan it would lose `force`.
+  return `github-scan:${payload.installationId}:${repos}${payload.force ? ":force" : ""}`;
 }
 
 /** Per repo: blobs fetched at most, and the largest blob read (tree entry size). */

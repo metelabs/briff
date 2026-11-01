@@ -124,6 +124,9 @@ describe.skipIf(!url)("alerts resolve on a newer scan", () => {
 
   it("resolves the alert when the next upload has the fixed version, in that org only", async () => {
     expect((await alertOf(orgId)).resolvedAt).toBeNull();
+    expect((await db.advisory.findUniqueOrThrow({ where: { osvId } })).packages).toEqual([
+      { ecosystem: "npm", name: pkg },
+    ]);
     const [result] = await ingestScan(db, orgId, upload("4.17.21"));
     expect(result).toMatchObject({ alertsResolved: 1, alertsReopened: 0 });
     const alert = await alertOf(orgId);

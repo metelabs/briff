@@ -214,13 +214,14 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   does not read `reviewedAt`.
 - Alert resolution (`src/security/resolution.ts`, run in `ingestScan`): an upload that no longer
   has an affected version of an alert's package sets `Alert.resolvedAt` (never deletes; only when
-  the previous upload had the package and the new one carries its ecosystem; versions the ranges
-  cannot place keep it open), and an affected version coming back clears it, as does a
+  the previous upload had the package, the new one carries its ecosystem and none of the other
+  packages the OSV record covers (`Advisory.packages`, null until the next security scan
+  refetches the row); versions the ranges cannot place keep it open), and an affected version coming back clears it, as does a
   security-scan that OSV says is at risk again (no second email). Resolved alerts leave the Alerts
   lists, Home counts, the Alerts dot, Repos counts and the weekly bulletin input; stored bulletin
   pages keep theirs. Alerts shows "Resolved: N this week" and per section "Fixed since your last
   visit" (resolved after the previous `alertsSeenAt`). "Re-check now" (`recheckAction`) queues a
-  forced `github-scan` per GitHub App installation, once per 10 minutes per org
+  forced `github-scan` per GitHub App installation (own dedupe key `...:force`), once per 10 minutes per org
   (`Org.recheckRequestedAt`), polls until the jobs are done and reloads; briff-scan repos get the
   upload command instead. The sticky section bar (`AlertSectionNav`) is `data-sticky-top`;
   `stickyOffset` counts a stacked bar from its CSS `top`.

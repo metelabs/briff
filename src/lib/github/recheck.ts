@@ -25,7 +25,12 @@ export async function githubScanInFlight(
   const job = await db.job.findFirst({
     where: {
       type: "github-scan",
-      dedupeKey: { in: installationIds.map((installationId) => githubScanKey({ installationId })) },
+      dedupeKey: {
+        in: installationIds.flatMap((installationId) => [
+          githubScanKey({ installationId }),
+          githubScanKey({ installationId, force: true }),
+        ]),
+      },
       status: { in: ["pending", "running"] },
     },
     select: { id: true },

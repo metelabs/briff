@@ -497,6 +497,10 @@ model Advisory {
   // OSV `modified` per merged record ({"GHSA-…": "2023-11-…", "GO-…": "2024-05-…"}): each
   // record is refetched when its own timestamp moves.
   recordsModified Json?
+  // Every package the merged OSV records cover ([{ ecosystem, name }]); alert resolution on
+  // upload only judges an advisory it knows all packages of. Null on rows stored before it;
+  // the next security scan refetches those.
+  packages        Json?
   publishedAt     DateTime?
   // The newest `modified` of the merged OSV records.
   modifiedAt      DateTime?

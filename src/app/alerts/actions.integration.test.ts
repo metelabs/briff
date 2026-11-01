@@ -123,7 +123,7 @@ describe.skipIf(!url)("re-check action against Postgres", () => {
   let otherOrgId = "";
   const jobs = () =>
     db.job.findMany({
-      where: { type: "github-scan", dedupeKey: `github-scan:${installationId}:*` },
+      where: { type: "github-scan", dedupeKey: `github-scan:${installationId}:*:force` },
       select: { id: true, payload: true, status: true },
     });
 
@@ -137,7 +137,7 @@ describe.skipIf(!url)("re-check action against Postgres", () => {
   });
 
   afterAll(async () => {
-    await db.job.deleteMany({ where: { dedupeKey: `github-scan:${installationId}:*` } });
+    await db.job.deleteMany({ where: { dedupeKey: `github-scan:${installationId}:*:force` } });
     await db.org.deleteMany({ where: { id: { in: [orgId, otherOrgId] } } });
     await db.$disconnect();
   });

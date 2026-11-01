@@ -40,6 +40,8 @@ interface StoredAdvisory {
   osvId: string;
   aliases: string[] | null;
   recordsModified: Record<string, unknown> | null;
+  /** Stored before covered packages were recorded: refetched once. */
+  packagesMissing: boolean;
 }
 
 type ScanCounts = Record<
@@ -77,9 +79,16 @@ async function storeAdvisories(
     if (fresh.length === 0) return [];
     // Advisory is a global catalog table (no tenant data), read raw for the jsonb `?|` match.
     const rows = await db.$queryRaw<
-      { id: string; osvId: string; aliases: unknown; recordsModified: unknown }[]
+      {
+        id: string;
+        osvId: string;
+        aliases: unknown;
+        recordsModified: unknown;
+        packagesMissing: boolean;
+      }[]
     >`
-      SELECT "id", "osvId", "aliases", "recordsModified" FROM "advisory"
+      SELECT "id", "osvId", "aliases", "recordsModified", ("packages" IS NULL) AS "packagesMissing"
+      FROM "advisory"
       WHERE "osvId" = ANY(${fresh}::text[]) OR "aliases" ?| ${fresh}::text[]`;
     const known = new Map([...rowOf.values()].map((r) => [r.id, r]));
     const loaded = rows.map(
@@ -102,7 +111,8 @@ async function storeAdvisories(
   // (GHSA-2c4m-59x9-fr2g last moved in 2023, its GO-2023-1737 in 2024).
   const stale = (id: string, hit: Wanted): boolean => {
     const row = rowOf.get(id);
-    if (!row || row.aliases === null || row.recordsModified === null) return true;
+    if (!row || row.aliases === null || row.recordsModified === null || row.packagesMissing)
+      return true;
     const known = row.recordsModified[id];
     if (typeof known !== "string") return true;
     return hit.modified !== null && new Date(hit.modified) > new Date(known);
@@ -211,6 +221,7 @@ async function storeAdvisories(
     const data = {
       ...fields,
       affected: fields.affected as unknown as Prisma.InputJsonValue,
+      packages: fields.packages as unknown as Prisma.InputJsonValue,
       aliases,
       recordsModified,
     };

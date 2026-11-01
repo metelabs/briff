@@ -135,6 +135,8 @@ describe("githubScanKey", () => {
 
   it("is one key per installation and repo set", () => {
     expect(githubScanKey({ installationId: "1" })).toBe("github-scan:1:*");
+    // A forced scan is not swallowed by a pending ordinary one (it would lose `force`).
+    expect(githubScanKey({ installationId: "1", force: true })).toBe("github-scan:1:*:force");
     expect(githubScanKey({ installationId: "1", repos: ["b/x", "a/y"] })).toBe(
       githubScanKey({ installationId: "1", repos: ["a/y", "b/x"] })
     );

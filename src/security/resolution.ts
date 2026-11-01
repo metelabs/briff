@@ -12,12 +12,16 @@ export interface ResolvableAlert {
   /** The advisory's package and its stored ranges (Advisory.affected). */
   packageId: string;
   ecosystem: string;
+  packageName: string;
   affected: unknown;
+  /** Every package the OSV record covers (Advisory.packages); null when not known yet. */
+  covered: unknown;
 }
 
 export interface InstalledDependency {
   packageId: string;
   ecosystem: string;
+  name: string;
   version: string;
   unresolved: boolean;
   constraint: boolean;
@@ -30,6 +34,39 @@ export interface ResolutionPlan {
 
 function rangesOf(affected: unknown): OsvRange[] {
   return Array.isArray(affected) ? (affected as OsvRange[]) : [];
+}
+
+function coveredList(covered: unknown): { ecosystem: string; name: string }[] | null {
+  if (!Array.isArray(covered)) return null;
+  return covered.flatMap((c: unknown) =>
+    typeof c === "object" &&
+    c !== null &&
+    "ecosystem" in c &&
+    "name" in c &&
+    typeof c.ecosystem === "string" &&
+    typeof c.name === "string"
+      ? [{ ecosystem: c.ecosystem, name: c.name }]
+      : []
+  );
+}
+
+/**
+ * Whether the upload has another package the OSV record covers. Its ranges are not stored
+ * (Advisory.affected is the advisory's own package), so such an alert is left to the
+ * security scan. Unknown coverage counts as covered.
+ */
+function otherCoveredInstalled(
+  alert: Pick<ResolvableAlert, "ecosystem" | "packageName" | "covered">,
+  installed: readonly InstalledDependency[]
+): boolean {
+  const covered = coveredList(alert.covered);
+  if (covered === null) return true;
+  const others = new Set(
+    covered
+      .filter((c) => !(c.ecosystem === alert.ecosystem && c.name === alert.packageName))
+      .map((c) => `${c.ecosystem}\0${c.name}`)
+  );
+  return installed.some((d) => others.has(`${d.ecosystem}\0${d.name}`));
 }
 
 /**
@@ -51,7 +88,8 @@ export function stillAffected(
  * when the previous upload had its package (so the alert was about this package and not
  * another one the same OSV record covers) and the new upload carries the package's
  * ecosystem at all (an empty or partial upload, e.g. a lockfile that failed to parse,
- * says nothing about it). A resolved alert reopens when an affected install is back.
+ * says nothing about it), and no other package of the same OSV record is installed (its
+ * ranges are unknown here). A resolved alert reopens when an affected install is back.
  */
 export function planAlertResolution(
   alerts: readonly ResolvableAlert[],
@@ -63,7 +101,12 @@ export function planAlertResolution(
   for (const alert of alerts) {
     const affected = stillAffected(alert, installed);
     if (alert.resolvedAt === null) {
-      if (!affected && previousPackageIds.has(alert.packageId) && ecosystems.has(alert.ecosystem))
+      if (
+        !affected &&
+        previousPackageIds.has(alert.packageId) &&
+        ecosystems.has(alert.ecosystem) &&
+        !otherCoveredInstalled(alert, installed)
+      )
         plan.resolve.push(alert.id);
     } else if (affected) {
       plan.reopen.push(alert.id);

@@ -208,7 +208,8 @@ export async function ingestScan(
                 select: {
                   packageId: true,
                   affected: true,
-                  package: { select: { ecosystem: true } },
+                  packages: true,
+                  package: { select: { ecosystem: true, name: true } },
                 },
               },
             },
@@ -257,7 +258,9 @@ export async function ingestScan(
           resolvedAt: a.resolvedAt,
           packageId: a.advisory.packageId,
           ecosystem: a.advisory.package.ecosystem,
+          packageName: a.advisory.package.name,
           affected: a.advisory.affected,
+          covered: a.advisory.packages,
         })),
         previousPackageIds,
         repo.dependencies.flatMap((dep) => {
@@ -267,6 +270,7 @@ export async function ingestScan(
                 {
                   packageId,
                   ecosystem: dep.ecosystem,
+                  name: dep.name,
                   version: dep.version,
                   unresolved: dep.unresolved,
                   constraint: dep.constraint,

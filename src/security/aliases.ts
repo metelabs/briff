@@ -1,6 +1,6 @@
 import { severityRank } from "@/security/plan";
 import { toAdvisoryFields, type AdvisoryFields, type OsvVuln } from "@/sources/osv";
-import type { Ecosystem } from "@scan/ecosystems";
+import { isEcosystem, normalizePackageName, type Ecosystem } from "@scan/ecosystems";
 
 // One vulnerability, one Advisory. OSV answers a package query with every database's entry
 // for it: GitHub's GHSA next to the Go (GO-*) or PyPI (PYSEC-*) one, linked through
@@ -60,6 +60,26 @@ export interface MergedAdvisory extends AdvisoryFields {
   aliases: string[];
   /** Each merged record's own OSV `modified`. */
   recordsModified: Record<string, string>;
+  /** Every package the merged records cover (one OSV record can cover several). */
+  packages: CoveredPackage[];
+}
+
+export interface CoveredPackage {
+  ecosystem: string;
+  name: string;
+}
+
+/** The packages a group's records list under `affected`, names stored the way Package rows are. */
+export function coveredPackages(group: readonly Pick<OsvVuln, "affected">[]): CoveredPackage[] {
+  const seen = new Map<string, CoveredPackage>();
+  for (const vuln of group) {
+    for (const { package: pkg } of vuln.affected) {
+      if (!pkg || !isEcosystem(pkg.ecosystem)) continue;
+      const name = normalizePackageName(pkg.ecosystem, pkg.name);
+      seen.set(`${pkg.ecosystem}\0${name}`, { ecosystem: pkg.ecosystem, name });
+    }
+  }
+  return [...seen.values()];
 }
 
 /**
@@ -93,5 +113,6 @@ export function mergeAliasGroup(
     modifiedAt: modified.length > 0 ? new Date(Math.max(...modified)) : null,
     aliases,
     recordsModified: Object.fromEntries(sorted.map((v) => [v.id, v.modified])),
+    packages: coveredPackages(sorted),
   };
 }

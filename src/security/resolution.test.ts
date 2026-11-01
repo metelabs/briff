@@ -15,18 +15,21 @@ const alert = (over: Partial<ResolvableAlert> = {}): ResolvableAlert => ({
   resolvedAt: null,
   packageId: "p-lodash",
   ecosystem: "npm",
+  packageName: "lodash",
   affected: RANGES,
+  covered: [{ ecosystem: "npm", name: "lodash" }],
   ...over,
 });
 const dep = (over: Partial<InstalledDependency> = {}): InstalledDependency => ({
   packageId: "p-lodash",
   ecosystem: "npm",
+  name: "lodash",
   version: "4.17.20",
   unresolved: false,
   constraint: false,
   ...over,
 });
-const other = dep({ packageId: "p-other", version: "1.0.0" });
+const other = dep({ packageId: "p-other", name: "other", version: "1.0.0" });
 const before = new Set(["p-lodash"]);
 
 describe("stillAffected", () => {
@@ -75,6 +78,23 @@ describe("planAlertResolution", () => {
   it("does not resolve an alert whose package the repo did not have before", () => {
     // Another package of the same OSV record raised it; this upload cannot judge it.
     expect(planAlertResolution([alert()], new Set(), [other])).toEqual({ resolve: [], reopen: [] });
+  });
+
+  it("leaves an alert open while another package of the same OSV record is installed", () => {
+    // payload's advisory also covers its db driver; only the stored package's ranges are known.
+    const covered = [
+      { ecosystem: "npm", name: "lodash" },
+      { ecosystem: "npm", name: "lodash-driver" },
+    ];
+    const driver = dep({ packageId: "p-driver", name: "lodash-driver", version: "1.0.0" });
+    const fixed = dep({ version: "4.17.21" });
+    expect(planAlertResolution([alert({ covered })], before, [fixed, driver]).resolve).toEqual([]);
+    expect(planAlertResolution([alert({ covered })], before, [fixed]).resolve).toEqual(["a1"]);
+  });
+
+  it("does not resolve while the advisory's packages are not known yet", () => {
+    const fixed = [dep({ version: "4.17.21" })];
+    expect(planAlertResolution([alert({ covered: null })], before, fixed).resolve).toEqual([]);
   });
 
   it("reopens a resolved alert when an affected version comes back, and leaves it otherwise", () => {
