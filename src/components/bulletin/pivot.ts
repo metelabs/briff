@@ -42,3 +42,36 @@ export function pivotReducer(state: PivotState, action: PivotAction): PivotState
       return { ...state, target: null };
   }
 }
+
+/** A repo name on an item row; `clickable` when the By repo view has a card for it. */
+export interface RepoName {
+  repo: string;
+  clickable: boolean;
+}
+
+/** Marks each repo that has a By repo card (`cards`, the groups' repo names) as clickable. */
+export function repoNamesOf(repos: readonly string[], cards: ReadonlySet<string>): RepoName[] {
+  return repos.map((repo) => ({ repo, clickable: cards.has(repo) }));
+}
+
+/** Whether any item on the page names a repo with a By repo card (the click hint's condition). */
+export function hasClickableRepo(
+  items: readonly { affectedRepos: readonly string[] }[],
+  cards: ReadonlySet<string>
+): boolean {
+  return items.some((i) => i.affectedRepos.some((r) => cards.has(r)));
+}
+
+/**
+ * The chips a row shows: every repo up to `limit`, else `limit - 1` and a "+N" chip for the
+ * rest until it is expanded.
+ */
+export function chipLayout<T>(
+  repos: readonly T[],
+  limit: number,
+  expanded: boolean
+): { shown: readonly T[]; more: number } {
+  if (expanded || repos.length <= limit) return { shown: repos, more: 0 };
+  const shown = repos.slice(0, Math.max(1, limit - 1));
+  return { shown, more: repos.length - shown.length };
+}

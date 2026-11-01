@@ -62,9 +62,9 @@ the user with the earliest `createdAt`). There is no admin flag or role to set; 
 own account right after the first start, before you share the URL.
 
 - Every account gets its own organisation with 10 repositories and 2 streams. The admin's
-  **Admin** page (`/admin`) can raise an organisation's limits, queue jobs by hand
-  (`collect-sources`, `security-scan`, `weekly-bulletin`, ...), send a test email and preview
-  a synthesis.
+  **Admin** page (`/admin`) shows instance totals, can raise an organisation's limits and
+  send a test email; **Admin → Runs** (`/admin/runs`) queues jobs by hand (`collect-sources`,
+  `security-scan`, `weekly-bulletin`, ...).
 - Sign-up is open by default. To close it after your account exists, set
   `ALLOW_SIGNUP=false` in `.env` and run `docker compose up -d`. The first account can always
   be created, even with `ALLOW_SIGNUP=false`. There is no invite system.

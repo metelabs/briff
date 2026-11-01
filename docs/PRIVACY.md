@@ -85,7 +85,7 @@ the server just before it is sent, and the answer is mapped back before anything
   `service:<key>`) only; they have no repo field.
 
 `src/pipeline/llm-payload.integration.test.ts` builds an org with a distinctive name, member,
-email, scan token and repos, runs the preview synthesis, the profile refresh and a triage
+email, scan token and repos, runs the stream's synthesis request, the profile refresh and a triage
 request through the real code, and fails if any of those values appears in what would be
 sent.
 

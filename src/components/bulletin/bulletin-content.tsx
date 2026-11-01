@@ -22,6 +22,7 @@ import {
 } from "@/pipeline/bulletin-by-repo";
 import {
   advisoryCount,
+  allItems,
   BULLETIN_ALERT_LIMIT,
   restCount,
   type BulletinView,
@@ -37,7 +38,9 @@ import {
   PivotPane,
   PivotTabs,
   RepoChip,
+  RepoChips,
 } from "./pivot-client";
+import { hasClickableRepo, repoNamesOf, type RepoName } from "./pivot";
 
 // The bulletin as /b/<id> renders it, from a BulletinView alone: no database, no session.
 // The page passes the feedback trio (a Server Action); the landing page's sample has none.
@@ -65,8 +68,16 @@ export function BulletinContent({
   const newAdvisories = advisoryCount(view.alerts);
   const folded = restCount(view);
   const groups = groupByRepo(view, t);
+  const repoCards = new Set(groups.flatMap((g) => (g.repo ? [g.repo] : [])));
+  const repoNames = (item: BulletinViewItem): RepoName[] =>
+    repoNamesOf(item.affectedRepos, repoCards);
+  const anyClickable = hasClickableRepo(allItems(view), repoCards);
   // "Repo names are clickable" sits once, next to the first chip row of the page.
   const chipHintItem = view.act.find((i) => i.affectedRepos.length > 0)?.itemId ?? null;
+  const restRows = view.rest.length + view.minor.length;
+  const minorLeft = Math.max(0, view.minorCount - view.minor.length);
+  const minorNote =
+    minorLeft === 0 ? null : view.minor.length > 0 ? t.minor_more(minorLeft) : t.minor(minorLeft);
 
   return (
     <article className="min-w-0 [overflow-wrap:anywhere]" lang={view.language}>
@@ -77,11 +88,7 @@ export function BulletinContent({
               <WeekPill>{view.weekLabel}</WeekPill>
               {view.streamName && <span className="text-fg font-medium">{view.streamName}</span>}
               <span>
-                {view.preview
-                  ? "Preview, not emailed"
-                  : view.emailSentAt
-                    ? `Emailed ${shortDate(view.emailSentAt)}`
-                    : "Not emailed"}
+                {view.emailSentAt ? `Emailed ${shortDate(view.emailSentAt)}` : "Not emailed"}
               </span>
               {signedIn && (
                 <>
@@ -92,12 +99,6 @@ export function BulletinContent({
                 </>
               )}
             </div>
-            {view.preview && (
-              <p className="mt-3">
-                <Tag kind="wait">Preview</Tag>{" "}
-                <span className="text-fg-muted font-mono text-[12px]">{view.previewModel}</span>
-              </p>
-            )}
             <Headline_ className="type-hero my-3.5">
               <Headline count={view.act.length} security={securityAct > 0} />
             </Headline_>
@@ -150,11 +151,13 @@ export function BulletinContent({
 
         <div className="rise mb-4 flex flex-wrap items-center justify-between gap-3 [--i:2]">
           <PivotTabs />
-          <PivotPane when="item">
-            <span className="text-fg-muted hidden text-[13px] min-[560px]:inline">
-              Click a repo name to see everything for that repo
-            </span>
-          </PivotPane>
+          {anyClickable && (
+            <PivotPane when="item">
+              <span className="text-fg-muted hidden text-[13px] min-[560px]:inline">
+                Click a repo name to see everything for that repo
+              </span>
+            </PivotPane>
+          )}
         </div>
 
         <PivotPane when="item">
@@ -186,6 +189,7 @@ export function BulletinContent({
                       <KnowRow
                         key={item.itemId}
                         item={item}
+                        repos={repoNames(item)}
                         language={view.language}
                         t={t}
                         feedback={feedback}
@@ -202,8 +206,17 @@ export function BulletinContent({
               <AdvisoriesCard view={view} t={t} signedIn={signedIn} />
               {folded > 0 && (
                 <div className="rise [--i:6]">
-                  <FoldedBar count={folded}>
-                    <RestList view={view} t={t} language={view.language} feedback={feedback} />
+                  <FoldedBar count={folded} note={minorNote ?? undefined}>
+                    {restRows > 0 ? (
+                      <RestList
+                        view={view}
+                        t={t}
+                        language={view.language}
+                        feedback={feedback}
+                        repoNames={repoNames}
+                        minorNote={minorNote}
+                      />
+                    ) : undefined}
                   </FoldedBar>
                 </div>
               )}
@@ -215,13 +228,6 @@ export function BulletinContent({
           <RepoGrid groups={groups} t={t} />
         </PivotPane>
       </BulletinPivot>
-
-      {view.preview && (
-        <p className="text-fg-muted mt-7 text-right font-mono text-[11.5px]">
-          {view.model} · {view.promptVersion} ·{" "}
-          {view.createdAt.toISOString().slice(0, 16).replace("T", " ")} UTC
-        </p>
-      )}
     </article>
   );
 }
@@ -384,17 +390,15 @@ function ActCard({
   );
 }
 
-function reposText(repos: readonly string[]): string {
-  return repos.length > 3 ? plural(repos.length, "repo") : repos.join(", ");
-}
-
 function KnowRow({
   item,
+  repos,
   language,
   t,
   feedback,
 }: {
   item: BulletinViewItem;
+  repos: RepoName[];
   language: Language;
   t: Strings;
   feedback: FeedbackSlot;
@@ -407,14 +411,7 @@ function KnowRow({
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Tag kind={kind}>{item.todo ? todoLabel(language, item.todo) : t.know_title}</Tag>
-        {item.affectedRepos.length > 0 && (
-          <TruncatedText
-            className="text-fg-muted font-mono text-[12px]"
-            full={item.affectedRepos.length > 3 ? item.affectedRepos.join(", ") : undefined}
-          >
-            {reposText(item.affectedRepos)}
-          </TruncatedText>
-        )}
+        {repos.length > 0 && <RepoChips repos={repos} label={t.affected} />}
       </div>
       <h4 className="text-[15px] leading-[1.35] font-medium">
         <a href={item.url} target="_blank" rel="noreferrer" className="hover:underline">
@@ -561,50 +558,66 @@ function RestList({
   t,
   language,
   feedback,
+  repoNames,
+  minorNote,
 }: {
   view: BulletinView;
   t: Strings;
   language: Language;
   feedback: FeedbackSlot;
+  repoNames: (item: BulletinViewItem) => RepoName[];
+  minorNote: string | null;
 }) {
+  const rows = [
+    ...view.rest.map((item) => ({ item, tag: item.todo ? restTag(item.todo, language) : null })),
+    ...view.minor.map((item) => ({ item, tag: ["wait", t.minor_label] as [TagKind, string] })),
+  ];
   return (
     <div className="bg-surface border-line rounded-card mt-2 border">
-      {view.rest.map((item) => (
-        <div
-          key={item.itemId}
-          id={`item-${item.itemId}`}
-          className="border-line grid gap-1.5 border-t px-4 py-3 first:border-t-0"
-        >
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            {item.todo ? (
-              <Tag kind={todoKind(item.todo)}>{todoLabel(language, item.todo)}</Tag>
-            ) : (
-              <span />
+      {rows.map(({ item, tag }) => {
+        const repos = repoNames(item);
+        return (
+          <div
+            key={item.itemId}
+            id={`item-${item.itemId}`}
+            className="group/ri border-line hover:bg-surface-2 grid scroll-mt-24 gap-1.5 border-t px-4 py-3 transition-colors duration-150 first:border-t-0"
+          >
+            {(tag || repos.length > 0) && (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                {tag ? <Tag kind={tag[0]}>{tag[1]}</Tag> : <span />}
+                {repos.length > 0 && <RepoChips repos={repos} label={t.affected} />}
+              </div>
             )}
-            {item.affectedRepos.length > 0 && (
-              <span className="text-fg-muted font-mono text-[12px]">
-                {reposText(item.affectedRepos)}
-              </span>
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-[14px] font-medium hover:underline"
+            >
+              {item.headline}
+            </a>
+            {item.line && <p className="text-fg-muted text-[13px]">{item.line}</p>}
+            {feedback?.(
+              item.itemId,
+              "transition-opacity duration-200 min-[560px]:opacity-50 min-[560px]:group-focus-within/ri:opacity-100 min-[560px]:group-hover/ri:opacity-100 [@media(hover:none)]:opacity-100"
             )}
           </div>
-          <a
-            href={item.url}
-            target="_blank"
-            rel="noreferrer"
-            className="text-[14px] font-medium hover:underline"
-          >
-            {item.headline}
-          </a>
-          {feedback?.(item.itemId)}
-        </div>
-      ))}
-      {view.minorCount > 0 && (
+        );
+      })}
+      {minorNote && (
         <p className="text-fg-muted border-line border-t px-4 py-3 text-[13px] first:border-t-0">
-          {t.minor(view.minorCount)}
+          {minorNote}
         </p>
       )}
     </div>
   );
+}
+
+function restTag(
+  todo: NonNullable<BulletinViewItem["todo"]>,
+  language: Language
+): [TagKind, string] {
+  return [todoKind(todo), todoLabel(language, todo)];
 }
 
 const DOT: Record<string, string> = {

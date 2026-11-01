@@ -39,7 +39,6 @@ const view: BulletinView = {
   emailStatus: "pending",
   emailSentAt: null,
   preview: false,
-  previewModel: null,
   act: [
     item({
       itemId: "item1",
@@ -70,6 +69,7 @@ const view: BulletinView = {
     }),
   ],
   rest: [item({ itemId: "item3" }), item({ itemId: "item4" })],
+  minor: [],
   alerts: [
     {
       packageName: "next",

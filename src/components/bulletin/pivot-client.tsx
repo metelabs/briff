@@ -10,14 +10,21 @@ import {
   type ReactNode,
 } from "react";
 
-import { ChipButton } from "@/components/ui/chip";
+import { Chip, ChipButton } from "@/components/ui/chip";
 import { Segmented } from "@/components/ui/segmented";
-import { Tooltip, useIsTruncated } from "@/components/ui/tooltip";
+import { Tooltip, TruncatedText, useIsTruncated } from "@/components/ui/tooltip";
 import { prefersReducedMotion, scrollToElement } from "@/lib/scroll";
 import { cn } from "@/lib/utils";
 import { repoAnchor } from "@/pipeline/bulletin-by-repo";
 
-import { FOLDED_ID, INITIAL_PIVOT, pivotReducer, type View } from "./pivot";
+import {
+  chipLayout,
+  FOLDED_ID,
+  INITIAL_PIVOT,
+  pivotReducer,
+  type RepoName,
+  type View,
+} from "./pivot";
 
 interface PivotApi {
   view: View;
@@ -109,6 +116,53 @@ export function RepoChip({ repo }: { repo: string }) {
   );
 }
 
+function PlainRepoChip({ repo }: { repo: string }) {
+  return (
+    <Chip>
+      <TruncatedText>{repo}</TruncatedText>
+    </Chip>
+  );
+}
+
+/**
+ * Compact repo chips for a row: up to `limit`, else `limit - 1` and a "+N" chip that shows
+ * the rest. Clickable names jump to their By repo card like the attention cards' chips.
+ */
+export function RepoChips({
+  repos,
+  label,
+  limit = 3,
+  className,
+}: {
+  repos: readonly RepoName[];
+  label: string;
+  limit?: number;
+  className?: string;
+}) {
+  const [all, setAll] = useState(false);
+  const { shown, more } = chipLayout(repos, limit, all);
+  return (
+    <div role="group" aria-label={label} className={cn("flex flex-wrap gap-[5px]", className)}>
+      {shown.map((r) =>
+        r.clickable ? (
+          <RepoChip key={r.repo} repo={r.repo} />
+        ) : (
+          <PlainRepoChip key={r.repo} repo={r.repo} />
+        )
+      )}
+      {more > 0 && (
+        <ChipButton
+          onClick={() => setAll(true)}
+          aria-label={`Show all ${repos.length} repos`}
+          className="text-fg-muted"
+        >
+          +{more}
+        </ChipButton>
+      )}
+    </div>
+  );
+}
+
 const COUNTED_KEY = "briff-counted";
 
 /**
@@ -175,9 +229,34 @@ export function CountTile({
   );
 }
 
-/** The folded-away bar: opens the list of updates that did not make the two sections. */
-export function FoldedBar({ count, children }: { count: number; children: ReactNode }) {
+/**
+ * The folded-away bar: opens the list of updates that did not make the two sections.
+ * Without `children` (an older bulletin that stored only a count) it is not a button and
+ * shows `note` instead.
+ */
+export function FoldedBar({
+  count,
+  note,
+  children,
+}: {
+  count: number;
+  note?: string;
+  children?: ReactNode;
+}) {
   const { foldedOpen: open, toggleFolded } = usePivot();
+  const label = count === 1 ? "update folded away" : "updates folded away";
+  if (!children) {
+    return (
+      <div
+        id={FOLDED_ID}
+        className="border-line-strong text-fg-muted rounded-card flex scroll-mt-24 flex-wrap items-baseline gap-x-3 gap-y-1 border border-dashed px-4 py-3.5"
+      >
+        <b className="font-display text-fg text-[22px] font-semibold tabular-nums">{count}</b>
+        <span>{label}</span>
+        {note && <span className="text-[13px] min-[560px]:ml-auto">{note}</span>}
+      </div>
+    );
+  }
   return (
     <div id={FOLDED_ID} className="scroll-mt-24">
       <button
@@ -188,7 +267,7 @@ export function FoldedBar({ count, children }: { count: number; children: ReactN
         className="border-line-strong text-fg-muted hover:border-brand hover:text-fg rounded-card flex w-full items-center gap-3 border border-dashed px-4 py-3.5 text-left transition-colors duration-200"
       >
         <b className="font-display text-fg text-[22px] font-semibold tabular-nums">{count}</b>
-        <span>{count === 1 ? "update folded away" : "updates folded away"}</span>
+        <span>{label}</span>
         <span className="text-brand ml-auto font-medium">{open ? "Hide" : "Show"}</span>
       </button>
       <div id="folded-list" className="expand" data-open={open}>

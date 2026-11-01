@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { FOLDED_ID, INITIAL_PIVOT, pivotReducer } from "./pivot";
+import {
+  chipLayout,
+  FOLDED_ID,
+  hasClickableRepo,
+  INITIAL_PIVOT,
+  pivotReducer,
+  repoNamesOf,
+} from "./pivot";
 
 describe("pivotReducer", () => {
   it("opens the folded list when its tile is clicked from By repo", () => {
@@ -31,5 +38,31 @@ describe("pivotReducer", () => {
     expect(s).toMatchObject({ view: "repo", target: { id: "repo-briff", flash: true } });
     s = pivotReducer(s, { type: "scrolled" });
     expect(s.target).toBeNull();
+  });
+});
+
+describe("repo chips on item rows", () => {
+  const cards = new Set(["garden", "west"]);
+
+  it("makes only repos with a By repo card clickable", () => {
+    expect(repoNamesOf(["garden", "attic"], cards)).toEqual([
+      { repo: "garden", clickable: true },
+      { repo: "attic", clickable: false },
+    ]);
+  });
+
+  it("shows the click hint only when some item names a repo with a card", () => {
+    expect(hasClickableRepo([{ affectedRepos: [] }, { affectedRepos: ["attic"] }], cards)).toBe(
+      false
+    );
+    expect(hasClickableRepo([{ affectedRepos: ["attic", "west"] }], cards)).toBe(true);
+    expect(hasClickableRepo([], cards)).toBe(false);
+  });
+
+  it("folds more than the limit behind a +N chip until expanded", () => {
+    const five = ["a", "b", "c", "d", "e"];
+    expect(chipLayout(five, 3, false)).toEqual({ shown: ["a", "b"], more: 3 });
+    expect(chipLayout(five, 3, true)).toEqual({ shown: five, more: 0 });
+    expect(chipLayout(["a", "b", "c"], 3, false)).toEqual({ shown: ["a", "b", "c"], more: 0 });
   });
 });

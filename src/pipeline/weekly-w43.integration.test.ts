@@ -172,7 +172,7 @@ describe.skipIf(!url)("weekly path for the W43 security items", () => {
     expect(prepared).not.toBeNull();
     if (!prepared) return;
     const res = await createFakeLlm().json(synthesisRequest(prepared, ctx.model, prompt.text));
-    const { bulletinId } = await storeBulletin(db, prepared, res, ctx, { kind: "weekly" });
+    const { bulletinId } = await storeBulletin(db, prepared, res, ctx);
     const items = await withOrg(db, orgId).bulletinItem.findMany({
       where: { bulletinId },
       orderBy: { order: "asc" },

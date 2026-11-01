@@ -85,7 +85,7 @@ export async function loadBulletinView(
       : [];
   const foldedById = new Map(foldedItems.map((i) => [i.id, i]));
   const items = rows.map((r) => ({
-    section: sectionOf(r.section, r.bucket),
+    section: r.bucket === "minor" ? ("minor" as const) : sectionOf(r.section, r.bucket),
     item: {
       itemId: r.itemId,
       bucket: r.bucket,
@@ -105,7 +105,7 @@ export async function loadBulletinView(
       upgrades: parseUpgrades(r.upgrades),
     } satisfies BulletinViewItem,
   }));
-  const inSection = (section: Section) =>
+  const inSection = (section: Section | "minor") =>
     items.filter((i) => i.section === section).map((i) => i.item);
 
   const alertRows = await scoped.alert.findMany({
@@ -151,10 +151,10 @@ export async function loadBulletinView(
     emailStatus: bulletin.emailStatus,
     emailSentAt: bulletin.emailSentAt,
     preview: bulletin.preview,
-    previewModel: bulletin.preview ? bulletin.previewKey : null,
     act: inSection("act"),
     know: inSection("know"),
     rest: inSection("rest"),
+    minor: inSection("minor"),
     alerts: alertLinesOf(lineRows("new")),
     backlogAlerts: alertLinesOf(lineRows("backlog")),
     baseImageAlerts: await loadBaseImageGroups(
