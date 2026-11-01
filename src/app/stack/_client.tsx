@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { EcosystemTag } from "@/components/ui/ecosystem-tag";
 import { FilterChips } from "@/components/ui/filter-chips";
+import { Masonry } from "@/components/ui/masonry";
 import { SearchField } from "@/components/ui/search-field";
 import { Tag, type TagKind } from "@/components/ui/tag";
 import { plural } from "@/lib/format";
@@ -173,6 +174,14 @@ function RepoCard({ card, index }: { card: StackCardView; index: number }) {
   );
 }
 
+/** Rough card height in px from its rows, for the server's column split (DESIGN.md §6 Stack). */
+function estimateHeight(card: StackCardView): number {
+  if (card.entries.length === 0) return 110;
+  const groups = new Set(card.entries.map((e) => e.kind)).size;
+  const rows = card.entries.reduce((h, e) => h + 41 + (e.target ? 24 : 0) + (e.note ? 22 : 0), 0);
+  return 86 + groups * 34 + rows;
+}
+
 function Stat({
   value,
   caption,
@@ -261,11 +270,13 @@ export function StackCards({ cards }: { cards: StackCardView[] }) {
           No repo matches.
         </p>
       ) : (
-        <div className="grid items-start gap-3 min-[980px]:grid-cols-2">
-          {visible.map((c, i) => (
-            <RepoCard key={c.id} card={c} index={i} />
-          ))}
-        </div>
+        <Masonry
+          items={visible.map((c, i) => ({
+            key: c.id,
+            estimate: estimateHeight(c),
+            node: <RepoCard card={c} index={i} />,
+          }))}
+        />
       )}
       <p className="text-fg-muted mt-3 max-w-[72ch] text-[12.5px]">
         Runtimes are checked against end-of-life dates (endoflife.date); a target stays on your

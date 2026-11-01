@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PublicFooter, PublicHeader } from "@/components/landing/public-chrome";
 import { SiteFooter } from "@/components/shell/site-footer";
+import { Accordion } from "@/components/ui/accordion";
 import { resetEnvCache } from "@/lib/env";
 import { PRICED_PLANS } from "@/lib/plans";
 
@@ -12,6 +13,7 @@ import sitemap from "../sitemap";
 
 import PricingPage from "./page";
 import { PricingCards } from "./_client";
+import { FAQ } from "./faq";
 
 // Self-hosters never see plans or prices: with BRIFF_CLOUD off the pricing page is a 404 and
 // no public page, sitemap or robots file names it.
@@ -65,5 +67,31 @@ describe("pricing on the hosted service only", () => {
     }
     expect(html).toContain("Unlimited repos");
     expect(html).toContain("10 members");
+  });
+});
+
+describe("pricing questions", () => {
+  it("asks about the free plan first and lists the questions in visitor order", () => {
+    expect(FAQ.map((f) => f.id)).toEqual([
+      "free",
+      "limits",
+      "repo",
+      "cancel",
+      "self-hosting",
+      "invoices",
+      "tax",
+    ]);
+  });
+
+  it("renders the first answer open and the rest closed but in the page", () => {
+    const html = renderToStaticMarkup(
+      createElement(Accordion, {
+        defaultOpen: [FAQ[0].id],
+        entries: FAQ.map((f) => ({ id: f.id, title: f.q, body: f.a })),
+      })
+    );
+    expect(html.match(/aria-expanded="true"/g)).toHaveLength(1);
+    expect(html.match(/aria-expanded="false"/g)).toHaveLength(FAQ.length - 1);
+    for (const f of FAQ) expect(html).toContain(f.q);
   });
 });

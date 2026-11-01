@@ -36,15 +36,32 @@ export const menuItemClass =
 const THEME_LABELS: Record<Theme, string> = { system: "System", light: "Light", dark: "Dark" };
 const THEME_ICONS: Record<Theme, LucideIcon> = { system: Monitor, light: Sun, dark: Moon };
 
-function applyTheme(theme: Theme): void {
+// A 200ms crossfade of the page snapshot (View Transitions) instead of transitioning every
+// element's colours, which restyled the whole tree for 300ms. Element transitions are off while
+// the attribute flips, so nothing lags behind the snapshot; without the API it is instant.
+// Resolves once the switch has painted.
+function applyTheme(theme: Theme): Promise<void> {
   const root = document.documentElement;
-  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    root.classList.add("theming");
-    window.setTimeout(() => root.classList.remove("theming"), 350);
-  }
   const attr = themeAttribute(theme);
-  if (attr) root.setAttribute("data-theme", attr);
-  else root.removeAttribute("data-theme");
+  const flip = () => {
+    root.setAttribute("data-theme-switching", "");
+    if (attr) root.setAttribute("data-theme", attr);
+    else root.removeAttribute("data-theme");
+  };
+  const done = () => root.removeAttribute("data-theme-switching");
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!reduced && typeof document.startViewTransition === "function") {
+    return document.startViewTransition(flip).finished.then(done, done);
+  }
+  flip();
+  return new Promise((resolve) =>
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        done();
+        resolve();
+      })
+    )
+  );
 }
 
 export function TopBar({
@@ -335,10 +352,12 @@ function AccountMenu({
                 value={shownTheme}
                 onValueChange={(value: Theme) => {
                   setShownTheme(value);
-                  applyTheme(value);
-                  startTransition(async () => {
-                    await setThemeAction(value);
-                  });
+                  // The cookie write refreshes the route; after the crossfade, so it cannot stall it.
+                  void applyTheme(value).then(() =>
+                    startTransition(async () => {
+                      await setThemeAction(value);
+                    })
+                  );
                 }}
                 className="flex items-center justify-between gap-3 py-0.5 pr-0.5 pl-2.5"
               >

@@ -207,7 +207,7 @@ Numbers in tables and tiles are always `tabular-nums`. Do not use Bricolage belo
   (brand outline + `--brand-soft`, fading; reduced motion: no fade).
 - Stack: a summary strip (repos scanned, end-of-life runtimes, packages a major behind, repos up to
   date), filter chips + search, then one card per repo, most urgent first (end of life > majors behind
-  > minor behind > current), at most 2 columns (1 below 980px). A card lists only what the repo uses:
+  > minor behind > current), a masonry of at most 2 columns (1 below 980px; `Masonry` in `src/components/ui/masonry.tsx`: each card keeps its natural height and goes to the shortest column in urgency order). A card lists only what the repo uses:
   > one row per runtime, then its key packages, each with version, source, a status label ("EOL since
   > 2025-04-30", "Supported until 2027-04-30", "Current", "Behind" + "2 majors behind") and the target
   > line ("Move to 22.x (LTS, supported until 2027-04)", "Latest in your line: 20.19.4"). Rows wrap;
@@ -217,19 +217,19 @@ Numbers in tables and tiles are always `tabular-nums`. Do not use Bricolage belo
 
 ## 7. Motion
 
-| Thing                       | Duration                 | Easing                     | Notes                                                               |
-| --------------------------- | ------------------------ | -------------------------- | ------------------------------------------------------------------- |
-| Entrance (page, sections)   | 400–500ms                | `cubic-bezier(.2,.7,.2,1)` | rise 10px + fade; stagger 55ms per item, cap at 10 items            |
-| Count-up (stat tiles)       | 500ms (<20), 900ms (≥20) | ease-out cubic             | First paint of a bulletin only, not on revisit within session       |
-| Tab indicator / segmented   | 300ms                    | `cubic-bezier(.3,.8,.2,1)` | Indicator slides; labels only change colour                         |
-| Hover on cards/tiles        | 200–250ms                | same entrance easing       | translateY(-1 to -2px) + raised shadow                              |
-| Hover on pills, chips, rows | 120–150ms                | ease                       | colour/background only                                              |
-| Theme change                | 300ms                    | ease                       | background/colour/border only, via a temporary `html.theming` class |
-| Copy button                 | 1400ms state             | none                       | label becomes "Copied" and toast appears                            |
-| Dialog                      | 180ms in, 120ms out      | ease-out                   | scale .98→1 + fade; scrim fade                                      |
-| Tooltip                     | 300ms delay, 120ms fade  | ease-out                   | scale .98→1 + fade                                                  |
-| Toast                       | 200ms in, auto-hide 5s   | ease-out                   | slide 8px (down from the top on phones, up from the bottom ≥ 768px) |
-| Expand/collapse             | 280ms                    | entrance easing            | `grid-template-rows: 0fr → 1fr`                                     |
+| Thing                       | Duration                 | Easing                     | Notes                                                                                                                                               |
+| --------------------------- | ------------------------ | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Entrance (page, sections)   | 400–500ms                | `cubic-bezier(.2,.7,.2,1)` | rise 10px + fade; stagger 55ms per item, cap at 10 items                                                                                            |
+| Count-up (stat tiles)       | 500ms (<20), 900ms (≥20) | ease-out cubic             | First paint of a bulletin only, not on revisit within session                                                                                       |
+| Tab indicator / segmented   | 300ms                    | `cubic-bezier(.3,.8,.2,1)` | Indicator slides; labels only change colour                                                                                                         |
+| Hover on cards/tiles        | 200–250ms                | same entrance easing       | translateY(-1 to -2px) + raised shadow                                                                                                              |
+| Hover on pills, chips, rows | 120–150ms                | ease                       | colour/background only                                                                                                                              |
+| Theme change                | 200ms                    | ease-out                   | View Transitions crossfade of the page; element transitions off while `<html data-theme-switching>`; instant without the API or with reduced motion |
+| Copy button                 | 1400ms state             | none                       | label becomes "Copied" and toast appears                                                                                                            |
+| Dialog                      | 180ms in, 120ms out      | ease-out                   | scale .98→1 + fade; scrim fade                                                                                                                      |
+| Tooltip                     | 300ms delay, 120ms fade  | ease-out                   | scale .98→1 + fade                                                                                                                                  |
+| Toast                       | 180ms in and out, 5s     | ease-out                   | slide 8px (down from the top on phones, up from the bottom ≥ 768px); `opacity` + `translate` only, absolutely placed so removal never reflows       |
+| Expand/collapse             | 280ms                    | entrance easing            | `grid-template-rows: 0fr → 1fr`                                                                                                                     |
 
 - Animate only `opacity`, `transform`, and colour properties. Never animate layout size, except grid-row expand.
 - **Reduced motion:** with `prefers-reduced-motion: reduce`, every animation and transition is ~0ms, count-up
@@ -292,6 +292,12 @@ states are noted where they apply.
   3px `--brand-soft` ring. Help text 12.5px muted below. Error: coral border is _not_ used. Use `--upgrade` border +
   message, to keep coral for security.
 - **Toggle:** 36×20 track, `--line-strong` off, `--brand` on.
+- **No native form controls:** never a bare `<select>`, `<input type="checkbox|radio">` or `<progress>`; they draw
+  the browser's chrome. Use the primitives in `src/components/ui/`: `Select` (trigger styled as a form field,
+  popup like the account menu, a check on the chosen item), `Checkbox` (16px, radius 5, `--brand` when ticked),
+  `Accordion` (rows in one card, the chevron turns; open the item that answers the page's first question).
+  `<details>` summaries draw their own indicator (the browser marker is hidden globally).
+  `src/test/no-native-controls.test.ts` fails on a native control outside `src/components/ui/`.
 - **Empty state:** centred in its card, 40px line icon in `--fg-subtle`, display 19px title, one muted sentence,
   one primary action. The copy says what will appear here and what to do, e.g. "No bulletin yet. Your first one
   arrives Monday after your repos are scanned."

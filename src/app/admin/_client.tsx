@@ -5,11 +5,12 @@ import { useActionState, useEffect, useReducer, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DialogClose, FormDialog } from "@/components/ui/dialog";
-import { Input, Select } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { FieldHelp, FormStatus, Label } from "@/components/ui/label";
 import { SearchField } from "@/components/ui/search-field";
 import { useToast } from "@/components/ui/toast";
-import { isPlanId, limitLabel, PLAN_IDS, PLANS, type PlanId } from "@/lib/plans";
+import { limitLabel, PLAN_IDS, PLANS, type PlanId } from "@/lib/plans";
 import { initialSearch, searchSync, withSearch } from "@/lib/search-sync";
 
 import {
@@ -118,17 +119,10 @@ export function EditLimitsButton({
             id={`plan-${org.id}`}
             name="plan"
             value={plan}
-            onChange={(e) => {
-              if (isPlanId(e.target.value)) setPlan(e.target.value);
-            }}
+            onValueChange={setPlan}
             autoFocus
-          >
-            {PLAN_IDS.map((id) => (
-              <option key={id} value={id}>
-                {planSummary(id)}
-              </option>
-            ))}
-          </Select>
+            options={PLAN_IDS.map((id) => ({ value: id, label: planSummary(id) }))}
+          />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="grid gap-1.5">

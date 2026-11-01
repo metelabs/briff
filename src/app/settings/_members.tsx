@@ -4,7 +4,8 @@ import { useActionState, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
-import { Input, Select } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { FieldHelp, Label } from "@/components/ui/label";
 import { SecretBox } from "@/components/ui/secret-box";
 import { Tag } from "@/components/ui/tag";
@@ -89,10 +90,15 @@ export function InviteForm() {
         </div>
         <div className="grid content-start gap-1.5">
           <Label htmlFor="invite-role">Role</Label>
-          <Select id="invite-role" name="role" defaultValue="member">
-            <option value="member">Member</option>
-            <option value="owner">Owner</option>
-          </Select>
+          <Select
+            id="invite-role"
+            name="role"
+            defaultValue="member"
+            options={[
+              { value: "member", label: "Member" },
+              { value: "owner", label: "Owner" },
+            ]}
+          />
         </div>
         <FieldHelp
           id="invite-help"
