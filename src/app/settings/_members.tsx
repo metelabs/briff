@@ -27,6 +27,8 @@ import {
 // Settings -> Organisation and Members (owners manage, members see the list and can leave).
 
 const INITIAL: FormState = { ok: true, message: null };
+type InviteRole = "member" | "owner";
+
 const INVITE_INITIAL: InviteFormState = { ok: true, message: null };
 
 const ROW =
@@ -68,6 +70,14 @@ export function OrgNameForm({ name, maxLength }: { name: string; maxLength: numb
 
 export function InviteForm() {
   const [state, action, pending] = useActionState(inviteMemberAction, INVITE_INITIAL);
+  // React resets the form after the action, but the Select keeps its own state: back to Member
+  // after a sent invite, so an Owner choice never carries over to the next invitee.
+  const [role, setRole] = useState<InviteRole>("member");
+  const [seenState, setSeenState] = useState(state);
+  if (seenState !== state) {
+    setSeenState(state);
+    if (state.ok) setRole("member");
+  }
   useResultToast(state, state);
   return (
     <div className="grid gap-3">
@@ -93,7 +103,8 @@ export function InviteForm() {
           <Select
             id="invite-role"
             name="role"
-            defaultValue="member"
+            value={role}
+            onValueChange={setRole}
             options={[
               { value: "member", label: "Member" },
               { value: "owner", label: "Owner" },
