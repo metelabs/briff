@@ -207,7 +207,7 @@ Numbers in tables and tiles are always `tabular-nums`. Do not use Bricolage belo
   (brand outline + `--brand-soft`, fading; reduced motion: no fade).
 - Stack: a summary strip (repos scanned, end-of-life runtimes, packages a major behind, repos up to
   date), filter chips + search, then one card per repo, most urgent first (end of life > majors behind
-  > minor behind > current), a masonry of at most 2 columns (1 below 980px; `Masonry` in `src/components/ui/masonry.tsx`: each card keeps its natural height and goes to the shortest column in urgency order). A card lists only what the repo uses:
+  > minor behind > current), a masonry of at most 2 columns (1 below 980px; `Masonry` in `src/components/ui/masonry.tsx`: each card keeps its natural height and goes to the shortest column in urgency order; the cards stay in DOM order, so focus and screen readers follow urgency). A card lists only what the repo uses:
   > one row per runtime, then its key packages, each with version, source, a status label ("EOL since
   > 2025-04-30", "Supported until 2027-04-30", "Current", "Behind" + "2 majors behind") and the target
   > line ("Move to 22.x (LTS, supported until 2027-04)", "Latest in your line: 20.19.4"). Rows wrap;

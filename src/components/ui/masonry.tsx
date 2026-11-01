@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
+import { type CSSProperties, type ReactNode, useLayoutEffect, useRef, useState } from "react";
 
 import { distribute } from "@/lib/masonry";
 import { cn } from "@/lib/utils";
@@ -15,21 +15,23 @@ export interface MasonryItem {
 const GAP = 12;
 
 /**
- * Two columns from 980px, filled shortest-first with each card's natural height (CSS grid rows
- * would align cards across columns and leave gaps). The server splits by estimate; the client
- * re-splits after measuring. Below 980px the column wrappers are `display: contents` and `order`
- * restores the original sequence, so one column reads in order without JavaScript.
+ * Two columns from 980px, filled shortest-first with each card's natural height (plain grid rows
+ * would align cards across columns and leave gaps). The cards stay in their original DOM order,
+ * so focus and screen readers keep the urgency order; from 980px each is placed explicitly on a
+ * grid of 1px rows that may grow, so an estimate that is too small pushes content down instead of
+ * overlapping it. The server places by estimate, the client again after measuring. Below 980px
+ * it is a plain column and needs no JavaScript.
  */
 export function Masonry({ items, className }: { items: MasonryItem[]; className?: string }) {
   const [measured, setMeasured] = useState<Record<string, number>>({});
-  const nodes = useRef(new Map<string, HTMLDivElement>());
-  const observer = useRef<ResizeObserver | null>(null);
-  const columns = distribute(
+  const nodes = useRef(new Map<string, HTMLElement>());
+  const placements = distribute(
     items.map((it) => measured[it.key] ?? it.estimate),
     2,
     GAP
   );
 
+  const keys = items.map((it) => it.key).join("|");
   useLayoutEffect(() => {
     const read = () => {
       // Below 980px the cards span the full width, so their heights say nothing about two columns.
@@ -44,49 +46,44 @@ export function Masonry({ items, className }: { items: MasonryItem[]; className?
         return changed ? out : prev;
       });
     };
-    const ro = new ResizeObserver(read);
-    observer.current = ro;
-    for (const el of nodes.current.values()) ro.observe(el);
-    return () => {
-      ro.disconnect();
-      observer.current = null;
-    };
-  }, []);
+    const observer = new ResizeObserver(read);
+    for (const el of nodes.current.values()) observer.observe(el);
+    return () => observer.disconnect();
+    // Re-run when the set of cards changes so new ones are observed.
+  }, [keys]);
 
   return (
     <div
-      className={cn("flex flex-col gap-3 min-[980px]:flex-row min-[980px]:items-start", className)}
+      className={cn(
+        "flex flex-col gap-3 min-[980px]:grid min-[980px]:auto-rows-[minmax(1px,auto)] min-[980px]:grid-cols-2 min-[980px]:gap-x-3 min-[980px]:gap-y-0 min-[980px]:-mb-3",
+        className
+      )}
     >
-      {columns.map((col, c) => (
-        <div
-          key={c}
-          className="contents min-[980px]:flex min-[980px]:min-w-0 min-[980px]:flex-1 min-[980px]:flex-col min-[980px]:gap-3"
-        >
-          {col.map((i) => {
-            const item = items[i];
-            return (
-              <div
-                key={item.key}
-                style={{ order: i }}
-                className="min-w-0"
-                ref={(el) => {
-                  // A card that moves column remounts, so it is (re)observed here.
-                  if (el) {
-                    nodes.current.set(item.key, el);
-                    observer.current?.observe(el);
-                    return () => {
-                      observer.current?.unobserve(el);
-                      if (nodes.current.get(item.key) === el) nodes.current.delete(item.key);
-                    };
-                  }
-                }}
-              >
-                {item.node}
-              </div>
-            );
-          })}
-        </div>
-      ))}
+      {items.map((item, i) => {
+        const { column, top } = placements[i];
+        const span = (measured[item.key] ?? item.estimate) + GAP;
+        return (
+          <div
+            key={item.key}
+            className="min-w-0 min-[980px]:[grid-column:var(--masonry-column)] min-[980px]:[grid-row:var(--masonry-row)]"
+            style={
+              {
+                "--masonry-column": column + 1,
+                "--masonry-row": `${top + 1} / span ${span}`,
+              } as CSSProperties
+            }
+          >
+            <div
+              ref={(el) => {
+                if (el) nodes.current.set(item.key, el);
+                else nodes.current.delete(item.key);
+              }}
+            >
+              {item.node}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
