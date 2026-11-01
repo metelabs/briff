@@ -296,6 +296,43 @@ describe.skipIf(!url)("invite flow through the Server Actions", () => {
     expect((await db().org.findUniqueOrThrow({ where: { id: zedOrg } })).name).toBe(`Flow ${zed}`);
   }, 60000);
 
+  it("refuses invites past the plan's member limit on the hosted service", async () => {
+    vi.stubEnv("ALLOW_SIGNUP", "true");
+    vi.stubEnv("BRIFF_CLOUD", "true");
+    mod.env.resetEnvCache();
+    try {
+      const owner = email("owner5");
+      expect(await redirectOf(signUp(owner))).toBe("/");
+      await signInAs(owner);
+      const orgId = (await mod.session.getOrgContext())?.orgId ?? "";
+      const before = state.sent.length;
+      expect(
+        await mod.members.inviteMemberAction(
+          { ok: true, message: null },
+          form({ email: email("seat5"), role: "member" })
+        )
+      ).toMatchObject({
+        ok: false,
+        message: "Member limit reached (1 on the Free plan). See Settings → Billing for the plans.",
+      });
+      expect(state.sent).toHaveLength(before);
+      expect(await db().orgInvite.count({ where: { orgId } })).toBe(0);
+
+      await db().org.update({ where: { id: orgId }, data: { plan: "pro" } });
+      await ownerInvite(email("seat5"));
+      await ownerInvite(email("seat6"));
+      expect(
+        await mod.members.inviteMemberAction(
+          { ok: true, message: null },
+          form({ email: email("seat7"), role: "member" })
+        )
+      ).toMatchObject({ ok: false, message: expect.stringContaining("3 on the Pro plan") });
+    } finally {
+      vi.stubEnv("BRIFF_CLOUD", "false");
+      mod.env.resetEnvCache();
+    }
+  }, 60000);
+
   it("joins a signed-in account from the invite page and leaves again", async () => {
     vi.stubEnv("ALLOW_SIGNUP", "true");
     mod.env.resetEnvCache();

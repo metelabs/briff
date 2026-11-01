@@ -54,21 +54,27 @@ function pendingWhere(now: Date) {
   return { acceptedAt: null, revokedAt: null, expiresAt: { gt: now } };
 }
 
+async function countSeats(
+  scoped: Pick<OrgDb, "orgMember" | "orgInvite">,
+  now: Date
+): Promise<number> {
+  const [members, invites] = await Promise.all([
+    scoped.orgMember.count(),
+    scoped.orgInvite.count({ where: pendingWhere(now) }),
+  ]);
+  return members + invites;
+}
+
 /**
- * Seats in use: members plus pending (unexpired, unrevoked, unaccepted) invites. The one
- * place that counts them, so a member limit has a single number to compare against.
+ * Seats in use against the plan's member limit (`assertMemberCapacity`, Settings): members
+ * plus pending (unexpired, unrevoked, unaccepted) invites. The one place that counts them.
  */
 export async function countMembers(
   db: PrismaClient,
   orgId: string,
   now = new Date()
 ): Promise<number> {
-  const scoped = withOrg(db, orgId);
-  const [members, invites] = await Promise.all([
-    scoped.orgMember.count(),
-    scoped.orgInvite.count({ where: pendingWhere(now) }),
-  ]);
-  return members + invites;
+  return countSeats(withOrg(db, orgId), now);
 }
 
 export async function memberRole(
@@ -85,7 +91,19 @@ export async function memberRole(
 
 export type CreateInviteResult =
   | { ok: true; inviteId: string; token: string; email: string; expiresAt: Date }
-  | { ok: false; reason: "not-owner" | "already-member" | "already-invited" | "rate-limited" };
+  | {
+      ok: false;
+      reason: "not-owner" | "already-member" | "already-invited" | "rate-limited" | "member-limit";
+    };
+
+/** The plan's member limit (null = unlimited), rechecked under the membership lock. */
+async function seatsFull(
+  tx: Pick<OrgDb, "orgMember" | "orgInvite">,
+  memberLimit: number | null,
+  now: Date
+): Promise<boolean> {
+  return memberLimit !== null && (await countSeats(tx, now)) >= memberLimit;
+}
 
 async function underDailyLimit(tx: MembersTx, now: Date): Promise<boolean> {
   const sent = await tx.orgEvent.count({
@@ -97,7 +115,15 @@ async function underDailyLimit(tx: MembersTx, now: Date): Promise<boolean> {
 /** Creates a pending invite; the caller emails the returned token (never stored). */
 export async function createInvite(
   db: PrismaClient,
-  args: { orgId: string; actorUserId: string; email: string; role: OrgRole; now?: Date }
+  args: {
+    orgId: string;
+    actorUserId: string;
+    email: string;
+    role: OrgRole;
+    /** From `loadOrgLimits`; null = unlimited. */
+    memberLimit: number | null;
+    now?: Date;
+  }
 ): Promise<CreateInviteResult> {
   const now = args.now ?? new Date();
   const email = normalizeEmail(args.email);
@@ -110,6 +136,7 @@ export async function createInvite(
     if ((await tx.orgInvite.count({ where: { email, ...pendingWhere(now) } })) > 0) {
       return { ok: false, reason: "already-invited" };
     }
+    if (await seatsFull(tx, args.memberLimit, now)) return { ok: false, reason: "member-limit" };
     if (!(await underDailyLimit(tx, now))) return { ok: false, reason: "rate-limited" };
     const { token, tokenHash } = generateInviteToken();
     const expiresAt = new Date(now.getTime() + INVITE_TTL_MS);
@@ -140,7 +167,13 @@ export type ResendInviteResult =
   | { ok: true; token: string; email: string; role: OrgRole; expiresAt: Date }
   | {
       ok: false;
-      reason: "not-owner" | "not-found" | "already-member" | "already-invited" | "rate-limited";
+      reason:
+        | "not-owner"
+        | "not-found"
+        | "already-member"
+        | "already-invited"
+        | "rate-limited"
+        | "member-limit";
     };
 
 /**
@@ -149,7 +182,14 @@ export type ResendInviteResult =
  */
 export async function resendInvite(
   db: PrismaClient,
-  args: { orgId: string; actorUserId: string; inviteId: string; now?: Date }
+  args: {
+    orgId: string;
+    actorUserId: string;
+    inviteId: string;
+    /** From `loadOrgLimits`; an expired invite takes a seat again when renewed. */
+    memberLimit: number | null;
+    now?: Date;
+  }
 ): Promise<ResendInviteResult> {
   const now = args.now ?? new Date();
   return withOrg(db, args.orgId).$transaction(async (tx): Promise<ResendInviteResult> => {
@@ -157,7 +197,7 @@ export async function resendInvite(
     if (!(await isOwner(tx, args.actorUserId))) return { ok: false, reason: "not-owner" };
     const invite = await tx.orgInvite.findFirst({
       where: { id: args.inviteId, acceptedAt: null, revokedAt: null },
-      select: { id: true, email: true, role: true },
+      select: { id: true, email: true, role: true, expiresAt: true },
     });
     if (!invite) return { ok: false, reason: "not-found" };
     if ((await tx.orgMember.count({ where: { user: { email: invite.email } } })) > 0) {
@@ -168,6 +208,10 @@ export async function resendInvite(
       where: { email: invite.email, id: { not: invite.id }, ...pendingWhere(now) },
     });
     if (newer > 0) return { ok: false, reason: "already-invited" };
+    const expired = invite.expiresAt.getTime() <= now.getTime();
+    if (expired && (await seatsFull(tx, args.memberLimit, now))) {
+      return { ok: false, reason: "member-limit" };
+    }
     if (!(await underDailyLimit(tx, now))) return { ok: false, reason: "rate-limited" };
     const { token, tokenHash } = generateInviteToken();
     const expiresAt = new Date(now.getTime() + INVITE_TTL_MS);

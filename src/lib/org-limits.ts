@@ -2,7 +2,7 @@ import type { PrismaClient } from "@/generated/prisma/client";
 import { getDb } from "@/lib/db/client";
 import { withOrg } from "@/lib/db/with-org";
 import { isCloud } from "@/lib/env";
-import { countMembers } from "@/lib/org-members";
+import { countMembers } from "@/lib/members";
 import { limitsFor, PLANS, type OrgLimits, type OrgPlanRow } from "@/lib/plans";
 import { freeSlug } from "@/lib/streams";
 
@@ -35,6 +35,10 @@ function limitMessage(kind: string, limit: number | null, limits: OrgLimits): st
   return `${kind} limit reached (${limit ?? "none"} on the ${plan} plan). See Settings → Billing for the plans.`;
 }
 
+export function memberLimitMessage(limits: OrgLimits): string {
+  return limitMessage("Member", limits.memberLimit, limits);
+}
+
 export function repoLimitMessage(limits: OrgLimits): string {
   return limitMessage("Repository", limits.repoLimit, limits);
 }
@@ -53,9 +57,17 @@ export async function createLimitedStream(
   });
 }
 
-/** Throws OrgLimitError when the org has no seat left for one more member or invite. */
-export async function assertMemberCapacity(orgId: string): Promise<void> {
-  const limits = await loadOrgLimits(getDb(), orgId);
-  if (limits.memberLimit !== null && (await countMembers(orgId)) >= limits.memberLimit)
-    throw new OrgLimitError(limitMessage("Member", limits.memberLimit, limits));
+/**
+ * Throws OrgLimitError when the org has no seat left for one more member or invite (seats:
+ * `countMembers`, members plus pending invites). Returns the limits, so the caller can pass
+ * `memberLimit` to the invite write, which checks again under the membership lock.
+ */
+export async function assertMemberCapacity(
+  orgId: string,
+  db: PrismaClient = getDb()
+): Promise<OrgLimits> {
+  const limits = await loadOrgLimits(db, orgId);
+  if (limits.memberLimit !== null && (await countMembers(db, orgId)) >= limits.memberLimit)
+    throw new OrgLimitError(memberLimitMessage(limits));
+  return limits;
 }

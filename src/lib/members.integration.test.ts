@@ -45,6 +45,7 @@ describe.skipIf(!url)("org members against Postgres", () => {
 
   async function invite(orgId: string, actorUserId: string, email: string, role = "member") {
     const res = await createInvite(db, {
+      memberLimit: null,
       orgId,
       actorUserId,
       email,
@@ -79,10 +80,22 @@ describe.skipIf(!url)("org members against Postgres", () => {
     expect(JSON.stringify(row)).not.toContain(sent.token);
 
     expect(
-      await createInvite(db, { orgId, actorUserId: ada.id, email: bob.email, role: "member" })
+      await createInvite(db, {
+        memberLimit: null,
+        orgId,
+        actorUserId: ada.id,
+        email: bob.email,
+        role: "member",
+      })
     ).toEqual({ ok: false, reason: "already-invited" });
     expect(
-      await createInvite(db, { orgId, actorUserId: ada.id, email: ada.email, role: "member" })
+      await createInvite(db, {
+        memberLimit: null,
+        orgId,
+        actorUserId: ada.id,
+        email: ada.email,
+        role: "member",
+      })
     ).toEqual({ ok: false, reason: "already-member" });
 
     expect(await acceptInvite(db, { token: sent.token, userId: bob.id })).toEqual({
@@ -152,7 +165,12 @@ describe.skipIf(!url)("org members against Postgres", () => {
       data: { expiresAt: new Date(Date.now() - 1) },
     });
 
-    const again = await resendInvite(db, { orgId, actorUserId: ada.id, inviteId: first.inviteId });
+    const again = await resendInvite(db, {
+      memberLimit: null,
+      orgId,
+      actorUserId: ada.id,
+      inviteId: first.inviteId,
+    });
     if (!again.ok) throw new Error(again.reason);
     expect(again.role).toBe("owner");
     expect(await acceptInvite(db, { token: first.token, userId: bob.id })).toEqual({
@@ -169,7 +187,14 @@ describe.skipIf(!url)("org members against Postgres", () => {
       data: { expiresAt: new Date(Date.now() - 1) },
     });
     await invite(orgId, ada.id, `twice-${suffix}@example.com`);
-    expect(await resendInvite(db, { orgId, actorUserId: ada.id, inviteId: old.inviteId })).toEqual({
+    expect(
+      await resendInvite(db, {
+        memberLimit: null,
+        orgId,
+        actorUserId: ada.id,
+        inviteId: old.inviteId,
+      })
+    ).toEqual({
       ok: false,
       reason: "already-invited",
     });
@@ -183,10 +208,18 @@ describe.skipIf(!url)("org members against Postgres", () => {
       await invite(orgId, ada.id, `x${i}-${suffix}@example.com`);
     }
     expect(
-      (await resendInvite(db, { orgId, actorUserId: ada.id, inviteId: first.inviteId })).ok
+      (
+        await resendInvite(db, {
+          memberLimit: null,
+          orgId,
+          actorUserId: ada.id,
+          inviteId: first.inviteId,
+        })
+      ).ok
     ).toBe(true);
     expect(
       await createInvite(db, {
+        memberLimit: null,
         orgId,
         actorUserId: ada.id,
         email: `over-${suffix}@example.com`,
@@ -194,13 +227,19 @@ describe.skipIf(!url)("org members against Postgres", () => {
       })
     ).toEqual({ ok: false, reason: "rate-limited" });
     expect(
-      await resendInvite(db, { orgId, actorUserId: ada.id, inviteId: first.inviteId })
+      await resendInvite(db, {
+        memberLimit: null,
+        orgId,
+        actorUserId: ada.id,
+        inviteId: first.inviteId,
+      })
     ).toEqual({ ok: false, reason: "rate-limited" });
     // Another org has its own allowance.
     const other = await orgOf(ada.id, "limit-other");
     expect(
       (
         await createInvite(db, {
+          memberLimit: null,
           orgId: other,
           actorUserId: ada.id,
           email: `y-${suffix}@example.com`,
@@ -208,6 +247,52 @@ describe.skipIf(!url)("org members against Postgres", () => {
         })
       ).ok
     ).toBe(true);
+  });
+
+  it("stops invites at the member limit, counting pending invites as seats", async () => {
+    const ada = await user("ada10");
+    const orgId = await orgOf(ada.id, "seats");
+    const asAda = { orgId, actorUserId: ada.id };
+    // Free: one seat, taken by the owner.
+    expect(
+      await createInvite(db, {
+        ...asAda,
+        memberLimit: 1,
+        email: `s1-${suffix}@example.com`,
+        role: "member",
+      })
+    ).toEqual({ ok: false, reason: "member-limit" });
+    // Pro (3): the owner and two pending invites fill it.
+    const first = await createInvite(db, {
+      ...asAda,
+      memberLimit: 3,
+      email: `s1-${suffix}@example.com`,
+      role: "member",
+    });
+    if (!first.ok) throw new Error(first.reason);
+    await invite(orgId, ada.id, `s2-${suffix}@example.com`);
+    expect(await countMembers(db, orgId)).toBe(3);
+    expect(
+      await createInvite(db, {
+        ...asAda,
+        memberLimit: 3,
+        email: `s3-${suffix}@example.com`,
+        role: "member",
+      })
+    ).toEqual({ ok: false, reason: "member-limit" });
+    // A pending invite keeps its seat on resend; an expired one must find a free seat again.
+    expect(
+      (await resendInvite(db, { ...asAda, memberLimit: 3, inviteId: first.inviteId })).ok
+    ).toBe(true);
+    await withOrg(db, orgId).orgInvite.updateMany({
+      where: { id: first.inviteId },
+      data: { expiresAt: new Date(Date.now() - 1) },
+    });
+    await invite(orgId, ada.id, `s4-${suffix}@example.com`);
+    expect(await resendInvite(db, { ...asAda, memberLimit: 3, inviteId: first.inviteId })).toEqual({
+      ok: false,
+      reason: "member-limit",
+    });
   });
 
   it("only owners invite, change roles, remove and rename", async () => {
@@ -223,9 +308,16 @@ describe.skipIf(!url)("org members against Postgres", () => {
 
     const asBob = { orgId, actorUserId: bob.id };
     expect(
-      await createInvite(db, { ...asBob, email: `z-${suffix}@example.com`, role: "owner" })
+      await createInvite(db, {
+        memberLimit: null,
+        ...asBob,
+        email: `z-${suffix}@example.com`,
+        role: "owner",
+      })
     ).toEqual({ ok: false, reason: "not-owner" });
-    expect(await resendInvite(db, { ...asBob, inviteId: pending.inviteId })).toEqual({
+    expect(
+      await resendInvite(db, { memberLimit: null, ...asBob, inviteId: pending.inviteId })
+    ).toEqual({
       ok: false,
       reason: "not-owner",
     });
@@ -370,7 +462,9 @@ describe.skipIf(!url)("org members against Postgres", () => {
       ok: false,
       reason: "not-found",
     });
-    expect(await resendInvite(db, { ...asAda, inviteId: theirInvite.inviteId })).toEqual({
+    expect(
+      await resendInvite(db, { memberLimit: null, ...asAda, inviteId: theirInvite.inviteId })
+    ).toEqual({
       ok: false,
       reason: "not-found",
     });

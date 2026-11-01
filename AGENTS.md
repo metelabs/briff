@@ -264,7 +264,8 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   stream and member limits; `Org.repoLimit` / `streamLimit` are the instance admin's overrides
   (null = the plan's, a value counts only above it). Every check reads `loadOrgLimits` →
   `limitsFor` inside the org's advisory-lock transaction (`src/lib/org-limits.ts`; members:
-  `assertMemberCapacity`, seats from `countMembers` in `src/lib/org-members.ts`). Over a limit
+  `assertMemberCapacity`, seats from `countMembers` in `src/lib/members.ts`: members plus pending invites; the invite
+  write rechecks the limit under the membership lock). Over a limit
   nothing is deleted; new repos, streams or members are refused. Only the hosted service sets
   `BRIFF_CLOUD=true` (`isCloud()`); otherwise every org is unlimited and nothing plan-related
   renders: no capacity line, no plan column or Edit limits in Admin, `/pricing` and

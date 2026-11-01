@@ -128,7 +128,7 @@ describe.skipIf(!url)("organisation capacity", () => {
     const selfHosted = await orgWith("acme-selfhost", "free", 10, 2);
     await expect(ingestScan(db, selfHosted, payload("acme-selfhost/new"))).resolves.toHaveLength(1);
     await expect(createLimitedStream(db, selfHosted, "Extra")).resolves.toBeUndefined();
-    await expect(assertMemberCapacity(selfHosted)).resolves.toBeUndefined();
+    await expect(assertMemberCapacity(selfHosted)).resolves.toMatchObject({ memberLimit: null });
     auth.orgId = selfHosted;
     const form = new FormData();
     form.set("orgId", selfHosted);
@@ -157,7 +157,7 @@ describe.skipIf(!url)("organisation capacity", () => {
       }
       const check = assertMemberCapacity(orgId);
       if (c.full) await expect(check, `${c.plan} ${c.members}`).rejects.toThrow(OrgLimitError);
-      else await expect(check, `${c.plan} ${c.members}`).resolves.toBeUndefined();
+      else await expect(check, `${c.plan} ${c.members}`).resolves.toMatchObject({ plan: c.plan });
     }
     await db.user.deleteMany({ where: { id: { startsWith: "seat-" } } });
   });
