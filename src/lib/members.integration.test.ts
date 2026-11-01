@@ -1,10 +1,11 @@
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
 import { orgRecipients } from "@/lib/email/recipients";
+import { resetEnvCache } from "@/lib/env";
 import { INVITE_TTL_MS } from "@/lib/invite-token";
 import { createOrgForUser } from "@/lib/org";
 
@@ -45,7 +46,6 @@ describe.skipIf(!url)("org members against Postgres", () => {
 
   async function invite(orgId: string, actorUserId: string, email: string, role = "member") {
     const res = await createInvite(db, {
-      memberLimit: null,
       orgId,
       actorUserId,
       email,
@@ -81,7 +81,6 @@ describe.skipIf(!url)("org members against Postgres", () => {
 
     expect(
       await createInvite(db, {
-        memberLimit: null,
         orgId,
         actorUserId: ada.id,
         email: bob.email,
@@ -90,7 +89,6 @@ describe.skipIf(!url)("org members against Postgres", () => {
     ).toEqual({ ok: false, reason: "already-invited" });
     expect(
       await createInvite(db, {
-        memberLimit: null,
         orgId,
         actorUserId: ada.id,
         email: ada.email,
@@ -166,7 +164,6 @@ describe.skipIf(!url)("org members against Postgres", () => {
     });
 
     const again = await resendInvite(db, {
-      memberLimit: null,
       orgId,
       actorUserId: ada.id,
       inviteId: first.inviteId,
@@ -189,7 +186,6 @@ describe.skipIf(!url)("org members against Postgres", () => {
     await invite(orgId, ada.id, `twice-${suffix}@example.com`);
     expect(
       await resendInvite(db, {
-        memberLimit: null,
         orgId,
         actorUserId: ada.id,
         inviteId: old.inviteId,
@@ -210,7 +206,6 @@ describe.skipIf(!url)("org members against Postgres", () => {
     expect(
       (
         await resendInvite(db, {
-          memberLimit: null,
           orgId,
           actorUserId: ada.id,
           inviteId: first.inviteId,
@@ -219,7 +214,6 @@ describe.skipIf(!url)("org members against Postgres", () => {
     ).toBe(true);
     expect(
       await createInvite(db, {
-        memberLimit: null,
         orgId,
         actorUserId: ada.id,
         email: `over-${suffix}@example.com`,
@@ -228,7 +222,6 @@ describe.skipIf(!url)("org members against Postgres", () => {
     ).toEqual({ ok: false, reason: "rate-limited" });
     expect(
       await resendInvite(db, {
-        memberLimit: null,
         orgId,
         actorUserId: ada.id,
         inviteId: first.inviteId,
@@ -239,7 +232,6 @@ describe.skipIf(!url)("org members against Postgres", () => {
     expect(
       (
         await createInvite(db, {
-          memberLimit: null,
           orgId: other,
           actorUserId: ada.id,
           email: `y-${suffix}@example.com`,
@@ -249,50 +241,42 @@ describe.skipIf(!url)("org members against Postgres", () => {
     ).toBe(true);
   });
 
-  it("stops invites at the member limit, counting pending invites as seats", async () => {
-    const ada = await user("ada10");
-    const orgId = await orgOf(ada.id, "seats");
-    const asAda = { orgId, actorUserId: ada.id };
-    // Free: one seat, taken by the owner.
-    expect(
-      await createInvite(db, {
-        ...asAda,
-        memberLimit: 1,
-        email: `s1-${suffix}@example.com`,
-        role: "member",
-      })
-    ).toEqual({ ok: false, reason: "member-limit" });
-    // Pro (3): the owner and two pending invites fill it.
-    const first = await createInvite(db, {
-      ...asAda,
-      memberLimit: 3,
-      email: `s1-${suffix}@example.com`,
-      role: "member",
-    });
-    if (!first.ok) throw new Error(first.reason);
-    await invite(orgId, ada.id, `s2-${suffix}@example.com`);
-    expect(await countMembers(db, orgId)).toBe(3);
-    expect(
-      await createInvite(db, {
-        ...asAda,
-        memberLimit: 3,
-        email: `s3-${suffix}@example.com`,
-        role: "member",
-      })
-    ).toEqual({ ok: false, reason: "member-limit" });
-    // A pending invite keeps its seat on resend; an expired one must find a free seat again.
-    expect(
-      (await resendInvite(db, { ...asAda, memberLimit: 3, inviteId: first.inviteId })).ok
-    ).toBe(true);
-    await withOrg(db, orgId).orgInvite.updateMany({
-      where: { id: first.inviteId },
-      data: { expiresAt: new Date(Date.now() - 1) },
-    });
-    await invite(orgId, ada.id, `s4-${suffix}@example.com`);
-    expect(await resendInvite(db, { ...asAda, memberLimit: 3, inviteId: first.inviteId })).toEqual({
-      ok: false,
-      reason: "member-limit",
-    });
+  it("stops invites at the plan's member limit, counting pending invites as seats", async () => {
+    vi.stubEnv("BRIFF_CLOUD", "true");
+    resetEnvCache();
+    try {
+      const ada = await user("ada10");
+      const orgId = await orgOf(ada.id, "seats");
+      const asAda = { orgId, actorUserId: ada.id, role: "member" as const };
+      const full = { ok: false, reason: "member-limit", limits: expect.anything() };
+      // Free: one seat, taken by the owner.
+      expect(await createInvite(db, { ...asAda, email: `s1-${suffix}@example.com` })).toMatchObject(
+        { ...full, limits: { plan: "free", memberLimit: 1 } }
+      );
+      // Pro (3): the owner and two pending invites fill it; the plan is read at write time.
+      await db.org.update({ where: { id: orgId }, data: { plan: "pro" } });
+      const first = await invite(orgId, ada.id, `s1-${suffix}@example.com`);
+      await invite(orgId, ada.id, `s2-${suffix}@example.com`);
+      expect(await countMembers(db, orgId)).toBe(3);
+      expect(await createInvite(db, { ...asAda, email: `s3-${suffix}@example.com` })).toMatchObject(
+        full
+      );
+      // A pending invite keeps its seat on resend; an expired one needs a free seat again.
+      expect(
+        (await resendInvite(db, { orgId, actorUserId: ada.id, inviteId: first.inviteId })).ok
+      ).toBe(true);
+      await withOrg(db, orgId).orgInvite.updateMany({
+        where: { id: first.inviteId },
+        data: { expiresAt: new Date(Date.now() - 1) },
+      });
+      await invite(orgId, ada.id, `s4-${suffix}@example.com`);
+      expect(
+        await resendInvite(db, { orgId, actorUserId: ada.id, inviteId: first.inviteId })
+      ).toMatchObject(full);
+    } finally {
+      vi.unstubAllEnvs();
+      resetEnvCache();
+    }
   });
 
   it("only owners invite, change roles, remove and rename", async () => {
@@ -309,15 +293,12 @@ describe.skipIf(!url)("org members against Postgres", () => {
     const asBob = { orgId, actorUserId: bob.id };
     expect(
       await createInvite(db, {
-        memberLimit: null,
         ...asBob,
         email: `z-${suffix}@example.com`,
         role: "owner",
       })
     ).toEqual({ ok: false, reason: "not-owner" });
-    expect(
-      await resendInvite(db, { memberLimit: null, ...asBob, inviteId: pending.inviteId })
-    ).toEqual({
+    expect(await resendInvite(db, { ...asBob, inviteId: pending.inviteId })).toEqual({
       ok: false,
       reason: "not-owner",
     });
@@ -412,6 +393,27 @@ describe.skipIf(!url)("org members against Postgres", () => {
     });
   });
 
+  it("gives a user removed from two orgs at once a single new org", async () => {
+    const ada = await user("ada11");
+    const zed = await user("zed11");
+    const kim = await user("kim11");
+    const a = await orgOf(ada.id, "twice-a");
+    const b = await orgOf(zed.id, "twice-b");
+    for (const [orgId, owner] of [
+      [a, ada.id],
+      [b, zed.id],
+    ] as const) {
+      const sent = await invite(orgId, owner, kim.email);
+      expect((await acceptInvite(db, { token: sent.token, userId: kim.id })).ok).toBe(true);
+    }
+    const results = await Promise.all([
+      removeMember(db, { orgId: a, actorUserId: ada.id, memberUserId: kim.id }),
+      removeMember(db, { orgId: b, actorUserId: zed.id, memberUserId: kim.id }),
+    ]);
+    expect(results).toEqual([{ ok: true }, { ok: true }]);
+    expect(await db.orgMember.count({ where: { userId: kim.id } })).toBe(1);
+  });
+
   it("delivers to a member from joining until removal", async () => {
     const ada = await user("ada7");
     const bob = await user("bob7");
@@ -462,9 +464,7 @@ describe.skipIf(!url)("org members against Postgres", () => {
       ok: false,
       reason: "not-found",
     });
-    expect(
-      await resendInvite(db, { memberLimit: null, ...asAda, inviteId: theirInvite.inviteId })
-    ).toEqual({
+    expect(await resendInvite(db, { ...asAda, inviteId: theirInvite.inviteId })).toEqual({
       ok: false,
       reason: "not-found",
     });

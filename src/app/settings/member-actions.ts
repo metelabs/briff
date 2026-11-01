@@ -97,9 +97,8 @@ export async function inviteMemberAction(
   if (!parsed.success) return { ok: false, message: "Enter a valid email address.", saved: raw };
   // The role is rechecked in the transaction; this only puts the clearer message first.
   if (ctx.role !== "owner") return { ok: false, message: NOT_OWNER, saved: raw };
-  let limits;
   try {
-    limits = await assertMemberCapacity(ctx.orgId);
+    await assertMemberCapacity(ctx.orgId);
   } catch (err) {
     if (err instanceof OrgLimitError) return { ok: false, message: err.message, saved: raw };
     throw err;
@@ -109,15 +108,16 @@ export async function inviteMemberAction(
     actorUserId: ctx.userId,
     email: parsed.data.email,
     role: parsed.data.role,
-    memberLimit: limits.memberLimit,
   });
   if (!res.ok) {
+    if (res.reason === "member-limit") {
+      return { ok: false, message: memberLimitMessage(res.limits), saved: raw };
+    }
     const message = {
       "not-owner": NOT_OWNER,
       "already-member": `${parsed.data.email} is already a member.`,
       "already-invited": `${parsed.data.email} already has a pending invite. Use Resend below.`,
       "rate-limited": RATE_LIMITED,
-      "member-limit": memberLimitMessage(limits),
     }[res.reason];
     return { ok: false, message, saved: raw };
   }
@@ -131,16 +131,16 @@ export async function resendInviteAction(inviteId: string): Promise<InviteFormSt
   const ctx = await requireOrgContext();
   const parsed = z.string().min(1).max(100).safeParse(inviteId);
   if (!parsed.success) return { ok: false, message: "That invite no longer exists." };
-  const limits = await loadOrgLimits(getDb(), ctx.orgId);
   const res = await resendInvite(getDb(), {
     orgId: ctx.orgId,
     actorUserId: ctx.userId,
     inviteId: parsed.data,
-    memberLimit: limits.memberLimit,
   });
   if (!res.ok) {
+    revalidatePath("/settings");
+    if (res.reason === "member-limit")
+      return { ok: false, message: memberLimitMessage(res.limits) };
     const message = {
-      "member-limit": memberLimitMessage(limits),
       "not-owner": NOT_OWNER,
       "not-found": "That invite was already accepted or revoked.",
       "already-member": "That address is already a member.",

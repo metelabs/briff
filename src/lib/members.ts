@@ -11,7 +11,9 @@ import {
   isInviteToken,
   normalizeEmail,
 } from "@/lib/invite-token";
-import { createOrgForUser } from "@/lib/org";
+import { isCloud } from "@/lib/env";
+import { createOrgIfNone } from "@/lib/org";
+import { limitsFor, type OrgLimits } from "@/lib/plans";
 
 // Org membership: invites, roles, removal and the audit log (Settings -> Members). Owners
 // invite, change roles, remove members and rename the org; the last owner can never be
@@ -93,16 +95,27 @@ export type CreateInviteResult =
   | { ok: true; inviteId: string; token: string; email: string; expiresAt: Date }
   | {
       ok: false;
-      reason: "not-owner" | "already-member" | "already-invited" | "rate-limited" | "member-limit";
-    };
+      reason: "not-owner" | "already-member" | "already-invited" | "rate-limited";
+    }
+  | { ok: false; reason: "member-limit"; limits: OrgLimits };
 
-/** The plan's member limit (null = unlimited), rechecked under the membership lock. */
+/**
+ * The org's limits when it has no seat left, else null. Read inside the membership lock, so a
+ * plan change or a concurrent invite between the page and the write cannot overfill the org
+ * (same rule as `loadOrgLimits`, which members.ts cannot import without a cycle).
+ */
 async function seatsFull(
-  tx: Pick<OrgDb, "orgMember" | "orgInvite">,
-  memberLimit: number | null,
+  tx: Pick<OrgDb, "orgMember" | "orgInvite" | "org">,
+  orgId: string,
   now: Date
-): Promise<boolean> {
-  return memberLimit !== null && (await countSeats(tx, now)) >= memberLimit;
+): Promise<OrgLimits | null> {
+  const org = await tx.org.findUniqueOrThrow({
+    where: { id: orgId },
+    select: { plan: true, repoLimit: true, streamLimit: true },
+  });
+  const limits = limitsFor(org, { cloud: isCloud() });
+  if (limits.memberLimit === null) return null;
+  return (await countSeats(tx, now)) >= limits.memberLimit ? limits : null;
 }
 
 async function underDailyLimit(tx: MembersTx, now: Date): Promise<boolean> {
@@ -120,8 +133,6 @@ export async function createInvite(
     actorUserId: string;
     email: string;
     role: OrgRole;
-    /** From `loadOrgLimits`; null = unlimited. */
-    memberLimit: number | null;
     now?: Date;
   }
 ): Promise<CreateInviteResult> {
@@ -136,7 +147,8 @@ export async function createInvite(
     if ((await tx.orgInvite.count({ where: { email, ...pendingWhere(now) } })) > 0) {
       return { ok: false, reason: "already-invited" };
     }
-    if (await seatsFull(tx, args.memberLimit, now)) return { ok: false, reason: "member-limit" };
+    const full = await seatsFull(tx, args.orgId, now);
+    if (full) return { ok: false, reason: "member-limit", limits: full };
     if (!(await underDailyLimit(tx, now))) return { ok: false, reason: "rate-limited" };
     const { token, tokenHash } = generateInviteToken();
     const expiresAt = new Date(now.getTime() + INVITE_TTL_MS);
@@ -167,14 +179,9 @@ export type ResendInviteResult =
   | { ok: true; token: string; email: string; role: OrgRole; expiresAt: Date }
   | {
       ok: false;
-      reason:
-        | "not-owner"
-        | "not-found"
-        | "already-member"
-        | "already-invited"
-        | "rate-limited"
-        | "member-limit";
-    };
+      reason: "not-owner" | "not-found" | "already-member" | "already-invited" | "rate-limited";
+    }
+  | { ok: false; reason: "member-limit"; limits: OrgLimits };
 
 /**
  * A new link for a pending or expired invite: the old link stops working, the 7 days start
@@ -186,8 +193,6 @@ export async function resendInvite(
     orgId: string;
     actorUserId: string;
     inviteId: string;
-    /** From `loadOrgLimits`; an expired invite takes a seat again when renewed. */
-    memberLimit: number | null;
     now?: Date;
   }
 ): Promise<ResendInviteResult> {
@@ -208,9 +213,10 @@ export async function resendInvite(
       where: { email: invite.email, id: { not: invite.id }, ...pendingWhere(now) },
     });
     if (newer > 0) return { ok: false, reason: "already-invited" };
-    const expired = invite.expiresAt.getTime() <= now.getTime();
-    if (expired && (await seatsFull(tx, args.memberLimit, now))) {
-      return { ok: false, reason: "member-limit" };
+    // A pending invite keeps its seat; an expired one needs a free seat to come back.
+    if (invite.expiresAt.getTime() <= now.getTime()) {
+      const full = await seatsFull(tx, args.orgId, now);
+      if (full) return { ok: false, reason: "member-limit", limits: full };
     }
     if (!(await underDailyLimit(tx, now))) return { ok: false, reason: "rate-limited" };
     const { token, tokenHash } = generateInviteToken();
@@ -358,10 +364,10 @@ export function leaveOrg(
 export async function ensureUserHasOrg(db: PrismaClient, userId: string): Promise<string | null> {
   const user = await db.user.findUnique({
     where: { id: userId },
-    select: { name: true, email: true, _count: { select: { memberships: true } } },
+    select: { name: true, email: true },
   });
-  if (!user || user._count.memberships > 0) return null;
-  return createOrgForUser(db, { name: user.name || user.email, userId });
+  if (!user) return null;
+  return createOrgIfNone(db, { name: user.name || user.email, userId });
 }
 
 export async function renameOrg(

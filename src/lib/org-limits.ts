@@ -59,15 +59,14 @@ export async function createLimitedStream(
 
 /**
  * Throws OrgLimitError when the org has no seat left for one more member or invite (seats:
- * `countMembers`, members plus pending invites). Returns the limits, so the caller can pass
- * `memberLimit` to the invite write, which checks again under the membership lock.
+ * `countMembers`, members plus pending invites). The invite write checks again under the
+ * membership lock (`createInvite`), so this is the early, clear answer.
  */
 export async function assertMemberCapacity(
   orgId: string,
   db: PrismaClient = getDb()
-): Promise<OrgLimits> {
+): Promise<void> {
   const limits = await loadOrgLimits(db, orgId);
   if (limits.memberLimit !== null && (await countMembers(db, orgId)) >= limits.memberLimit)
     throw new OrgLimitError(memberLimitMessage(limits));
-  return limits;
 }
