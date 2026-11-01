@@ -10,6 +10,7 @@ import { resetEnvCache } from "@/lib/env";
 import { log } from "@/lib/log";
 
 import { ALERT_WINDOW_MS, sendOpsAlert } from "./alerts";
+import { opsCheck } from "./check";
 
 const mail = vi.hoisted(() => ({
   sent: [] as { to: string; subject: string; html: string }[],
@@ -62,10 +63,12 @@ describe.skipIf(!url)("ops alerts against Postgres", () => {
     posts.length = 0;
     webhookStatus = 200;
     await db.opsAlert.deleteMany({ where: { jobType } });
+    await db.job.deleteMany({ where: { type: jobType } });
   });
 
   afterAll(async () => {
     await db.opsAlert.deleteMany({ where: { jobType } });
+    await db.job.deleteMany({ where: { type: jobType } });
     await db.$disconnect();
     await new Promise<void>((resolve) => server.close(() => resolve()));
     vi.unstubAllEnvs();
@@ -127,5 +130,37 @@ describe.skipIf(!url)("ops alerts against Postgres", () => {
     expect(await sendOpsAlert(db, failure, log, now)).toBe("skipped");
     expect(await sendOpsAlert(db, failure, log, now)).toBe("deduped");
     expect(posts).toHaveLength(0);
+  });
+
+  it("ops-check retries a recent failure whose alert was not delivered, without counting it twice", async () => {
+    await db.job.create({
+      data: {
+        type: jobType,
+        dedupeKey: jobType,
+        status: "failed",
+        attempts: 5,
+        lastError: "Error: SMTP was down too",
+      },
+    });
+    const ctx = { db, log, jobId: "ops-check-test", payload: {}, heartbeat: async () => {} };
+    await opsCheck(ctx);
+    const row = await db.opsAlert.findUniqueOrThrow({
+      where: { jobType_kind: { jobType, kind: "failed" } },
+    });
+    expect(row.suppressed).toBe(0);
+    expect(mail.sent.filter((m) => m.subject.includes(jobType))).toHaveLength(2);
+    // Other test files may leave failures of their own; only this job type is ours.
+    const ours = () => posts.filter((p) => (p as { job: string }).job === jobType);
+    expect(ours()).toEqual([
+      expect.objectContaining({ job: jobType, error: "Error: SMTP was down too" }),
+    ]);
+
+    // Delivered: the next tick dedupes and does not count the same failure as held back.
+    await opsCheck(ctx);
+    expect(ours()).toHaveLength(1);
+    const again = await db.opsAlert.findUniqueOrThrow({
+      where: { jobType_kind: { jobType, kind: "failed" } },
+    });
+    expect(again.suppressed).toBe(0);
   });
 });

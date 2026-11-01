@@ -60,7 +60,7 @@ gets the web container restarted.
 
 The worker alerts the operators when
 
-- a job **fails for good** (its last retry, `src/worker/runner.ts`), or a job is failed by the
+- a job **fails for good** (its last retry, `src/worker/runner.ts`; `ops-check` re-offers failures of the last 2 hours whose alert was not delivered), or a job is failed by the
   stale-lock release because its worker died on the last attempt (`lock expired`), and
 - a scheduled job type turns **stale** (the `ops-check` job, every 30 min at :10 and :40).
 
@@ -84,7 +84,7 @@ read `text`; Discord webhooks read `content`. The webhook URL is a secret: it is
 Dedupe: at most one alert per (job type, kind) per 24 hours, stored in the `ops_alert` table
 (instance-level, not tenant data). Failures held back inside the window are counted and the next
 email says how many. If every configured channel fails (SMTP error, webhook non-2xx), the slot is
-released and the next failure or `ops-check` tick tries again. With neither SMTP nor a webhook
+released and the next failure or `ops-check` tick (which revisits jobs failed in the last 2 hours) tries again. With neither SMTP nor a webhook
 configured, the alert is only written to the worker log (`"msg":"ops alert"`, once per window).
 
 A type that has never succeeded is not alerted on until a job of that type was queued and a grace

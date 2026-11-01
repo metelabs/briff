@@ -21,6 +21,8 @@ export interface OpsAlertInput {
   error?: string | null;
   attempts?: number;
   lastSuccessAt?: Date | null;
+  /** ops-check re-offering a failure that may already have been alerted: not a new failure. */
+  revisit?: boolean;
 }
 
 export type OpsAlertOutcome = "sent" | "deduped" | "skipped" | "failed";
@@ -45,7 +47,7 @@ interface Claim {
  */
 export async function claimOpsAlert(
   db: PrismaClient,
-  alert: Pick<OpsAlertInput, "jobType" | "kind">,
+  alert: Pick<OpsAlertInput, "jobType" | "kind" | "revisit">,
   message: string,
   now: Date
 ): Promise<Claim | null> {
@@ -61,8 +63,8 @@ export async function claimOpsAlert(
     return { id: row.id, previous: null };
   }
   if (!alertDue(existing.lastSentAt, now)) {
-    // A stale job stays stale every tick; only distinct failures count as held back.
-    if (alert.kind === "failed") {
+    // A stale job stays stale every tick; only new failures count as held back.
+    if (alert.kind === "failed" && !alert.revisit) {
       await db.opsAlert.update({ where: key, data: { suppressed: { increment: 1 } } });
     }
     return null;
