@@ -20,6 +20,7 @@
 #   SMOKE_PORT                   host port for web (default 3999)
 #   SMOKE_KEEP=1                 leave the stack running (default: docker compose down -v)
 #   BRIFF_SCAN                   scanner command (default: npx --yes briff-scan@0)
+#   SMOKE_SCANNER=docker         run briff-scan in node:22-alpine even when npx exists
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -167,10 +168,10 @@ scan() {
   if [ -n "${BRIFF_SCAN:-}" ]; then
     # shellcheck disable=SC2086 # BRIFF_SCAN is a command line on purpose
     $BRIFF_SCAN "$@" --root "$fixture"
-  elif command -v npx > /dev/null; then
+  elif [ "${SMOKE_SCANNER:-}" != "docker" ] && command -v npx > /dev/null; then
     npx --yes briff-scan@0 "$@" --root "$fixture"
   else
-    docker run --rm --network host -v "$fixture:/repo:ro" node:22-alpine \
+    docker run --rm --network host -e BRIFF_TOKEN -v "$fixture:/repo:ro" node:22-alpine \
       npx --yes briff-scan@0 "$@" --root /repo
   fi
 }
