@@ -1,4 +1,19 @@
+<p>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/brand/lockup-dark.svg">
+    <img src="public/brand/lockup.svg" alt="Briff" height="40">
+  </picture>
+</p>
+
 # Briff
+
+[![CI](https://github.com/metelabs/briff/actions/workflows/ci.yml/badge.svg)](https://github.com/metelabs/briff/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/metelabs/briff?sort=semver)](https://github.com/metelabs/briff/releases)
+[![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue)](LICENSE)
+
+**Status: public beta.** Pre-1.0: the payload of `briff-scan` 0.x stays compatible, but
+configuration and pages can still change between minor releases; read the
+[changelog](CHANGELOG.md) before upgrading ([docs/UPGRADING.md](docs/UPGRADING.md)).
 
 Briff watches the packages and runtimes your repositories actually use and tells you what
 changed for them. Once a week it sends one email: the releases, deprecations, deadlines and
@@ -6,9 +21,13 @@ security fixes that touch your stack, each with the repos it affects and what to
 security advisory hits an installed version, it emails the same day. It learns your stack from
 lockfiles and runtime files only; it never reads source code.
 
-Briff is a Next.js app and a worker on Postgres. You can run it yourself (below) or use the
-hosted instance at [app.briff.dev](https://app.briff.dev). Sign-ups are open: each new
-organisation defaults to 10 repos and 2 streams, including the default stream.
+Briff is a Next.js app and a worker on Postgres. Two ways to start:
+
+- **Hosted beta:** sign up at [app.briff.dev](https://app.briff.dev). Sign-ups are open: each
+  new organisation defaults to 10 repos and 2 streams, including the default stream.
+- **Self-hosted:** one Docker image and Postgres; the step-by-step guide is
+  [docs/SELF-HOSTING.md](docs/SELF-HOSTING.md), the short version is under
+  [Self-hosting](#self-hosting) below.
 
 ## What you get
 
@@ -87,7 +106,10 @@ aliases (`repo-1`, `repo-2`, ...).
 
 ## Self-hosting
 
-Briff is one Docker image run twice, next to Postgres 16:
+The full guide (compose file, configuration, a smoke test) is
+[docs/SELF-HOSTING.md](docs/SELF-HOSTING.md); upgrades are in
+[docs/UPGRADING.md](docs/UPGRADING.md). In short, Briff is one Docker image run twice, next
+to Postgres 16:
 
 | Role   | Command                              | Notes                                                                              |
 | ------ | ------------------------------------ | ---------------------------------------------------------------------------------- |

@@ -9,6 +9,7 @@
 - [ ] `npm run typecheck && npm run lint && npm test`
 - [ ] DB-backed tests with `TEST_DATABASE_URL` (when the change touches the database, jobs or delivery)
 - [ ] A Vitest test for every behaviour change; a fixture for every parser or adapter change
+- [ ] Screenshots for UI or email changes (light and dark), attached above
 - [ ] `npm run replay` rerun if a scenario, template or pipeline sentence changed
 - [ ] Prompt version bumped if a prompt in `src/llm/prompts/` changed
 - [ ] `.env.example` updated if an environment variable was added or changed

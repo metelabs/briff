@@ -50,6 +50,19 @@ TEST_DATABASE_URL=postgresql://briff:briff@127.0.0.1:55433/briff npm test
 
 CI runs all of the above on every pull request.
 
+### CI for forks
+
+A pull request from a fork runs the same CI as one from a branch in this repository. The
+`check` job in `.github/workflows/ci.yml` uses no repository secret: its database is a
+Postgres service container with fixed throwaway credentials, and the workflow's token is
+read-only (`permissions: contents: read`). GitHub asks the maintainer to approve the first
+run of a first-time contributor; after that it starts by itself. The Docker workflow
+(`.github/workflows/docker.yml`) never runs for pull requests: it runs on pushes to `main`
+and manual dispatch only, and skips itself in any repository other than `metelabs/briff`,
+so enabling Actions on your fork does not open release PRs or push images there. Pull
+requests that change only `package.json` / `package-lock.json` (dependency bumps) get no PR
+run; CI checks them on `main` after the merge.
+
 - Every behaviour change comes with a Vitest test; a parser or source adapter change comes
   with a fixture.
 - Fixtures and docs use synthetic names (`acme/web`, `*.example`). `src/test/private-names.test.ts`
@@ -59,6 +72,13 @@ CI runs all of the above on every pull request.
   equal the rendered output.
 - A change to a prompt in `src/llm/prompts/` bumps its `<!-- version: ... -->` line.
 - A new environment variable is read through `getEnv()` and documented in `.env.example`.
+
+## Where to start
+
+[docs/CONTRIBUTING-ISSUES.md](docs/CONTRIBUTING-ISSUES.md) lists small, well-scoped tasks
+(tests, docs, CLI ergonomics) with the files to read and what "done" means. Issues labelled
+`good first issue` on GitHub come from that list. Comment on an issue before you start so two
+people do not pick the same one.
 
 ## Commits and pull requests
 
