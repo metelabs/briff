@@ -6,7 +6,10 @@ import { useCallback, useEffect, useRef, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-export type ToastKind = "ok" | "info" | "error";
+import type { ToastKind } from "./toast-kind";
+import { type ActionResult, resultToast } from "./toast-result";
+
+export type { ToastKind };
 
 export const TOAST_TIMEOUT = 5000;
 
@@ -79,19 +82,14 @@ export function useToast(): (message: string, kind?: ToastKind) => void {
   );
 }
 
-/**
- * Toasts a Server Action's result once per returned state. React hands back a new state
- * object for every submit, so the identity check fires once even when the message repeats.
- */
-export function useResultToast(
-  state: object,
-  result: { ok: boolean; message: string | null } | null
-): void {
+/** Toasts a Server Action's result once per returned state (`resultToast`). */
+export function useResultToast(state: object, result: ActionResult | null): void {
   const toast = useToast();
   const shown = useRef<object | null>(null);
   useEffect(() => {
-    if (!result?.message || shown.current === state) return;
+    const next = resultToast(state, shown.current, result);
+    if (!next) return;
     shown.current = state;
-    toast(result.message, result.ok ? "ok" : "error");
-  }, [state, result?.message, result?.ok, toast]);
+    toast(next.message, next.kind);
+  }, [state, result, toast]);
 }

@@ -84,3 +84,19 @@ export function strippedUrl(
   const query = next.toString();
   return `${pathname}${query ? `?${query}` : ""}${hash}`;
 }
+
+/**
+ * What `<FlashToast />` does for the current URL. `shownKey` is the URL it last toasted: the
+ * same URL re-rendering stays silent, and a URL without a flash clears the key so the same
+ * redirect later (a second password change in the tab) toasts again.
+ */
+export function flashStep(
+  pathname: string,
+  params: URLSearchParams,
+  shownKey: string | null
+): { show: Flash; key: string } | { show: null; key: string | null } {
+  const flash = flashFor(pathname, params);
+  if (!flash) return { show: null, key: null };
+  const key = `${pathname}?${params.toString()}`;
+  return key === shownKey ? { show: null, key } : { show: flash, key };
+}

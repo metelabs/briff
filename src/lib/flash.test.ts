@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { flashFor, LINK_ERROR_FALLBACK, strippedUrl } from "./flash";
+import { flashFor, flashStep, LINK_ERROR_FALLBACK, strippedUrl } from "./flash";
 
 const q = (s: string) => new URLSearchParams(s);
 
@@ -49,5 +49,17 @@ describe("strippedUrl", () => {
       "/settings?tab=x#account"
     );
     expect(strippedUrl("/login", q("reset=1"), ["reset"])).toBe("/login");
+  });
+});
+
+describe("flashStep", () => {
+  it("toasts once per URL and again after the params were stripped", () => {
+    const changed = q("password=changed");
+    const first = flashStep("/settings", changed, null);
+    expect(first.show?.message).toMatch(/Password changed/);
+    expect(flashStep("/settings", changed, first.key).show).toBeNull();
+    const stripped = flashStep("/settings", q(""), first.key);
+    expect(stripped).toEqual({ show: null, key: null });
+    expect(flashStep("/settings", changed, stripped.key).show).not.toBeNull();
   });
 });
