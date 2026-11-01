@@ -73,11 +73,6 @@ export function PricingCards() {
                 </li>
               ))}
             </ul>
-            {plan.planned.length > 0 && (
-              <p className="text-fg-muted mt-3 text-[12.5px]">
-                Planned for {plan.name}: {plan.planned.join(" · ")}
-              </p>
-            )}
             <div className="mt-auto pt-5">
               <Link
                 href="/login?mode=sign-up"

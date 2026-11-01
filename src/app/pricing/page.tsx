@@ -5,11 +5,13 @@ import { notFound } from "next/navigation";
 import { OG_IMAGE, SELF_HOST_URL } from "@/components/landing/links";
 import { PublicFooter, PublicHeader } from "@/components/landing/public-chrome";
 import { PageContainer } from "@/components/shell/page-container";
+import { Accordion } from "@/components/ui/accordion";
 import { isCloud } from "@/lib/env";
 import { INCLUDED_FEATURES, PLANS } from "@/lib/plans";
 import { publicSiteUrl } from "@/lib/public-site";
 
 import { PricingCards } from "./_client";
+import { FAQ } from "./faq";
 
 // Public, hosted service only: a self-hosted instance (BRIFF_CLOUD off) has no plans and answers
 // 404 here. Rendered per request so the flag is read at request time, never at build.
@@ -37,33 +39,6 @@ export function generateMetadata(): Metadata {
     robots: { index: true, follow: true },
   };
 }
-
-const FAQ: { q: string; a: string }[] = [
-  {
-    q: "What counts as a repo?",
-    a: "Every repository your organisation has in Briff: one a GitHub App installation scans, or one a scanner (briff-scan, the GitHub Action) uploads. A monorepo uploaded as one repo is one. A repo counts whether or not it is in a stream; removing it on Repos frees its slot.",
-  },
-  {
-    q: "What happens when I reach a limit?",
-    a: "Nothing is deleted and nothing stops working. New repos past the limit are refused: briff-scan reports the limit, the GitHub App leaves them unlinked and Repos says so. A new stream past the limit is refused the same way. Move to a larger plan or remove a repo, then rescan.",
-  },
-  {
-    q: "Is self-hosting free?",
-    a: "Yes, and unlimited. A self-hosted instance has no plans and no limits: one Docker image and Postgres, every feature, as many repos, streams and people as you like.",
-  },
-  {
-    q: "Can I cancel anytime?",
-    a: "Yes. A cancelled plan runs to the end of the period you paid for, then the organisation moves to Free. Your repos, streams and bulletins stay.",
-  },
-  {
-    q: "Who sends the invoices?",
-    a: "Paddle, our payment partner. Paddle is the merchant of record: it takes the payment and sends the invoice and receipts.",
-  },
-  {
-    q: "What about VAT and sales tax?",
-    a: "Paddle handles them: it adds the VAT or sales tax that applies where you are, and lets a business enter its VAT number at checkout.",
-  },
-];
 
 export default function PricingPage() {
   if (!isCloud()) notFound();
@@ -119,14 +94,11 @@ export default function PricingPage() {
           <h2 id="faq" className="type-page text-[clamp(24px,3vw,32px)]">
             Questions
           </h2>
-          <dl className="bg-surface border-line rounded-card mt-5 border">
-            {FAQ.map((item) => (
-              <div key={item.q} className="border-line border-t px-[18px] py-4 first:border-t-0">
-                <dt className="text-[15px] font-medium">{item.q}</dt>
-                <dd className="text-fg-muted mt-1.5 text-[14px]">{item.a}</dd>
-              </div>
-            ))}
-          </dl>
+          <Accordion
+            className="mt-5"
+            defaultOpen={[FAQ[0].id]}
+            entries={FAQ.map((item) => ({ id: item.id, title: item.q, body: item.a }))}
+          />
         </section>
       </PageContainer>
       <PublicFooter pricing />

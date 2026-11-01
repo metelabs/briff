@@ -360,14 +360,25 @@ select:-webkit-autofill:focus {
   }
 }
 
-/* Theme change: colours only, for 300ms, while the class is on <html>. */
-html.theming *,
-html.theming *::before,
-html.theming *::after {
-  transition:
-    background-color 0.3s ease,
-    color 0.3s ease,
-    border-color 0.3s ease !important;
+/* Theme change (applyTheme in top-bar.tsx): a View Transitions crossfade of the page; element
+   transitions are off while the theme attribute flips so none of them lags behind it. */
+html[data-theme-switching] *,
+html[data-theme-switching] *::before,
+html[data-theme-switching] *::after {
+  transition: none !important;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 200ms;
+  animation-timing-function: ease-out;
+}
+
+/* Native <details> markers (Safari keeps ::-webkit-details-marker); summaries draw their own. */
+summary {
+  list-style: none;
+}
+summary::-webkit-details-marker {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -14,7 +14,8 @@ import { Input } from "@/components/ui/input";
 import { FieldHelp, FormStatus, Label } from "@/components/ui/label";
 import { Tooltip, TruncatedText, useIsTruncated } from "@/components/ui/tooltip";
 import type { StreamOption } from "@/lib/stream-scope";
-import { themeAttribute, THEMES, type Theme } from "@/lib/theme";
+import { THEMES, type Theme } from "@/lib/theme";
+import { switchTheme } from "@/lib/theme-switch";
 import { cn } from "@/lib/utils";
 
 import {
@@ -36,15 +37,16 @@ export const menuItemClass =
 const THEME_LABELS: Record<Theme, string> = { system: "System", light: "Light", dark: "Dark" };
 const THEME_ICONS: Record<Theme, LucideIcon> = { system: Monitor, light: Sun, dark: Moon };
 
-function applyTheme(theme: Theme): void {
-  const root = document.documentElement;
-  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    root.classList.add("theming");
-    window.setTimeout(() => root.classList.remove("theming"), 350);
-  }
-  const attr = themeAttribute(theme);
-  if (attr) root.setAttribute("data-theme", attr);
-  else root.removeAttribute("data-theme");
+function applyTheme(theme: Theme): Promise<void> {
+  return switchTheme(theme, {
+    root: document.documentElement,
+    reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    startViewTransition:
+      typeof document.startViewTransition === "function"
+        ? (update) => document.startViewTransition(update)
+        : undefined,
+    nextFrame: (cb) => requestAnimationFrame(cb),
+  });
 }
 
 export function TopBar({
@@ -335,10 +337,12 @@ function AccountMenu({
                 value={shownTheme}
                 onValueChange={(value: Theme) => {
                   setShownTheme(value);
-                  applyTheme(value);
-                  startTransition(async () => {
-                    await setThemeAction(value);
-                  });
+                  // The cookie write refreshes the route; after the crossfade, so it cannot stall it.
+                  void applyTheme(value).then(() =>
+                    startTransition(async () => {
+                      await setThemeAction(value);
+                    })
+                  );
                 }}
                 className="flex items-center justify-between gap-3 py-0.5 pr-0.5 pl-2.5"
               >
