@@ -142,19 +142,18 @@ export function judgeRuntime(
   if (lifecycle === "unknown" || !facts) {
     return { ...base, status: "unknown", note: "No lifecycle data for this line" };
   }
-  const latest = facts.latest;
-  const behind =
-    latest !== null &&
-    isExactVersion(runtime, version) &&
-    releaseLineOf(runtime, latest) === line &&
-    compareDotted(version, latest) < 0;
-  const onLatest = latest !== null && isExactVersion(runtime, version) && !behind;
+  // The table can file a line under its major (bun `1.2` under cycle `1`): its latest is
+  // only a target when it is on the installed line.
+  const latest =
+    facts.latest !== null && releaseLineOf(runtime, facts.latest) === line ? facts.latest : null;
+  const exact = isExactVersion(runtime, version);
+  const behind = latest !== null && exact && compareDotted(version, latest) < 0;
   return {
     ...base,
     status: behind ? "minor" : "supported",
     until: facts.eolDate,
     target:
-      latest && !onLatest
+      latest && (behind || !exact)
         ? `Latest in your line: ${latest}${behind && facts.eolDate ? ` (line supported until ${MONTH(facts.eolDate)})` : ""}`
         : null,
     note: null,

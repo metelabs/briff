@@ -153,6 +153,24 @@ describe("judgeRuntime and eolTarget", () => {
     });
   });
 
+  it("never names a latest version from another line as the target", () => {
+    setLifecycleRows([
+      { product: "bun", cycle: "1", eol: false, latest: "1.4.4", lts: null, support: null },
+    ]);
+    expect(judgeRuntime("bun", node("1.2", "1.2", "Dockerfile"), asOf)).toMatchObject({
+      status: "supported",
+      target: null,
+    });
+    expect(judgeRuntime("bun", node("1.2.5", "1.2.5", "Dockerfile"), asOf)).toMatchObject({
+      status: "supported",
+      target: null,
+    });
+    expect(judgeRuntime("bun", node("1.4.1", "1.4.1", "Dockerfile"), asOf)).toMatchObject({
+      status: "minor",
+      target: "Latest in your line: 1.4.4",
+    });
+  });
+
   it("does not judge ranges, build variables, or lines the table does not know", () => {
     expect(
       judgeRuntime("node", node(">=18", "18", "package.json engines.node"), asOf)
