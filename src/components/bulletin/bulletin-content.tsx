@@ -39,8 +39,8 @@ import {
   PivotTabs,
   RepoChip,
   RepoChips,
-  type RepoName,
 } from "./pivot-client";
+import { hasClickableRepo, repoNamesOf, type RepoName } from "./pivot";
 
 // The bulletin as /b/<id> renders it, from a BulletinView alone: no database, no session.
 // The page passes the feedback trio (a Server Action); the landing page's sample has none.
@@ -70,8 +70,8 @@ export function BulletinContent({
   const groups = groupByRepo(view, t);
   const repoCards = new Set(groups.flatMap((g) => (g.repo ? [g.repo] : [])));
   const repoNames = (item: BulletinViewItem): RepoName[] =>
-    item.affectedRepos.map((repo) => ({ repo, clickable: repoCards.has(repo) }));
-  const anyClickable = allItems(view).some((i) => i.affectedRepos.some((r) => repoCards.has(r)));
+    repoNamesOf(item.affectedRepos, repoCards);
+  const anyClickable = hasClickableRepo(allItems(view), repoCards);
   // "Repo names are clickable" sits once, next to the first chip row of the page.
   const chipHintItem = view.act.find((i) => i.affectedRepos.length > 0)?.itemId ?? null;
   const restRows = view.rest.length + view.minor.length;

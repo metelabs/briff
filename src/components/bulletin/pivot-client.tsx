@@ -17,7 +17,14 @@ import { prefersReducedMotion, scrollToElement } from "@/lib/scroll";
 import { cn } from "@/lib/utils";
 import { repoAnchor } from "@/pipeline/bulletin-by-repo";
 
-import { FOLDED_ID, INITIAL_PIVOT, pivotReducer, type View } from "./pivot";
+import {
+  chipLayout,
+  FOLDED_ID,
+  INITIAL_PIVOT,
+  pivotReducer,
+  type RepoName,
+  type View,
+} from "./pivot";
 
 interface PivotApi {
   view: View;
@@ -109,12 +116,6 @@ export function RepoChip({ repo }: { repo: string }) {
   );
 }
 
-/** A repo name on an item row; `clickable` when the By repo view has a card for it. */
-export interface RepoName {
-  repo: string;
-  clickable: boolean;
-}
-
 function PlainRepoChip({ repo }: { repo: string }) {
   return (
     <Chip>
@@ -139,8 +140,7 @@ export function RepoChips({
   className?: string;
 }) {
   const [all, setAll] = useState(false);
-  const folds = repos.length > limit;
-  const shown = folds && !all ? repos.slice(0, limit - 1) : repos;
+  const { shown, more } = chipLayout(repos, limit, all);
   return (
     <div role="group" aria-label={label} className={cn("flex flex-wrap gap-[5px]", className)}>
       {shown.map((r) =>
@@ -150,13 +150,13 @@ export function RepoChips({
           <PlainRepoChip key={r.repo} repo={r.repo} />
         )
       )}
-      {folds && !all && (
+      {more > 0 && (
         <ChipButton
           onClick={() => setAll(true)}
           aria-label={`Show all ${repos.length} repos`}
           className="text-fg-muted"
         >
-          +{repos.length - shown.length}
+          +{more}
         </ChipButton>
       )}
     </div>
