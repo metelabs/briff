@@ -31,7 +31,7 @@ The app serves its own public pages, in the Triage design system, without a sess
   `src/components/legal/legal-placeholders.test.ts` fails if a placeholder comes back. The
   sub-processor list (`src/components/legal/subprocessors.ts`) must stay in step with
   docs/PRIVACY.md. Both footers (public pages and the app shell) start with Terms, Privacy,
-  Pricing, Security, Status and the support address (`TRUST_LINKS` in `links.ts`); the sign-up
+  Security, Status and the support address (`TRUST_LINKS` in `links.ts`); the sign-up
   form says that creating an account accepts the Terms and Privacy Policy (not on the first,
   instance-owning account).
 - Links to the repository (Self-host, Docs, Source, Security) are built from `SOURCE_URL` in

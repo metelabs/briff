@@ -54,7 +54,7 @@ Pages outside the shell: **Login**, **Onboarding** and a bulletin opened from an
 a minimal header (`MinimalHeader`: logo only, plus a "Sign out" link on onboarding) in the same container as the
 shell's bar, so the logo sits in the same place on every page. The public pages (landing, `/replay/<id>`) use the same
 header position with a few section links and a secondary "Sign in" button, and the footer line
-with Terms, Privacy, Pricing, Security, Status, the support address, Docs, Source, Made by Metelabs
+with Terms, Privacy, Security, Status, the support address, Docs, Source, Made by Metelabs
 and the version (docs/LANDING.md). The legal pages (`/terms`, `/privacy`, `/refunds`, `/dpa`) put
 a 72ch prose column (15px/1.6 body, H2 per section) under that header, with a table of contents
 for long pages: sticky in a 220px column from 980px, a card above the text below that. Login and onboarding are centred single columns,
@@ -250,7 +250,7 @@ states are noted where they apply.
 - **Connect repos:** secondary pill button left of the stream picker (icon only below 1100px). It opens a
   side sheet (Base UI dialog: full height, right edge, max 620px, `--bg` with the onboarding card inside,
   scrim) with the same GitHub Action / Local scanner tabs as onboarding. Onboarding itself is first run only.
-- **Footer:** one muted 12.5px line under every shell page (Terms, Privacy, Pricing, Security,
+- **Footer:** one muted 12.5px line under every shell page (Terms, Privacy, Security,
   Status with the version, Docs, Changelog, Made by Metelabs, then "Contact: support@briff.dev" as
   text), 1px top `--line`. Nothing else goes there.
 - **Stream picker:** pill button with a brand dot + stream name + chevron. Opens a popover listing streams with

@@ -99,9 +99,9 @@ export const TERMS: LegalDoc = {
       body: (
         <>
           <p>
-            Briff has a Free plan and paid plans (Pro and Team); the current prices and limits are
-            on the <A href="/pricing">pricing page</A>. During the beta every account is on the Free
-            plan; paid plans start when billing opens, and your plan stays Free until you choose to
+            Briff has a Free plan and paid plans (Pro and Team). During the beta every account is on
+            the Free plan; paid plans start when billing opens, with their prices and limits
+            published on this site before then, and your plan stays Free until you choose to
             upgrade.
           </p>
           <p>

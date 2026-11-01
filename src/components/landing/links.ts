@@ -15,7 +15,6 @@ export const SECURITY_POLICY_URL = `${SOURCE_URL}/blob/main/SECURITY.md`;
 export const TRUST_LINKS = [
   { href: "/terms", label: "Terms" },
   { href: "/privacy", label: "Privacy" },
-  { href: "/pricing", label: "Pricing" },
   { href: SECURITY_POLICY_URL, label: "Security" },
   { href: "/api/health", label: "Status" },
 ] as const;
