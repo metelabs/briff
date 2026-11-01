@@ -16,17 +16,17 @@ describe("splitFirstSentence", () => {
 
   it("does not cut inside an email address", () => {
     expect(
-      splitFirstSentence("We sent a link to a.b@x.dev. Your email changes once you open it.")
+      splitFirstSentence("We sent a link to a.b@example.com. Your email changes once you open it.")
     ).toEqual({
-      lead: "We sent a link to a.b@x.dev.",
+      lead: "We sent a link to a.b@example.com.",
       rest: "Your email changes once you open it.",
     });
   });
 
   it("splits short status lines", () => {
-    expect(splitFirstSentence("Sent. Check a@x.dev.")).toEqual({
+    expect(splitFirstSentence("Sent. Check a@example.com.")).toEqual({
       lead: "Sent.",
-      rest: "Check a@x.dev.",
+      rest: "Check a@example.com.",
     });
   });
 
