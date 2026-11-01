@@ -94,6 +94,15 @@ docs/                    SCANNER.md (runbook), SOURCES.md (feeds and matching), 
   typed name matches (owners only), its pending jobs, and the user when it has no other org, then
   drops the session cookies. Every tenant table cascades from `Org`; a new tenant table must too
   (`org-data.integration.test.ts` checks every one).
+- Account emails (`src/lib/auth/auth.ts`, `auth-email.ts`, templates `src/lib/email/account-email.ts`
+  built from the reusable pieces in `src/lib/email/components.ts`): password reset (`/forgot-password`
+  → Better Auth link, 1 h → `/reset-password`; all sessions revoked), email verification on sign-up
+  (24 h, never required to sign in; banner with resend in the shell and onboarding), Settings →
+  Account change email (link to the new address) and change password (other sessions revoked).
+  Endpoints that send email or check a password are limited per IP in `AUTH_LIMITS`
+  (`signup-limit.ts`), both as Better Auth `customRules` and in the before-hook, because Server
+  Actions call `auth.api.*` directly and skip Better Auth's limiter. `orgRecipients` drops members
+  unverified 7 days after sign-up (`receivesDelivery`).
 - Scan auth (`/api/scan`, `src/lib/scan/tokens.ts`): `Authorization: Bearer brf_<40 url-safe>`
   is a per-org `ScanToken` (created in Settings → Scan tokens, secret shown once, only its
   sha256 `tokenHash` and an 8-char `prefix` stored); the token decides the org and gets

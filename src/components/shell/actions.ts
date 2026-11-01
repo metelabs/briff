@@ -1,10 +1,13 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { APIError } from "better-auth/api";
+import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { getAuth, VERIFIED_CALLBACK } from "@/lib/auth/auth";
 import { requireOrgContext } from "@/lib/auth/session";
+import { log } from "@/lib/log";
 import { getDb } from "@/lib/db/client";
 import { withOrg } from "@/lib/db/with-org";
 import { STREAM_COOKIE } from "@/lib/stream-scope";
@@ -43,4 +46,28 @@ export async function selectStreamAction(streamId: string): Promise<{ ok: boolea
   });
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+export interface ResendState {
+  ok: boolean;
+  message: string | null;
+}
+
+/** Sends the signed-in user a fresh verification link (rate limited in the auth hook). */
+export async function resendVerificationAction(): Promise<ResendState> {
+  const ctx = await requireOrgContext();
+  if (ctx.emailVerified) return { ok: true, message: "Your email is already verified." };
+  try {
+    await getAuth().api.sendVerificationEmail({
+      body: { email: ctx.email, callbackURL: VERIFIED_CALLBACK },
+      headers: await headers(),
+    });
+  } catch (err) {
+    if (err instanceof APIError && err.status === "TOO_MANY_REQUESTS") {
+      return { ok: false, message: "Too many attempts. Try again in one hour." };
+    }
+    log.warn({ err, userId: ctx.userId }, "auth: resend verification failed");
+    return { ok: false, message: "Could not send the email. Try again in a minute." };
+  }
+  return { ok: true, message: `Sent. Check ${ctx.email}.` };
 }

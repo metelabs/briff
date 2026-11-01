@@ -88,6 +88,7 @@ const DARK: readonly DarkRule[] = [
   { selector: ".t-read", bg: "#192343", color: "#8eaaff" },
   { selector: ".t-wait", bg: "#1b252c", color: "#93a3ad" },
   { selector: ".t-brand", bg: "#0e2e2d", color: "#3ccfc2" },
+  { selector: ".b-btn", bg: "#3ccfc2", color: "#04201e" },
 ];
 
 function surfaceDecl(r: DarkRule): string {
@@ -149,6 +150,7 @@ export function mobileCss(): string {
   .m-flat{border-left-width:0 !important;border-right-width:0 !important;border-bottom-width:0 !important;border-radius:0 !important;margin:0 !important}
   .m-flat-cell{padding:14px 0 16px !important;border-radius:0 !important}
   .m-inset{padding:8px !important}
+  .m-body{font-size:16px !important;line-height:1.55 !important}
   .m-cmd{padding:8px !important;white-space:pre !important;overflow-x:auto !important;word-break:normal !important;overflow-wrap:normal !important}
 }`;
 }

@@ -75,10 +75,13 @@ describe('"use server" modules', () => {
   });
 
   it("each action authenticates before anything else, or is listed as public", () => {
-    // Public on purpose: sign-in/up/out, the theme cookie, feedback (bulletin token or session).
+    // Public on purpose: sign-in/up/out, password reset (its token, rate limited per IP), the
+    // theme cookie, feedback (bulletin token or session).
     const PUBLIC = new Set([
       "signInAction",
       "signUpAction",
+      "requestPasswordResetAction",
+      "resetPasswordAction",
       "signOutAction",
       "setThemeAction",
       "giveFeedbackAction",

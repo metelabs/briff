@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { MinimalHeader } from "@/components/shell/page-container";
+import { VerifyEmailBanner } from "@/components/shell/verify-email-banner";
 import { OrgCapacityNotice } from "@/components/org-capacity-notice";
 import { loadOrgCapacity } from "@/lib/org-capacity";
 import { requireOrgContext } from "@/lib/auth/session";
@@ -31,6 +32,7 @@ export default async function OnboardingPage() {
         <SignOutLink />
       </MinimalHeader>
       <main className="gutter mx-auto max-w-[652px] pt-6 pb-20">
+        {!ctx.emailVerified && <VerifyEmailBanner email={ctx.email} />}
         <OrgCapacityNotice capacity={capacity} />
         <Onboarding data={data} finishAction={finishOnboardingAction} />
       </main>

@@ -119,9 +119,11 @@ export function StreamsEditor({
               <dd>{s.memberIds.length > 0 ? plural(s.memberIds.length, "repo") : "none yet"}</dd>
               <dt className="text-fg-muted">Sends</dt>
               <dd className="min-w-0 [overflow-wrap:anywhere]">
-                {s.memberIds.length > 0
-                  ? `Monday 04:00 UTC to ${recipients}`
-                  : "Nothing until it has repos"}
+                {s.memberIds.length === 0
+                  ? "Nothing until it has repos"
+                  : recipients
+                    ? `Monday 04:00 UTC to ${recipients}`
+                    : "Nobody: no member has a verified email"}
               </dd>
               {s.last && (
                 <>

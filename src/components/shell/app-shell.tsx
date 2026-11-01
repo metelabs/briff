@@ -12,6 +12,7 @@ import type { NavHref } from "./nav";
 import { PageContainer } from "./page-container";
 import { SiteFooter } from "./site-footer";
 import { TopBar } from "./top-bar";
+import { VerifyEmailBanner } from "./verify-email-banner";
 
 /**
  * One shell for every signed-in page (DESIGN.md §2): sticky top bar with the pill nav,
@@ -47,6 +48,11 @@ export async function AppShell({
           currentStreamId={scope.current?.id ?? null}
         />
         <PageContainer as="main" className="flex flex-1 flex-col pb-16">
+          {!ctx.emailVerified && (
+            <div className="pt-4">
+              <VerifyEmailBanner email={ctx.email} />
+            </div>
+          )}
           {children}
         </PageContainer>
         <SiteFooter />

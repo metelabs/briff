@@ -11,6 +11,7 @@ export interface OrgContext {
   userId: string;
   email: string;
   name: string;
+  emailVerified: boolean;
   orgId: string;
 }
 
@@ -31,6 +32,7 @@ export async function getOrgContext(): Promise<OrgContext | null> {
     userId: session.user.id,
     email: session.user.email,
     name: session.user.name,
+    emailVerified: session.user.emailVerified,
     orgId: membership.orgId,
   };
 }

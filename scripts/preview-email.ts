@@ -1,5 +1,6 @@
 // Renders the latest bulletin email of each stream (or the one given), a security
-// alert email, an urgent email and the test email from the local database into files, without
+// alert email, an urgent email, the test email and the account emails (reset, verification,
+// email change) from the local database into files, without
 // sending anything.
 //   npm run email:preview -- [--bulletin <id>] [--out <dir>]
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -14,6 +15,7 @@ import {
   renderTestEmail,
   renderUrgentEmail,
 } from "@/lib/email/alert-email";
+import { renderPasswordResetEmail, renderVerificationEmail } from "@/lib/email/account-email";
 import { renderBulletinEmail } from "@/lib/email/bulletin-email";
 import { signFeedbackToken } from "@/lib/feedback-token";
 import { PRODUCT_LANGUAGE } from "@/lib/i18n";
@@ -160,6 +162,18 @@ async function main(): Promise<void> {
     );
   }
   write("test", renderTestEmail(PRODUCT_LANGUAGE, env.BETTER_AUTH_URL));
+  // Sample links shaped like Better Auth's; the tokens are placeholders.
+  const authBase = `${env.BETTER_AUTH_URL.replace(/\/$/, "")}/api/auth`;
+  write(
+    "reset-password",
+    renderPasswordResetEmail(
+      `${authBase}/reset-password/sample-token?callbackURL=%2Freset-password`,
+      env.BETTER_AUTH_URL
+    )
+  );
+  const verifyUrl = `${authBase}/verify-email?token=sample.token.value&callbackURL=%2Fsettings%3Fverified%3D1`;
+  write("verify-email", renderVerificationEmail(verifyUrl, "sign-up", env.BETTER_AUTH_URL));
+  write("change-email", renderVerificationEmail(verifyUrl, "change-email", env.BETTER_AUTH_URL));
   await db.$disconnect();
 }
 
