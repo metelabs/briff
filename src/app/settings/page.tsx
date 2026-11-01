@@ -6,7 +6,6 @@ import type { CSSProperties, ReactNode } from "react";
 
 import { AppShell } from "@/components/shell/app-shell";
 import { ConnectReposButton } from "@/components/shell/connect-sheet";
-import { Callout, type CalloutTone } from "@/components/ui/callout";
 import { PageHeader } from "@/components/ui/section-header";
 import { Tag } from "@/components/ui/tag";
 import { requireOrgContext } from "@/lib/auth/session";
@@ -82,32 +81,8 @@ function formatWeight(value: number): string {
   return value > 0 ? `+${value}` : String(value);
 }
 
-const VERIFY_ERRORS: Record<string, string> = {
-  TOKEN_EXPIRED: "That verification link has expired. Send a new one from the banner above.",
-  INVALID_TOKEN: "That verification link is not valid. Send a new one from the banner above.",
-};
-
-export default async function SettingsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ verified?: string; error?: string; password?: string }>;
-}) {
+export default async function SettingsPage() {
   const ctx = await requireOrgContext();
-  const { verified, error, password } = await searchParams;
-  const accountNotice: { tone: CalloutTone; message: string } | null =
-    password === "changed"
-      ? { tone: "ok", message: "Password changed. Other devices were signed out." }
-      : verified === "1"
-        ? error
-          ? {
-              tone: "warn",
-              message:
-                VERIFY_ERRORS[error] ?? "That verification link did not work. Send a new one.",
-            }
-          : ctx.emailVerified
-            ? { tone: "ok", message: "Your email address is verified." }
-            : null
-        : null;
   const db = getDb();
   const scoped = withOrg(db, ctx.orgId);
   const [profile, user, streams, tokens, org, github, capacity] = await Promise.all([
@@ -373,9 +348,6 @@ export default async function SettingsPage({
             title="Account"
             sub="Sign-in email, password and theme. The theme switch is in the menu under your initials."
           >
-            {accountNotice && (
-              <Callout tone={accountNotice.tone} message={accountNotice.message} className="mb-4" />
-            )}
             <div className="border-line flex flex-wrap items-center justify-between gap-3 border-b pb-4">
               <div className="min-w-0">
                 <p>{ctx.name || ctx.email}</p>

@@ -50,17 +50,3 @@ export function Callout({
     </div>
   );
 }
-
-/** A form's result: nothing while there is no message, else an ok or warn callout. */
-export function FormCallout({
-  ok,
-  message,
-  className,
-}: {
-  ok: boolean;
-  message: string | null;
-  className?: string;
-}) {
-  if (!message) return null;
-  return <Callout tone={ok ? "ok" : "warn"} message={message} className={className} />;
-}

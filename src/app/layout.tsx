@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import type { ReactNode } from "react";
+import { type ReactNode, Suspense } from "react";
 
+import { FlashToast } from "@/components/flash-toast";
 import { ToastProvider } from "@/components/ui/toast";
 import { themeAttribute } from "@/lib/theme";
 import { readTheme } from "@/lib/theme-cookie";
@@ -32,7 +33,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       className={cn(bricolage.variable, geist.variable, geistMono.variable)}
     >
       <body className="min-h-svh">
-        <ToastProvider>{children}</ToastProvider>
+        <ToastProvider>
+          {children}
+          <Suspense>
+            <FlashToast />
+          </Suspense>
+        </ToastProvider>
       </body>
     </html>
   );

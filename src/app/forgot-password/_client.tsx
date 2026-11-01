@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Callout, FormCallout } from "@/components/ui/callout";
+import { Callout } from "@/components/ui/callout";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useResultToast } from "@/components/ui/toast";
 
 import { requestPasswordResetAction, type ResetRequestState } from "../login/actions";
 import { showsResetAnswer } from "./answer";
@@ -15,6 +16,7 @@ const INITIAL: ResetRequestState = { sent: false, message: null };
 
 export function ForgotPasswordForm() {
   const [state, action, pending] = useActionState(requestPasswordResetAction, INITIAL);
+  useResultToast(state, { ok: state.sent, message: state.message });
   const [dismissed, setDismissed] = useState<ResetRequestState | null>(null);
   const sent = showsResetAnswer(state, dismissed);
   return (
@@ -49,7 +51,6 @@ export function ForgotPasswordForm() {
               required
             />
           </div>
-          {!state.sent && <FormCallout ok={false} message={state.message} />}
           <Button type="submit" variant="primary" size="lg" disabled={pending} className="w-full">
             Send reset link
           </Button>

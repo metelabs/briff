@@ -220,6 +220,28 @@
   }
 }
 
+/* Browser autofill paints its own light-blue field with !important (unreadable in both
+   themes). An inset shadow covers that background and text-fill-color wins over its colour.
+   Unlayered so it also beats the focus ring utility; the focus rule redraws the ring. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--fg);
+  caret-color: var(--fg);
+  box-shadow: 0 0 0 1000px var(--surface) inset;
+  transition:
+    background-color 600000s 0s,
+    color 600000s 0s;
+}
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill:focus {
+  box-shadow:
+    0 0 0 1000px var(--surface) inset,
+    0 0 0 3px var(--brand-soft);
+}
+
 /* Type roles (DESIGN.md §4). Bricolage only for headings and numbers. */
 @utility type-hero {
   font-family: var(--font-display);

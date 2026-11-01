@@ -3,9 +3,9 @@
 import { useActionState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { FormCallout } from "@/components/ui/callout";
 import { Input } from "@/components/ui/input";
 import { FieldHelp, Label } from "@/components/ui/label";
+import { useResultToast } from "@/components/ui/toast";
 
 import { type AuthFormState, resetPasswordAction } from "../login/actions";
 
@@ -13,6 +13,7 @@ const INITIAL: AuthFormState = { error: null };
 
 export function ResetPasswordForm({ token }: { token: string }) {
   const [state, action, pending] = useActionState(resetPasswordAction, INITIAL);
+  useResultToast(state, { ok: false, message: state.error });
   return (
     <>
       <h1 className="type-page rise mb-2 [font-size:clamp(28px,6vw,36px)]">
@@ -36,7 +37,6 @@ export function ResetPasswordForm({ token }: { token: string }) {
           />
           <FieldHelp>At least 12 characters.</FieldHelp>
         </div>
-        <FormCallout ok={false} message={state.error} />
         <Button type="submit" variant="primary" size="lg" disabled={pending} className="w-full">
           Save new password
         </Button>
