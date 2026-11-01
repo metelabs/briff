@@ -198,7 +198,9 @@ Reach the UI through an SSH tunnel (`ssh -L 3042:127.0.0.1:3042 <host>`, then
 
 `scripts/smoke.sh` automates the same check end to end (start, health, sign-up, scan token,
 `briff-scan` upload) in its own throw-away project; see the header of the script for its
-options (`SMOKE_PORT`, `SMOKE_PROJECT`, `BRIFF_IMAGE`, `BRIFF_VERSION`).
+options (`SMOKE_PORT`, `SMOKE_PROJECT`, `BRIFF_IMAGE`, `BRIFF_VERSION`). Each run uses a new
+project name (`briff-smoke-<random>`) and refuses an existing one, so its cleanup never removes
+another stack's data.
 
 ## Troubleshooting
 

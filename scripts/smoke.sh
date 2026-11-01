@@ -16,7 +16,8 @@
 #   BRIFF_IMAGE, BRIFF_VERSION   image under test (default ghcr.io/metelabs/briff, latest)
 #   SMOKE_COMPOSE_FILE           compose file (default: compose.yaml next to this repo's root)
 #   SMOKE_ENV_EXAMPLE            env template (default: .env.selfhost.example next to the compose file)
-#   SMOKE_PROJECT                compose project name (default briff-smoke)
+#   SMOKE_PROJECT                compose project name (default briff-smoke-<random>, new per run);
+#                                the script refuses a name that already has containers or volumes
 #   SMOKE_PORT                   host port for web (default 3999)
 #   SMOKE_KEEP=1                 leave the stack running (default: docker compose down -v)
 #   BRIFF_SCAN                   scanner command (default: npx --yes briff-scan@0)
@@ -26,7 +27,6 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 compose_src=${SMOKE_COMPOSE_FILE:-$here/../compose.yaml}
 env_example=${SMOKE_ENV_EXAMPLE:-$(dirname "$compose_src")/.env.selfhost.example}
-project=${SMOKE_PROJECT:-briff-smoke}
 port=${SMOKE_PORT:-3999}
 base="http://127.0.0.1:$port"
 image=${BRIFF_IMAGE:-ghcr.io/metelabs/briff}
@@ -58,6 +58,13 @@ docker compose version > /dev/null 2>&1 || fail "prerequisites" "docker compose 
 [ -f "$compose_src" ] || fail "prerequisites" "no compose file at $compose_src"
 [ -f "$env_example" ] || fail "prerequisites" "no env template at $env_example"
 pass "prerequisites (docker, compose, curl)"
+
+# Never adopt an existing project: cleanup runs `down -v`, which would delete its database.
+project=${SMOKE_PROJECT:-briff-smoke-$(rand_hex 4)}
+label="label=com.docker.compose.project=$project"
+if [ -n "$(docker ps -aq --filter "$label")$(docker volume ls -q --filter "$label")" ]; then
+  fail "project $project is unused" "containers or volumes of compose project $project exist; pick another SMOKE_PROJECT or remove that stack yourself"
+fi
 
 workdir=$(mktemp -d "${TMPDIR:-/tmp}/briff-smoke.XXXXXX")
 dc() { docker compose --project-directory "$workdir" -f "$workdir/compose.yaml" -p "$project" "$@"; }
