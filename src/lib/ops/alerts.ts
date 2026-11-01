@@ -147,7 +147,6 @@ export async function sendOpsAlert(
   /** The calling job's heartbeat, before every send (slow SMTP must not cost the job lock). */
   heartbeat: () => Promise<void> = async () => {}
 ): Promise<OpsAlertOutcome> {
-  const env = getEnv();
   const headline = opsAlertHeadline(alert);
   // Before the claim: a failing lookup must not leave a slot taken with nothing sent.
   const recipients = await opsAlertRecipients(db);

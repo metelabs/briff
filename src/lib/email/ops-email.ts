@@ -1,7 +1,14 @@
 import { caps } from "@/lib/i18n";
 
 import type { RenderedEmail } from "./bulletin-email";
-import { C, DISPLAY, emailShell, esc, FONT, MONO, tag } from "./layout";
+import {
+  emailHeadline,
+  emailNote,
+  emailParagraph,
+  instanceFooter,
+  primaryButton,
+} from "./components";
+import { C, emailShell, esc, FONT, MONO, tag } from "./layout";
 
 // Operator alert for the instance admin (src/lib/ops/alerts.ts). English only: it goes to
 // whoever runs the instance, not to members. One column at every width with 16px body text,
@@ -56,13 +63,6 @@ function detailRow(label: string, valueHtml: string, last = false): string {
 <tr><td class="b-text b-line" style="${value}">${valueHtml}</td></tr>`;
 }
 
-function button(href: string, text: string): string {
-  // Petrol in both schemes; white on #0b6b67 is 6.3:1.
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:22px 0 4px;"><tr><td bgcolor="${C.brand}" style="background:${C.brand};border-radius:10px;">
-<a href="${esc(href)}" style="display:inline-block;padding:12px 20px;font-family:${FONT};font-size:16px;line-height:1.2;font-weight:600;color:#ffffff;text-decoration:none;border-radius:10px;">${esc(text)} &rarr;</a>
-</td></tr></table>`;
-}
-
 export function renderOpsAlertEmail(alert: OpsAlertEmail): RenderedEmail {
   const headline = opsAlertHeadline(alert);
   const base = alert.baseUrl.replace(/\/$/, "");
@@ -89,18 +89,23 @@ export function renderOpsAlertEmail(alert: OpsAlertEmail): RenderedEmail {
   );
   const suppressedLine =
     alert.suppressed > 0
-      ? `<p class="b-muted" style="font-family:${FONT};font-size:14px;line-height:1.5;color:${C.muted};margin:14px 0 0;">${alert.suppressed} more ${alert.suppressed === 1 ? "alert" : "alerts"} of this kind were held back since the previous email.</p>`
+      ? emailNote(
+          `${alert.suppressed} more ${alert.suppressed === 1 ? "alert" : "alerts"} of this kind were held back since the previous email.`
+        )
       : "";
-  const footer =
-    "You get this because you administer this Briff instance (or OPS_ALERT_EMAIL names you). At most one email per job and problem every 24 hours.";
+  const footer = instanceFooter(
+    "You get this because you administer this Briff instance (or OPS_ALERT_EMAIL names you). At most one email per job and problem every 24 hours.",
+    base
+  );
 
   const body = `${tag(alert.kind === "failed" ? "Failed" : "Overdue", "upgrade")}
-<h1 class="b-text" style="font-family:${DISPLAY};font-size:24px;line-height:1.2;font-weight:600;letter-spacing:-0.02em;color:${C.text};margin:12px 0 8px;">${esc(headline)}</h1>
-<p class="b-text" style="font-family:${FONT};font-size:16px;line-height:1.5;color:${C.text};margin:0 0 8px;">${esc(lead(alert))}</p>
+<div style="height:12px;line-height:12px;">&nbsp;</div>
+${emailHeadline(headline)}
+${emailParagraph(lead(alert))}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="m-fixed" style="margin:6px 0 0;">
 ${rows.join("\n")}
 </table>
-${button(runsUrl, "Open runs in Admin")}
+${primaryButton(runsUrl, "Open runs in Admin")}
 ${suppressedLine}`;
 
   const text = [
