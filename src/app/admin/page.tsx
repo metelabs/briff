@@ -233,10 +233,7 @@ export default async function AdminPage({
                 current: f.value === query.filter,
               }))}
             />
-            <OrgSearch
-              initial={query.q}
-              hrefFor={orgHref({ q: "", filter: query.filter, page: 1 })}
-            />
+            <OrgSearch initial={query.q} />
           </div>
           <OrgTable rows={page.rows} />
           <div className="text-fg-muted flex flex-wrap items-center justify-between gap-2 text-[13px] tabular-nums">

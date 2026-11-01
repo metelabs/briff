@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useReducer, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DialogClose, FormDialog } from "@/components/ui/dialog";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { FormStatus, Label } from "@/components/ui/label";
 import { SearchField } from "@/components/ui/search-field";
 import { useToast } from "@/components/ui/toast";
+import { initialSearch, searchSync, withSearch } from "@/lib/search-sync";
 
 import {
   type AdminState,
@@ -127,36 +128,25 @@ export function EditLimitsButton({
 }
 
 /** Name/email search for the organisation table; the query lives in the URL (`?q=`). */
-export function OrgSearch({ initial, hrefFor }: { initial: string; hrefFor: string }) {
+export function OrgSearch({ initial }: { initial: string }) {
   const router = useRouter();
-  const [value, setValue] = useState(initial);
-  const [synced, setSynced] = useState(initial);
-  // The query this field navigated to and the URL has not shown yet.
-  const [pushed, setPushed] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(searchSync, initial, initialSearch);
   const timer = useRef<number | undefined>(undefined);
-  // Back/forward restores another ?q=: show it, unless it is the one this field just pushed.
-  if (initial !== synced) {
-    setSynced(initial);
-    if (initial === pushed) setPushed(null);
-    else setValue(initial);
-  }
+  useEffect(() => dispatch({ type: "url", q: initial }), [initial]);
   useEffect(() => () => window.clearTimeout(timer.current), []);
-  const onChange = (next: string) => {
-    setValue(next);
+  const onChange = (value: string) => {
+    dispatch({ type: "edit", value });
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => {
-      const q = next.trim();
-      setPushed(q === initial ? null : q);
-      const url = new URL(hrefFor, window.location.origin);
-      if (q) url.searchParams.set("q", q);
-      else url.searchParams.delete("q");
-      url.searchParams.delete("page");
-      router.replace(`${url.pathname}${url.search}`, { scroll: false });
+      const q = value.trim();
+      dispatch({ type: "navigate", q });
+      const { pathname, search } = window.location;
+      router.replace(withSearch(pathname, search, q), { scroll: false });
     }, 300);
   };
   return (
     <SearchField
-      value={value}
+      value={state.value}
       onChange={onChange}
       placeholder="Search name or owner email"
       label="Search organisations"
