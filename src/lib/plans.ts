@@ -20,8 +20,6 @@ export interface Plan {
   members: number | null;
   /** One sentence for the pricing card. */
   pitch: string;
-  /** Team features that are announced, not built yet. */
-  planned: readonly string[];
 }
 
 export const PLANS: Readonly<Record<PlanId, Plan>> = {
@@ -34,7 +32,6 @@ export const PLANS: Readonly<Record<PlanId, Plan>> = {
     streams: 2,
     members: 1,
     pitch: "For one developer and a handful of repos.",
-    planned: [],
   },
   pro: {
     id: "pro",
@@ -45,7 +42,6 @@ export const PLANS: Readonly<Record<PlanId, Plan>> = {
     streams: 10,
     members: 3,
     pitch: "For a freelancer or a small studio with many client repos.",
-    planned: [],
   },
   team: {
     id: "team",
@@ -56,7 +52,6 @@ export const PLANS: Readonly<Record<PlanId, Plan>> = {
     streams: null,
     members: 10,
     pitch: "For a team that ships every repo it has.",
-    planned: ["Slack and webhook delivery", "Audit log export", "Priority support"],
   },
   // The founder's own org and friends; set in Admin, never sold.
   unlimited: {
@@ -68,7 +63,6 @@ export const PLANS: Readonly<Record<PlanId, Plan>> = {
     streams: null,
     members: null,
     pitch: "",
-    planned: [],
   },
 };
 
