@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { osvVulnSchema } from "@/sources/osv";
 
 import { mixedHits, mixedQueries, mixedVuln } from "./__fixtures__/osv-mixed";
-import { aliasGroups, idRank, mergeAliasGroup } from "./aliases";
+import { aliasGroups, coveredPackages, idRank, mergeAliasGroup } from "./aliases";
 
 // Every recorded query, its hits grouped and merged as the scan stores them.
 const merged = mixedQueries.flatMap((q) =>
@@ -125,6 +125,32 @@ describe("mergeAliasGroup fallbacks", () => {
   it("ranks GHSA before CVE before native ids", () => {
     expect([idRank("GHSA-x"), idRank("CVE-x"), idRank("PYSEC-x"), idRank("GO-x")]).toEqual([
       0, 1, 2, 2,
+    ]);
+  });
+});
+
+describe("coveredPackages", () => {
+  it("lists every package of the merged records once, names normalised like Package rows", () => {
+    const record = (pkgs: [string, string][]) =>
+      ({
+        affected: pkgs.map(([ecosystem, name]) => ({ package: { ecosystem, name }, ranges: [] })),
+      }) as unknown as Parameters<typeof coveredPackages>[0][number];
+    expect(
+      coveredPackages([
+        record([
+          ["npm", "payload"],
+          ["npm", "@payloadcms/db-postgres"],
+        ]),
+        record([
+          ["PyPI", "Flask_SQLAlchemy"],
+          ["npm", "payload"],
+          ["Debian:12", "openssl"],
+        ]),
+      ])
+    ).toEqual([
+      { ecosystem: "npm", name: "payload" },
+      { ecosystem: "npm", name: "@payloadcms/db-postgres" },
+      { ecosystem: "PyPI", name: "flask-sqlalchemy" },
     ]);
   });
 });

@@ -20,7 +20,8 @@ vi.mock("@/lib/stream-scope", async (importOriginal) => ({
   loadStreamScope: async () => ({ streams: [], current: null }),
 }));
 
-const { markBacklogReviewedAction, markPackageReviewedAction } = await import("./actions");
+const { markBacklogReviewedAction, markPackageReviewedAction, recheckAction, recheckStatusAction } =
+  await import("./actions");
 
 describe.skipIf(!url)("backlog review actions against Postgres", () => {
   const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: url ?? "" }) });
@@ -111,5 +112,77 @@ describe.skipIf(!url)("backlog review actions against Postgres", () => {
       ok: true,
       message: "No backlog left to review.",
     });
+  });
+});
+
+describe.skipIf(!url)("re-check action against Postgres", () => {
+  const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: url ?? "" }) });
+  const suffix = Date.now().toString(36);
+  const installationId = `9${Date.now()}`;
+  let orgId = "";
+  let otherOrgId = "";
+  const jobs = () =>
+    db.job.findMany({
+      where: { type: "github-scan", dedupeKey: `github-scan:${installationId}:*:force` },
+      select: { id: true, payload: true, status: true },
+    });
+
+  beforeAll(async () => {
+    testDb.client = db;
+    orgId = (await db.org.create({ data: { name: `recheck-${suffix}` } })).id;
+    otherOrgId = (await db.org.create({ data: { name: `recheck-other-${suffix}` } })).id;
+    await withOrg(db, orgId).githubInstallation.create({
+      data: { orgId, installationId, accountLogin: "acme", accountType: "Organization" },
+    });
+  });
+
+  afterAll(async () => {
+    await db.job.deleteMany({ where: { dedupeKey: `github-scan:${installationId}:*:force` } });
+    await db.org.deleteMany({ where: { id: { in: [orgId, otherOrgId] } } });
+    await db.$disconnect();
+  });
+
+  it("queues one forced scan per installation and then waits ten minutes", async () => {
+    session.orgId = orgId;
+    expect(await recheckAction()).toEqual({ ok: true, checking: true, message: null });
+    const queued = await jobs();
+    expect(queued).toHaveLength(1);
+    expect(queued[0].payload).toEqual({ installationId, force: true });
+    expect(await recheckStatusAction()).toEqual({ checking: true });
+
+    // Still in flight: the button keeps showing "Checking…", nothing new is queued.
+    expect(await recheckAction()).toEqual({ ok: true, checking: true, message: null });
+    expect(await jobs()).toHaveLength(1);
+
+    // Done, but within the interval: refused with the wait.
+    await db.job.updateMany({ where: { id: queued[0].id }, data: { status: "succeeded" } });
+    expect(await recheckStatusAction()).toEqual({ checking: false });
+    // A follow-up for repos the scan could not read yet still counts as checking.
+    const followUp = await db.job.create({
+      data: { type: "github-scan", dedupeKey: `github-scan:${installationId}:abc`, payload: {} },
+    });
+    expect(await recheckStatusAction()).toEqual({ checking: true });
+    await db.job.delete({ where: { id: followUp.id } });
+    expect(await recheckAction()).toMatchObject({
+      ok: false,
+      checking: false,
+      message: expect.stringContaining("10 minutes"),
+    });
+    expect(await jobs()).toHaveLength(1);
+
+    // After the interval it queues again.
+    await db.org.update({
+      where: { id: orgId },
+      data: { recheckRequestedAt: new Date(Date.now() - 11 * 60_000) },
+    });
+    expect(await recheckAction()).toMatchObject({ ok: true, checking: true });
+    expect(await jobs()).toHaveLength(2);
+  });
+
+  it("queues nothing for an org without a GitHub App installation", async () => {
+    session.orgId = otherOrgId;
+    expect(await recheckAction()).toMatchObject({ ok: false, checking: false });
+    expect(await recheckStatusAction()).toEqual({ checking: false });
+    expect(await jobs()).toHaveLength(2);
   });
 });

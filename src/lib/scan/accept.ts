@@ -24,7 +24,15 @@ export async function acceptScan(
   orgId: string,
   body: ScanBody,
   now: Date = new Date(),
-  options: { skipRepoLimit?: boolean } = {}
+  options: {
+    skipRepoLimit?: boolean;
+    /**
+     * Every upload of an existing repo is a complete read (the GitHub App never replaces a
+     * snapshot with a partial one). Only then may a package that is gone resolve an alert;
+     * briff-scan uploads carry no such guarantee (a lockfile can fail to parse).
+     */
+    completeSnapshots?: boolean;
+  } = {}
 ): Promise<AcceptedScan> {
   const repos = await ingestScan(db, orgId, body, now, options);
   const refreshJob = await enqueueJob(db, "refresh-packages");

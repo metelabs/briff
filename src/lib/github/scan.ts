@@ -50,6 +50,11 @@ export const githubScanPayloadSchema = z.object({
 });
 export type GithubScanPayload = z.infer<typeof githubScanPayloadSchema>;
 
+/** Every scan key of an installation starts with this. */
+export function githubScanKeyPrefix(installationId: string): string {
+  return `github-scan:${installationId}:`;
+}
+
 /** One pending scan per installation and repo set. */
 export function githubScanKey(payload: GithubScanPayload): string {
   const repos = payload.repos
@@ -57,7 +62,8 @@ export function githubScanKey(payload: GithubScanPayload): string {
         .update([...payload.repos].sort().join("\n"))
         .digest("hex")
     : "*";
-  return `github-scan:${payload.installationId}:${repos}`;
+  // A forced scan keeps its own key: deduped into a pending ordinary scan it would lose `force`.
+  return `${githubScanKeyPrefix(payload.installationId)}${repos}${payload.force ? ":force" : ""}`;
 }
 
 /** Per repo: blobs fetched at most, and the largest blob read (tree entry size). */
@@ -267,7 +273,7 @@ export async function scanInstallation(args: {
         final: i + INGEST_CHUNK >= payloads.length,
       },
       now,
-      { skipRepoLimit: true }
+      { skipRepoLimit: true, completeSnapshots: true }
     );
     const acceptedNames = new Set(accepted.repos.map((r) => r.name));
     counts.repoLimitSkipped += chunk.length - accepted.repos.length;

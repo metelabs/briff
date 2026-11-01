@@ -227,7 +227,8 @@ async function loadAlerts(
 ): Promise<StreamAlerts> {
   const scoped = withOrg(db, orgId);
   const rows = await scoped.alert.findMany({
-    where: { createdAt: { gte: start, lt: end }, repoId: { in: repoIds } },
+    // A fixed alert (a later scan has no affected version) is not news for the bulletin.
+    where: { createdAt: { gte: start, lt: end }, repoId: { in: repoIds }, resolvedAt: null },
     select: {
       repoId: true,
       kind: true,

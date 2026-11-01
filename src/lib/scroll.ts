@@ -9,13 +9,17 @@ export function prefersReducedMotion(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-/** Height covered by sticky bars at the top of the viewport. */
+/**
+ * Height covered by sticky bars at the top of the viewport, once they are stuck: a bar
+ * stacked under another (Alerts' section bar, `top: var(--bar-h)`) counts from its `top`.
+ */
 export function stickyOffset(): number {
   let bottom = 0;
   for (const el of document.querySelectorAll<HTMLElement>("[data-sticky-top]")) {
-    const position = getComputedStyle(el).position;
-    if (position !== "sticky" && position !== "fixed") continue;
-    bottom = Math.max(bottom, el.getBoundingClientRect().height);
+    const style = getComputedStyle(el);
+    if (style.position !== "sticky" && style.position !== "fixed") continue;
+    const top = Number.parseFloat(style.top) || 0;
+    bottom = Math.max(bottom, top + el.getBoundingClientRect().height);
   }
   return bottom;
 }

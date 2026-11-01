@@ -1,9 +1,12 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { Check, RefreshCw } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
-import { CopyButton } from "@/components/ui/command-box";
+import { CommandBox, CopyButton } from "@/components/ui/command-box";
+import { DialogClose, FormDialog } from "@/components/ui/dialog";
 import { EcosystemTag } from "@/components/ui/ecosystem-tag";
 import { FilterChips } from "@/components/ui/filter-chips";
 import { SearchField } from "@/components/ui/search-field";
@@ -12,10 +15,19 @@ import { useToast } from "@/components/ui/toast";
 import { Tooltip, TruncatedText } from "@/components/ui/tooltip";
 import { UpgradeList } from "@/components/ui/upgrade-list";
 import { plural } from "@/lib/format";
+import { SCROLL_GAP, scrollToElement, stickyOffset } from "@/lib/scroll";
+import { cn } from "@/lib/utils";
 import type { AlertPackageGroup } from "@/pipeline/alert-groups";
+import type { AlertSection, FixedPackage } from "@/pipeline/alert-sections";
 import { ecosystemLabel } from "@scan/ecosystems";
 
-import { markBacklogReviewedAction, markPackageReviewedAction, type ReviewState } from "./actions";
+import {
+  markBacklogReviewedAction,
+  markPackageReviewedAction,
+  recheckAction,
+  recheckStatusAction,
+  type ReviewState,
+} from "./actions";
 
 const SEVERITY_ORDER = ["CRITICAL", "HIGH", "MODERATE", "LOW", "UNKNOWN"];
 const SEVERITY_NAME: Record<string, string> = {
@@ -72,7 +84,8 @@ function MarkPackageReviewed({ packageName }: { packageName: string }) {
   return (
     <form action={action}>
       <input type="hidden" name="packageName" value={packageName} />
-      <Button type="submit" variant="ghost" size="sm" disabled={pending}>
+      <Button type="submit" variant="secondary" size="sm" disabled={pending}>
+        <Check className="size-3.5" strokeWidth={2} aria-hidden />
         {pending ? "Marking…" : "Mark reviewed"}
       </Button>
     </form>
@@ -220,5 +233,252 @@ function AlertRow({ group: g, review }: { group: AlertPackageGroup; review: bool
         {review && <MarkPackageReviewed packageName={g.packageName} />}
       </div>
     </div>
+  );
+}
+
+/**
+ * Sticky section bar under the page header: section names with their package counts, a
+ * click scrolls to the section (deep links like #earlier work without it), and the
+ * section crossing the line below the sticky bars is marked current.
+ */
+export function AlertSectionNav({
+  sections,
+}: {
+  sections: { id: AlertSection; label: string; count: number }[];
+}) {
+  const [current, setCurrent] = useState<string>(sections[0]?.id ?? "");
+  const navRef = useRef<HTMLElement>(null);
+  const stripRef = useRef<HTMLDivElement>(null);
+  // While a click's smooth scroll runs, the clicked section stays current.
+  const scrolling = useRef(false);
+  const [viewport, setViewport] = useState(0);
+
+  // Exposes the bar's height for the sections' scroll-margin (see SECTION_ANCHOR).
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const root = document.documentElement;
+    const observer = new ResizeObserver(() => {
+      root.style.setProperty(
+        "--section-nav-h",
+        `${Math.round(nav.getBoundingClientRect().height)}px`
+      );
+      setViewport(window.innerHeight);
+    });
+    observer.observe(nav);
+    const onResize = () => setViewport(window.innerHeight);
+    window.addEventListener("resize", onResize);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", onResize);
+      root.style.removeProperty("--section-nav-h");
+    };
+  }, []);
+
+  useEffect(() => {
+    if (viewport === 0) return;
+    const elements = sections.flatMap((s) => {
+      const el = document.getElementById(s.id);
+      return el ? [el] : [];
+    });
+    if (elements.length === 0) return;
+    const line = stickyOffset() + SCROLL_GAP + 24;
+    // A one-pixel band at `line`: the section crossing it is the one being read.
+    const crossing = new IntersectionObserver(
+      (entries) => {
+        if (scrolling.current) return;
+        const hit = entries.find((e) => e.isIntersecting);
+        if (hit) setCurrent(hit.target.id);
+      },
+      { rootMargin: `-${line}px 0px -${Math.max(0, viewport - line - 1)}px 0px` }
+    );
+    for (const el of elements) crossing.observe(el);
+    // The last section of a page that cannot scroll further never reaches the line.
+    const end = document.createElement("div");
+    end.setAttribute("aria-hidden", "true");
+    elements[elements.length - 1].after(end);
+    const bottom = new IntersectionObserver((entries) => {
+      if (scrolling.current || !entries[0]?.isIntersecting) return;
+      if (window.scrollY > 0) setCurrent(elements[elements.length - 1].id);
+    });
+    bottom.observe(end);
+    return () => {
+      crossing.disconnect();
+      bottom.disconnect();
+      end.remove();
+    };
+  }, [sections, viewport]);
+
+  // On mobile the strip scrolls inside itself; keep the current section's pill visible.
+  useEffect(() => {
+    const strip = stripRef.current;
+    const pill = strip?.querySelector<HTMLElement>('[aria-current="true"]');
+    if (!strip || !pill || strip.scrollWidth <= strip.clientWidth) return;
+    strip.scrollTo({ left: pill.offsetLeft - (strip.clientWidth - pill.offsetWidth) / 2 });
+  }, [current]);
+
+  return (
+    <nav
+      ref={navRef}
+      data-sticky-top
+      aria-label="Alert sections"
+      className="bg-bar border-line sticky top-[var(--bar-h,64px)] z-20 -mx-1 -mb-4 border-b px-1 py-2 backdrop-blur-[12px]"
+    >
+      <div ref={stripRef} className="no-scrollbar relative flex gap-1 overflow-x-auto">
+        {sections.map((s) => (
+          <a
+            key={s.id}
+            href={`#${s.id}`}
+            aria-current={current === s.id ? "true" : undefined}
+            onClick={(e) => {
+              const el = document.getElementById(s.id);
+              if (!el) return;
+              e.preventDefault();
+              setCurrent(s.id);
+              window.history.replaceState(null, "", `#${s.id}`);
+              scrolling.current = true;
+              void scrollToElement(el).then(() => {
+                scrolling.current = false;
+              });
+            }}
+            className={cn(
+              "text-fg-muted hover:bg-surface hover:text-fg flex min-h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-[13.5px] font-medium whitespace-nowrap transition-colors duration-150",
+              "aria-[current=true]:bg-brand-soft aria-[current=true]:text-brand"
+            )}
+          >
+            {s.label}
+            <span className="tabular-nums opacity-80">{s.count}</span>
+          </a>
+        ))}
+      </div>
+    </nav>
+  );
+}
+
+/** "Fixed since your last visit": packages a later scan no longer has at an affected version. */
+export function FixedSinceVisit({ packages }: { packages: FixedPackage[] }) {
+  if (packages.length === 0) return null;
+  return (
+    <div className="bg-ok-soft text-ok rounded-inset mb-3.5 flex flex-wrap items-baseline gap-x-2 gap-y-1 px-3.5 py-2.5 text-[13px]">
+      <span className="inline-flex items-center gap-1.5 font-semibold">
+        <Check className="size-3.5 self-center" strokeWidth={2.2} aria-hidden />
+        Fixed since your last visit
+      </span>
+      {packages.map((p, i) => (
+        <span key={p.packageName}>
+          <b className="font-mono font-medium">{p.packageName}</b>{" "}
+          <span className="font-mono text-[12px]">({p.repos.join(", ")})</span>
+          {i < packages.length - 1 && ","}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Header counter: alerts a scan resolved since Monday. */
+export function ResolvedCounter({ count }: { count: number }) {
+  return (
+    <span
+      className={cn(
+        "border-line inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-medium tabular-nums",
+        count > 0 ? "bg-ok-soft text-ok border-transparent" : "bg-surface text-fg-muted"
+      )}
+    >
+      <Check className="size-3.5" strokeWidth={2.2} aria-hidden />
+      Resolved: {count} this week
+    </span>
+  );
+}
+
+const POLL_MS = 4000;
+const POLL_LIMIT_MS = 5 * 60_000;
+
+/**
+ * "Re-check now": GitHub App repos are rescanned by the worker (shows "Checking…" until the
+ * job is done, then reloads the page); repos uploaded by briff-scan get the command instead.
+ */
+export function RecheckButton({
+  githubRepos,
+  scannerRepos,
+  initialChecking,
+  command,
+}: {
+  githubRepos: number;
+  scannerRepos: number;
+  initialChecking: boolean;
+  command: string;
+}) {
+  const router = useRouter();
+  const toast = useToast();
+  const [checking, setChecking] = useState(initialChecking);
+  const [pending, start] = useTransition();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!checking) return;
+    const startedAt = Date.now();
+    let stopped = false;
+    const timer = window.setInterval(async () => {
+      if (stopped) return;
+      const timedOut = Date.now() - startedAt > POLL_LIMIT_MS;
+      let done = false;
+      try {
+        if (!timedOut) done = !(await recheckStatusAction()).checking;
+      } catch {
+        // Offline or signed out: the next tick tries again.
+      }
+      if ((!done && !timedOut) || stopped) return;
+      stopped = true;
+      window.clearInterval(timer);
+      setChecking(false);
+      router.refresh();
+      if (done) toast("Re-check done.");
+      else toast("The re-check is still running. Reload this page in a few minutes.", "info");
+    }, POLL_MS);
+    return () => {
+      stopped = true;
+      window.clearInterval(timer);
+    };
+  }, [checking, router, toast]);
+
+  const recheck = () => {
+    if (githubRepos === 0) return;
+    start(async () => {
+      const res = await recheckAction();
+      if (res.message) toast(res.message, res.ok ? "ok" : "info");
+      setChecking(res.checking);
+    });
+  };
+
+  const busy = checking || pending;
+  const button = (
+    <Button variant="secondary" disabled={busy} onClick={recheck}>
+      <RefreshCw className="size-4" strokeWidth={1.8} aria-hidden />
+      {busy ? "Checking…" : "Re-check now"}
+    </Button>
+  );
+  if (scannerRepos === 0) return button;
+  return (
+    <FormDialog
+      open={open}
+      onOpenChange={setOpen}
+      trigger={button}
+      title="Re-check your repos"
+      description={
+        githubRepos > 0
+          ? `Briff is re-checking ${plural(githubRepos, "GitHub App repo")}; this page reloads when it is done. The other ${plural(scannerRepos, "repo")} upload their own scans, so Briff cannot re-check them from here.`
+          : `${plural(scannerRepos, "repo")} upload their own scans with briff-scan, so Briff cannot re-check them from here.`
+      }
+    >
+      <p className="mb-2 text-[13.5px]">After the fix, run the scanner in the repo:</p>
+      <CommandBox command={command} />
+      <p className="text-fg-muted mt-2.5 text-[12.5px]">
+        Use your scan token from Settings. Repos scanned by the GitHub Action re-check on their next
+        push to main. Fixed advisories leave this page with the next upload.
+      </p>
+      <div className="mt-4 flex justify-end">
+        <DialogClose render={<Button variant="secondary">Close</Button>} />
+      </div>
+    </FormDialog>
   );
 }

@@ -27,6 +27,8 @@ import {
 import { publicActionsForScan } from "./action-visibility";
 
 const FETCH_CONCURRENCY = 8;
+/** Advisories without covered packages refetched per run, on top of the ones OSV answered with. */
+const COVERAGE_BACKFILL_LIMIT = 500;
 
 interface Wanted {
   modified: string | null;
@@ -40,6 +42,8 @@ interface StoredAdvisory {
   osvId: string;
   aliases: string[] | null;
   recordsModified: Record<string, unknown> | null;
+  /** Stored before covered packages were recorded: refetched once. */
+  packagesMissing: boolean;
 }
 
 type ScanCounts = Record<
@@ -67,7 +71,11 @@ async function storeAdvisories(
   { db, log, heartbeat }: Pick<JobContext, "db" | "log" | "heartbeat">,
   wanted: ReadonlyMap<string, Wanted>,
   counts: ScanCounts
-): Promise<{ advisoryOf: (osvId: string) => string | undefined; merges: Map<string, string> }> {
+): Promise<{
+  advisoryOf: (osvId: string) => string | undefined;
+  merges: Map<string, string>;
+  withdrawn: Set<string>;
+}> {
   const rowOf = new Map<string, StoredAdvisory>();
   const looked = new Set<string>();
   /** Loads the stored rows holding any of `ids`, as their own id or as an alias. */
@@ -77,9 +85,16 @@ async function storeAdvisories(
     if (fresh.length === 0) return [];
     // Advisory is a global catalog table (no tenant data), read raw for the jsonb `?|` match.
     const rows = await db.$queryRaw<
-      { id: string; osvId: string; aliases: unknown; recordsModified: unknown }[]
+      {
+        id: string;
+        osvId: string;
+        aliases: unknown;
+        recordsModified: unknown;
+        packagesMissing: boolean;
+      }[]
     >`
-      SELECT "id", "osvId", "aliases", "recordsModified" FROM "advisory"
+      SELECT "id", "osvId", "aliases", "recordsModified", ("packages" IS NULL) AS "packagesMissing"
+      FROM "advisory"
       WHERE "osvId" = ANY(${fresh}::text[]) OR "aliases" ?| ${fresh}::text[]`;
     const known = new Map([...rowOf.values()].map((r) => [r.id, r]));
     const loaded = rows.map(
@@ -102,7 +117,8 @@ async function storeAdvisories(
   // (GHSA-2c4m-59x9-fr2g last moved in 2023, its GO-2023-1737 in 2024).
   const stale = (id: string, hit: Wanted): boolean => {
     const row = rowOf.get(id);
-    if (!row || row.aliases === null || row.recordsModified === null) return true;
+    if (!row || row.aliases === null || row.recordsModified === null || row.packagesMissing)
+      return true;
     const known = row.recordsModified[id];
     if (typeof known !== "string") return true;
     return hit.modified !== null && new Date(hit.modified) > new Date(known);
@@ -211,6 +227,7 @@ async function storeAdvisories(
     const data = {
       ...fields,
       affected: fields.affected as unknown as Prisma.InputJsonValue,
+      packages: fields.packages as unknown as Prisma.InputJsonValue,
       aliases,
       recordsModified,
     };
@@ -240,7 +257,7 @@ async function storeAdvisories(
     const row = rowOf.get(osvId);
     return row ? (merges.get(row.id) ?? row.id) : undefined;
   };
-  return { advisoryOf, merges };
+  return { advisoryOf, merges, withdrawn };
 }
 
 /**
@@ -306,6 +323,8 @@ export async function securityScan({ db, log, heartbeat }: JobContext): Promise<
     alertsBacklog: 0,
     alertsDelivered: 0,
     alertsHeld: 0,
+    alertsReopened: 0,
+    advisoriesBackfilled: 0,
     emailsSent: 0,
     emailsFailed: 0,
   };
@@ -401,7 +420,37 @@ export async function securityScan({ db, log, heartbeat }: JobContext): Promise<
       }
     }
   });
-  const { advisoryOf, merges } = await storeAdvisories({ db, log, heartbeat }, wanted, counts);
+  // Rows stored before covered packages were recorded are refetched even when OSV no
+  // longer answers with them (the repos upgraded): upload-time resolution needs the list.
+  const backfill = await db.$queryRaw<
+    { osvId: string; packageId: string; name: string; ecosystem: string }[]
+  >`
+    SELECT a."osvId", a."packageId", p."name", p."ecosystem"
+    FROM "advisory" a JOIN "package" p ON p."id" = a."packageId"
+    WHERE a."packages" IS NULL
+    ORDER BY a."osvId"
+    LIMIT ${COVERAGE_BACKFILL_LIMIT}`;
+  for (const row of backfill) {
+    if (wanted.has(row.osvId) || !isEcosystem(row.ecosystem)) continue;
+    wanted.set(row.osvId, {
+      modified: null,
+      packageId: row.packageId,
+      packageName: row.name,
+      ecosystem: row.ecosystem,
+    });
+  }
+  counts.advisoriesBackfilled = backfill.length;
+  const { advisoryOf, merges, withdrawn } = await storeAdvisories(
+    { db, log, heartbeat },
+    wanted,
+    counts
+  );
+  if (withdrawn.size > 0) {
+    // A withdrawn record is never written again; an empty list stops its backfill.
+    await db.$executeRaw`
+      UPDATE "advisory" SET "packages" = '[]'::jsonb
+      WHERE "osvId" = ANY(${[...withdrawn]}::text[]) AND "packages" IS NULL`;
+  }
   if (merges.size > 0) await mergeDuplicates(db, orgs, merges, counts);
 
   const matches = queries.map((query, i) => ({
@@ -428,8 +477,27 @@ export async function securityScan({ db, log, heartbeat }: JobContext): Promise<
     const advisoryIds = [...new Set(orgMatches.flatMap((m) => m.advisoryIds))];
     const existing = await scoped.alert.findMany({
       where: { advisoryId: { in: advisoryIds } },
-      select: { advisoryId: true, repoId: true },
+      select: { id: true, advisoryId: true, repoId: true, resolvedAt: true },
     });
+    // OSV says a resolved pair is affected again (the advisory's ranges grew, or the
+    // ingest check could not see it): the alert is open again, without a second email.
+    const atRiskKeys = new Set(
+      orgMatches.flatMap((m) =>
+        m.advisoryIds.flatMap((advisoryId) =>
+          m.query.dependents.map((d) => alertKey(advisoryId, d.repoId))
+        )
+      )
+    );
+    const reopen = existing.filter(
+      (a) => a.resolvedAt !== null && atRiskKeys.has(alertKey(a.advisoryId, a.repoId))
+    );
+    if (reopen.length > 0) {
+      const res = await scoped.alert.updateMany({
+        where: { id: { in: reopen.map((a) => a.id) } },
+        data: { resolvedAt: null },
+      });
+      counts.alertsReopened += res.count;
+    }
     const candidates = newAlertCandidates(
       orgMatches,
       new Set(existing.map((a) => alertKey(a.advisoryId, a.repoId))),
