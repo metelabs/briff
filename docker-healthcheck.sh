@@ -8,4 +8,4 @@ if tr '\0' ' ' < /proc/1/cmdline | grep -q "worker"; then
   [ "$age" -lt 180 ] || exit 1
   exit 0
 fi
-wget -q -O /dev/null "http://127.0.0.1:${PORT:-3000}/api/health" || exit 1
+wget -q -O /dev/null "http://127.0.0.1:${PORT:-3000}/api/health?probe=live" || exit 1

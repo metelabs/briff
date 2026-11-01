@@ -3,6 +3,7 @@ import "server-only";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { findInstanceAdmin } from "@/lib/admin";
 import { getAuth } from "@/lib/auth/auth";
 import { loadRuntimeLifecycle } from "@/lib/runtime-eol-catalog";
 import { getDb } from "@/lib/db/client";
@@ -45,11 +46,7 @@ export async function requireOrgContext(): Promise<OrgContext> {
 
 /** The first account bootstraps the instance and is its admin. */
 export async function isInstanceAdmin(userId: string): Promise<boolean> {
-  const first = await getDb().user.findFirst({
-    orderBy: { createdAt: "asc" },
-    select: { id: true },
-  });
-  return first?.id === userId;
+  return (await findInstanceAdmin(getDb()))?.id === userId;
 }
 
 export async function requireAdminContext(): Promise<OrgContext> {

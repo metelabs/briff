@@ -6,6 +6,8 @@ export const JOB_TYPES = [
   "triage-items",
   "weekly-bulletin",
   "refresh-packages",
+  // Every 30 min: alerts on scheduled job types without a recent success (src/lib/ops/check.ts).
+  "ops-check",
   // Admin "Preview synthesis": payload { orgId, streamId, model } (src/pipeline/preview.ts).
   "bulletin-preview",
   // GitHub App: payload { installationId, repos?, force? } (src/lib/github/scan.ts).

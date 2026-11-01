@@ -71,7 +71,8 @@ packages/scan/           npm package `briff-scan` (MIT): CLI + lockfile/runtime 
 scripts/                 scan-local.ts (tsx; thin wrapper: briff-scan --all-repos over ~/code for the systemd unit),
                          build-worker.mjs (esbuild), replay.ts
 deploy/systemd/          systemd user units for the scanner
-docs/                    SCANNER.md (runbook), SOURCES.md (feeds and matching), DESIGN.md (UI system), design/ (mocks)
+docs/                    SCANNER.md (runbook), SOURCES.md (feeds and matching), DESIGN.md (UI system), design/ (mocks),
+                         OPERATIONS.md (health, job alerts, run history, Sentry)
 compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhost.example, docs/SELF-HOSTING.md,
                          docs/UPGRADING.md, smoke test scripts/smoke.sh); docker-compose.dev.yml = dev Postgres only
 ```
@@ -84,7 +85,7 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   BulletinStream, StreamRepo, ScanToken, GithubInstallation. Creates
   still pass `orgId` explicitly (Prisma types require it; the layer verifies it). Nested
   relation writes and raw SQL bypass the layer, so do not use them for tenant tables.
-  Global catalog tables (Package, Service, Source, Item, Advisory, Job, Run) use `getDb()`.
+  Global catalog tables (Package, Service, Source, Item, Advisory, Job, Run, OpsAlert) use `getDb()`.
   Two reads run before the org is known and are the only tenant reads outside the layer:
   the session's membership (`getOrgContext`) and the scan token lookup by hash
   (`findScanTokenByHash`, `src/lib/scan/token-store.ts`), and the GitHub App's installation
@@ -267,15 +268,22 @@ Checks before a PR: `npm run typecheck && npm run lint && npm test`. DB-backed t
 ## Worker and jobs
 
 - Job types: `security-scan`, `collect-sources`, `triage-items`, `weekly-bulletin`,
-  `refresh-packages`, `bulletin-preview`, `github-scan` (`src/lib/jobs/types.ts`); handlers in `src/worker/handlers.ts`.
+  `refresh-packages`, `ops-check`, `bulletin-preview`, `github-scan` (`src/lib/jobs/types.ts`); handlers in `src/worker/handlers.ts`.
+- Observability (docs/OPERATIONS.md, `src/lib/ops/`): a job that fails for good (runner) or a
+  scheduled type without a success within its cron interval + grace (`ops-check`, every 30 min;
+  `jobFreshness`, never alerts on a type never queued) emails `OPS_ALERT_EMAIL` or the instance
+  admin (`findInstanceAdmin`, same rule as `/admin`) and POSTs `ALERT_WEBHOOK_URL`, once per
+  (job type, kind) per 24h (`OpsAlert`). `/api/health` returns 503 on a stale type or a due job
+  older than 1h; the container healthcheck uses `?probe=live` (database only). Admin → Runs is
+  `/admin/runs`. Sentry (`src/lib/sentry.ts`) loads only with `SENTRY_DSN`.
 - GitHub App (docs/GITHUB-APP.md): `/api/github/install` → GitHub → `/api/github/setup` (signed state)
   → app OAuth → `/api/github/callback` links the installation only when the GitHub user can access
   it; `/api/github/webhook` (5 MB cap, HMAC before parsing) queues `github-scan` jobs. The job reads
   the default branch's tree and fetches only `isScannedPath` blobs (`packages/scan/src/files.ts`),
   builds the payload with `collectFromFiles` (same code as the CLI) and ingests through
   `acceptScan`; an unchanged head (`Repo.githubHeadSha`) is skipped.
-- Schedule (UTC, `src/worker/scheduler.ts`): refresh-packages 03:00 daily, security-scan
-  04:00 daily, weekly-bulletin Monday 04:00, collect-sources **hourly** with payload `{ due: true }`
+- Schedule (UTC, `src/lib/jobs/schedule.ts`, run by `src/worker/scheduler.ts`): refresh-packages 03:00 daily, security-scan
+  04:00 daily, weekly-bulletin Monday 04:00, ops-check :10 and :40, collect-sources **hourly** with payload `{ due: true }`
   (it enqueues triage-items when done; triage also runs at :30 every 6h as a catch-up). The systemd
   scanner (`deploy/systemd/`) runs 03:30 UTC and enqueues refresh-packages itself.
 - Source classes (`Source.class`): `security` sources are fetched on every hourly run, `releases`
@@ -493,8 +501,8 @@ Checks before a PR: `npm run typecheck && npm run lint && npm test`. DB-backed t
   (`.env.example` documents each variable).
 - The entrypoint runs `prisma migrate deploy` only for `node server.js` (set
   `MIGRATE_ON_START=false` to skip). The Prisma CLI lives isolated in `/app/migrate`.
-- Healthcheck script handles both roles: web → `GET http://127.0.0.1:3000/api/health`,
-  worker → heartbeat file younger than 180s.
+- Healthcheck script handles both roles: web → `GET http://127.0.0.1:3000/api/health?probe=live`,
+  worker → heartbeat file younger than 180s (refreshed every 30s, before each claim and on job heartbeats).
 - Self-hosters run `compose.yaml` (pulls the image, builds nothing); CI validates it with
   `docker compose config` against `.env.selfhost.example`. A new env variable goes into both
   `.env.example` and `.env.selfhost.example`.

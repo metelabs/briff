@@ -11,6 +11,8 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
+  // Loaded only when SENTRY_DSN is set (src/lib/sentry.ts); kept out of the server bundle.
+  serverExternalPackages: ["@sentry/node"],
   // The app is fully dynamic (auth + database on every page); Cache Components
   // would only add prerender constraints without a payoff.
   cacheComponents: false,

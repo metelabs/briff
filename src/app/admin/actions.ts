@@ -30,6 +30,7 @@ export async function runJobAction(_prev: AdminState, form: FormData): Promise<A
   const job = await enqueueJob(getDb(), parsed.data, { dedupeKey: parsed.data });
   log.info({ userId: ctx.userId, type: parsed.data, ...job }, "admin: job enqueued");
   revalidatePath("/admin");
+  revalidatePath("/admin/runs");
   return {
     ok: true,
     message: job.created
