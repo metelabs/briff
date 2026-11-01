@@ -88,3 +88,29 @@ export function lowestSupportedLineAbove(runtime: string, line: string, asOf: Da
       .sort(compareLines)[0] ?? null
   );
 }
+
+export interface LineFacts {
+  /** End-of-life date; null for a line without one (`eol: false`). */
+  eolDate: string | null;
+  /** Newest release on the line (endoflife.date `latest`); null without fetched data. */
+  latest: string | null;
+  /** A long-term support line on `asOf`. */
+  lts: boolean;
+}
+
+/** What the lifecycle table says about one line; null when it does not list the runtime or line. */
+export function lineFacts(runtime: string, line: string, asOf: Date): LineFacts | null {
+  const rows = fetched.filter((r) => r.product === runtime);
+  if (rows.length) {
+    const row =
+      rows.find((r) => r.cycle === line) ?? rows.find((r) => r.cycle === line.split(".")[0]);
+    if (!row) return null;
+    const lts =
+      row.lts === true ||
+      (typeof row.lts === "string" && new Date(`${row.lts}T00:00:00Z`).getTime() <= asOf.getTime());
+    return { eolDate: typeof row.eol === "string" ? row.eol : null, latest: row.latest, lts };
+  }
+  const table = FALLBACK_EOL[runtime];
+  const date = table?.[line] ?? table?.[line.split(".")[0]];
+  return date === undefined ? null : { eolDate: date, latest: null, lts: false };
+}

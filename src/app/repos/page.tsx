@@ -10,7 +10,7 @@ import { requireOrgContext } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { withOrg } from "@/lib/db/with-org";
 import { plural, shortDateTime } from "@/lib/format";
-import { dependencySummary, isNewRepo, runtimeChips } from "@/lib/repos";
+import { connectionLabel, dependencySummary, isNewRepo, runtimeChips } from "@/lib/repos";
 import { GITHUB_FLOW_MESSAGES, isGithubFlowStatus } from "@/lib/github/status";
 import { loadStreamScope } from "@/lib/stream-scope";
 
@@ -109,8 +109,7 @@ export default async function ReposPage({
   const rows: RepoListRow[] = visible.map((r) => ({
     id: r.id,
     name: r.name,
-    source:
-      r.source === "local" ? "Local scanner" : r.githubInstallationId ? "GitHub App" : "GitHub",
+    source: connectionLabel(r),
     scanner: r.source === "local" ? "local" : "github",
     isNew: isNewRepo(r),
     inNoStream: r.streams.length === 0,

@@ -219,8 +219,9 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   pages showing repo data (Alerts, Stack) filter with `repoScope(await loadStreamScope(orgId))`
   (`src/lib/stream-scope.ts`). Alerts groups per package with `alertGroupsOf`
   (`src/pipeline/alert-groups.ts`, same fix rules as the bulletin's alert lines); Stack uses
-  `computeDrift` (`src/pipeline/stack-drift.ts`: runtimes vs the EOL table, packages vs
-  `Package.latestVersion`).
+  `computeDrift` (`src/pipeline/stack-drift.ts`: one card per repo, most urgent first; runtimes vs
+  the lifecycle table with a target on the installed line, or the EOL migration sentence naming the
+  lowest supported line; packages vs `Package.latestVersion`).
 - Streams: a `BulletinStream` is a named repo set with its own weekly bulletin and email.
   `Repo.included` means "in at least one stream" and stays the gate for triage and security
   alerts; change membership only through `src/lib/streams.ts`, which writes the membership and

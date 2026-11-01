@@ -7,12 +7,12 @@ import { Card } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/ui/section-header";
 import { requireOrgContext } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
-import { plural } from "@/lib/format";
+import { plural, shortDateTime } from "@/lib/format";
 import { loadDrift } from "@/lib/stack-load";
 import { loadStreamScope, repoScope } from "@/lib/stream-scope";
 import { loadUnfixedDistros } from "@/security/base-image-view";
 
-import { DriftTable } from "./_client";
+import { StackCards } from "./_client";
 
 export const metadata: Metadata = { title: "Stack · Briff" };
 
@@ -29,21 +29,27 @@ export default async function StackPage() {
       <PageHeader
         eyebrow={`${plural(repos.length, "repo")} · ${scope.current?.name ?? "all streams"}`}
         title="Stack"
-        sub="What every repo runs, next to what is current. Runtimes come from package files, Dockerfiles and compose files; packages are the direct dependencies most of your repos share."
+        sub="What every repo runs and what to move to, most urgent first. Runtimes come from package files, Dockerfiles and compose files; key packages are the direct dependencies most of your repos share."
       />
-      {repos.length === 0 ? (
+      {repos.length === 0 || drift.every((r) => r.entries.length === 0) ? (
         <Card className="rise [--i:1]">
           <EmptyState
             icon={<Layers strokeWidth={1.4} />}
-            title="Nothing scanned yet"
+            title={repos.length === 0 ? "Nothing scanned yet" : "No runtime data yet"}
             action={<ConnectReposButton />}
           >
-            Once this stream has scanned repos, each one appears here with its runtimes and key
-            packages against the latest release.
+            {repos.length === 0
+              ? "Once this stream has scanned repos, each one appears here with its runtimes and key packages, and what to move to."
+              : "No scan has reported a runtime or package for these repos yet. Connect a repo or run the scanner, and each one appears here with what to move to."}
           </EmptyState>
         </Card>
       ) : (
-        <DriftTable columns={drift.columns} rows={drift.rows} />
+        <StackCards
+          cards={drift.map(({ lastScannedAt, ...card }) => ({
+            ...card,
+            lastScan: lastScannedAt ? shortDateTime(lastScannedAt) : "never",
+          }))}
+        />
       )}
       {unfixed.map((d) => (
         <p key={d.distro} className="text-fg-muted mt-3 text-[13px]">
