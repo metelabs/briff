@@ -247,38 +247,34 @@ command for the founder. Do them in order; each ends with what you should see.
    gh pr list -R metelabs/briff --search 'chore(main): release in:title' --state open
    ```
 
-   - The open release PR says `chore(main): release 0.8.0`: go to step 4c.
+   - The open release PR says `chore(main): release 0.8.0`: merge it (below).
    - It says `0.7.4` (or there is none): force the version with a `Release-As` footer. The
      release-please README documents it: a commit on `main` whose **body** contains
      `Release-As: x.y.z` makes the next release PR that version. Do not use `feat!:` for
      this: pre-1.0 with `bump-minor-pre-major` it would also give 0.8.0, but the changelog
      would get a "⚠ BREAKING CHANGES" section that is not true.
 
-     a. When you squash-merge the next pull request (any one), open **Squash and merge**,
-     and in the extended description add a last line on its own:
+     Either way works:
+     - **With a pending pull request** (any one): open **Squash and merge**, add a last
+       line on its own to the extended description, then **Confirm squash and merge**.
+       The repository's squash message is the commit messages; the footer must be a line
+       by itself, not a `* ` bullet.
 
-     ```
-     Release-As: 0.8.0
-     ```
+       ```
+       Release-As: 0.8.0
+       ```
 
-     Then **Confirm squash and merge**. (The repository's squash message is the commit
-     messages; the footer must be a line by itself, not a `* ` bullet.)
-
-     b. Without a pending pull request, use an empty commit on a branch:
-
-     ```bash
-     cd ~/code/briff && git fetch origin && git switch -c chore/release-0.8.0 origin/main
-     git commit --allow-empty -m "chore: release 0.8.0" -m "Release-As: 0.8.0"
-     git push -u origin chore/release-0.8.0
-     gh pr create -R metelabs/briff --base main --title "chore: release 0.8.0" --body "Release-As: 0.8.0"
-     ```
-
-     Squash-merge it with the footer line kept in the description.
+     - **Without one**: GitHub refuses a pull request with no file changes, so an empty
+       commit does not work. Set `"release-as": "0.8.0"` on the `"."` package in
+       `release-please-config.json` in a pull request whose squash body also carries the
+       `Release-As: 0.8.0` line, merge it, and once 0.8.0 is released remove
+       `release-as` again in a second pull request (it is sticky: while it is set, every
+       later release PR asks for 0.8.0).
 
      You should see: within a few minutes the `Docker` run on `main` updates the release PR
      to `chore(main): release 0.8.0`.
 
-   c. Merge the release PR. You should see: tag `0.8.0`, a GitHub release `0.8.0`, and in
+   Then merge the release PR. You should see: tag `0.8.0`, a GitHub release `0.8.0`, and in
    the `Docker` run "Trigger Dokploy deploys" with `WEB deploy triggered` and
    `WORKER deploy triggered`. Then `curl -s https://app.briff.dev/api/health` starts with
    `{"ok":true,"db":"ok"`.
