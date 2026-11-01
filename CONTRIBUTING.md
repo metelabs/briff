@@ -13,7 +13,7 @@ Node 22, npm, Docker (for Postgres).
 
 ```bash
 git clone https://github.com/metelabs/briff.git && cd briff
-docker compose up -d                  # Postgres 16 on 127.0.0.1:55432
+docker compose -f docker-compose.dev.yml up -d   # Postgres 16 on 127.0.0.1:55432
 cp .env.example .env                  # set BETTER_AUTH_SECRET (openssl rand -base64 48)
 npm ci                                # also runs prisma generate
 npm run db:migrate                    # prisma migrate dev

@@ -58,3 +58,23 @@ jobs:
       - run: npm run lint
       - run: npx prisma migrate deploy
       - run: npm test
+
+  # The self-hosting compose file must keep parsing with the documented env file.
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: docker compose config (compose.yaml + .env.selfhost.example)
+        run: |
+          cp .env.selfhost.example .env
+          sed -i -e 's|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=ci-check|' \
+            -e 's|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=ci-check-secret-of-at-least-32-characters|' .env
+          docker compose -f compose.yaml config --quiet
+          docker compose -f compose.yaml config --services | sort | tr '\n' ' ' | grep -qx 'postgres web worker '
+          # Without the required password the file must refuse to start.
+          sed -i 's|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=|' .env
+          ! docker compose -f compose.yaml config --quiet 2>/dev/null
+      - name: docker compose config (docker-compose.dev.yml)
+        run: docker compose -f docker-compose.dev.yml config --quiet
+      - name: smoke.sh syntax
+        run: bash -n scripts/smoke.sh && shellcheck scripts/smoke.sh

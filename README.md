@@ -106,62 +106,23 @@ aliases (`repo-1`, `repo-2`, ...).
 
 ## Self-hosting
 
-The full guide (compose file, configuration, a smoke test) is
-[docs/SELF-HOSTING.md](docs/SELF-HOSTING.md); upgrades are in
-[docs/UPGRADING.md](docs/UPGRADING.md). In short, Briff is one Docker image run twice, next
-to Postgres 16:
+Briff is one Docker image (`ghcr.io/metelabs/briff`) run twice, as `web` and `worker`, next to
+Postgres 16. [`compose.yaml`](compose.yaml) runs all three and
+[`.env.selfhost.example`](.env.selfhost.example) documents every variable:
 
-| Role   | Command                              | Notes                                                                              |
-| ------ | ------------------------------------ | ---------------------------------------------------------------------------------- |
-| web    | `node server.js` (the image default) | port 3000; applies database migrations on start (`MIGRATE_ON_START=false` to skip) |
-| worker | `node dist/worker.mjs`               | job queue in Postgres, UTC schedule; no port                                       |
-
-Releases publish the image as `ghcr.io/metelabs/briff` (`latest`, `<version>`,
-`sha-<commit>`), or build it from this repository with `docker build .`; the build needs no
-secrets and no env. All configuration is runtime environment, set on both roles;
-[.env.example](.env.example) documents every variable. The minimum:
-
-| Variable                                                         | What                                                                 |
-| ---------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `DATABASE_URL`                                                   | Postgres 16 connection string                                        |
-| `BETTER_AUTH_SECRET`                                             | session signing secret, 32+ chars (`openssl rand -base64 48`)        |
-| `BETTER_AUTH_URL`                                                | the public origin of the web app                                     |
-| `ANTHROPIC_API_KEY`                                              | triage and the weekly synthesis; without it only security alerts run |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `FROM_EMAIL` | any SMTP relay; without them nothing is emailed                      |
-
-A minimal compose file:
-
-```yaml
-services:
-  db:
-    image: postgres:16-alpine
-    environment: { POSTGRES_USER: briff, POSTGRES_PASSWORD: change-me, POSTGRES_DB: briff }
-    volumes: [briff-db:/var/lib/postgresql/data]
-  web:
-    image: ghcr.io/metelabs/briff:latest
-    env_file: .env
-    ports: ["3000:3000"]
-    depends_on: [db]
-  worker:
-    image: ghcr.io/metelabs/briff:latest
-    command: ["node", "dist/worker.mjs"]
-    env_file: .env
-    depends_on: [db]
-volumes:
-  briff-db:
+```bash
+curl -fsSLO https://raw.githubusercontent.com/metelabs/briff/main/compose.yaml
+curl -fsSL -o .env https://raw.githubusercontent.com/metelabs/briff/main/.env.selfhost.example
+# set POSTGRES_PASSWORD, BETTER_AUTH_SECRET, BETTER_AUTH_URL and BRIFF_VERSION in .env
+docker compose pull && docker compose up -d
 ```
 
-with `DATABASE_URL=postgresql://briff:change-me@db:5432/briff` in `.env`. Put a TLS-terminating
-proxy in front of port 3000. `GET /api/health` reports the database state and which optional
-features are disabled by missing variables. Both roles have a container healthcheck.
-
-The first account created on an instance owns it and is its admin. Sign-ups are open by default
-(`ALLOW_SIGNUP=true`); set `ALLOW_SIGNUP=false` to close registration after the first account.
-Each new account gets its own organisation with 10 repositories and 2 streams (including
-the default stream). Self-hosted instances use the same defaults; the instance Admin page can raise these limits
-to fit your own capacity. There is no separate self-hosted tier. There is no invite
-system. Point scanners at your instance with `BRIFF_API_URL`, and create your own
-GitHub App if you want "Connect GitHub" ([docs/GITHUB-APP.md](docs/GITHUB-APP.md)).
+**[docs/SELF-HOSTING.md](docs/SELF-HOSTING.md)** is the full guide: requirements, install, the
+first account as instance admin, what works without SMTP, an Anthropic key or a GitHub App,
+connecting repos, a Caddy example, updates, backups, health, logs and troubleshooting.
+[docs/UPGRADING.md](docs/UPGRADING.md) covers versions and breaking changes.
+`scripts/smoke.sh` checks a stack end to end. There is no separate self-hosted tier; the image
+builds from this repository with `docker build .` without secrets or env.
 
 Operator notes for the hosted instance at app.briff.dev (its servers, deploy hooks and
 credentials) are kept outside this repository; everything a self-hosted instance needs is here.
@@ -171,7 +132,7 @@ credentials) are kept outside this repository; everything a self-hosted instance
 Node 22, npm, Docker for Postgres.
 
 ```bash
-docker compose up -d                  # Postgres 16 on 127.0.0.1:55432
+docker compose -f docker-compose.dev.yml up -d   # Postgres 16 on 127.0.0.1:55432
 cp .env.example .env                  # set BETTER_AUTH_SECRET; DATABASE_URL is preset
 npm ci                                # also runs prisma generate
 npm run db:migrate                    # prisma migrate dev

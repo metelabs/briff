@@ -1,7 +1,8 @@
 name: briff-dev
 
 # Local development database. The app and worker run on the host:
-#   docker compose up -d && npm run db:migrate && npm run dev
+#   docker compose -f docker-compose.dev.yml up -d && npm run db:migrate && npm run dev
+# The self-hosting stack is compose.yaml (docs/SELF-HOSTING.md).
 services:
   postgres:
     image: postgres:16-alpine

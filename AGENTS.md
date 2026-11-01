@@ -72,6 +72,8 @@ scripts/                 scan-local.ts (tsx; thin wrapper: briff-scan --all-repo
                          build-worker.mjs (esbuild), replay.ts
 deploy/systemd/          systemd user units for the scanner
 docs/                    SCANNER.md (runbook), SOURCES.md (feeds and matching), DESIGN.md (UI system), design/ (mocks)
+compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhost.example, docs/SELF-HOSTING.md,
+                         docs/UPGRADING.md, smoke test scripts/smoke.sh); docker-compose.dev.yml = dev Postgres only
 ```
 
 ## Conventions
@@ -215,7 +217,7 @@ docs/                    SCANNER.md (runbook), SOURCES.md (feeds and matching), 
 ## Run locally
 
 ```bash
-docker compose up -d                  # Postgres 16 on 127.0.0.1:55432
+docker compose -f docker-compose.dev.yml up -d   # Postgres 16 on 127.0.0.1:55432
 cp .env.example .env                  # fill BETTER_AUTH_SECRET; DATABASE_URL is preset
 npm ci                                # runs prisma generate
 npm run db:migrate                    # prisma migrate dev
@@ -480,6 +482,9 @@ Checks before a PR: `npm run typecheck && npm run lint && npm test`. DB-backed t
   `MIGRATE_ON_START=false` to skip). The Prisma CLI lives isolated in `/app/migrate`.
 - Healthcheck script handles both roles: web → `GET http://127.0.0.1:3000/api/health`,
   worker → heartbeat file younger than 180s.
+- Self-hosters run `compose.yaml` (pulls the image, builds nothing); CI validates it with
+  `docker compose config` against `.env.selfhost.example`. A new env variable goes into both
+  `.env.example` and `.env.selfhost.example`.
 
 ## Do not (all hit in production)
 
