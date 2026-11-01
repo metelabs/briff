@@ -113,7 +113,18 @@ function OrgTable({ rows, cloud }: { rows: OrgRow[]; cloud: boolean }) {
               <td className={cn(TD, "text-fg-muted max-w-[240px]")}>
                 <TruncatedText>{org.ownerEmail ?? "no owner"}</TruncatedText>
               </td>
-              {cloud && <td className={TD}>{PLANS[org.plan].name}</td>}
+              {cloud && (
+                <td className={TD}>
+                  {PLANS[org.plan].name}
+                  <span className="text-fg-muted block text-[12px]">
+                    {org.subscription
+                      ? `Paddle: ${org.subscription}`
+                      : org.planSource === "admin"
+                        ? "set by admin"
+                        : "no subscription"}
+                  </span>
+                </td>
+              )}
               <td className={cn(TD, "tabular-nums")}>{org.members}</td>
               <td className={TD}>
                 <Usage used={org.repos} limit={org.repoLimit} />
@@ -242,7 +253,7 @@ export default async function AdminPage({
             <h2 className="type-h2">Organisations</h2>
             <p className="text-fg-muted mt-1 max-w-[72ch] text-[13.5px]">
               {cloud
-                ? `The instance admin view: every organisation, its plan and the repos and streams it uses (Free: ${PLANS.free.repos} repos, ${PLANS.free.streams} streams). Edit limits sets the plan, or raises one organisation's limits above it; Unlimited is for your own organisation and friends.`
+                ? `The instance admin view: every organisation, its plan and the repos and streams it uses (Free: ${PLANS.free.repos} repos, ${PLANS.free.streams} streams). Edit limits sets the plan, or raises one organisation's limits above it; Unlimited is for your own organisation and friends. A plan set here is never lowered by Paddle billing.`
                 : "The instance admin view: every organisation on this instance and the repos and streams it uses. A self-hosted instance has no plans or limits."}{" "}
               Only the instance admin, the first account, sees it.
             </p>

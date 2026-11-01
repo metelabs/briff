@@ -6,7 +6,7 @@ import { OG_IMAGE, SELF_HOST_URL } from "@/components/landing/links";
 import { PublicFooter, PublicHeader } from "@/components/landing/public-chrome";
 import { PageContainer } from "@/components/shell/page-container";
 import { Accordion } from "@/components/ui/accordion";
-import { isCloud } from "@/lib/env";
+import { isBillingConfigured, isCloud } from "@/lib/env";
 import { INCLUDED_FEATURES, PLANS } from "@/lib/plans";
 import { publicSiteUrl } from "@/lib/public-site";
 
@@ -42,6 +42,7 @@ export function generateMetadata(): Metadata {
 
 export default function PricingPage() {
   if (!isCloud()) notFound();
+  const billing = isBillingConfigured();
   return (
     <div className="flex min-h-svh flex-col">
       <PublicHeader pricing />
@@ -57,15 +58,17 @@ export default function PricingPage() {
           </p>
         </header>
 
-        <p
-          role="note"
-          className="rise bg-brand-soft text-fg rounded-inset mx-auto mb-6 max-w-[720px] px-4 py-3 text-center text-[13.5px] [--i:1]"
-        >
-          <b className="font-semibold">Free during the beta:</b> Pro and Team start when billing
-          opens; your plan stays {PLANS.free.name} until you choose to upgrade.
-        </p>
+        {!billing && (
+          <p
+            role="note"
+            className="rise bg-brand-soft text-fg rounded-inset mx-auto mb-6 max-w-[720px] px-4 py-3 text-center text-[13.5px] [--i:1]"
+          >
+            <b className="font-semibold">Free during the beta:</b> Pro and Team start when billing
+            opens; your plan stays {PLANS.free.name} until you choose to upgrade.
+          </p>
+        )}
 
-        <PricingCards />
+        <PricingCards billing={billing} />
 
         <div className="rise bg-surface border-line rounded-card mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 border px-[18px] py-3.5 text-[14px] [--i:6]">
           <span className="text-fg-muted text-[13px]">Every plan includes</span>

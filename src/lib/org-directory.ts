@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { PrismaClient } from "@/generated/prisma/client";
+import { subscriptionLabel } from "@/lib/billing/labels";
 import { limitsFor } from "@/lib/plans";
 
 import type { OrgRow } from "./org-directory-view";
@@ -8,14 +9,14 @@ import type { OrgRow } from "./org-directory-view";
 /**
  * Every organisation of the instance with its owner, members, repos and streams, for the
  * instance admin's table (`/admin`, behind requireAdminContext). The one tenant read outside
- * withOrg that spans orgs on purpose: counts and the owner's email only, a fixed number of
+ * withOrg that spans orgs on purpose: counts, the owner's email and the subscription status only, a fixed number of
  * grouped queries however many orgs there are, never rendered for anyone but the admin.
  */
 export async function loadOrgDirectory(
   db: PrismaClient,
   { cloud }: { cloud: boolean }
 ): Promise<OrgRow[]> {
-  const [orgs, repos, streams, members, owners] = await Promise.all([
+  const [orgs, repos, streams, members, owners, subscriptions] = await Promise.all([
     db.org.findMany({
       select: {
         id: true,
@@ -24,6 +25,7 @@ export async function loadOrgDirectory(
         plan: true,
         repoLimit: true,
         streamLimit: true,
+        planSource: true,
       },
     }),
     db.repo.groupBy({ by: ["orgId"], _count: { _all: true } }),
@@ -34,6 +36,12 @@ export async function loadOrgDirectory(
       orderBy: { createdAt: "asc" },
       select: { orgId: true, user: { select: { email: true } } },
     }),
+    cloud
+      ? db.subscription.findMany({
+          orderBy: { stateAt: "desc" },
+          select: { orgId: true, status: true, scheduledChange: true },
+        })
+      : Promise.resolve([]),
   ]);
   const count = (rows: { orgId: string; _count: { _all: number } }[]) =>
     new Map(rows.map((r) => [r.orgId, r._count._all]));
@@ -42,6 +50,13 @@ export async function loadOrgDirectory(
   const memberCount = count(members);
   const ownerEmail = new Map<string, string>();
   for (const o of owners) if (!ownerEmail.has(o.orgId)) ownerEmail.set(o.orgId, o.user.email);
+  // Newest first; a live subscription wins over an ended one.
+  const subscription = new Map<string, string>();
+  for (const sub of [...subscriptions].sort(
+    (a, b) => Number(b.status !== "canceled") - Number(a.status !== "canceled")
+  )) {
+    if (!subscription.has(sub.orgId)) subscription.set(sub.orgId, subscriptionLabel(sub));
+  }
   return orgs.map((o) => {
     const limits = limitsFor(o, { cloud });
     return {
@@ -49,6 +64,8 @@ export async function loadOrgDirectory(
       name: o.name,
       createdAt: o.createdAt,
       plan: o.plan,
+      planSource: o.planSource,
+      subscription: subscription.get(o.id) ?? null,
       repoOverride: o.repoLimit,
       streamOverride: o.streamLimit,
       repoLimit: limits.repoLimit,

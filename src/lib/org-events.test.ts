@@ -38,4 +38,13 @@ describe("eventSentence", () => {
       "A deleted account revoked the invite for bob@example.com"
     );
   });
+
+  it("says who changed the plan: billing or the instance admin", () => {
+    expect(
+      eventSentence({ ...base, actor: null, type: "plan_changed", detail: "paddle:free:pro" })
+    ).toBe("Billing changed the plan from Free to Pro");
+    expect(eventSentence({ ...base, type: "plan_changed", detail: "admin:team:unlimited" })).toBe(
+      "The instance admin changed the plan from Team to Unlimited"
+    );
+  });
 });

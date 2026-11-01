@@ -18,6 +18,10 @@ export interface OrgRow {
   repos: number;
   streams: number;
   plan: PlanId;
+  /** Who set the plan last: default, admin or paddle. */
+  planSource: "default" | "admin" | "paddle";
+  /** The Paddle subscription's status ("active", "cancels 2026-12-01"); null without one. */
+  subscription: string | null;
   /** The admin's overrides (Org.repoLimit / streamLimit); null = the plan's limit. */
   repoOverride: number | null;
   streamOverride: number | null;

@@ -100,7 +100,10 @@ describe.skipIf(!url)("organisation capacity", () => {
       repoLimit: null,
       streamLimit: null,
       planUpdatedAt: expect.any(Date),
+      planSource: "admin",
     });
+    const audit = await withOrg(db, orgId).orgEvent.findMany({ where: { type: "plan_changed" } });
+    expect(audit.map((e) => e.detail)).toEqual(["admin:free:pro"]);
     await expect(createLimitedStream(db, orgId, "Admin raised")).resolves.toBeUndefined();
   });
 

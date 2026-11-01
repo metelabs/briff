@@ -1,6 +1,7 @@
 import { refreshRuntimeLifecycle } from "@/lib/runtime-eol-catalog";
 
 import { baseImageScan } from "@/security/base-images";
+import { billingCheck, billingNotify } from "@/lib/billing/jobs";
 import { githubScan } from "@/lib/github/scan";
 import type { JobType } from "@/lib/jobs/types";
 import { opsCheck } from "@/lib/ops/check";
@@ -22,4 +23,6 @@ export const handlers: Record<JobType, JobHandler> = {
   "refresh-packages": refreshPackages,
   "ops-check": opsCheck,
   "github-scan": githubScan,
+  "billing-check": billingCheck,
+  "billing-notify": billingNotify,
 };

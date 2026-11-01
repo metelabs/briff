@@ -95,6 +95,11 @@ model Org {
   // a value counts only where it is above it.
   plan OrgPlan @default(free)
   planUpdatedAt DateTime?
+  // Who set the plan last (src/lib/billing/plan-sync.ts): Paddle never lowers a plan the admin set.
+  planSource PlanSource @default(default)
+  // The Paddle customer of the org's latest subscription (one customer per payer email, so
+  // several orgs can share one).
+  paddleCustomerId String?
   repoLimit Int?
   streamLimit Int?
   githubRepoLimitReached Boolean @default(false)
@@ -124,8 +129,16 @@ model Org {
   githubInstallations GithubInstallation[]
   invites             OrgInvite[]
   events              OrgEvent[]
+  subscriptions       Subscription[]
 
+  @@index([paddleCustomerId])
   @@map("org")
+}
+
+enum PlanSource {
+  default
+  admin
+  paddle
 }
 
 enum OrgPlan {
@@ -188,6 +201,7 @@ enum OrgEventType {
   role_changed    @map("role.changed")
   org_renamed     @map("org.renamed")
   org_created     @map("org.created")
+  plan_changed    @map("plan.changed")
 }
 
 // Audit log of membership and org changes, shown to owners under Settings -> Members.
@@ -207,6 +221,52 @@ model OrgEvent {
 
   @@index([orgId, createdAt])
   @@map("org_event")
+}
+
+// A Paddle subscription of the org, mirrored from webhooks and the daily billing-check
+// (docs/BILLING.md). Webhooks find it by paddleSubscriptionId before the org is known.
+model Subscription {
+  id                   String    @id @default(cuid())
+  orgId                String
+  org                  Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  paddleSubscriptionId String    @unique
+  paddleCustomerId     String
+  paddlePriceId        String
+  plan                 OrgPlan
+  // month | year
+  interval             String
+  // Paddle's status: active | trialing | past_due | paused | canceled
+  status               String
+  currentPeriodEnd     DateTime?
+  nextBilledAt         DateTime?
+  // { action, effectiveAt, resumeAt } while a cancel or pause is scheduled.
+  scheduledChange      Json?
+  canceledAt           DateTime?
+  pastDueSince         DateTime?
+  // When the state held here was true at Paddle (event occurred_at, or the API read time):
+  // an older event never overwrites it.
+  stateAt              DateTime
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([orgId])
+  @@map("subscription")
+}
+
+// Every Paddle webhook event received (global, not tenant data): the id makes processing
+// idempotent, the payload and error help debugging. Pruned by billing-check.
+model BillingEvent {
+  // Paddle's event id (evt_...).
+  id          String    @id
+  type        String
+  occurredAt  DateTime
+  payload     Json
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+  error       String?
+
+  @@index([processedAt])
+  @@map("billing_event")
 }
 
 // Bearer secret a scanner sends to POST /api/scan; the token decides the org. Only the

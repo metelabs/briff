@@ -11,6 +11,8 @@ const row = (i: number, over: Partial<OrgRow> = {}): OrgRow => ({
   repos: 3,
   streams: 1,
   plan: "free",
+  planSource: "default",
+  subscription: null,
   repoOverride: null,
   streamOverride: null,
   repoLimit: 10,

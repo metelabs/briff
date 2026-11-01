@@ -134,6 +134,18 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
         accountType: "User",
       },
     });
+    await scoped.subscription.create({
+      data: {
+        orgId,
+        paddleSubscriptionId: `sub_${name}_${suffix}`,
+        paddleCustomerId: `ctm_${name}`,
+        paddlePriceId: "pri_x",
+        plan: "pro",
+        interval: "month",
+        status: "canceled",
+        stateAt: new Date(),
+      },
+    });
     return orgId;
   }
 
@@ -160,6 +172,7 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
       orgInvite: await s.orgInvite.count(),
       // createOrgForUser writes the org.created event.
       orgEvent: await s.orgEvent.count(),
+      subscription: await s.subscription.count(),
     };
   }
 

@@ -33,8 +33,22 @@ function Price({ plan, period }: { plan: Plan; period: Period }) {
   );
 }
 
+/**
+ * Paid plans link to Settings -> Billing with the plan picked: an owner lands on the checkout,
+ * a member on "ask an owner", a visitor without a session on sign-up (the page redirects).
+ */
+function ctaFor(plan: Plan, period: Period, billing: boolean): { href: string; label: string } {
+  if (plan.id === "free") return { href: "/login?mode=sign-up", label: "Create an account" };
+  if (!billing) return { href: "/login?mode=sign-up", label: "Start free, upgrade later" };
+  const interval = period === "monthly" ? "month" : "year";
+  return {
+    href: `/settings/billing?plan=${plan.id}&interval=${interval}`,
+    label: `Get ${plan.name}`,
+  };
+}
+
 /** The three sold plans with a monthly/yearly switch; every number comes from PLANS. */
-export function PricingCards() {
+export function PricingCards({ billing = false }: { billing?: boolean }) {
   const [period, setPeriod] = useState<Period>("monthly");
   return (
     <>
@@ -75,13 +89,13 @@ export function PricingCards() {
             </ul>
             <div className="mt-auto pt-5">
               <Link
-                href="/login?mode=sign-up"
+                href={ctaFor(plan, period, billing).href}
                 className={cn(
                   buttonVariants({ variant: plan.id === "free" ? "primary" : "secondary" }),
                   "w-full"
                 )}
               >
-                {plan.id === "free" ? "Create an account" : "Start free, upgrade later"}
+                {ctaFor(plan, period, billing).label}
               </Link>
             </div>
           </li>

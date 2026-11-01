@@ -4,13 +4,16 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { requireAdminContext } from "@/lib/auth/session";
+import { lockOrgBilling } from "@/lib/billing/sync";
 import { getDb } from "@/lib/db/client";
+import { withOrg } from "@/lib/db/with-org";
 import { renderTestEmail } from "@/lib/email/alert-email";
 import { sendMail } from "@/lib/email/mailer";
 import { PRODUCT_LANGUAGE } from "@/lib/i18n";
 import { getEnv, isCloud } from "@/lib/env";
 import { enqueueJob } from "@/lib/jobs/queue";
 import { log } from "@/lib/log";
+import { planChangeDetail } from "@/lib/org-events";
 import { PLAN_IDS, PLANS, type PlanId } from "@/lib/plans";
 
 import { RUNNABLE_JOB_TYPES } from "./job-types";
@@ -82,7 +85,7 @@ const planSchema = z.object({
 });
 
 export async function saveOrgPlanAction(_prev: LimitsState, form: FormData): Promise<LimitsState> {
-  await requireAdminContext();
+  const ctx = await requireAdminContext();
   if (!isCloud())
     return { ok: false, message: "Plans and limits are off on this instance (BRIFF_CLOUD)." };
   const parsed = planSchema.safeParse(Object.fromEntries(form));
@@ -90,18 +93,32 @@ export async function saveOrgPlanAction(_prev: LimitsState, form: FormData): Pro
     return { ok: false, message: "Pick a plan; overrides are empty or positive whole numbers." };
   const { orgId, plan, repoLimit, streamLimit } = parsed.data;
   const db = getDb();
-  const saved = await db.$transaction(async (tx) => {
+  // Same lock as billing (src/lib/billing/sync.ts): a webhook cannot interleave with this write.
+  const saved = await withOrg(db, orgId).$transaction(async (tx) => {
+    await lockOrgBilling(tx, orgId);
     const org = await tx.org.findUnique({ where: { id: orgId }, select: { plan: true } });
     if (!org) return false;
+    const changed = org.plan !== plan;
     await tx.org.update({
       where: { id: orgId },
       data: {
         plan,
         repoLimit,
         streamLimit,
-        ...(org.plan !== plan ? { planUpdatedAt: new Date() } : {}),
+        // A plan the admin set is never lowered by billing (planDecision).
+        ...(changed ? { planUpdatedAt: new Date(), planSource: "admin" as const } : {}),
       },
     });
+    if (changed) {
+      await tx.orgEvent.create({
+        data: {
+          orgId,
+          type: "plan_changed",
+          actorUserId: ctx.userId,
+          detail: planChangeDetail("admin", org.plan, plan),
+        },
+      });
+    }
     return true;
   });
   if (!saved) return { ok: false, message: "Organisation not found." };

@@ -1,6 +1,6 @@
 // Renders the latest bulletin email of each stream (or the one given), a security
 // alert email, an urgent email, the test email, the account emails (reset, verification,
-// email change, invite) and the operator alert emails from the local database into files, without
+// email change, invite), the billing emails and the operator alert emails from the local database into files, without
 // sending anything.
 //   npm run email:preview -- [--bulletin <id>] [--out <dir>]
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -17,6 +17,7 @@ import {
 } from "@/lib/email/alert-email";
 import { renderPasswordResetEmail, renderVerificationEmail } from "@/lib/email/account-email";
 import { renderBulletinEmail } from "@/lib/email/bulletin-email";
+import { renderBillingEmail } from "@/lib/email/billing-email";
 import { renderInviteEmail } from "@/lib/email/invite-email";
 import { renderOpsAlertEmail } from "@/lib/email/ops-email";
 import { signFeedbackToken } from "@/lib/feedback-token";
@@ -216,6 +217,25 @@ async function main(): Promise<void> {
       expiresAt: new Date("2026-11-09T12:00:00Z"),
       instanceUrl: env.BETTER_AUTH_URL,
     })
+  );
+  const billing = { orgName: "Acme Studio", instanceUrl: env.BETTER_AUTH_URL };
+  write(
+    "billing-plan-changed",
+    renderBillingEmail({ kind: "plan-changed", from: "free", to: "pro" }, billing)
+  );
+  write(
+    "billing-payment-failed",
+    renderBillingEmail(
+      { kind: "payment-failed", plan: "pro", graceEndsAt: new Date("2026-11-20T00:00:00Z") },
+      billing
+    )
+  );
+  write(
+    "billing-canceled",
+    renderBillingEmail(
+      { kind: "canceled", plan: "team", endsAt: new Date("2026-12-02T10:00:00Z") },
+      billing
+    )
   );
   await db.$disconnect();
 }

@@ -50,6 +50,12 @@ const RULES: Rule[] = [
     flash: () => ({ kind: "ok", message: "Password changed. Other devices were signed out." }),
   },
   {
+    path: "/settings/billing",
+    param: "checkout",
+    value: "success",
+    flash: () => ({ kind: "ok", message: "Payment received, your plan updates in a moment." }),
+  },
+  {
     path: "/login",
     param: "reset",
     value: "1",
