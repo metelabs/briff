@@ -1,4 +1,4 @@
-import { TRUST_LINKS } from "@/components/landing/links";
+import { STATUS_PATH, TRUST_LINKS } from "@/components/landing/links";
 import { SUPPORT_EMAIL } from "@/lib/legal";
 
 import packageJson from "../../../package.json";
@@ -7,7 +7,7 @@ import { PageContainer } from "./page-container";
 
 const LINKS = [
   ...TRUST_LINKS.map((link) =>
-    link.href === "/api/health" ? { ...link, label: `Status · ${packageJson.version}` } : link
+    link.href === STATUS_PATH ? { ...link, label: `Status · ${packageJson.version}` } : link
   ),
   { href: "https://www.npmjs.com/package/briff-scan", label: "Docs" },
   { href: "https://github.com/metelabs/briff/releases", label: "Changelog" },

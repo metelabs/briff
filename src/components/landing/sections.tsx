@@ -397,22 +397,22 @@ export function SampleSection({
   return (
     <section className="pb-16">
       <SectionHead id="sample" title="What a bulletin looks like">
-        The Monday bulletin and the security email from the PHP2Shell replay, for three sample
-        repos, rendered by the same components and templates as the app. In production a model
-        writes the headline, one line per item and the good-to-know list; here the item title stands
-        in.
+        A Monday bulletin for three fictional repos, rendered by the same component as the app: what
+        needs attention with the fix for each repo, what is good to know, the week&apos;s new
+        advisories and the minor releases folded away. Switch to By repo to read it per repo. In
+        production a model writes the headline and one line per item; here they are written by hand.
       </SectionHead>
 
       <div className="rise border-line bg-surface-2 rounded-card overflow-hidden border [--i:1]">
         <div className="border-line bg-surface flex items-center gap-3 border-b px-4 py-2.5">
           <span className="text-fg-muted min-w-0 truncate font-mono text-[12px]">
-            {view.streamName} bulletin · {shortDate(view.createdAt)}
+            Sample · {view.streamName} bulletin · {shortDate(view.createdAt)}
           </span>
           <Link
             href={`/replay/${replayId}`}
             className="text-brand ml-auto shrink-0 text-[12.5px] font-medium underline-offset-4 hover:underline"
           >
-            Where it comes from
+            Replay a real incident
           </Link>
         </div>
         <div className="bg-bg px-[15px] pb-6 min-[560px]:px-6">
@@ -431,9 +431,10 @@ export function SampleSection({
         <div className="rise min-w-0 [--i:2]">
           <h3 className="type-h3">The security email</h3>
           <p className="text-fg-muted mt-2 text-[14px]">
-            Sent on the first hourly run after the fix is public: what each repo runs, the fixed
-            versions, one step per repo and every source folded into one block. A repo on an
-            end-of-life line is told to migrate, never handed a command for a major it is not on.
+            From the PHP2Shell replay. Sent on the first hourly run after the fix is public: what
+            each repo runs, the fixed versions, one step per repo and every source folded into one
+            block. A repo on an end-of-life line is told to migrate, never handed a command for a
+            major it is not on.
           </p>
           <p className="text-fg-muted mt-3 font-mono text-[12.5px] tabular-nums">
             {shortDate(alert.at)} · {timeLabel(alert.at)}

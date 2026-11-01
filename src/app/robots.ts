@@ -1,6 +1,11 @@
 import type { MetadataRoute } from "next";
 
-import { LEGAL_PATHS, PRICING_PATH, PRIVATE_PREFIXES } from "@/components/landing/links";
+import {
+  LEGAL_PATHS,
+  PRICING_PATH,
+  PRIVATE_PREFIXES,
+  STATUS_PATH,
+} from "@/components/landing/links";
 import { isCloud } from "@/lib/env";
 import { publicSiteUrl } from "@/lib/public-site";
 
@@ -16,6 +21,7 @@ export default function robots(): MetadataRoute.Robots {
         "/replay/",
         ...(isCloud() ? [PRICING_PATH] : []),
         ...LEGAL_PATHS,
+        STATUS_PATH,
         "/.well-known/security.txt",
       ],
       disallow: [...PRIVATE_PREFIXES],

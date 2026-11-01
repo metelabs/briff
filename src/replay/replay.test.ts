@@ -3,7 +3,14 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { runReplay } from "./engine";
-import { delayLabel, renderReplayPage } from "./render";
+import {
+  delayLabel,
+  renderReplayPage,
+  repoOutcomes,
+  replaySpan,
+  stepsFor,
+  summaryParts,
+} from "./render";
 import { SCENARIOS } from "./scenarios";
 import type { ReplayEmail, ReplayResult } from "./types";
 
@@ -155,18 +162,54 @@ describe("replay page", () => {
     expect([28, 60, 125].map(delayLabel)).toEqual(["+28 min", "+1 h", "+2 h 5 min"]);
   });
 
+  it("leads the hero with the summary's first sentence and the timeline's span", () => {
+    const result = runReplay(SCENARIOS.php2shell);
+    expect(summaryParts(result.scenario.summary).lead).toBe(
+      "Two critical PHP remote code execution flaws leaked before their coordinated release."
+    );
+    expect(replaySpan(result)).toBe("Sat 17 Oct – Mon 26 Oct 2026");
+  });
+
+  it("tells each repo its own step per email, or the shared step that names it", () => {
+    const outcomes = repoOutcomes(runReplay(SCENARIOS.php2shell));
+    expect(outcomes.find((o) => o.repo === "api")?.told).toEqual([
+      [
+        "Update PHP in api, garden.example as soon as the fixed release is out (announced for 21 Oct 2026, 14:00 UTC).",
+      ],
+      ["set php 8.4.27 in .tool-versions"],
+      ["set php 8.4.27 in .tool-versions"],
+    ]);
+    expect(outcomes.find((o) => o.repo === "legacy-shop")?.told[1]).toEqual([
+      "php 8.1 is end-of-life and will not get this fix; move to 8.2.35 or later",
+    ]);
+    // A repo name inside another word or name is not a mention.
+    expect(stepsFor("api", { todo: ["To do: Update PHP in rapid-api, api-gateway now."] })).toEqual(
+      []
+    );
+  });
+
   for (const scenario of Object.values(SCENARIOS)) {
     it(`renders ${scenario.id} with every event and email, and matches docs/replay`, () => {
       const result = runReplay(scenario);
       const html = renderReplayPage(result);
+      const emails = emailsOf(result);
       expect(html).toContain("Replay · real items, sample repos, no LLM involved");
-      expect(html).toContain("WHAT HAPPENED");
-      expect(html).toContain("WHAT BRIFF SENT");
-      expect(html.match(/<iframe class="mail-frame"/g)).toHaveLength(emailsOf(result).length);
-      expect(html.match(/class="card world"/g)).toHaveLength(scenario.world.length);
-      for (const m of emailsOf(result)) {
+      expect(html).not.toContain("<iframe");
+      expect(html.match(/<li class="ev ev-world">/g)).toHaveLength(scenario.world.length);
+      // Each email folds open into its own body, inline: no document or style of its own.
+      expect(html.match(/<details class="ev-card mail-card/g)).toHaveLength(emails.length);
+      expect(html.match(/<div class="mail-body"><div class="b-page"/g)).toHaveLength(emails.length);
+      expect(html.match(/<html/g)).toHaveLength(1);
+      expect(html.match(/<style>/g)).toHaveLength(1);
+      for (const m of emails) {
         if (m.delayMinutes !== null) expect(html).toContain(delayLabel(m.delayMinutes));
       }
+      // The outcome table: one row per sample repo, one column per email.
+      const table = html.slice(html.indexOf('<table class="outcome">'));
+      for (const repo of scenario.repos) expect(table).toContain(`<strong>${repo.name}</strong>`);
+      expect(table.slice(0, table.indexOf("</thead>")).match(/<th scope="col">/g)).toHaveLength(
+        emails.length + 1
+      );
       expect(html).toContain(
         `npm run replay -- ${scenario.id} --out docs/replay/${scenario.id}.html`
       );

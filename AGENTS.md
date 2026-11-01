@@ -38,7 +38,7 @@ This file is the project guide for every coding agent and for people; `CLAUDE.md
 src/app/                 pages (/ home overview, /bulletins, /b/[id], /alerts, /stack, /repos, /streams, /settings, /settings/billing, /onboarding, /admin, /login, /pricing, /invite/[token]) + route
                          handlers (/api/health, /api/scan, /api/export, /api/auth/[...all])
 src/proxy.ts             `/` without a session cookie -> rewrite to /landing (docs/LANDING.md)
-src/app/landing, replay/ public pages (no session, no tenant imports: src/test/public-routes.test.ts),
+src/app/landing, replay/, status/ public pages (no session, no tenant imports: src/test/public-routes.test.ts),
                          robots.ts / sitemap.ts; parts in src/components/landing, src/components/replay
 src/components/bulletin/ the bulletin page body (BulletinContent, pivot), shared by /b/<id> and the landing sample
 src/components/shell/    app shell: top bar, pill nav, Connect repos sheet, stream picker (scope cookie,
@@ -619,7 +619,7 @@ like, and this section says how a review reports deviations from them.
 - Jobs that can run longer than a few minutes must call `ctx.heartbeat()`; a loop that sends email or polls a batch without it is a finding.
 - Nothing may be delivered twice: check `deliveredAt`, `urgentAt` and the batch `custom_id` mapping on every change to delivery code.
 - Env is read through `getEnv()` at request or job time, never at module top level; the same holds for opening the DB and building auth. No `NEXT_PUBLIC_*`, no secrets in build args or image layers.
-- Public routes (`src/app/landing`, `replay/`, `robots.ts`, `sitemap.ts`) never import the DB client, auth, `next/headers` or Server Actions; a page that reads tenant data must call `headers()` (via `getOrgContext`) first so it is never prerendered with another org's data.
+- Public routes (`src/app/landing`, `replay/`, `status/`, `robots.ts`, `sitemap.ts`) never import the DB client, auth, `next/headers` or Server Actions; a page that reads tenant data must call `headers()` (via `getOrgContext`) first so it is never prerendered with another org's data.
 - A fetch of a URL that came from data (feeds, release URLs, model text) that does not go through `safeFetch` / `fetchRssFeed` is a finding (SSRF).
 - Schema changes ship a migration under `prisma/migrations/`; production only runs `prisma migrate deploy`, so a change that needs `migrate dev`, a prompt or a manual step on deploy is a finding.
 - Upper-cased copy goes through `caps()`; CSS or Tailwind `uppercase` or a bare `toLocaleUpperCase()` on user-facing text is a finding (Turkish locale turns "Security" into "SECURİTY").
