@@ -29,6 +29,7 @@ export interface SubscriptionFixture {
   periodEnd?: string;
   scheduledChange?: ISubscriptionNotificationResponse["scheduled_change"];
   canceledAt?: string | null;
+  updatedAt?: string;
 }
 
 export function subscriptionData(f: SubscriptionFixture): ISubscriptionNotificationResponse {
@@ -43,7 +44,7 @@ export function subscriptionData(f: SubscriptionFixture): ISubscriptionNotificat
     business_id: null,
     currency_code: "USD",
     created_at: "2026-11-02T10:00:00.000Z",
-    updated_at: "2026-11-02T10:00:00.000Z",
+    updated_at: f.updatedAt ?? "2026-11-02T10:00:00.000Z",
     started_at: "2026-11-02T10:00:00.000Z",
     first_billed_at: "2026-11-02T10:00:00.000Z",
     next_billed_at: f.status === "canceled" ? null : end,

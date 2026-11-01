@@ -14,6 +14,7 @@ import {
   isLive,
   prorationMode,
   snapshotOf,
+  stateTime,
   type PaddleSubscriptionLike,
   type PlanTerms,
 } from "./state";
@@ -83,7 +84,7 @@ async function mirror(
   const readAt = new Date();
   const snap = snapshotOf(remote, env);
   await withOrg(db, orgId).$transaction(async (tx) => {
-    const result = await applySubscription(tx, orgId, snap, readAt, readAt);
+    const result = await applySubscription(tx, orgId, snap, stateTime(snap, readAt), readAt);
     await queueNotices(
       tx,
       orgId,
@@ -308,15 +309,15 @@ export async function invoiceUrl(
 }
 
 /**
- * Before an org is deleted: its live subscriptions are canceled at once, so nobody is billed
+ * Before an org is deleted: every subscription that is not canceled (paused ones too, which can
+ * resume on their own) is canceled at once, so nobody is billed
  * for an org that no longer exists. Returns a refusal message when that is not possible.
  */
 export async function endSubscriptions(db: PrismaClient, orgId: string): Promise<string | null> {
-  const live = (
-    await withOrg(db, orgId).subscription.findMany({
-      select: { paddleSubscriptionId: true, status: true },
-    })
-  ).filter((s) => isLive(s.status));
+  const live = await withOrg(db, orgId).subscription.findMany({
+    where: { status: { not: "canceled" } },
+    select: { paddleSubscriptionId: true },
+  });
   if (live.length === 0) return null;
   const api = getBillingApi();
   if (!api) {

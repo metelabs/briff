@@ -40,6 +40,8 @@ export interface PaddleSubscriptionLike {
   id: string;
   status: SubscriptionStatus;
   customerId: string;
+  /** When Paddle last changed the subscription: orders API answers against webhook events. */
+  updatedAt: string;
   nextBilledAt: string | null;
   canceledAt: string | null;
   currentBillingPeriod: { endsAt: string } | null;
@@ -60,6 +62,8 @@ export interface SubscriptionSnapshot {
   nextBilledAt: Date | null;
   scheduledChange: ScheduledChange | null;
   canceledAt: Date | null;
+  /** Paddle's updated_at; the state time of an API answer (`stateTime`). */
+  updatedAt: Date | null;
   /** `custom_data` set at checkout: `{ orgId, orgSig }` (org-link.ts). */
   customData: CustomData | null;
 }
@@ -117,12 +121,21 @@ export function snapshotOf(sub: PaddleSubscriptionLike, env: PaddleEnv): Subscri
           }
         : null,
       canceledAt: date(sub.canceledAt),
+      updatedAt: date(sub.updatedAt),
       customData: sub.customData,
     };
   }
   throw new BillingMappingError(
     `subscription ${sub.id}: no item has a Briff price (custom_data.plan or a catalog id)`
   );
+}
+
+/**
+ * When an API answer's state was true at Paddle: its updated_at, never the time we read it, so
+ * a slow answer cannot overwrite a newer state a webhook already stored.
+ */
+export function stateTime(snap: Pick<SubscriptionSnapshot, "updatedAt">, readAt: Date): Date {
+  return snap.updatedAt ?? readAt;
 }
 
 /** A stored state at `stateAt` is newer than an event that occurred at `occurredAt`. */

@@ -13,6 +13,7 @@ import {
   planDecision,
   prorationMode,
   snapshotOf,
+  stateTime,
   targetPlan,
 } from "./state";
 
@@ -208,5 +209,24 @@ describe("catalog, money and the signed org link", () => {
     expect(signedOrgId("t".repeat(32), data)).toBeNull();
     expect(signedOrgId(secret, { orgId: "org_a" })).toBeNull();
     expect(signedOrgId(secret, null)).toBeNull();
+  });
+});
+
+describe("stateTime", () => {
+  it("orders an API answer by Paddle's updated_at, not by when it was read", () => {
+    const readAt = new Date("2026-11-02T12:00:00Z");
+    const snap = snapshotOf(
+      notification(
+        subscriptionData({
+          id: "sub_t",
+          customerId: "ctm_1",
+          status: "active",
+          updatedAt: "2026-11-02T11:00:00Z",
+        })
+      ),
+      "sandbox"
+    );
+    expect(stateTime(snap, readAt).toISOString()).toBe("2026-11-02T11:00:00.000Z");
+    expect(stateTime({ updatedAt: null }, readAt)).toBe(readAt);
   });
 });

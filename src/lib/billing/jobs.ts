@@ -10,7 +10,7 @@ import { PLAN_IDS } from "@/lib/plans";
 import type { JobContext, JobResult } from "@/worker/types";
 
 import { getBillingApi } from "./api";
-import { graceEndsAt, snapshotOf } from "./state";
+import { graceEndsAt, snapshotOf, stateTime } from "./state";
 import { applyOrgPlan, applySubscription, lockOrgBilling, queueNotices } from "./sync";
 
 const DAY_MS = 86_400_000;
@@ -79,8 +79,9 @@ export async function billingNotify(ctx: JobContext): Promise<JobResult> {
 }
 
 /**
- * billing-check (daily): reads from Paddle every live subscription whose newest state is older
- * than a day (a missed webhook), then re-derives each org's plan, which ends the past_due grace
+ * billing-check (daily): reads from Paddle every subscription that is not canceled and whose
+ * newest state is older than a day; an answer newer than the stored state (a missed webhook) is
+ * applied, then re-derives each org's plan, which ends the past_due grace
  * and a canceled plan's paid period. Prunes old processed events.
  */
 export async function billingCheck(ctx: JobContext): Promise<JobResult> {
@@ -112,7 +113,7 @@ export async function billingCheck(ctx: JobContext): Promise<JobResult> {
           const readAt = new Date();
           const snap = snapshotOf(await api.getSubscription(paddleSubscriptionId), env.PADDLE_ENV);
           await scoped.$transaction(async (tx) => {
-            const result = await applySubscription(tx, orgId, snap, readAt, now);
+            const result = await applySubscription(tx, orgId, snap, stateTime(snap, readAt), now);
             await queueNotices(
               tx,
               orgId,

@@ -41,7 +41,8 @@ signed-in owner's): a Paddle customer is one email and may pay for other orgs to
 invoices and cards a co-owner of this org must not see. Billing history lists only the
 transactions of this org's own subscriptions.
 
-Deleting an organisation with a live subscription cancels it immediately through the API first;
+Deleting an organisation cancels every subscription that is not canceled yet (paused ones too)
+immediately through the API first;
 if that fails the org is not deleted.
 
 ## Plan rules (`src/lib/billing/state.ts`)

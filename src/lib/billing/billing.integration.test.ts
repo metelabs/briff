@@ -71,6 +71,8 @@ function fakeApi(remote: (id: string) => PaddleSubscriptionLike) {
 
 /** The SDK's API entity for a wire payload (same shape the real API answer is parsed into). */
 function entity(data: ReturnType<typeof subscriptionData>): PaddleSubscriptionLike {
+  // Paddle's answer to a write or a read now: changed just now unless the fixture says otherwise.
+  if (data.updated_at === "2026-11-02T10:00:00.000Z") data.updated_at = new Date().toISOString();
   return new PaddleSubscription(data as never);
 }
 
@@ -97,10 +99,13 @@ describe.skipIf(!url)("billing management, tenant checks and billing-check", () 
     orgId: string,
     id: string,
     customerId: string,
-    status: "active" | "past_due",
+    status: "active" | "past_due" | "paused",
     stateAt: Date
   ) {
-    const snap = snapshotOf(entity(subscriptionData({ id, customerId, status })), "sandbox");
+    const snap = snapshotOf(
+      entity(subscriptionData({ id, customerId, status, updatedAt: stateAt.toISOString() })),
+      "sandbox"
+    );
     await withOrg(db, orgId).$transaction((tx) =>
       applySubscription(tx, orgId, snap, stateAt, new Date())
     );
@@ -221,8 +226,12 @@ describe.skipIf(!url)("billing management, tenant checks and billing-check", () 
       entity(subscriptionData({ id, customerId: "ctm_b", status: "canceled" }))
     );
     setBillingApiForTests(api);
+    // A paused subscription can resume on its own: it is canceled too.
+    await seed(orgB, `sub_b_paused_${suffix}`, "ctm_b", "paused", new Date());
     expect(await endSubscriptions(db, orgB)).toBeNull();
-    expect(calls).toEqual(["cancelNow sub_b_live"]);
+    expect(calls.sort()).toEqual(
+      [`cancelNow sub_b_live`, `cancelNow sub_b_paused_${suffix}`].sort()
+    );
     setBillingApiForTests(null);
     const live = await db.org.create({ data: { name: `C-${suffix}` } });
     orgs.push(live.id);
@@ -249,6 +258,7 @@ describe.skipIf(!url)("billing management, tenant checks and billing-check", () 
     expect(res.counts).toMatchObject({ failed: 0 });
     expect((await db.org.findUniqueOrThrow({ where: { id: orgId } })).plan).toBe("free");
     const sub = await withOrg(db, orgId).subscription.findFirstOrThrow({});
+    // Ordered by Paddle's updated_at, not by when billing-check read it.
     expect(sub.stateAt.getTime()).toBeGreaterThan(Date.now() - 60_000);
     expect(sub.pastDueSince?.getTime()).toBe(long.getTime());
 
