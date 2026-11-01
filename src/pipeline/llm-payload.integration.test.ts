@@ -8,10 +8,12 @@ import { resetEnvCache } from "@/lib/env";
 import { log } from "@/lib/log";
 import type { JsonRequest, LlmClient } from "@/llm/client";
 import { createFakeLlm } from "@/llm/fake";
+import { loadPrompt } from "@/llm/prompts";
 
-import { bulletinPreview } from "./preview";
+import { isoWeekLabel, weekStartOf } from "./bulletin";
 import { refreshProfile } from "./profile";
 import { triageRequest } from "./triage";
+import { prepareStream, storeBulletin, synthesisRequest } from "./weekly";
 
 // Every LLM request the pipeline sends for one org, scanned for what must never leave:
 // repo names, the org name, member emails and names, scan token secrets and hashes.
@@ -198,14 +200,29 @@ describe.skipIf(!url)("LLM payloads against Postgres", () => {
 
   it("sends no repo name, org name, email or token in synthesis, profile or triage", async () => {
     sent.length = 0;
-    const res = await bulletinPreview({
-      db,
-      log,
-      jobId: "job",
-      payload: { orgId, streamId, model: "claude-haiku-5-5" },
-      heartbeat: async () => {},
+    const now = new Date();
+    const stream = await withOrg(db, orgId).bulletinStream.findFirstOrThrow({
+      where: { id: streamId },
+      select: { id: true, name: true, repos: { select: { repoId: true } } },
     });
-    expect(res.counts).toMatchObject({ generated: 1 });
+    const prompt = loadPrompt("synthesis");
+    const ctx = {
+      now,
+      weekStart: weekStartOf(now),
+      week: isoWeekLabel(now),
+      language: "en" as const,
+      model: "m",
+      promptVersion: prompt.version,
+    };
+    const prepared = await prepareStream(
+      db,
+      orgId,
+      { id: stream.id, name: stream.name, repoIds: stream.repos.map((r) => r.repoId) },
+      ctx
+    );
+    if (!prepared) throw new Error("nothing to synthesise");
+    const res = await capturing().json(synthesisRequest(prepared, "m", prompt.text));
+    await storeBulletin(db, prepared, res, ctx);
     expect(
       await refreshProfile({
         db,

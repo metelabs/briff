@@ -96,7 +96,7 @@ describe.skipIf(!url)("persisted runtime lifecycle", () => {
       const result = await createFakeLlm().json(
         synthesisRequest(prepared, context.model, prompt.text)
       );
-      const stored = await storeBulletin(db, prepared, result, context, { kind: "weekly" });
+      const stored = await storeBulletin(db, prepared, result, context);
       const bulletin = await scoped.bulletin.findFirstOrThrow({ where: { id: stored.bulletinId } });
       expect(bulletin.summary).toContain("EOL in 60 days");
     } finally {

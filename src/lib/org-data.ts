@@ -353,7 +353,7 @@ export async function deleteOrg(
   }
 
   return db.$transaction(async (tx) => {
-    // Pending jobs that name this org (bulletin previews) would only fail on retry.
+    // Pending jobs that name this org (e.g. a legacy bulletin preview) would only fail on retry.
     await tx.job.deleteMany({
       where: { status: "pending", payload: { path: ["orgId"], equals: args.orgId } },
     });

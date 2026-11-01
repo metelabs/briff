@@ -80,12 +80,19 @@ export interface BulletinView {
   emailStatus: string;
   /** When the bulletin email went out; null until it was sent. */
   emailSentAt: Date | null;
-  /** Admin preview (never emailed); `previewModel` is the model that was requested. */
+  /**
+   * A bulletin stored by the removed admin "Preview synthesis"; such rows remain until the
+   * columns are dropped, and are never emailed.
+   */
   preview: boolean;
-  previewModel: string | null;
   act: BulletinViewItem[];
   know: BulletinViewItem[];
   rest: BulletinViewItem[];
+  /**
+   * The minor updates behind `minorCount` that were stored with the bulletin (capped, so it
+   * can be shorter); empty for bulletins stored before they were.
+   */
+  minor: BulletinViewItem[];
   /** New advisories of the period, one line per package. */
   alerts: BulletinViewAlert[];
   /** Advisories of the period from a repo's first scan; their own, secondary group. */
@@ -99,11 +106,13 @@ export function sectionOf(section: Section | null, bucket: Bucket): Section {
   return bucket === "security" || bucket === "deadline" ? "act" : "know";
 }
 
-/** Everything the email does not list: rest items plus minor ones. */
+/** Everything the email does not list: rest items plus minor ones (`minor` is within `minorCount`). */
 export function restCount(view: Pick<BulletinView, "rest" | "minorCount">): number {
   return view.rest.length + view.minorCount;
 }
 
-export function allItems(view: Pick<BulletinView, "act" | "know" | "rest">): BulletinViewItem[] {
-  return [...view.act, ...view.know, ...view.rest];
+export function allItems(
+  view: Pick<BulletinView, "act" | "know" | "rest" | "minor">
+): BulletinViewItem[] {
+  return [...view.act, ...view.know, ...view.rest, ...view.minor];
 }

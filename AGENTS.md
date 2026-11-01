@@ -268,14 +268,15 @@ Checks before a PR: `npm run typecheck && npm run lint && npm test`. DB-backed t
 ## Worker and jobs
 
 - Job types: `security-scan`, `collect-sources`, `triage-items`, `weekly-bulletin`,
-  `refresh-packages`, `ops-check`, `bulletin-preview`, `github-scan` (`src/lib/jobs/types.ts`); handlers in `src/worker/handlers.ts`.
+  `refresh-packages`, `ops-check`, `github-scan` (`src/lib/jobs/types.ts`); handlers in `src/worker/handlers.ts`.
 - Observability (docs/OPERATIONS.md, `src/lib/ops/`): a job that fails for good (runner) or a
   scheduled type without a success within its cron interval + grace (`ops-check`, every 30 min;
   `jobFreshness`, never alerts on a type never queued) emails `OPS_ALERT_EMAIL` or the instance
   admin (`findInstanceAdmin`, same rule as `/admin`) and POSTs `ALERT_WEBHOOK_URL`, once per
   (job type, kind) per 24h (`OpsAlert`). `/api/health` returns 503 on a stale type or a due job
-  older than 1h; the container healthcheck uses `?probe=live` (database only). Admin → Runs is
-  `/admin/runs`. Sentry (`src/lib/sentry.ts`) loads only with `SENTRY_DSN`.
+  older than 1h; the container healthcheck uses `?probe=live` (database only). `/admin` is a hub
+  (instance totals, organisation limits, test email); Admin → Runs is `/admin/runs` (Run now
+  per job). Sentry (`src/lib/sentry.ts`) loads only with `SENTRY_DSN`.
 - GitHub App (docs/GITHUB-APP.md): `/api/github/install` → GitHub → `/api/github/setup` (signed state)
   → app OAuth → `/api/github/callback` links the installation only when the GitHub user can access
   it; `/api/github/webhook` (5 MB cap, HMAC before parsing) queues `github-scan` jobs. The job reads
@@ -408,13 +409,17 @@ Checks before a PR: `npm run typecheck && npm run lint && npm test`. DB-backed t
   `Briff · <stream> · W43: undici · nodemailer and more` (≤78 chars), email to every member with signed page links (`src/lib/feedback-token.ts`, HMAC
   keyed from `BETTER_AUTH_SECRET`, 90 days). Re-running in the same week regenerates only if
   the input changed, and then re-sends. Feedback buttons live only on the page.
-- bulletin-preview (admin "Preview synthesis"): payload `{ orgId, streamId, model }`
-  (`src/pipeline/preview-payload.ts`), same selection + synthesis + assembly for one stream and
-  the current week with the chosen model (direct call, not batched), stored with
-  `Bulletin.preview = true` and `previewKey = <model>` (the week's bulletin has `previewKey = ""`;
-  the unique key is (org, stream, week, previewKey)). Never emailed (`deliverBulletin` refuses),
-  never moves the next period start or the real bulletin's input hash. Listed under "Previews" on
-  `/admin` only, deletable there; only a preview's page shows the model / prompt version line.
+- Minor updates (`minorRows`, `src/pipeline/bulletin.ts`): the items behind `minorCount` (newest
+  first, at most `MINOR_LIST_LIMIT`) are stored as `BulletinItem` rows with bucket `minor` and
+  section `rest` (no synthesis: the item's title, `summaryLine` of its text, its match repos in the
+  stream). An unchanged input hash still rewrites them. The page lists them under the folded-away
+  bar; readers that count `rest` skip bucket `minor` (it is already in `minorCount`). Bulletins
+  stored before have only the count: the bar is then not expandable and shows the count sentence.
+  The email keeps its count sentence.
+- `Bulletin.preview` / `previewKey` are left from the removed admin "Preview synthesis": the
+  week's bulletin has `previewKey = ""` (part of the unique key); readers still filter
+  `preview: false` and `deliverBulletin` refuses a preview, until a migration drops old preview
+  rows and the columns.
 - `enqueueJob` is idempotent per `dedupeKey` (default: the type) while a job is pending,
   guarded by a Postgres advisory lock. Claim uses `FOR UPDATE SKIP LOCKED`.
 - Each attempt writes a `Run` (status, counts, tokens, error). Failures retry with backoff

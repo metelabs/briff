@@ -475,10 +475,10 @@ export function runReplay(scenario: ReplayScenario): ReplayResult {
       emailStatus: "sent",
       emailSentAt: now,
       preview: false,
-      previewModel: null,
       act: inSection("act"),
       know: inSection("know"),
       rest: inSection("rest"),
+      minor: [],
       alerts: [],
       backlogAlerts: [],
     };

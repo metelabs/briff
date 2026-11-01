@@ -656,6 +656,75 @@ export function countMinor(
   return candidates.filter((c) => isMinor(c) && inScope(c, includedRepos, traits)).length;
 }
 
+/** Minor rows stored per bulletin; `minorCount` still counts all of them. */
+export const MINOR_LIST_LIMIT = 50;
+
+/** A minor update listed under "folded away": no synthesis, the item's own title and text. */
+export interface MinorRow {
+  itemId: string;
+  line: string;
+  affectedRepos: string[];
+}
+
+/**
+ * The minor items countMinor counts, newest first, capped at `limit`: what the page lists
+ * when the folded-away bar is opened. Repos are the item's match repos inside the stream.
+ */
+export function minorRows(
+  candidates: Candidate[],
+  includedRepos: ReadonlyMap<string, string>,
+  traits?: ReadonlySet<string>,
+  limit = MINOR_LIST_LIMIT
+): MinorRow[] {
+  const seen = new Set<string>();
+  return candidates
+    .filter((c) => isMinor(c) && inScope(c, includedRepos, traits))
+    .sort(
+      (a, b) =>
+        (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0) ||
+        a.contentHash.localeCompare(b.contentHash)
+    )
+    .filter((c) => !seen.has(c.itemId) && seen.add(c.itemId))
+    .slice(0, limit)
+    .map((c) => ({
+      itemId: c.itemId,
+      line: summaryLine(c.rawText, c.title),
+      affectedRepos: [...new Set(c.repoIds.flatMap((id) => includedRepos.get(id) ?? []))].sort(),
+    }));
+}
+
+const SUMMARY_MAX = 160;
+const GENERIC_HEADING =
+  /^(?:what'?s changed|changes|changelog|release notes|(?:patch|minor|major) changes|bug ?fixes|fixes|features|improvements|dependencies|updated dependencies|full changelog.*|new contributors)$/i;
+
+/**
+ * The first line of an item's text that says something, as plain text: Markdown marks,
+ * links (their text kept), bare URLs and commit hashes removed; generic headings
+ * ("What's Changed", "Patch Changes") and a repeat of the title skipped.
+ */
+export function summaryLine(rawText: string, title = ""): string {
+  const normalisedTitle = title.trim().toLowerCase();
+  for (const raw of rawText.split(/\r?\n/)) {
+    const line = raw
+      .replace(/<[^>]+>/g, " ")
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+      .replace(/https?:\/\/\S+/g, " ")
+      // GitHub's generated notes end each line with "by @user in <PR url>".
+      .replace(/\s+by @[\w-]+(?:\s+in)?\s*$/, "")
+      .replace(/\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}\b:?/g, " ")
+      .replace(/^\s*(?:#{1,6}|[-*+]|\d+\.|>)\s+/, "")
+      .replace(/[`*~]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/^[:\-–—]\s*/, "");
+    if (line.length < 3 || GENERIC_HEADING.test(line)) continue;
+    if (line.toLowerCase() === normalisedTitle) continue;
+    return line.length > SUMMARY_MAX ? `${line.slice(0, SUMMARY_MAX - 1).trimEnd()}…` : line;
+  }
+  return "";
+}
+
 export interface StackRepo {
   name: string;
   /**

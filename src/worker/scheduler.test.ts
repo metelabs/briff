@@ -8,8 +8,8 @@ import { onlyDueSources } from "@/sources/collect";
 import { SCHEDULE } from "./scheduler";
 
 describe("SCHEDULE", () => {
-  it("schedules every job type but the on-demand ones (preview, GitHub App scan) exactly once", () => {
-    const onDemand: readonly string[] = ["bulletin-preview", "github-scan"];
+  it("schedules every job type but the on-demand GitHub App scan exactly once", () => {
+    const onDemand: readonly string[] = ["github-scan"];
     const scheduled = JOB_TYPES.filter((t) => !onDemand.includes(t));
     expect(SCHEDULE.map((s) => s.type).sort()).toEqual([...scheduled].sort());
     for (const entry of SCHEDULE) expect(cron.validate(entry.cron)).toBe(true);

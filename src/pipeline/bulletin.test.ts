@@ -15,6 +15,8 @@ import {
   buildSynthesisInput,
   bulletinSubject,
   countMinor,
+  minorRows,
+  summaryLine,
   foldKey,
   foldReleases,
   highestFix,
@@ -196,6 +198,55 @@ describe("selectCandidates", () => {
         included
       )
     ).toBe(2);
+  });
+});
+
+describe("minorRows", () => {
+  it("lists the counted minor items newest first with their stream repos and a text line", () => {
+    const items = [
+      candidate({
+        itemId: "old",
+        bucket: "minor",
+        repoIds: ["r2", "r1", "r9"],
+        title: "pkg 1.0.1",
+        rawText: "## Patch Changes\n\n- 3f2a9c1: Fix the retry loop",
+        publishedAt: new Date("2026-10-13T00:00:00Z"),
+      }),
+      candidate({ itemId: "outside", bucket: "minor", repoIds: ["r9"] }),
+      candidate({ itemId: "major", repoIds: ["r1"] }),
+      candidate({
+        itemId: "new",
+        repoIds: ["r1"],
+        title: "vercel/next.js v16.6.0-canary.3",
+        rawText: "",
+        publishedAt: new Date("2026-10-15T00:00:00Z"),
+      }),
+    ];
+    expect(minorRows(items, included)).toEqual([
+      { itemId: "new", line: "", affectedRepos: ["garden"] },
+      { itemId: "old", line: "Fix the retry loop", affectedRepos: ["garden", "west"] },
+    ]);
+    expect(minorRows(items, included).length).toBe(countMinor(items, included));
+    expect(minorRows(items, included, undefined, 1).map((r) => r.itemId)).toEqual(["new"]);
+  });
+});
+
+describe("summaryLine", () => {
+  it("takes the first line that says something, as plain text", () => {
+    expect(
+      summaryLine(
+        "# pkg 2.1.3\n\n## What's Changed\n* fix: [handle empty body](https://github.com/o/r/pull/9) by @dev in https://github.com/o/r/pull/9",
+        "pkg 2.1.3"
+      )
+    ).toBe("fix: handle empty body");
+    expect(
+      summaryLine("<p>Bug fixes</p>\n<p>Faster <code>parse()</code> for large files.</p>")
+    ).toBe("Faster parse() for large files.");
+    expect(summaryLine("Fixes deadbeef handling in some_module")).toBe(
+      "Fixes deadbeef handling in some_module"
+    );
+    expect(summaryLine("x".repeat(400))).toHaveLength(160);
+    expect(summaryLine("\n\n")).toBe("");
   });
 });
 

@@ -22,6 +22,7 @@ import {
   bulletinSubject,
   candidateFromMatch,
   countMinor,
+  minorRows,
   foldReleases,
   isoWeekLabel,
   selectCandidates,
@@ -32,6 +33,7 @@ import {
   synthesisOutputSchema,
   weekStartOf,
   type Candidate,
+  type MinorRow,
   type SecurityAlertSummary,
   type SelectedCandidate,
   type StackRepo,
@@ -331,6 +333,8 @@ export interface PreparedStream {
   periodEnd: Date;
   selected: SelectedCandidate[];
   minorCount: number;
+  /** The minor items behind `minorCount` (capped), listed when the folded-away bar opens. */
+  minor: MinorRow[];
   eolFacts?: string[];
   alertPackages: ReadonlySet<string>;
   /** The stream's repos with their direct dependencies (installed versions for itemUpgrades). */
@@ -347,7 +351,7 @@ export interface PreparedStream {
 
 /**
  * Selection and synthesis input for one stream and the current week. The period
- * starts where the stream's previous real bulletin ended (previews never move it).
+ * starts where the stream's previous bulletin ended.
  * Null when there is nothing to report.
  */
 export async function prepareStream(
@@ -391,6 +395,7 @@ export async function prepareStream(
     runtimes,
   });
   const minorCount = countMinor(folded, repos, traits);
+  const minor = minorRows(folded, repos, traits);
   const { facts: eolFacts } = upcomingEol([...runtimes.values()].flat(), ctx.now);
   // A first-scan backlog alone still gets a bulletin: its page is where the backlog is listed.
   const baseImages = await loadBaseImageGroups(
@@ -432,6 +437,7 @@ export async function prepareStream(
     periodEnd,
     selected,
     minorCount,
+    minor,
     eolFacts,
     alertPackages: new Set(alerts.repoFixes.keys()),
     stack,
@@ -471,19 +477,50 @@ export function synthesisRequest(
   };
 }
 
-/** Where a stored bulletin goes: the week's real bulletin, or a preview keyed by the requested model. */
-export type BulletinSlot = { kind: "weekly" } | { kind: "preview"; model: string };
+// Minor rows sort after every synthesised item.
+const MINOR_ORDER_BASE = 10_000;
+
+/** BulletinItem rows for a bulletin's minor items (bucket `minor`, section `rest`). */
+function minorItemData(
+  orgId: string,
+  bulletinId: string,
+  minor: readonly MinorRow[]
+): Prisma.BulletinItemCreateManyInput[] {
+  return minor.map((m, i) => ({
+    orgId,
+    bulletinId,
+    itemId: m.itemId,
+    bucket: "minor" as const,
+    section: "rest" as const,
+    order: MINOR_ORDER_BASE + i,
+    line: m.line,
+    affectedRepos: m.affectedRepos as Prisma.InputJsonValue,
+  }));
+}
 
 /**
- * Assembles the model output and upserts the Bulletin and its items for
- * (stream, week, slot). Previews are stored with email status `skipped`.
+ * Rewrites only the minor rows of a bulletin whose synthesis input did not change: the
+ * count is part of that input, the listed items are not.
  */
+async function replaceMinorItems(
+  db: PrismaClient,
+  orgId: string,
+  bulletinId: string,
+  minor: readonly MinorRow[]
+): Promise<void> {
+  await withOrg(db, orgId).$transaction(async (tx) => {
+    await tx.bulletinItem.deleteMany({ where: { bulletinId, bucket: "minor" } });
+    if (minor.length > 0)
+      await tx.bulletinItem.createMany({ data: minorItemData(orgId, bulletinId, minor) });
+  });
+}
+
+/** Assembles the model output and upserts the week's Bulletin and its items for the stream. */
 export async function storeBulletin(
   db: PrismaClient,
   prepared: PreparedStream,
   res: JsonResponse<SynthesisOutput>,
   ctx: SynthesisContext,
-  slot: BulletinSlot,
   log?: Logger
 ): Promise<{ bulletinId: string; dropped: number; restItems: number; refMismatch: number }> {
   const { orgId, stream, selected } = prepared;
@@ -516,8 +553,6 @@ export async function storeBulletin(
       return i.section === "act" && c ? [subjectTopic(c, i.headline)] : [];
     })
   );
-  const preview = slot.kind === "preview";
-  const previewKey = preview ? slot.model : "";
   const data = {
     periodStart: prepared.periodStart,
     periodEnd: prepared.periodEnd,
@@ -528,14 +563,14 @@ export async function storeBulletin(
     summary: [assembled.summary, ...(prepared.eolFacts ?? [])].filter(Boolean).join("\n\n"),
     minorCount: prepared.minorCount,
     inputHash: prepared.inputHash,
-    emailStatus: preview ? ("skipped" as const) : ("pending" as const),
+    emailStatus: "pending" as const,
     emailError: null,
     emailSentAt: null,
   };
   const scoped = withOrg(db, orgId);
   const bulletinId = await scoped.$transaction(async (tx) => {
     const existing = await tx.bulletin.findFirst({
-      where: { streamId: stream.id, weekStart: ctx.weekStart, previewKey },
+      where: { streamId: stream.id, weekStart: ctx.weekStart, previewKey: "" },
       select: { id: true },
     });
     const saved = existing
@@ -545,8 +580,6 @@ export async function storeBulletin(
             orgId,
             streamId: stream.id,
             weekStart: ctx.weekStart,
-            preview,
-            previewKey,
             ...data,
           },
           select: { id: true },
@@ -569,6 +602,11 @@ export async function storeBulletin(
           foldedItemIds: i.foldedItemIds as Prisma.InputJsonValue,
           upgrades: upgradesOf(i) as unknown as Prisma.InputJsonValue,
         })),
+      });
+    }
+    if (prepared.minor.length > 0) {
+      await tx.bulletinItem.createMany({
+        data: minorItemData(orgId, saved.id, prepared.minor),
       });
     }
     return saved.id;
@@ -667,14 +705,7 @@ export async function weeklyBulletin({ db, log, heartbeat }: JobContext): Promis
       batch: llm.batch ? billedAsBatch : undefined,
     });
     try {
-      const stored = await storeBulletin(
-        db,
-        prepared,
-        entry.response,
-        ctx,
-        { kind: "weekly" },
-        log
-      );
+      const stored = await storeBulletin(db, prepared, entry.response, ctx, log);
       counts.generated++;
       counts.dropped += stored.dropped;
       counts.restItems += stored.restItems;
@@ -762,6 +793,7 @@ export async function weeklyBulletin({ db, log, heartbeat }: JobContext): Promis
     });
     if (existing && existing.inputHash === prepared.inputHash) {
       counts.unchanged++;
+      await replaceMinorItems(db, orgId, existing.id, prepared.minor);
       const retryEmail =
         existing.emailStatus === "pending" ||
         existing.emailStatus === "failed" ||

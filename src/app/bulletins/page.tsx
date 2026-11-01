@@ -60,7 +60,7 @@ export default async function BulletinsPage({
     minorCount: true,
   } as const;
   const streamFilter = active ? { streamId: active.id } : {};
-  // Previews are listed on /admin only.
+  // Legacy admin previews are never listed.
   const bulletins = await db.bulletin.findMany({
     where: { ...streamFilter, preview: false },
     orderBy: [{ weekStart: "desc" }, { createdAt: "asc" }],
@@ -78,6 +78,8 @@ export default async function BulletinsPage({
       : [];
   const counts = new Map<string, Counts>();
   for (const row of sectionRows) {
+    // Minor rows are listed items behind `minorCount`, which is added below.
+    if (row.bucket === "minor") continue;
     const c = counts.get(row.bulletinId) ?? { act: 0, securityAct: 0, know: 0, rest: 0 };
     const section = sectionOf(row.section, row.bucket);
     c[section] += row._count._all;
