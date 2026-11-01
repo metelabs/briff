@@ -91,6 +91,10 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   lookup by GitHub id from webhooks and scan jobs (`findInstallation`, `src/lib/github/installations.ts`). Deleting an org (`deleteOrg`,
   `src/lib/org-data.ts`) also counts the user's remaining memberships through `user._count` to
   decide whether the user goes too.
+  These rules cover the application (`src/`, `packages/`). `scripts/smoke.sh` is an external
+  black-box check of a throw-away compose stack: it cannot reach `withOrg` from a shell, so it
+  inserts its scan token and reads its assertions with `psql` (scan tokens are only created
+  by a Server Action). It never runs against a database it did not create.
 - Your data (Settings): `GET /api/export` streams the session's org as JSON section by section
   (`orgExportSections`, no token hashes, no auth rows); `deleteOrgAction` deletes the org after the
   typed name matches (owners only), its pending jobs, and the user when it has no other org, then
@@ -531,7 +535,7 @@ like, and this section says how a review reports deviations from them.
 
 ### Repository invariants
 
-- Tenant data (OrgMember, Repo, Dependency, RepoRuntime, ItemMatch, Alert, Bulletin, BulletinItem, Feedback, InterestProfile, Deadline, BulletinStream, StreamRepo, ScanToken, GithubInstallation) must be read and written through `withOrg(getDb(), orgId)`. A nested relation write or raw SQL on these tables is a finding. The only reads outside the layer are the ones listed under Conventions (`getOrgContext`, `findScanTokenByHash`, `findInstallation`, the `deleteOrg` membership count). A new tenant table that does not cascade from `Org` is a finding (`org-data.integration.test.ts` must cover it).
+- Tenant data (OrgMember, Repo, Dependency, RepoRuntime, ItemMatch, Alert, Bulletin, BulletinItem, Feedback, InterestProfile, Deadline, BulletinStream, StreamRepo, ScanToken, GithubInstallation) must be read and written through `withOrg(getDb(), orgId)`. A nested relation write or raw SQL on these tables is a finding. The only reads outside the layer are the ones listed under Conventions (`getOrgContext`, `findScanTokenByHash`, `findInstallation`, the `deleteOrg` membership count). `scripts/smoke.sh` is outside this rule (Conventions: it uses `psql` against its own throw-away stack). A new tenant table that does not cascade from `Org` is a finding (`org-data.integration.test.ts` must cover it).
 - Fix commands and derived actions never recommend a higher major than the installed release line. A command or sentence that crosses the line is a finding, with one exception: An end-of-life line gets the EOL sentence, which names the lowest supported line; that is the only derived action allowed to name a higher major, and it is worded as a migration, not a fix command. (`src/pipeline/runtime-fixes.ts`, "node 18 is end-of-life and will not get this fix; move to 22.23.4 or later"; an EOL line has no fix on its own major, so naming the supported line is the only truthful action.) An EOL sentence in command form (`npm i ...`, a `FROM`/image tag, "set node X") is a finding.
 - An item's repos have one source: `BulletinItem.affectedRepos` is the item's `affected_repos` in the synthesis input (match repos in the stream, plus repos with an alert on the item's security package), and `BulletinItem.upgrades` names exactly those repos (`alignUpgrades`; a repo without a version on record reads "installed version unknown"). A path that builds upgrades, actions or lines from another repo list is a finding. A model line or action that names only some of the affected repos is repaired after the alias restore (`completeRepoNames`, `chooseAction`), never stored as written.
 - Model output is accepted only for refs present in the synthesis input; any path where model text adds a URL, a version or a package the input did not contain is a finding.
