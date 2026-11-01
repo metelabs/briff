@@ -25,6 +25,8 @@ export interface OpsAlertInput {
   revisit?: boolean;
 }
 
+type DeliveryResult = "sent" | "skipped" | "failed";
+
 export type OpsAlertOutcome = "sent" | "deduped" | "skipped" | "failed";
 
 /** At most one alert per (jobType, kind) in this window. */
@@ -154,11 +156,12 @@ export async function sendOpsAlert(
     log.info({ jobType: alert.jobType, kind: alert.kind }, "ops alert: already sent within 24h");
     return "deduped";
   }
-  let results: ("sent" | "skipped" | "failed")[];
+  // Filled as channels deliver: a heartbeat that throws mid-way keeps what already went out.
+  const results: DeliveryResult[] = [];
   try {
-    results = await deliver(alert, recipients, claim.previous?.suppressed ?? 0, log, heartbeat);
+    await deliver(alert, recipients, claim.previous?.suppressed ?? 0, log, heartbeat, results);
   } catch (err) {
-    await releaseOpsAlert(db, claim, now);
+    if (!results.includes("sent")) await releaseOpsAlert(db, claim, now);
     throw err;
   }
   if (results.includes("sent")) return "sent";
@@ -174,8 +177,9 @@ async function deliver(
   recipients: string[],
   suppressed: number,
   log: Logger,
-  heartbeat: () => Promise<void>
-): Promise<("sent" | "skipped" | "failed")[]> {
+  heartbeat: () => Promise<void>,
+  results: DeliveryResult[]
+): Promise<void> {
   const env = getEnv();
   const email = renderOpsAlertEmail({
     kind: alert.kind,
@@ -192,7 +196,6 @@ async function deliver(
     { jobType: alert.jobType, kind: alert.kind, subject: email.subject, text: email.text },
     "ops alert"
   );
-  const results: ("sent" | "skipped" | "failed")[] = [];
   for (const to of recipients) {
     await heartbeat();
     const result = await sendMail({ to, ...email });
@@ -208,5 +211,4 @@ async function deliver(
     if (result === "failed") log.error({}, "ops alert: webhook failed");
     results.push(result);
   }
-  return results;
 }

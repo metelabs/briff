@@ -126,6 +126,25 @@ describe.skipIf(!url)("ops alerts against Postgres", () => {
     expect(await db.opsAlert.count({ where: { jobType } })).toBe(1);
   });
 
+  it("keeps the slot when the job heartbeat throws after an email went out", async () => {
+    const now = new Date("2026-11-05T04:00:00Z");
+    let beats = 0;
+    const lostAfterFirst = async () => {
+      if (beats++ > 0) throw new Error("lock lost");
+    };
+    await expect(sendOpsAlert(db, failure, log, now, lostAfterFirst)).rejects.toThrow("lock lost");
+    expect(mail.sent).toHaveLength(1);
+    expect(await sendOpsAlert(db, failure, log, now)).toBe("deduped");
+
+    // Nothing delivered yet: the slot is given back.
+    await db.opsAlert.deleteMany({ where: { jobType } });
+    const lostAtOnce = async () => {
+      throw new Error("lock lost");
+    };
+    await expect(sendOpsAlert(db, failure, log, now, lostAtOnce)).rejects.toThrow("lock lost");
+    expect(await db.opsAlert.count({ where: { jobType } })).toBe(0);
+  });
+
   it("keeps the slot when no channel is configured (the log line is the alert)", async () => {
     vi.stubEnv("ALERT_WEBHOOK_URL", "");
     resetEnvCache();
