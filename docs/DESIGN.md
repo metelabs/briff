@@ -212,6 +212,11 @@ Numbers in tables and tiles are always `tabular-nums`. Do not use Bricolage belo
   > 2025-04-30", "Supported until 2027-04-30", "Current", "Behind" + "2 majors behind") and the target
   > line ("Move to 22.x (LTS, supported until 2027-04)", "Latest in your line: 20.19.4"). Rows wrap;
   > nothing scrolls sideways.
+- Home: four equal count tiles (open alerts with the change since last week, resolved this
+  week, repos scanned with the stale ones, next bulletin with a countdown; 2×2 below 980px), the
+  attention chart, then the streams (one stream = one wide card with the latest bulletin's top
+  headlines; 2 or 4 streams in 2 columns, otherwise 3; equal heights via `auto-rows-fr`), then
+  Alerts / Stack health / Repos as three equal cards, then the last 10 events.
 - List pages (Bulletins, Alerts, Repos) use a single column of rows inside a card. Filters sit above the card.
 - Settings: 220px section index on the left (sticky) + 1 form column (max 640px); the index becomes a pill row on mobile.
 
@@ -376,11 +381,15 @@ Don't:
 - No purple, no gradients, no glow, no glass cards, no emoji, no illustrations of people.
 - No icon on every heading. Icons only where they carry meaning (nav on mobile, empty states, toasts, callouts).
 - No coral outside security. No second accent colour.
-- No charts for the sake of charts. Briff's data is lists and versions; a number beats a donut.
-  The two charts that earn a place are on Home: a 12-week "needs your attention" sparkline per stream
-  (2px brand line, gaps for weeks without a bulletin, the current week marked, first/last week and the
-  max labelled, a hover tooltip per week and a hidden table) and the backlog's severity bar (stacked,
-  2px gaps, text legend with counts). Inline SVG/HTML with the tokens, no chart library.
+- No charts for the sake of charts. Briff's data is lists and versions; a number beats a donut
+  everywhere except Home, which is the overview and carries the charts (inline SVG/HTML with the
+  tokens, no chart library, `src/components/ui/charts.tsx`): a 12-week attention chart (stacked
+  must-act / good-to-know bars across streams, a coral line of new advisories on the same count
+  axis, legend with totals, a tooltip per week, a hidden table), a 12-week sparkline per stream
+  (2px brand line, gaps for weeks without a bulletin, the current week marked, a tooltip per
+  week), the open alerts' severity ring (counts in the legend, total in the middle) and share
+  bars for stack health (end of life, majors behind, minor behind, up to date). Every chart has
+  a text legend with counts; colour is never the only signal.
 - No more than 5 items in "Needs your attention" or "Good to know". Fold the rest; never paginate a bulletin.
 - No hidden actions. Copy and feedback are always present; hover only raises their opacity.
 - Don't use Inter, system-ui-only stacks, or shadcn's default look (zinc, 6px radius, shadow-sm on everything).
