@@ -219,10 +219,16 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   import the DB client, auth, `next/headers` or Server Actions (`src/test/public-routes.test.ts`);
   replays shown there come from `publicReplay` (cached per process). Repository links come
   from `SOURCE_URL` (`src/components/landing/links.ts`).
-- Home (`/`, the logo's link, for members): bulletins per stream with a 12-week attention sparkline, then
-  alerts, stack health and repos for the picked stream, then last scan / last / next bulletin. Its
-  pure parts (series, severity split, next slot, sparkline geometry) are `src/pipeline/home.ts`;
-  charts are inline SVG with the tokens (`src/components/ui/charts.tsx`), no chart library.
+- Home (`/`, the logo's link, for members): four tiles (open alerts with the delta vs a week
+  ago, resolved this week, repos scanned / stale > 7 days, next bulletin), the 12-week attention
+  chart across streams (must act / good to know per week plus new advisories), a card per stream
+  (latest bulletin, counts, next slot, sparkline), Alerts by severity / Stack health / Repos, and
+  the org's last 10 events (alert resolved, bulletin sent, repo added, a repo's last scan, member
+  joined; folded when they come in bursts). Alerts and stack follow the stream picked in the top
+  bar; bulletins, trend, repos and activity cover the org. Data is loaded in
+  `src/lib/home-load.ts` (withOrg only); the pure parts (series, deltas, stale, activity merge,
+  chart geometry) are `src/pipeline/home.ts`; charts are inline SVG/HTML with the tokens
+  (`src/components/ui/charts.tsx`), no chart library.
 - Onboarding is shown once (`src/lib/member-state.ts`): `/` and `/onboarding` send a member there
   only while the org has no repo in a stream and `OrgMember.onboardedAt` is null (set by Skip or
   Continue). Afterwards the same steps (`src/app/onboarding/connect.tsx`) open in the Connect repos
