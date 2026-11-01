@@ -145,12 +145,35 @@ export async function sendOpsAlert(
 ): Promise<OpsAlertOutcome> {
   const env = getEnv();
   const headline = opsAlertHeadline(alert);
+  // Before the claim: a failing lookup must not leave a slot taken with nothing sent.
+  const recipients = await opsAlertRecipients(db);
   const claim = await claimOpsAlert(db, alert, headline, now);
   if (!claim) {
     log.info({ jobType: alert.jobType, kind: alert.kind }, "ops alert: already sent within 24h");
     return "deduped";
   }
-  const suppressed = claim.previous?.suppressed ?? 0;
+  let results: ("sent" | "skipped" | "failed")[];
+  try {
+    results = await deliver(alert, recipients, claim.previous?.suppressed ?? 0, log);
+  } catch (err) {
+    await releaseOpsAlert(db, claim, now);
+    throw err;
+  }
+  if (results.includes("sent")) return "sent";
+  if (results.includes("failed")) {
+    await releaseOpsAlert(db, claim, now);
+    return "failed";
+  }
+  return "skipped";
+}
+
+async function deliver(
+  alert: OpsAlertInput,
+  recipients: string[],
+  suppressed: number,
+  log: Logger
+): Promise<("sent" | "skipped" | "failed")[]> {
+  const env = getEnv();
   const email = renderOpsAlertEmail({
     kind: alert.kind,
     jobType: alert.jobType,
@@ -166,9 +189,8 @@ export async function sendOpsAlert(
     { jobType: alert.jobType, kind: alert.kind, subject: email.subject, text: email.text },
     "ops alert"
   );
-
   const results: ("sent" | "skipped" | "failed")[] = [];
-  for (const to of await opsAlertRecipients(db)) {
+  for (const to of recipients) {
     const result = await sendMail({ to, ...email });
     if (result.status === "failed") log.error({ error: result.error }, "ops alert: email failed");
     results.push(result.status);
@@ -181,11 +203,5 @@ export async function sendOpsAlert(
     if (result === "failed") log.error({}, "ops alert: webhook failed");
     results.push(result);
   }
-
-  if (results.includes("sent")) return "sent";
-  if (results.includes("failed")) {
-    await releaseOpsAlert(db, claim, now);
-    return "failed";
-  }
-  return "skipped";
+  return results;
 }
