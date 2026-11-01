@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.11.0](https://github.com/metelabs/briff/compare/0.10.0...0.11.0) (2026-11-01)
+
+
+### Features
+
+* **billing:** Paddle checkout, webhooks, subscription sync and plan management ([#51](https://github.com/metelabs/briff/issues/51)) ([034dd28](https://github.com/metelabs/briff/commit/034dd284aa6f93904b87178582b13f5ff281e784))
+* **home:** redesign the dashboard with tiles, trend chart and activity ([#52](https://github.com/metelabs/briff/issues/52)) ([1c2d51d](https://github.com/metelabs/briff/commit/1c2d51dc85f2b1df512245e4c6780c35d0e83597))
+* **public:** status page, readable replay pages, fuller landing sample ([#49](https://github.com/metelabs/briff/issues/49)) ([cde7442](https://github.com/metelabs/briff/commit/cde744234f968950dc101840bea58a6921e29d52))
+
+
+### Bug Fixes
+
+* **legal:** name Resend, not Brevo, as the email sub-processor ([#47](https://github.com/metelabs/briff/issues/47)) ([bbb184c](https://github.com/metelabs/briff/commit/bbb184cecd4cc430cfd3f24a5965e44c0fb5fc73))
+* **ui:** masonry Stack, no native controls, smooth theme and toast, pricing FAQ ([#50](https://github.com/metelabs/briff/issues/50)) ([0b7b2cc](https://github.com/metelabs/briff/commit/0b7b2cc79b6346be5ef01085cf4ce07973bc34d6))
+
 ## [0.10.0](https://github.com/metelabs/briff/compare/0.9.0...0.10.0) (2026-11-01)
 
 
