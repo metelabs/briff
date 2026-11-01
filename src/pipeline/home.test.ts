@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   ago,
   attentionSeries,
+  burstsOf,
   countdown,
   foldBursts,
   hasTrend,
@@ -267,6 +268,7 @@ describe("activity", () => {
       { at: d("2026-11-04T08:00:00Z"), key: "4", text: "d", count: 1 },
     ]);
     expect(foldBursts(events, (g) => String(g.length), 3 * 3_600_000)).toHaveLength(1);
+    expect(burstsOf(events).map((g) => g.map((e) => e.key))).toEqual([["3", "2", "1"], ["4"]]);
   });
 
   it("merges sources newest first and keeps the first ten", () => {

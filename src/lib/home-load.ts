@@ -9,6 +9,7 @@ import { isoWeekLabel, weekStartOf } from "@/pipeline/bulletin";
 import { sectionOf } from "@/pipeline/bulletin-view";
 import {
   attentionSeries,
+  burstsOf,
   foldBursts,
   isFollowUpScan,
   isStale,
@@ -93,7 +94,7 @@ export async function loadHome(orgId: string, scope: StreamScope, now: Date) {
       select: { name: true, included: true, lastScannedAt: true },
     }),
     loadDrift(orgId, scope),
-    loadActivity(orgId, since),
+    loadActivity(orgId),
   ]);
 
   const latestRows = (
@@ -234,6 +235,7 @@ export async function loadHome(orgId: string, scope: StreamScope, now: Date) {
 }
 
 const SCAN_FOLD_MS = 60 * 60_000;
+const ACTIVITY_LIMIT = 10;
 
 function names(list: readonly string[], shown = 2): string {
   const unique = [...new Set(list)];
@@ -244,21 +246,14 @@ function names(list: readonly string[], shown = 2): string {
 /**
  * The org's last events from the tables that carry a timestamp. A scan is a repo's last
  * one only (`Repo.lastScannedAt`): uploads are not kept, so older scans have no row.
- * Folded sources are read whole (repos) or for the chart's 12 weeks (resolved alerts), never
- * cut by a row limit, so a burst is counted in full before the last ten are picked.
+ * Folded sources are never cut by a row limit, so a burst is counted in full before the last
+ * ten are picked: repos are read whole, and resolutions as their distinct pass times first
+ * (one scan resolves its alerts with one timestamp), then the rows of the newest ten bursts.
  */
-async function loadActivity(orgId: string, since: Date): Promise<Activity[]> {
+async function loadActivity(orgId: string): Promise<Activity[]> {
   const db = withOrg(getDb(), orgId);
   const [resolved, sent, repos, members] = await Promise.all([
-    db.alert.findMany({
-      where: { resolvedAt: { gte: since } },
-      select: {
-        id: true,
-        resolvedAt: true,
-        repo: { select: { name: true } },
-        advisory: { select: { package: { select: { name: true } } } },
-      },
-    }),
+    loadResolutions(orgId),
     db.bulletin.findMany({
       where: { preview: false, emailSentAt: { not: null } },
       orderBy: { emailSentAt: "desc" },
@@ -352,5 +347,34 @@ async function loadActivity(orgId: string, since: Date): Promise<Activity[]> {
     href: "/settings#members",
   }));
 
-  return mergeActivity([resolvedEvents, sentEvents, addedEvents, scanEvents, memberEvents]);
+  return mergeActivity(
+    [resolvedEvents, sentEvents, addedEvents, scanEvents, memberEvents],
+    ACTIVITY_LIMIT
+  );
+}
+
+async function loadResolutions(orgId: string) {
+  const db = withOrg(getDb(), orgId);
+  const passes = await db.alert.groupBy({
+    by: ["resolvedAt"],
+    where: { resolvedAt: { not: null } },
+  });
+  const newest = burstsOf(
+    passes.flatMap((p) =>
+      p.resolvedAt ? [{ at: p.resolvedAt, key: p.resolvedAt.toISOString() }] : []
+    )
+  )
+    .slice(0, ACTIVITY_LIMIT)
+    .flat()
+    .map((p) => p.at);
+  if (newest.length === 0) return [];
+  return db.alert.findMany({
+    where: { resolvedAt: { in: newest } },
+    select: {
+      id: true,
+      resolvedAt: true,
+      repo: { select: { name: true } },
+      advisory: { select: { package: { select: { name: true } } } },
+    },
+  });
 }

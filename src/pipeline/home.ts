@@ -286,15 +286,27 @@ export function foldBursts<T extends { at: Date; key: string }>(
   label: (group: T[]) => string,
   windowMs = FOLD_MS
 ): { at: Date; key: string; text: string; count: number }[] {
-  const sorted = [...events].sort(byNewest);
+  return burstsOf(events, windowMs).map((g) => ({
+    at: g[0].at,
+    key: g[0].key,
+    text: label(g),
+    count: g.length,
+  }));
+}
+
+/** Events grouped into bursts (newest first, each burst newest first); see `foldBursts`. */
+export function burstsOf<T extends { at: Date; key: string }>(
+  events: readonly T[],
+  windowMs = FOLD_MS
+): T[][] {
   const groups: T[][] = [];
-  for (const e of sorted) {
+  for (const e of [...events].sort(byNewest)) {
     const group = groups.at(-1);
     const last = group?.at(-1);
     if (group && last && last.at.getTime() - e.at.getTime() <= windowMs) group.push(e);
     else groups.push([e]);
   }
-  return groups.map((g) => ({ at: g[0].at, key: g[0].key, text: label(g), count: g.length }));
+  return groups;
 }
 
 /**
