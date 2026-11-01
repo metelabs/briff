@@ -9,14 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { requestPasswordResetAction, type ResetRequestState } from "../login/actions";
+import { showsResetAnswer } from "./answer";
 
 const INITIAL: ResetRequestState = { sent: false, message: null };
 
 export function ForgotPasswordForm() {
   const [state, action, pending] = useActionState(requestPasswordResetAction, INITIAL);
-  // "Try again" hides this answer; the next submit returns a new state object and shows its own.
   const [dismissed, setDismissed] = useState<ResetRequestState | null>(null);
-  const sent = state.sent && state.message !== null && dismissed !== state;
+  const sent = showsResetAnswer(state, dismissed);
   return (
     <>
       <h1 className="type-page rise mb-2 [font-size:clamp(28px,6vw,36px)]">Reset your password</h1>
