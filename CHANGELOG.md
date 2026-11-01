@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.9.0](https://github.com/metelabs/briff/compare/0.8.0...0.9.0) (2026-11-01)
+
+
+### Features
+
+* admin organisation table, listed folded minor updates, clickable Good to know repo chips ([#38](https://github.com/metelabs/briff/issues/38)) ([c420bb9](https://github.com/metelabs/briff/commit/c420bb90ecfa66113ba8ad3ff8845fc3cbba0173))
+* **alerts:** section bar, re-check and resolved alerts ([#40](https://github.com/metelabs/briff/issues/40)) ([e57eafa](https://github.com/metelabs/briff/commit/e57eafac897466af4e115a2d52da9181330b8096))
+* **stack:** repo cards with status and upgrade target instead of the drift table ([#37](https://github.com/metelabs/briff/issues/37)) ([9ca6513](https://github.com/metelabs/briff/commit/9ca651367737ceed636131d929e8d3b114e133ef))
+* **ui:** account UI polish, result toasts, one-shot redirect messages ([#36](https://github.com/metelabs/briff/issues/36)) ([0079830](https://github.com/metelabs/briff/commit/0079830a240c5b3e2eb1d0c9fdcaedb070f28e39))
+
 ## [0.8.0](https://github.com/metelabs/briff/compare/0.7.3...0.8.0) (2026-11-01)
 
 
