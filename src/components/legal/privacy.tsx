@@ -145,8 +145,10 @@ export const PRIVACY: LegalDoc = {
             rows={SUBPROCESSORS.map((s) => [s.name, s.purpose, s.data, s.location])}
           />
           <p>
-            Briff also queries {PUBLIC_SOURCES}. These requests carry public package or product
-            names only, nothing about you.
+            Briff also queries {PUBLIC_SOURCES}. OSV receives the ecosystem, package name and
+            installed version of each dependency it checks; the other sources receive public package
+            or product names only. None of these requests carries repo names, account data or
+            anything else about you.
           </p>
           <p>
             Transfers outside the EEA and Türkiye (Anthropic and GitHub in the United States, Paddle
