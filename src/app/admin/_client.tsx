@@ -131,12 +131,14 @@ export function OrgSearch({ initial, hrefFor }: { initial: string; hrefFor: stri
   const router = useRouter();
   const [value, setValue] = useState(initial);
   const [synced, setSynced] = useState(initial);
-  const [pushed, setPushed] = useState(initial);
+  // The query this field navigated to and the URL has not shown yet.
+  const [pushed, setPushed] = useState<string | null>(null);
   const timer = useRef<number | undefined>(undefined);
   // Back/forward restores another ?q=: show it, unless it is the one this field just pushed.
   if (initial !== synced) {
     setSynced(initial);
-    if (initial !== pushed) setValue(initial);
+    if (initial === pushed) setPushed(null);
+    else setValue(initial);
   }
   useEffect(() => () => window.clearTimeout(timer.current), []);
   const onChange = (next: string) => {
@@ -144,7 +146,7 @@ export function OrgSearch({ initial, hrefFor }: { initial: string; hrefFor: stri
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => {
       const q = next.trim();
-      setPushed(q);
+      setPushed(q === initial ? null : q);
       const url = new URL(hrefFor, window.location.origin);
       if (q) url.searchParams.set("q", q);
       else url.searchParams.delete("q");
