@@ -3,15 +3,15 @@
 // left, `legal-placeholders.test.ts` fails unless LEGAL_PLACEHOLDERS_ALLOWED is set.
 
 /** The operator's registered name (sole proprietorship in Türkiye). */
-export const LEGAL_NAME = "[LEGAL_NAME]";
+export const LEGAL_NAME = "Fikret Yunus Yıldız";
 /** Registered business address, one line. */
-export const ADDRESS = "[ADDRESS]";
+export const ADDRESS = "Nilüfer, Bursa, Türkiye";
 /** Tax or trade registry number. */
-export const REGISTRATION_NO = "[REGISTRATION_NO]";
+export const REGISTRATION_NO = "9610613060";
 /** How long encrypted database backups exist before rotation removes them, e.g. "30 days". */
-export const BACKUP_RETENTION = "[BACKUP_RETENTION]";
+export const BACKUP_RETENTION = "6 months";
 /** How long server logs are kept, e.g. "14 days". */
-export const LOG_RETENTION = "[LOG_RETENTION]";
+export const LOG_RETENTION = "30 days";
 
 export const BRAND = "Metelabs";
 export const SERVICE_HOST = "app.briff.dev";
