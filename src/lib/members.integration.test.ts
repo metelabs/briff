@@ -7,7 +7,7 @@ import { withOrg } from "@/lib/db/with-org";
 import { orgRecipients } from "@/lib/email/recipients";
 import { resetEnvCache } from "@/lib/env";
 import { INVITE_TTL_MS } from "@/lib/invite-token";
-import { createOrgForUser } from "@/lib/org";
+import { createOrgForUser, createOrgWithin } from "@/lib/org";
 
 import {
   acceptInvite,
@@ -412,6 +412,16 @@ describe.skipIf(!url)("org members against Postgres", () => {
     ]);
     expect(results).toEqual([{ ok: true }, { ok: true }]);
     expect(await db.orgMember.count({ where: { userId: kim.id } })).toBe(1);
+  });
+
+  it("caps the orgs one account creates, also in parallel", async () => {
+    const ada = await user("ada12");
+    await orgOf(ada.id, "cap-1");
+    const made = await Promise.all(
+      [2, 3, 4].map((i) => createOrgWithin(db, { name: `cap-${i}-${suffix}`, userId: ada.id }, 2))
+    );
+    expect(made.filter(Boolean)).toHaveLength(1);
+    expect(await db.orgMember.count({ where: { userId: ada.id } })).toBe(2);
   });
 
   it("delivers to a member from joining until removal", async () => {

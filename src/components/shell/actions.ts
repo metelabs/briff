@@ -7,12 +7,12 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { getAuth, VERIFIED_CALLBACK } from "@/lib/auth/auth";
-import { listUserOrgs, ORG_COOKIE, requireOrgContext } from "@/lib/auth/session";
+import { ORG_COOKIE, requireOrgContext } from "@/lib/auth/session";
 import { log } from "@/lib/log";
 import { getDb } from "@/lib/db/client";
 import { withOrg } from "@/lib/db/with-org";
 import { MAX_ORGS_PER_USER, ORG_NAME_MAX } from "@/lib/members";
-import { createOrgForUser } from "@/lib/org";
+import { createOrgWithin } from "@/lib/org";
 import { STREAM_COOKIE } from "@/lib/stream-scope";
 import { THEME_COOKIE, THEMES, type Theme } from "@/lib/theme";
 
@@ -120,14 +120,18 @@ export async function createOrgAction(
   if (!parsed.success) {
     return { ok: false, message: parsed.error.issues[0]?.message ?? "Invalid name.", saved: raw };
   }
-  if ((await listUserOrgs(ctx.userId)).length >= MAX_ORGS_PER_USER) {
+  const orgId = await createOrgWithin(
+    getDb(),
+    { name: parsed.data, userId: ctx.userId },
+    MAX_ORGS_PER_USER
+  );
+  if (!orgId) {
     return {
       ok: false,
       message: `You belong to ${MAX_ORGS_PER_USER} organisations, the most one account can have.`,
       saved: raw,
     };
   }
-  const orgId = await createOrgForUser(getDb(), { name: parsed.data, userId: ctx.userId });
   log.info({ userId: ctx.userId, orgId }, "org created");
   await chooseOrg(orgId);
   redirect("/");
