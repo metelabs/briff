@@ -420,18 +420,20 @@ export function RecheckButton({
     let stopped = false;
     const timer = window.setInterval(async () => {
       if (stopped) return;
-      let done = Date.now() - startedAt > POLL_LIMIT_MS;
+      const timedOut = Date.now() - startedAt > POLL_LIMIT_MS;
+      let done = false;
       try {
-        if (!done) done = !(await recheckStatusAction()).checking;
+        if (!timedOut) done = !(await recheckStatusAction()).checking;
       } catch {
         // Offline or signed out: the next tick tries again.
       }
-      if (!done || stopped) return;
+      if ((!done && !timedOut) || stopped) return;
       stopped = true;
       window.clearInterval(timer);
       setChecking(false);
       router.refresh();
-      toast("Re-check done.");
+      if (done) toast("Re-check done.");
+      else toast("The re-check is still running. Reload this page in a few minutes.", "info");
     }, POLL_MS);
     return () => {
       stopped = true;

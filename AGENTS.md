@@ -215,8 +215,8 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
 - Alert resolution (`src/security/resolution.ts`, run in `ingestScan`): an upload that no longer
   has an affected version of an alert's package sets `Alert.resolvedAt` (never deletes; only when
   the previous upload had the package, the new one carries its ecosystem and none of the other
-  packages the OSV record covers (`Advisory.packages`, null until the next security scan
-  refetches the row); versions the ranges cannot place keep it open), and an affected version coming back clears it, as does a
+  packages the OSV record covers (`Advisory.packages`; rows stored before it are refetched by
+  security-scan, 500 per run, also when OSV no longer answers with them; withdrawn ones get `[]`); versions the ranges cannot place keep it open), and an affected version coming back clears it, as does a
   security-scan that OSV says is at risk again (no second email). Resolved alerts leave the Alerts
   lists, Home counts, the Alerts dot, Repos counts and the weekly bulletin input; stored bulletin
   pages keep theirs. Alerts shows "Resolved: N this week" and per section "Fixed since your last

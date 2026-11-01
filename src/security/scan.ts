@@ -27,6 +27,8 @@ import {
 import { publicActionsForScan } from "./action-visibility";
 
 const FETCH_CONCURRENCY = 8;
+/** Advisories without covered packages refetched per run, on top of the ones OSV answered with. */
+const COVERAGE_BACKFILL_LIMIT = 500;
 
 interface Wanted {
   modified: string | null;
@@ -69,7 +71,11 @@ async function storeAdvisories(
   { db, log, heartbeat }: Pick<JobContext, "db" | "log" | "heartbeat">,
   wanted: ReadonlyMap<string, Wanted>,
   counts: ScanCounts
-): Promise<{ advisoryOf: (osvId: string) => string | undefined; merges: Map<string, string> }> {
+): Promise<{
+  advisoryOf: (osvId: string) => string | undefined;
+  merges: Map<string, string>;
+  withdrawn: Set<string>;
+}> {
   const rowOf = new Map<string, StoredAdvisory>();
   const looked = new Set<string>();
   /** Loads the stored rows holding any of `ids`, as their own id or as an alias. */
@@ -251,7 +257,7 @@ async function storeAdvisories(
     const row = rowOf.get(osvId);
     return row ? (merges.get(row.id) ?? row.id) : undefined;
   };
-  return { advisoryOf, merges };
+  return { advisoryOf, merges, withdrawn };
 }
 
 /**
@@ -318,6 +324,7 @@ export async function securityScan({ db, log, heartbeat }: JobContext): Promise<
     alertsDelivered: 0,
     alertsHeld: 0,
     alertsReopened: 0,
+    advisoriesBackfilled: 0,
     emailsSent: 0,
     emailsFailed: 0,
   };
@@ -413,7 +420,37 @@ export async function securityScan({ db, log, heartbeat }: JobContext): Promise<
       }
     }
   });
-  const { advisoryOf, merges } = await storeAdvisories({ db, log, heartbeat }, wanted, counts);
+  // Rows stored before covered packages were recorded are refetched even when OSV no
+  // longer answers with them (the repos upgraded): upload-time resolution needs the list.
+  const backfill = await db.$queryRaw<
+    { osvId: string; packageId: string; name: string; ecosystem: string }[]
+  >`
+    SELECT a."osvId", a."packageId", p."name", p."ecosystem"
+    FROM "advisory" a JOIN "package" p ON p."id" = a."packageId"
+    WHERE a."packages" IS NULL
+    ORDER BY a."osvId"
+    LIMIT ${COVERAGE_BACKFILL_LIMIT}`;
+  for (const row of backfill) {
+    if (wanted.has(row.osvId) || !isEcosystem(row.ecosystem)) continue;
+    wanted.set(row.osvId, {
+      modified: null,
+      packageId: row.packageId,
+      packageName: row.name,
+      ecosystem: row.ecosystem,
+    });
+  }
+  counts.advisoriesBackfilled = backfill.length;
+  const { advisoryOf, merges, withdrawn } = await storeAdvisories(
+    { db, log, heartbeat },
+    wanted,
+    counts
+  );
+  if (withdrawn.size > 0) {
+    // A withdrawn record is never written again; an empty list stops its backfill.
+    await db.$executeRaw`
+      UPDATE "advisory" SET "packages" = '[]'::jsonb
+      WHERE "osvId" = ANY(${[...withdrawn]}::text[]) AND "packages" IS NULL`;
+  }
   if (merges.size > 0) await mergeDuplicates(db, orgs, merges, counts);
 
   const matches = queries.map((query, i) => ({

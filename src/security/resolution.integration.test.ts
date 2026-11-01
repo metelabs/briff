@@ -144,6 +144,30 @@ describe.skipIf(!url)("alerts resolve on a newer scan", () => {
     expect((await alertOf(orgId)).resolvedAt).toBeNull();
   });
 
+  it("records the covered packages of an older advisory even when OSV no longer answers with it", async () => {
+    const legacyId = `GHSA-legacy-${suffix}`;
+    const pkgRow = await db.package.findFirstOrThrow({ where: { name: pkg } });
+    await db.advisory.create({ data: { osvId: legacyId, packageId: pkgRow.id, affected: [] } });
+    osv.vulns.set(legacyId, {
+      pkg,
+      vuln: {
+        id: legacyId,
+        modified: new Date().toISOString(),
+        affected: [
+          {
+            package: { ecosystem: "npm", name: pkg },
+            ranges: [{ type: "SEMVER", events: [{ introduced: "0" }, { fixed: "1.0.0" }] }],
+          },
+        ],
+      },
+    });
+    await run();
+    const row = await db.advisory.findUniqueOrThrow({ where: { osvId: legacyId } });
+    expect(row.packages).toEqual([{ ecosystem: "npm", name: pkg }]);
+    osv.vulns.delete(legacyId);
+    await db.advisory.delete({ where: { id: row.id } });
+  });
+
   it("reopens a resolved alert when OSV widens the range, without a second email", async () => {
     await ingestScan(db, orgId, upload("4.17.21"));
     expect((await alertOf(orgId)).resolvedAt).not.toBeNull();
