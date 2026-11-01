@@ -177,4 +177,20 @@ describe.skipIf(!url)("alerts resolve on a newer scan", () => {
     expect((await alertOf(orgId)).resolvedAt).toBeNull();
     expect(sent.filter((m) => m.to === email)).toHaveLength(before);
   });
+
+  it("resolves a removed package only from a complete snapshot (GitHub App), not a briff-scan upload", async () => {
+    expect((await alertOf(orgId)).resolvedAt).toBeNull();
+    const removed: ScanBody = {
+      ...upload("4.17.20"),
+      repos: upload("4.17.20").repos.map((r) => ({
+        ...r,
+        dependencies: r.dependencies.filter((d) => d.name !== pkg),
+      })),
+    };
+    const [cli] = await ingestScan(db, orgId, removed);
+    expect(cli.alertsResolved).toBe(0);
+    await ingestScan(db, orgId, upload("4.17.20"));
+    const [app] = await ingestScan(db, orgId, removed, new Date(), { completeSnapshots: true });
+    expect(app.alertsResolved).toBe(1);
+  });
 });

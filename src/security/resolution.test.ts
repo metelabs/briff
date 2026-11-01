@@ -51,25 +51,35 @@ describe("stillAffected", () => {
 
 describe("planAlertResolution", () => {
   it("resolves an open alert when the upload has the fixed version or no longer the package", () => {
-    expect(planAlertResolution([alert()], before, [dep({ version: "4.17.21" })])).toEqual({
+    expect(planAlertResolution([alert()], before, true, [dep({ version: "4.17.21" })])).toEqual({
       resolve: ["a1"],
       reopen: [],
     });
-    expect(planAlertResolution([alert()], before, [other])).toEqual({
+    expect(planAlertResolution([alert()], before, true, [other])).toEqual({
       resolve: ["a1"],
       reopen: [],
     });
+  });
+
+  it("resolves a removed package only from a complete snapshot (a briff-scan lockfile can fail to parse)", () => {
+    expect(planAlertResolution([alert()], before, false, [other]).resolve).toEqual([]);
+    expect(
+      planAlertResolution([alert()], before, false, [other, dep({ version: "4.17.21" })]).resolve
+    ).toEqual(["a1"]);
   });
 
   it("keeps an alert open while any installed version is affected", () => {
     const installed = [dep({ version: "4.17.21" }), dep({ version: "4.17.15" })];
-    expect(planAlertResolution([alert()], before, installed)).toEqual({ resolve: [], reopen: [] });
+    expect(planAlertResolution([alert()], before, true, installed)).toEqual({
+      resolve: [],
+      reopen: [],
+    });
   });
 
   it("does not resolve from an upload without the package's ecosystem (a lockfile failed to parse)", () => {
-    expect(planAlertResolution([alert()], before, [])).toEqual({ resolve: [], reopen: [] });
+    expect(planAlertResolution([alert()], before, true, [])).toEqual({ resolve: [], reopen: [] });
     const composerOnly = [dep({ packageId: "p-x", ecosystem: "Packagist", version: "1.0.0" })];
-    expect(planAlertResolution([alert()], before, composerOnly)).toEqual({
+    expect(planAlertResolution([alert()], before, true, composerOnly)).toEqual({
       resolve: [],
       reopen: [],
     });
@@ -77,7 +87,10 @@ describe("planAlertResolution", () => {
 
   it("does not resolve an alert whose package the repo did not have before", () => {
     // Another package of the same OSV record raised it; this upload cannot judge it.
-    expect(planAlertResolution([alert()], new Set(), [other])).toEqual({ resolve: [], reopen: [] });
+    expect(planAlertResolution([alert()], new Set(), true, [other])).toEqual({
+      resolve: [],
+      reopen: [],
+    });
   });
 
   it("leaves an alert open while another package of the same OSV record is installed", () => {
@@ -88,22 +101,28 @@ describe("planAlertResolution", () => {
     ];
     const driver = dep({ packageId: "p-driver", name: "lodash-driver", version: "1.0.0" });
     const fixed = dep({ version: "4.17.21" });
-    expect(planAlertResolution([alert({ covered })], before, [fixed, driver]).resolve).toEqual([]);
-    expect(planAlertResolution([alert({ covered })], before, [fixed]).resolve).toEqual(["a1"]);
+    expect(
+      planAlertResolution([alert({ covered })], before, true, [fixed, driver]).resolve
+    ).toEqual([]);
+    expect(planAlertResolution([alert({ covered })], before, true, [fixed]).resolve).toEqual([
+      "a1",
+    ]);
   });
 
   it("does not resolve while the advisory's packages are not known yet", () => {
     const fixed = [dep({ version: "4.17.21" })];
-    expect(planAlertResolution([alert({ covered: null })], before, fixed).resolve).toEqual([]);
+    expect(planAlertResolution([alert({ covered: null })], before, true, fixed).resolve).toEqual(
+      []
+    );
   });
 
   it("reopens a resolved alert when an affected version comes back, and leaves it otherwise", () => {
     const resolved = alert({ resolvedAt: new Date("2026-10-30T10:00:00Z") });
-    expect(planAlertResolution([resolved], new Set(), [dep()])).toEqual({
+    expect(planAlertResolution([resolved], new Set(), true, [dep()])).toEqual({
       resolve: [],
       reopen: ["a1"],
     });
-    expect(planAlertResolution([resolved], before, [dep({ version: "4.17.21" })])).toEqual({
+    expect(planAlertResolution([resolved], before, true, [dep({ version: "4.17.21" })])).toEqual({
       resolve: [],
       reopen: [],
     });

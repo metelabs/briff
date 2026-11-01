@@ -268,7 +268,7 @@ export async function scanInstallation(args: {
         final: i + INGEST_CHUNK >= payloads.length,
       },
       now,
-      { skipRepoLimit: true }
+      { skipRepoLimit: true, completeSnapshots: true }
     );
     const acceptedNames = new Set(accepted.repos.map((r) => r.name));
     counts.repoLimitSkipped += chunk.length - accepted.repos.length;

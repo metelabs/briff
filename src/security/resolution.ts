@@ -89,11 +89,15 @@ export function stillAffected(
  * another one the same OSV record covers) and the new upload carries the package's
  * ecosystem at all (an empty or partial upload, e.g. a lockfile that failed to parse,
  * says nothing about it), and no other package of the same OSV record is installed (its
- * ranges are unknown here). A resolved alert reopens when an affected install is back.
+ * ranges are unknown here). A package that is gone resolves only from a snapshot known to
+ * be complete (`completeSnapshot`, the GitHub App): in a briff-scan upload a lockfile that
+ * failed to parse looks the same as a removal. A resolved alert reopens when an affected
+ * install is back.
  */
 export function planAlertResolution(
   alerts: readonly ResolvableAlert[],
   previousPackageIds: ReadonlySet<string>,
+  completeSnapshot: boolean,
   installed: readonly InstalledDependency[]
 ): ResolutionPlan {
   const ecosystems = new Set(installed.map((d) => d.ecosystem));
@@ -101,8 +105,10 @@ export function planAlertResolution(
   for (const alert of alerts) {
     const affected = stillAffected(alert, installed);
     if (alert.resolvedAt === null) {
+      const stillInstalled = installed.some((d) => d.packageId === alert.packageId);
       if (
         !affected &&
+        (stillInstalled || completeSnapshot) &&
         previousPackageIds.has(alert.packageId) &&
         ecosystems.has(alert.ecosystem) &&
         !otherCoveredInstalled(alert, installed)

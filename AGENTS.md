@@ -213,7 +213,9 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   are never hidden, and delivery (`deliveredAt`, urgent emails, the bulletin's backlog lines)
   does not read `reviewedAt`.
 - Alert resolution (`src/security/resolution.ts`, run in `ingestScan`): an upload that no longer
-  has an affected version of an alert's package sets `Alert.resolvedAt` (never deletes; only when
+  has an affected version of an alert's package sets `Alert.resolvedAt` (never deletes; a package
+  that is gone counts only from a complete snapshot, i.e. the GitHub App (`completeSnapshots`), as
+  a briff-scan lockfile can fail to parse; only when
   the previous upload had the package, the new one carries its ecosystem and none of the other
   packages the OSV record covers (`Advisory.packages`; rows stored before it are refetched by
   security-scan, 500 per run, also when OSV no longer answers with them; withdrawn ones get `[]`); versions the ranges cannot place keep it open), and an affected version coming back clears it, as does a

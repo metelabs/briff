@@ -149,7 +149,15 @@ export async function ingestScan(
   orgId: string,
   body: ScanBody,
   now: Date = new Date(),
-  options: { skipRepoLimit?: boolean } = {}
+  options: {
+    skipRepoLimit?: boolean;
+    /**
+     * Every upload of an existing repo is a complete read (the GitHub App never replaces a
+     * snapshot with a partial one). Only then may a package that is gone resolve an alert;
+     * briff-scan uploads carry no such guarantee (a lockfile can fail to parse).
+     */
+    completeSnapshots?: boolean;
+  } = {}
 ): Promise<RepoIngestResult[]> {
   const scoped = withOrg(db, orgId);
   const repos = body.repos.map((repo) => ({
@@ -263,6 +271,7 @@ export async function ingestScan(
           covered: a.advisory.packages,
         })),
         previousPackageIds,
+        options.completeSnapshots ?? false,
         repo.dependencies.flatMap((dep) => {
           const packageId = packageIds.get(packageKey(dep.ecosystem, dep.name));
           return packageId
