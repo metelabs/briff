@@ -34,6 +34,18 @@ function post(path: string, body: unknown, ip: string, cookie?: string): Promise
   );
 }
 
+function cookieOf(response: Response): string {
+  return response.headers
+    .getSetCookie()
+    .map((c) => c.split(";")[0])
+    .join("; ");
+}
+
+async function sessionUserId(cookie: string): Promise<string | null> {
+  const session = await getAuth().api.getSession({ headers: new Headers({ Cookie: cookie }) });
+  return session?.user.id ?? null;
+}
+
 function linkIn(message: MailMessage | undefined): string {
   const match = message?.text.match(/https:\/\/\S+/);
   if (!match) throw new Error("no link in email");
@@ -117,10 +129,7 @@ describe.skipIf(!url)("account emails through Better Auth", () => {
     const user = await db.user.findUniqueOrThrow({ where: { email } });
     const signIn = await post("/sign-in/email", { email, password: current }, "192.0.2.65");
     expect(signIn.status).toBe(200);
-    const cookie = signIn.headers
-      .getSetCookie()
-      .map((c) => c.split(";")[0])
-      .join("; ");
+    const cookie = cookieOf(signIn);
     const change = await post(
       "/change-email",
       { newEmail: `new-${email}`, callbackURL: "/settings?verified=1" },
@@ -131,12 +140,47 @@ describe.skipIf(!url)("account emails through Better Auth", () => {
     const changeMail = sent.findLast((m) => m.to === `new-${email}`);
     expect(changeMail?.subject).toBe("Briff · confirm your new email address");
 
-    const member = await db.orgMember.findFirstOrThrow({ where: { userId: user.id } });
-    expect((await orgRecipients(db, member.orgId)).map((r) => r.userId)).toEqual([user.id]);
+    const org = await db.org.findFirstOrThrow({ where: { name }, select: { id: true } });
+    expect((await orgRecipients(db, org.id)).map((r) => r.userId)).toEqual([user.id]);
     await db.user.update({
       where: { id: user.id },
       data: { emailVerified: false, createdAt: new Date(Date.now() - 8 * 86_400_000) },
     });
-    expect(await orgRecipients(db, member.orgId)).toEqual([]);
+    expect(await orgRecipients(db, org.id)).toEqual([]);
+  }, 30000);
+
+  it("changes the password only with the current one and signs out other sessions", async () => {
+    const user = await getDb().user.findUniqueOrThrow({ where: { email } });
+    const signIn = (ip: string) => post("/sign-in/email", { email, password: current }, ip);
+    const here = cookieOf(await signIn("192.0.2.71"));
+    const elsewhere = cookieOf(await signIn("192.0.2.72"));
+    expect(await sessionUserId(elsewhere)).toBe(user.id);
+
+    const next = crypto.randomUUID();
+    const wrong = await post(
+      "/change-password",
+      { currentPassword: "not-the-password", newPassword: next, revokeOtherSessions: true },
+      "192.0.2.73",
+      here
+    );
+    expect(wrong.status).toBe(400);
+    expect(await sessionUserId(elsewhere)).toBe(user.id);
+
+    const changed = await post(
+      "/change-password",
+      { currentPassword: current, newPassword: next, revokeOtherSessions: true },
+      "192.0.2.73",
+      here
+    );
+    expect(changed.status).toBe(200);
+    expect(await sessionUserId(elsewhere)).toBeNull();
+    expect(await sessionUserId(here)).toBeNull();
+    expect(await sessionUserId(cookieOf(changed))).toBe(user.id);
+    expect((await post("/sign-in/email", { email, password: current }, "192.0.2.74")).status).toBe(
+      401
+    );
+    expect((await post("/sign-in/email", { email, password: next }, "192.0.2.74")).status).toBe(
+      200
+    );
   }, 30000);
 });
