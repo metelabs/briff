@@ -9,7 +9,7 @@ import { Input, Textarea } from "@/components/ui/input";
 import { FieldHelp, FormStatus, Label } from "@/components/ui/label";
 import { SecretBox } from "@/components/ui/secret-box";
 import { Tag } from "@/components/ui/tag";
-import { useToast } from "@/components/ui/toast";
+import { useResultToast, useToast } from "@/components/ui/toast";
 import { SCAN_TOKEN_NAME_MAX } from "@/lib/scan/tokens";
 import {
   activeSectionId,
@@ -36,6 +36,7 @@ const INITIAL: FormState = { ok: true, message: null };
 
 export function ProfileTextForm({ text }: { text: string }) {
   const [state, action, pending] = useActionState(saveProfileTextAction, INITIAL);
+  useResultToast(state, state);
   return (
     <form action={action} className="grid gap-1.5">
       <Label htmlFor="text">About your work</Label>
@@ -50,11 +51,10 @@ export function ProfileTextForm({ text }: { text: string }) {
       <FieldHelp>
         Used as context for your bulletin, never shared. At most 2000 characters.
       </FieldHelp>
-      <div className="mt-2.5 flex flex-wrap items-center gap-3">
+      <div className="mt-2.5">
         <Button type="submit" variant="primary" disabled={pending}>
           Save profile
         </Button>
-        <FormStatus ok={state.ok} message={state.message} />
       </div>
     </form>
   );
@@ -68,6 +68,7 @@ export function DeliveryForm({
   accountEmail: string;
 }) {
   const [state, action, pending] = useActionState(saveDeliveryAction, INITIAL);
+  useResultToast(state, state);
   return (
     <form action={action} className="grid gap-4 min-[560px]:grid-cols-2">
       <div className="grid content-start gap-1.5">
@@ -91,11 +92,10 @@ export function DeliveryForm({
         />
         <FieldHelp>Empty means the account email.</FieldHelp>
       </div>
-      <div className="flex flex-wrap items-center gap-3 min-[560px]:col-span-2">
+      <div className="min-[560px]:col-span-2">
         <Button type="submit" variant="secondary" disabled={pending}>
           Save delivery address
         </Button>
-        <FormStatus ok={state.ok} message={state.message} />
       </div>
     </form>
   );
@@ -103,8 +103,14 @@ export function DeliveryForm({
 
 export function ChangePasswordForm() {
   const [state, action, pending] = useActionState(changePasswordAction, INITIAL);
+  useResultToast(state, state);
   return (
-    <form action={action} className="grid gap-4 min-[560px]:grid-cols-2">
+    // From 560px: both fields and the button on one row, the button bottom-aligned with the
+    // inputs; the help line goes under the fields. Below: one column, full-width button last.
+    <form
+      action={action}
+      className="grid gap-4 min-[560px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] min-[560px]:gap-x-3 min-[560px]:gap-y-1.5"
+    >
       <div className="grid content-start gap-1.5">
         <Label htmlFor="currentPassword">Current password</Label>
         <Input
@@ -125,40 +131,60 @@ export function ChangePasswordForm() {
           minLength={12}
           maxLength={128}
           required
+          aria-describedby="newPasswordHelp"
         />
-        <FieldHelp>At least 12 characters. Other devices are signed out.</FieldHelp>
       </div>
-      <div className="flex flex-wrap items-center gap-3 min-[560px]:col-span-2">
-        <Button type="submit" variant="secondary" disabled={pending}>
-          Change password
-        </Button>
-        <FormStatus ok={state.ok} message={state.message} />
-      </div>
+      <FieldHelp
+        id="newPasswordHelp"
+        className="-mt-2.5 min-[560px]:col-span-2 min-[560px]:row-start-2 min-[560px]:mt-0"
+      >
+        At least 12 characters. Other devices are signed out.
+      </FieldHelp>
+      <Button
+        type="submit"
+        variant="primary"
+        disabled={pending}
+        className="h-10 w-full min-[560px]:col-start-3 min-[560px]:row-start-1 min-[560px]:w-auto min-[560px]:self-end"
+      >
+        Change password
+      </Button>
     </form>
   );
 }
 
 export function ChangeEmailForm({ email }: { email: string }) {
   const [state, action, pending] = useActionState(changeEmailAction, INITIAL);
+  useResultToast(state, state);
+  // Same row layout as ChangePasswordForm.
   return (
-    <form action={action} className="grid gap-1.5">
-      <Label htmlFor="newEmail">New account email</Label>
-      <Input
-        id="newEmail"
-        name="newEmail"
-        type="email"
-        autoComplete="email"
-        defaultValue={state.saved ?? ""}
-        placeholder={email}
-        required
-      />
-      <FieldHelp>We send a link to the new address; the change happens once you open it.</FieldHelp>
-      <div className="mt-2.5 flex flex-wrap items-center gap-3">
-        <Button type="submit" variant="secondary" disabled={pending}>
-          Change email
-        </Button>
-        <FormStatus ok={state.ok} message={state.message} />
+    <form
+      action={action}
+      className="grid gap-4 min-[560px]:grid-cols-[minmax(0,1fr)_auto] min-[560px]:gap-x-3 min-[560px]:gap-y-1.5"
+    >
+      <div className="grid content-start gap-1.5">
+        <Label htmlFor="newEmail">New account email</Label>
+        <Input
+          id="newEmail"
+          name="newEmail"
+          type="email"
+          autoComplete="email"
+          defaultValue={state.saved ?? ""}
+          placeholder={email}
+          required
+          aria-describedby="newEmailHelp"
+        />
       </div>
+      <FieldHelp id="newEmailHelp" className="-mt-2.5 min-[560px]:row-start-2 min-[560px]:mt-0">
+        We send a link to the new address; the change happens once you open it.
+      </FieldHelp>
+      <Button
+        type="submit"
+        variant="primary"
+        disabled={pending}
+        className="h-10 w-full min-[560px]:col-start-2 min-[560px]:row-start-1 min-[560px]:w-auto min-[560px]:self-end"
+      >
+        Change email
+      </Button>
     </form>
   );
 }

@@ -5,7 +5,8 @@ import { useActionState, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FormStatus, Label } from "@/components/ui/label";
+import { Label } from "@/components/ui/label";
+import { useResultToast } from "@/components/ui/toast";
 
 import { type AuthFormState, signInAction, signUpAction } from "./actions";
 import { type AuthMode, initialSignup, signupFooter } from "./signup-state";
@@ -26,6 +27,7 @@ export function AuthForm({ mode, allowSignup, signup = false }: AuthFormProps) {
   const state = signingUp ? signUpState : signInState;
   const footer = signupFooter(mode, allowSignup);
   const pending = signingUp ? signUpPending : signInPending;
+  useResultToast(state, { ok: false, message: state.error });
   const title =
     mode === "bootstrap" ? "Set up Briff" : signingUp ? "Create your account" : "Sign in to Briff";
   const lead =
@@ -82,7 +84,6 @@ export function AuthForm({ mode, allowSignup, signup = false }: AuthFormProps) {
           />
           {signingUp && <p className="text-fg-muted text-[12.5px]">At least 12 characters.</p>}
         </div>
-        <FormStatus ok={false} message={state.error} />
         <Button type="submit" variant="primary" size="lg" disabled={pending} className="w-full">
           {signingUp ? "Create account" : "Sign in"}
         </Button>

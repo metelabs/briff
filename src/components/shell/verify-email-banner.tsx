@@ -1,17 +1,17 @@
 "use client";
 
 import { MailCheck } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
-import { FormStatus } from "@/components/ui/label";
+import { useToast } from "@/components/ui/toast";
 
-import { resendVerificationAction, type ResendState } from "./actions";
+import { resendVerificationAction } from "./actions";
 
 /** Non-blocking: shown on every shell page and onboarding until the account email is verified. */
 export function VerifyEmailBanner({ email }: { email: string }) {
-  const [state, setState] = useState<ResendState>({ ok: true, message: null });
   const [pending, start] = useTransition();
+  const toast = useToast();
   return (
     <aside
       aria-label="Email verification"
@@ -24,7 +24,6 @@ export function VerifyEmailBanner({ email }: { email: string }) {
           We sent a link to {email}. Open it to keep getting bulletins and alerts: an unverified
           account stops receiving them 7 days after sign-up.
         </p>
-        <FormStatus ok={state.ok} message={state.message} />
       </div>
       <Button
         variant="secondary"
@@ -33,7 +32,8 @@ export function VerifyEmailBanner({ email }: { email: string }) {
         disabled={pending}
         onClick={() =>
           start(async () => {
-            setState(await resendVerificationAction());
+            const res = await resendVerificationAction();
+            if (res.message) toast(res.message, res.ok ? "ok" : "error");
           })
         }
       >

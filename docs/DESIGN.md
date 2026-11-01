@@ -149,7 +149,7 @@ shadcn: map `--background`→`--bg`, `--card`/`--popover`→`--surface`, `--prim
 - **Coral means security, nothing else.** It is not used for destructive buttons in normal flows, form errors or
   decoration. Destructive actions (delete account) use `--sec` only inside a confirm dialog.
 - **Petrol means "you can act here"**: primary button, active tab or pill, links, focus ring. At most **one** filled
-  petrol button per view.
+  petrol button per view; on Settings, where each section holds its own forms, one per form.
 - Severity in tables: CRITICAL/HIGH use `--sec`; MODERATE uses `--upgrade`; LOW uses `--wait`. These labels are
   always text, never colour alone.
 - Drift cells: current = `--ok` text; minor behind = `--fg`; major behind = `--upgrade` on `--upgrade-soft`;
@@ -225,7 +225,7 @@ Numbers in tables and tiles are always `tabular-nums`. Do not use Bricolage belo
 | Copy button                 | 1400ms state             | none                       | label becomes "Copied" and toast appears                            |
 | Dialog                      | 180ms in, 120ms out      | ease-out                   | scale .98→1 + fade; scrim fade                                      |
 | Tooltip                     | 300ms delay, 120ms fade  | ease-out                   | scale .98→1 + fade                                                  |
-| Toast                       | 200ms in, auto-hide 2.5s | ease-out                   | slide up 8px                                                        |
+| Toast                       | 200ms in, auto-hide 5s   | ease-out                   | slide 8px (down from the top on phones, up from the bottom ≥ 768px) |
 | Expand/collapse             | 280ms                    | entrance easing            | `grid-template-rows: 0fr → 1fr`                                     |
 
 - Animate only `opacity`, `transform`, and colour properties. Never animate layout size, except grid-row expand.
@@ -299,8 +299,30 @@ states are noted where they apply.
   tooltip (and a tab stop) only when it is actually cut or abbreviated. Inside a menu popup or a link,
   `TruncatedText` stays out of the tab order. Icon-only buttons keep `aria-label` (and may keep `title` as a fallback)
   next to the tooltip.
-- **Toast:** bottom-centre (bottom-right ≥ 768px), surface + line + raised shadow, radius 12, 13px, an icon in its
-  kind colour. One at a time.
+- **Callout:** a status that replaces a finished form when the page has nothing else to show (forgot password:
+  "we sent a link" plus the spam hint and "try again"). `Callout` in `src/components/ui/callout.tsx`: radius 12,
+  12×14px padding, 13.5px `--fg` text with the first sentence semibold, an 18px icon. Success: `--ok-soft` with a
+  `--ok` border at 30% and a check icon (`role="status"`). Failure: `--upgrade-soft`, `--upgrade` border at 30%
+  and an alert icon (`role="alert"`); never coral. Everything else goes to a toast.
+- **Account menu theme row:** one line: "Theme" label (12.5px muted) and three 32px icon buttons in a
+  `--surface-2` pill (System `Monitor`, Light `Sun`, Dark `Moon`). The current one is `--brand-soft` with
+  `--brand` icon; each has an `aria-label` and a tooltip.
+- **Form fields and autofill:** `globals.css` overrides `:-webkit-autofill` (inset `--surface` shadow,
+  `-webkit-text-fill-color: var(--fg)`), so an autofilled field keeps the theme's colours instead of the browser's
+  blue.
+- **Settings account forms:** fields and the primary button share one row from 560px, the button at the right,
+  bottom-aligned with the inputs (40px tall), help text under the fields. Below 560px: one column, the button full
+  width under the fields.
+- **Toast:** the result of every action on the auth and Settings pages (sign-in or reset errors, link sent,
+  password or email changed, profile and delivery saved, verification resent), instead of a line under the inputs.
+  Top-centre on phones, bottom-right ≥ 768px; radius 12, 13.5px, raised shadow, an 18px icon and a dismiss button.
+  Kinds (`useToast`, `src/components/ui/toast.tsx`): ok = `--ok-soft` + `--ok` border at 30% + check; error =
+  `--upgrade-soft` + `--upgrade` border at 30% + alert icon (never coral), announced assertively; info = surface +
+  line + brand icon. One at a time, 5s. Server Action results go through `useResultToast(state, …)` (fires once per
+  returned state). Redirects that carry a message in the query (`/settings?verified=1[&error=…]`,
+  `?password=changed`, `/login?reset=1`, `?deleted=1`) are mapped in `src/lib/flash.ts`; `<FlashToast />` in the root
+  layout shows the toast once and strips those params with `router.replace`, so a refresh does not repeat it. A
+  URL yields one message: an `error=` code wins over the success. Dialog forms keep their inline `FormStatus` line.
 - **Dialog:** surface, radius 16, max-width 440px, raised shadow + scrim. Title display 19px, body 14px, actions
   right-aligned (secondary, then primary or danger). Esc and scrim click close it. Focus is trapped and returns to the trigger on close.
 
@@ -342,7 +364,7 @@ Don't:
 
 - No sidebar, no breadcrumb trail, no avatar stacks, no "welcome back" banners.
 - No purple, no gradients, no glow, no glass cards, no emoji, no illustrations of people.
-- No icon on every heading. Icons only where they carry meaning (nav on mobile, empty states, toasts).
+- No icon on every heading. Icons only where they carry meaning (nav on mobile, empty states, toasts, callouts).
 - No coral outside security. No second accent colour.
 - No charts for the sake of charts. Briff's data is lists and versions; a number beats a donut.
   The two charts that earn a place are on Home: a 12-week "needs your attention" sparkline per stream

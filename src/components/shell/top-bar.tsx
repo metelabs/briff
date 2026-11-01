@@ -1,7 +1,7 @@
 "use client";
 
 import { Menu } from "@base-ui/react/menu";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, type LucideIcon, Monitor, Moon, Sun } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -10,7 +10,7 @@ import { signOutAction } from "@/app/login/actions";
 import { Logo } from "@/components/logo/Logo";
 import { Tooltip, TruncatedText, useIsTruncated } from "@/components/ui/tooltip";
 import type { StreamOption } from "@/lib/stream-scope";
-import { themeAttribute, type Theme } from "@/lib/theme";
+import { themeAttribute, THEMES, type Theme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 import { selectStreamAction, setThemeAction } from "./actions";
@@ -24,6 +24,7 @@ export const menuItemClass =
   "flex min-h-9 w-full cursor-default items-center gap-2 rounded-[9px] px-2.5 py-2 text-left text-[14px] outline-none select-none transition-colors duration-[120ms] data-highlighted:bg-surface-2";
 
 const THEME_LABELS: Record<Theme, string> = { system: "System", light: "Light", dark: "Dark" };
+const THEME_ICONS: Record<Theme, LucideIcon> = { system: Monitor, light: Sun, dark: Moon };
 
 function applyTheme(theme: Theme): void {
   const root = document.documentElement;
@@ -261,29 +262,36 @@ function AccountMenu({
                   await setThemeAction(value);
                 });
               }}
+              className="flex items-center justify-between gap-3 py-0.5 pr-0.5 pl-2.5"
             >
-              <Menu.GroupLabel className="text-fg-muted px-2.5 pt-1 pb-1.5 text-[12px] font-medium">
+              <Menu.GroupLabel className="text-fg-muted text-[12.5px] font-medium">
                 Theme
               </Menu.GroupLabel>
-              {(Object.keys(THEME_LABELS) as Theme[]).map((t) => (
-                <Menu.RadioItem key={t} value={t} closeOnClick={false} className={menuItemClass}>
-                  <span className="flex w-4 shrink-0 justify-center">
-                    <Menu.RadioItemIndicator>
-                      <Check aria-hidden className="text-brand size-4" />
-                    </Menu.RadioItemIndicator>
-                  </span>
-                  {THEME_LABELS[t]}
-                </Menu.RadioItem>
-              ))}
+              <div className="bg-surface-2 border-line flex gap-0.5 rounded-full border p-0.5">
+                {THEMES.map((t) => {
+                  const Icon = THEME_ICONS[t];
+                  return (
+                    <Tooltip key={t} content={THEME_LABELS[t]} describe={false} toggleOnTap={false}>
+                      <Menu.RadioItem
+                        value={t}
+                        closeOnClick={false}
+                        aria-label={`${THEME_LABELS[t]} theme`}
+                        title={THEME_LABELS[t]}
+                        className="text-fg-muted data-highlighted:ring-line-strong data-highlighted:not-data-checked:bg-surface data-highlighted:not-data-checked:text-fg data-checked:bg-brand-soft data-checked:text-brand grid size-8 cursor-default place-items-center rounded-full transition-colors duration-[120ms] outline-none select-none data-highlighted:ring-1"
+                      >
+                        <Icon aria-hidden className="size-4" />
+                      </Menu.RadioItem>
+                    </Tooltip>
+                  );
+                })}
+              </div>
             </Menu.RadioGroup>
             <Menu.Separator className="border-line my-1.5 border-t" />
             <Menu.LinkItem render={<Link href="/settings" />} className={menuItemClass}>
-              <span className="w-4" aria-hidden />
               Settings
             </Menu.LinkItem>
             {admin && (
               <Menu.LinkItem render={<Link href="/admin" />} className={menuItemClass}>
-                <span className="w-4" aria-hidden />
                 Admin
               </Menu.LinkItem>
             )}
@@ -295,7 +303,6 @@ function AccountMenu({
                 });
               }}
             >
-              <span className="w-4" aria-hidden />
               Sign out
             </Menu.Item>
           </Menu.Popup>

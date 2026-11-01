@@ -1,18 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Callout } from "@/components/ui/callout";
 import { Input } from "@/components/ui/input";
-import { FormStatus, Label } from "@/components/ui/label";
+import { Label } from "@/components/ui/label";
+import { useResultToast } from "@/components/ui/toast";
 
 import { requestPasswordResetAction, type ResetRequestState } from "../login/actions";
+import { showsResetAnswer } from "./answer";
 
 const INITIAL: ResetRequestState = { sent: false, message: null };
 
 export function ForgotPasswordForm() {
   const [state, action, pending] = useActionState(requestPasswordResetAction, INITIAL);
+  useResultToast(state, { ok: state.sent, message: state.message });
+  const [dismissed, setDismissed] = useState<ResetRequestState | null>(null);
+  const sent = showsResetAnswer(state, dismissed);
   return (
     <>
       <h1 className="type-page rise mb-2 [font-size:clamp(28px,6vw,36px)]">Reset your password</h1>
@@ -20,23 +26,36 @@ export function ForgotPasswordForm() {
         Enter the email you sign in with. We send a link that lets you choose a new password; it
         works for one hour.
       </p>
-      <form action={action} className="rise flex flex-col gap-4 [--i:2]">
-        <div className="grid gap-1.5">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            placeholder="you@studio.dev"
-            required
-          />
-        </div>
-        <FormStatus ok={state.sent} message={state.message} />
-        <Button type="submit" variant="primary" size="lg" disabled={pending} className="w-full">
-          Send reset link
-        </Button>
-      </form>
+      {sent ? (
+        <Callout tone="ok" message={state.message ?? ""}>
+          Didn&apos;t get it? Check spam, or{" "}
+          <button
+            type="button"
+            onClick={() => setDismissed(state)}
+            className="text-brand rounded-[4px] font-medium underline-offset-4 hover:underline"
+          >
+            try again
+          </button>{" "}
+          in a minute.
+        </Callout>
+      ) : (
+        <form action={action} className="rise flex flex-col gap-4 [--i:2]">
+          <div className="grid gap-1.5">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@studio.dev"
+              required
+            />
+          </div>
+          <Button type="submit" variant="primary" size="lg" disabled={pending} className="w-full">
+            Send reset link
+          </Button>
+        </form>
+      )}
       <p className="text-fg-muted mt-[18px] text-center text-[12.5px]">
         Remembered it?{" "}
         <Link
