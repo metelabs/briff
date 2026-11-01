@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.8.0](https://github.com/metelabs/briff/compare/0.7.3...0.8.0) (2026-11-01)
+
+
+### Features
+
+* **auth:** password reset, email verification and account settings ([#33](https://github.com/metelabs/briff/issues/33)) ([751729a](https://github.com/metelabs/briff/commit/751729a8e2c19e7136acf9917eadaf62925ac532))
+* job failure alerts, health freshness and admin run history ([#34](https://github.com/metelabs/briff/issues/34)) ([1e76977](https://github.com/metelabs/briff/commit/1e769771c40a00b1263ac93c33cdbe810ded6b99))
+* **selfhost:** production compose stack, self-hosting guide, smoke test ([#32](https://github.com/metelabs/briff/issues/32)) ([240705a](https://github.com/metelabs/briff/commit/240705ad8be6aaf91b41866cc1523afd7339cb9e))
+
 ## [0.7.3](https://github.com/metelabs/briff/compare/0.7.2...0.7.3) (2026-10-30)
 
 
