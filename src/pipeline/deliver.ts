@@ -3,7 +3,7 @@ import { renderBulletinEmail } from "@/lib/email/bulletin-email";
 import { sendMail, smtpConfig } from "@/lib/email/mailer";
 import { orgRecipients } from "@/lib/email/recipients";
 import { withOrg } from "@/lib/db/with-org";
-import { enqueueBulletinDeliveries } from "@/lib/delivery-targets/deliver";
+import { bulletinJobs, writeTargetJobs } from "@/lib/delivery-targets/deliver";
 import { getEnv } from "@/lib/env";
 import { signFeedbackToken } from "@/lib/feedback-token";
 import type { Logger } from "@/lib/log";
@@ -54,21 +54,24 @@ export async function deliverBulletin(
       }
     }
   }
-  await withOrg(db, orgId).bulletin.update({
-    where: { id: bulletinId },
-    data: {
-      emailStatus: !smtp ? "skipped" : counts.emailsSent > 0 ? "sent" : "failed",
-      emailError: errors.length > 0 ? errors.join("; ").slice(0, 1000) : null,
-      emailSentAt: counts.emailsSent > 0 ? new Date() : null,
-    },
-  });
+  let jobs: Awaited<ReturnType<typeof bulletinJobs>> = [];
   try {
-    counts.targetsQueued = await enqueueBulletinDeliveries(db, orgId, {
-      id: bulletinId,
-      streamId: view.streamId,
-    });
+    jobs = await bulletinJobs(db, orgId, { id: bulletinId, streamId: view.streamId });
   } catch (err) {
-    log.error({ err, bulletinId }, "deliver: could not queue Slack / webhook delivery");
+    log.error({ err, bulletinId }, "deliver: could not plan Slack / webhook delivery");
   }
+  // The email outcome and the target jobs are written together: a bulletin is never marked
+  // sent (and so never retried) without its posts queued.
+  counts.targetsQueued = await withOrg(db, orgId).$transaction(async (tx) => {
+    await tx.bulletin.update({
+      where: { id: bulletinId },
+      data: {
+        emailStatus: !smtp ? "skipped" : counts.emailsSent > 0 ? "sent" : "failed",
+        emailError: errors.length > 0 ? errors.join("; ").slice(0, 1000) : null,
+        emailSentAt: counts.emailsSent > 0 ? new Date() : null,
+      },
+    });
+    return writeTargetJobs(tx, jobs);
+  });
   return counts;
 }

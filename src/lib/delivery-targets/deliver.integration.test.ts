@@ -15,6 +15,7 @@ import {
   alertBatchId,
   enqueueAlertDeliveries,
   enqueueBulletinDeliveries,
+  markAlertsDelivered,
   runDeliverTarget,
   sendTestDelivery,
   type PostFn,
@@ -381,6 +382,27 @@ describe.skipIf(!url)("delivery targets against Postgres and a local endpoint", 
       await db.job.count({
         where: { dedupeKey: `deliver:${all}:${alertBatchId([alertId])}` },
       })
+    ).toBe(1);
+  });
+
+  it("retires emailed alerts and queues their posts in one step", async () => {
+    await setPlan("team");
+    const targetId = await rawTarget({ kind: "slack", url: "https://hooks.slack.com/services/m" });
+    await withOrg(db, orgId).alert.updateMany({
+      where: { id: alertId },
+      data: { deliveredAt: null },
+    });
+    const res = await markAlertsDelivered(
+      db,
+      orgId,
+      { deliveredIds: [alertId], urgentIds: [alertId] },
+      log
+    );
+    expect(res).toEqual({ delivered: 1, queued: 1 });
+    const alert = await withOrg(db, orgId).alert.findFirstOrThrow({ where: { id: alertId } });
+    expect(alert.deliveredAt).not.toBeNull();
+    expect(
+      await db.job.count({ where: { dedupeKey: `deliver:${targetId}:${alertBatchId([alertId])}` } })
     ).toBe(1);
   });
 

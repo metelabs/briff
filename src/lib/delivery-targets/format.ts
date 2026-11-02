@@ -92,13 +92,25 @@ function slackEscape(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+/** Slack's limit for one section's text; lines that would cross it count as "more". */
+const SECTION_MAX = 2900;
+const LINK_URL_MAX = 400;
+
+/** A URL inside `<url|label>`: the characters that end the link are percent-encoded. */
+function slackUrl(url: string): string | null {
+  if (url.length > LINK_URL_MAX) return null;
+  return url.replace(/[<>|]/g, (c) => encodeURIComponent(c));
+}
+
 function itemLine(item: DeliveryItem): string {
   const sev = item.severity ? `${item.severity} · ` : "";
   const title = slackEscape(clip(item.title, 150));
-  const linked = item.url ? `<${item.url}|${title}>` : title;
+  const href = item.url ? slackUrl(item.url) : null;
+  const linked = href ? `<${href}|${title}>` : title;
+  const shown = item.repos.slice(0, 3).map((r) => clip(r, 60));
   const repos =
     item.repos.length > 0
-      ? ` (${slackEscape(item.repos.slice(0, 3).join(", "))}${item.repos.length > 3 ? ` +${item.repos.length - 3}` : ""})`
+      ? ` (${slackEscape(shown.join(", "))}${item.repos.length > 3 ? ` +${item.repos.length - 3}` : ""})`
       : "";
   const detail = item.detail ? ` — ${slackEscape(clip(item.detail, 120))}` : "";
   return `• ${sev}${linked}${repos}${detail}`;
@@ -112,7 +124,14 @@ type SlackBlock = Record<string, unknown>;
 
 /** Block Kit message: header, summary, up to six bullet lines, a link button. */
 export function slackPayload(event: DeliveryEvent): { text: string; blocks: SlackBlock[] } {
-  const lines = event.items.slice(0, SLACK_LINES_MAX).map(itemLine);
+  const lines: string[] = [];
+  let size = 0;
+  for (const item of event.items.slice(0, SLACK_LINES_MAX)) {
+    const line = itemLine(item);
+    if (size + line.length + 1 > SECTION_MAX - 40) break;
+    lines.push(line);
+    size += line.length + 1;
+  }
   const more = event.items.length - lines.length;
   if (more > 0) lines.push(`…and ${more} more`);
   const blocks: SlackBlock[] = [

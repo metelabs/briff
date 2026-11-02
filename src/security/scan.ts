@@ -1,7 +1,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { mapLimit } from "@/lib/concurrency";
 import { withOrg } from "@/lib/db/with-org";
-import { enqueueAlertDeliveries } from "@/lib/delivery-targets/deliver";
+import { markAlertsDelivered } from "@/lib/delivery-targets/deliver";
 import { renderSecurityAlertEmail, type FirstScanSummary } from "@/lib/email/alert-email";
 import { sendMail, smtpConfig } from "@/lib/email/mailer";
 import { orgRecipients } from "@/lib/email/recipients";
@@ -712,22 +712,17 @@ export async function securityScan({
         counts.emailsSent += sent;
         // Delivered once anyone received it; a total failure keeps the alerts for the next run.
         if (sent > 0) {
-          const res = await scoped.alert.updateMany({
-            where: { id: { in: [...urgent, ...backlog].map((a) => a.id) } },
-            data: { deliveredAt: new Date() },
-          });
-          counts.alertsDelivered += res.count;
-        }
-        if (sent > 0 && urgent.length > 0) {
-          try {
-            counts.targetsQueued += await enqueueAlertDeliveries(
-              db,
-              org.id,
-              urgent.map((a) => a.id)
-            );
-          } catch (err) {
-            log.error({ err, orgId: org.id }, "security: could not queue Slack / webhook delivery");
-          }
+          const res = await markAlertsDelivered(
+            db,
+            org.id,
+            {
+              deliveredIds: [...urgent, ...backlog].map((a) => a.id),
+              urgentIds: urgent.map((a) => a.id),
+            },
+            log
+          );
+          counts.alertsDelivered += res.delivered;
+          counts.targetsQueued += res.queued;
         }
       },
       { maxWait: 10_000, timeout: DELIVERY_LOCK_HOLD_MS }

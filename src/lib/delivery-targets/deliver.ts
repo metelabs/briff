@@ -7,7 +7,7 @@ import { z } from "zod";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
 import { getEnv } from "@/lib/env";
-import { enqueueJobOnce } from "@/lib/jobs/queue";
+import { enqueueJobOnceIn, type JobWriter } from "@/lib/jobs/queue";
 import type { Logger } from "@/lib/log";
 import { loadOrgLimits } from "@/lib/org-limits";
 import { safeFetch, SsrfBlockedError } from "@/lib/rss/safe-fetch";
@@ -32,7 +32,7 @@ import {
 
 // After a bulletin is delivered and after a same-day alert email, one `deliver-target` job per
 // matching target, enqueued once per (target, bulletin | alert batch) ever. The job posts
-// through safeFetch (SSRF guard, pinned DNS), 10 s timeout; 3 retries with the queue's backoff.
+// through safeFetch (SSRF guard, pinned DNS), 10 s timeout; 3 retries with the queue's backoff. Jobs are written in the same transaction as the delivery state they belong to.
 
 export const DELIVERY_TIMEOUT_MS = 10_000;
 export const DELIVERY_MAX_ATTEMPTS = 4;
@@ -241,17 +241,17 @@ const payloadSchema = z.discriminatedUnion("event", [
 
 type Payload = z.infer<typeof payloadSchema>;
 
-async function enqueueFor(
-  db: PrismaClient,
-  targetIds: string[],
-  ref: string,
-  payload: (targetId: string) => Payload
-): Promise<number> {
+interface TargetJob {
+  dedupeKey: string;
+  payload: Payload;
+}
+
+export async function writeTargetJobs(tx: JobWriter, jobs: readonly TargetJob[]): Promise<number> {
   let created = 0;
-  for (const targetId of targetIds) {
-    const res = await enqueueJobOnce(db, "deliver-target", {
-      dedupeKey: `deliver:${targetId}:${ref}`,
-      payload: payload(targetId),
+  for (const job of jobs) {
+    const res = await enqueueJobOnceIn(tx, "deliver-target", {
+      dedupeKey: job.dedupeKey,
+      payload: job.payload,
       maxAttempts: DELIVERY_MAX_ATTEMPTS,
     });
     if (res.created) created++;
@@ -271,21 +271,18 @@ async function enabledTargets(
   });
 }
 
-/** Called once the bulletin went out; a target gets each bulletin once, whatever re-sends. */
-export async function enqueueBulletinDeliveries(
+/** One job per enabled target of the bulletin's stream (or of every stream). */
+export async function bulletinJobs(
   db: PrismaClient,
   orgId: string,
   bulletin: { id: string; streamId: string | null }
-): Promise<number> {
-  const targets = (await enabledTargets(db, orgId, "bulletin")).filter(
-    (t) => t.streamId === null || t.streamId === bulletin.streamId
-  );
-  return enqueueFor(
-    db,
-    targets.map((t) => t.id),
-    bulletin.id,
-    (targetId) => ({ orgId, targetId, event: "bulletin", bulletinId: bulletin.id })
-  );
+): Promise<TargetJob[]> {
+  return (await enabledTargets(db, orgId, "bulletin"))
+    .filter((t) => t.streamId === null || t.streamId === bulletin.streamId)
+    .map((t) => ({
+      dedupeKey: `deliver:${t.id}:${bulletin.id}`,
+      payload: { orgId, targetId: t.id, event: "bulletin", bulletinId: bulletin.id },
+    }));
 }
 
 /** The batch id: the same alert set is one batch, so a retried enqueue posts nothing twice. */
@@ -293,16 +290,16 @@ export function alertBatchId(alertIds: readonly string[]): string {
   return `alerts-${sha256Hex([...alertIds].sort().join(",")).slice(0, 24)}`;
 }
 
-/** Called after the same-day alert email covered `alertIds` (critical / high, new). */
-export async function enqueueAlertDeliveries(
+/** One job per enabled alert target whose stream (or every stream) has a repo of the batch. */
+export async function alertJobs(
   db: PrismaClient,
   orgId: string,
   alertIds: readonly string[],
   now: Date = new Date()
-): Promise<number> {
-  if (alertIds.length === 0) return 0;
+): Promise<TargetJob[]> {
+  if (alertIds.length === 0) return [];
   const targets = await enabledTargets(db, orgId, "alert");
-  if (targets.length === 0) return 0;
+  if (targets.length === 0) return [];
   const scoped = withOrg(db, orgId);
   const streamIds = [...new Set(targets.flatMap((t) => (t.streamId ? [t.streamId] : [])))];
   const alertRepos = await scoped.alert.findMany({
@@ -320,21 +317,73 @@ export async function enqueueAlertDeliveries(
           })
         ).map((r) => r.streamId)
   );
-  const matching = targets.filter((t) => t.streamId === null || covered.has(t.streamId));
   const batchId = alertBatchId(alertIds);
-  return enqueueFor(
-    db,
-    matching.map((t) => t.id),
-    batchId,
-    (targetId) => ({
-      orgId,
-      targetId,
-      event: "alerts",
-      batchId,
-      alertIds: [...alertIds],
-      occurredAt: now.toISOString(),
-    })
-  );
+  return targets
+    .filter((t) => t.streamId === null || covered.has(t.streamId))
+    .map((t) => ({
+      dedupeKey: `deliver:${t.id}:${batchId}`,
+      payload: {
+        orgId,
+        targetId: t.id,
+        event: "alerts",
+        batchId,
+        alertIds: [...alertIds],
+        occurredAt: now.toISOString(),
+      },
+    }));
+}
+
+/** Queues the jobs on their own (tests, and callers with nothing else to record). */
+export async function enqueueTargetJobs(
+  db: PrismaClient,
+  orgId: string,
+  jobs: readonly TargetJob[]
+): Promise<number> {
+  if (jobs.length === 0) return 0;
+  return withOrg(db, orgId).$transaction((tx) => writeTargetJobs(tx, jobs));
+}
+
+export async function enqueueBulletinDeliveries(
+  db: PrismaClient,
+  orgId: string,
+  bulletin: { id: string; streamId: string | null }
+): Promise<number> {
+  return enqueueTargetJobs(db, orgId, await bulletinJobs(db, orgId, bulletin));
+}
+
+export async function enqueueAlertDeliveries(
+  db: PrismaClient,
+  orgId: string,
+  alertIds: readonly string[],
+  now: Date = new Date()
+): Promise<number> {
+  return enqueueTargetJobs(db, orgId, await alertJobs(db, orgId, alertIds, now));
+}
+
+/**
+ * After the same-day email: marks the emailed alerts delivered and queues the target jobs for
+ * the urgent ones in one transaction, so an alert is never retired without its posts queued.
+ */
+export async function markAlertsDelivered(
+  db: PrismaClient,
+  orgId: string,
+  args: { deliveredIds: string[]; urgentIds: string[] },
+  log: Logger
+): Promise<{ delivered: number; queued: number }> {
+  let jobs: TargetJob[] = [];
+  try {
+    jobs = await alertJobs(db, orgId, args.urgentIds);
+  } catch (err) {
+    // Reading targets failed: keep the email bookkeeping; the posts are lost, not the email.
+    log.error({ err, orgId }, "security: could not plan Slack / webhook delivery");
+  }
+  return withOrg(db, orgId).$transaction(async (tx) => {
+    const res = await tx.alert.updateMany({
+      where: { id: { in: args.deliveredIds } },
+      data: { deliveredAt: new Date() },
+    });
+    return { delivered: res.count, queued: await writeTargetJobs(tx, jobs) };
+  });
 }
 
 export interface DeliverDeps {
@@ -397,10 +446,6 @@ export async function runDeliverTarget(
 
 export function deliverTarget(ctx: JobContext): Promise<JobResult> {
   return runDeliverTarget(ctx);
-}
-
-export function logEnqueueError(log: Logger, err: unknown, where: Record<string, unknown>): void {
-  log.error({ err, ...where }, "deliver-target: could not enqueue");
 }
 
 /** "Send test": an owner posts the sample message now; the result is written to the target. */

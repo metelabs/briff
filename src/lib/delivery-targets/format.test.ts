@@ -62,6 +62,23 @@ describe("delivery target format", () => {
     });
   });
 
+  it("keeps the lines section under Slack's limit and links that cannot break out", () => {
+    const long = event(6);
+    long.items = long.items.map((i) => ({
+      ...i,
+      title: "t".repeat(400),
+      detail: "d".repeat(400),
+      url: `https://example.com/${"p".repeat(300)}|x>`,
+      repos: ["r".repeat(300), "s".repeat(300), "u".repeat(300)],
+    }));
+    const text = (slackPayload(long).blocks[2] as { text: { text: string } }).text.text;
+    expect(text.length).toBeLessThanOrEqual(2900);
+    expect(text).toContain("%7Cx%3E|");
+    long.items[0].url = `https://example.com/${"p".repeat(500)}`;
+    const first = (slackPayload(long).blocks[2] as { text: { text: string } }).text.text;
+    expect(first.startsWith("• HIGH · ttt")).toBe(true);
+  });
+
   it("signs the exact webhook body with HMAC-SHA256 and names the event and delivery", () => {
     const req = buildRequest({ kind: "webhook", secret: "whsec_k" }, event(1), "job-1");
     const expected = createHmac("sha256", "whsec_k").update(req.body).digest("hex");
