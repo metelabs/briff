@@ -22,7 +22,11 @@ const NAV = [
 
 /** `pricing`: the hosted service (BRIFF_CLOUD); a self-hosted instance never links to plans. */
 export function PublicHeader({ pricing = false }: { pricing?: boolean }) {
-  const nav = pricing ? [...NAV, { href: "/pricing", label: "Pricing" }] : NAV;
+  const nav = [
+    ...NAV,
+    { href: DOCS_URL, label: "Docs" },
+    ...(pricing ? [{ href: "/pricing", label: "Pricing" }] : []),
+  ];
   return (
     <PageContainer as="header" className="flex min-h-14 items-center justify-between md:min-h-16">
       <Link href="/" aria-label="Briff home" className="rounded-[6px]">
