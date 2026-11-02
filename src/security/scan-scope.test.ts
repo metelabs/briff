@@ -76,4 +76,14 @@ describe("planScanResolution", () => {
     ];
     expect(planScanResolution([alert("a1", "r1")], queries, new Set(), new Set())).toEqual([]);
   });
+
+  it("never resolves a GitHub Actions alert: a failed tag lookup drops its hit", () => {
+    const queries = [
+      query([dep("r1", { ecosystem: "GitHub Actions" })], {
+        ecosystem: "GitHub Actions",
+        name: "actions/checkout",
+      }),
+    ];
+    expect(planScanResolution([alert("a1", "r1")], queries, new Set(), new Set())).toEqual([]);
+  });
 });

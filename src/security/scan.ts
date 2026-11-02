@@ -352,7 +352,7 @@ export async function securityScan({
   const deps: StackDependency[] = [];
   const repoState = new Map<
     string,
-    { securityScannedAt: Date | null; includedChangedAt: Date | null }
+    { securityScannedAt: Date | null; includedChangedAt: Date | null; lastScannedAt: Date | null }
   >();
   for (const org of orgs) {
     const scoped = withOrg(db, org.id);
@@ -363,6 +363,7 @@ export async function securityScan({
         included: true,
         securityScannedAt: true,
         includedChangedAt: true,
+        lastScannedAt: true,
       },
     });
     for (const r of repos) repoState.set(r.id, r);
@@ -541,11 +542,34 @@ export async function securityScan({
       uncertainRepoIds
     );
     if (resolve.length > 0) {
-      const res = await scoped.alert.updateMany({
-        where: { id: { in: resolve }, resolvedAt: null },
-        data: { resolvedAt: startedAt, resolvedBy: "security_scan" },
+      // Under ingestion's per-org lock: a repo uploaded since its dependencies were read
+      // may hold an affected version again, so its alerts are left to the next run.
+      counts.alertsResolved += await scoped.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(68422::int, hashtext(${org.id}))`;
+        const repoIds = [...new Set(open.map((a) => a.repoId))];
+        const current = await tx.repo.findMany({
+          where: { id: { in: repoIds } },
+          select: { id: true, lastScannedAt: true },
+        });
+        const unchanged = new Set(
+          current
+            .filter(
+              (r) =>
+                (r.lastScannedAt?.getTime() ?? null) ===
+                (repoState.get(r.id)?.lastScannedAt?.getTime() ?? null)
+            )
+            .map((r) => r.id)
+        );
+        const ids = open
+          .filter((a) => resolve.includes(a.id) && unchanged.has(a.repoId))
+          .map((a) => a.id);
+        if (ids.length === 0) return 0;
+        const res = await tx.alert.updateMany({
+          where: { id: { in: ids }, resolvedAt: null },
+          data: { resolvedAt: startedAt, resolvedBy: "security_scan" },
+        });
+        return res.count;
       });
-      counts.alertsResolved += res.count;
     }
     const candidates = newAlertCandidates(
       orgMatches,

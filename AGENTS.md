@@ -267,9 +267,10 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   security-scan, 500 per run, also when OSV no longer answers with them; withdrawn ones get `[]`); versions the ranges cannot place keep it open), and an affected version coming back clears it, as does a
   security-scan that OSV says is at risk again (no second email). security-scan also resolves
   (`planScanResolution`, `src/security/plan.ts`): an open alert whose own package OSV was asked about
-  at the repo's stored version and no longer reports; never from a requirement, never for a repo
-  whose answer named an advisory the run could not store, and a package that is gone is left to
-  the upload. `Alert.resolvedBy` records the cause (`briff_scan` upload, `github_app` scan,
+  at the repo's stored version and no longer reports; never from a requirement or a GitHub Actions
+  tag, never for a repo whose answer named an advisory the run could not store or that was
+  uploaded during the run (checked under ingestion's per-org lock), and a package that is gone is
+  left to the upload. `Alert.resolvedBy` records the cause (`briff_scan` upload, `github_app` scan,
   `security_scan`; null on older rows, "a later scan"); a reopen clears it. Resolved alerts leave the Alerts
   lists, Home counts, the Alerts dot, Repos counts and the weekly bulletin input; stored bulletin
   pages keep theirs. Alerts shows "Resolved: N this week", per section "Fixed since your last

@@ -15,6 +15,8 @@ import type { OsvHit, OsvQuery, OsvVuln } from "@/sources/osv";
 const osv = vi.hoisted(() => ({
   vulns: new Map<string, { pkg: string; fixed: string; vuln: unknown }>(),
   queries: [] as OsvQuery[],
+  /** Runs while OSV "answers": stands in for an upload racing the scan. */
+  during: null as null | (() => Promise<void>),
 }));
 const sent = vi.hoisted(() => [] as { to: string }[]);
 
@@ -24,6 +26,7 @@ vi.mock("@/sources/osv", async (importOriginal) => {
     ...actual,
     queryOsvBatchHits: async (queries: OsvQuery[]): Promise<OsvHit[][]> => {
       osv.queries.push(...queries);
+      await osv.during?.();
       return queries.map((q) =>
         [...osv.vulns.entries()]
           .filter(([, v]) => v.pkg === q.name && semver.lt(q.version, v.fixed))
@@ -144,6 +147,22 @@ describe.skipIf(!url)("security-scan scoped to one org", () => {
     );
     // Already delivered by the daily run: the re-check sends nothing.
     expect(sent.length).toBe(emailsBefore);
+  });
+
+  it("leaves a repo uploaded during the run to the next run", async () => {
+    const [, b] = orgs;
+    osv.during = async () => {
+      await withOrg(db, b.orgId).repo.updateMany({ data: { lastScannedAt: new Date() } });
+    };
+    try {
+      const res = await run({ orgId: b.orgId, manual: true });
+      expect(res.counts).toMatchObject({ alertsResolved: 0 });
+      expect((await alertOf(b.orgId)).resolvedAt).toBeNull();
+    } finally {
+      osv.during = null;
+    }
+    await run({ orgId: b.orgId, manual: true });
+    expect(await alertOf(b.orgId)).toMatchObject({ resolvedBy: "security_scan" });
   });
 
   it("reopens a resolved alert when the stored version is affected again", async () => {

@@ -393,8 +393,10 @@ export interface ScanResolvableAlert {
  * Open alerts the run may resolve: OSV was asked about the alert's own package at the repo's
  * stored version and no longer reports the advisory for the repo. Not when the repo has the
  * package only as a requirement (OSV cannot place it), or when one of the repo's answers
- * named an advisory the run could not store (its pair is unknown, not safe). A package that
- * is gone from the repo is left to the upload that removed it (`planAlertResolution`).
+ * named an advisory the run could not store (its pair is unknown, not safe), and not for
+ * GitHub Actions: their tag queries drop hits whose record could not be fetched, so a missing
+ * hit proves nothing. A package that is gone from the repo is left to the upload that removed
+ * it (`planAlertResolution`).
  */
 export function planScanResolution(
   open: readonly ScanResolvableAlert[],
@@ -406,7 +408,8 @@ export function planScanResolution(
   const unplaced = new Set<string>();
   for (const q of queries) {
     for (const d of q.dependents) {
-      (q.constraint || d.constraint ? unplaced : placed).add(`${d.repoId}\0${q.packageId}`);
+      const uncertain = q.constraint || d.constraint || q.ecosystem === "GitHub Actions";
+      (uncertain ? unplaced : placed).add(`${d.repoId}\0${q.packageId}`);
     }
   }
   return open
