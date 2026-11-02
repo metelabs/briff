@@ -129,6 +129,11 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
   const flat = groups.flatMap((g) => g.hits);
   const current = Math.min(active, Math.max(flat.length - 1, 0));
 
+  // Focus stays in the input, so the browser does not follow the active option by itself.
+  useEffect(() => {
+    document.getElementById(`docs-hit-${current}`)?.scrollIntoView({ block: "nearest" });
+  }, [current, groups]);
+
   const go = (href: string) => {
     onDone();
     router.push(href);
