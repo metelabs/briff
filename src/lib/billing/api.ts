@@ -78,6 +78,46 @@ export interface BillingApi {
   paymentMethodUpdateUrl(subscriptionId: string): Promise<string | null>;
 }
 
+interface Totals {
+  total: string;
+  currencyCode: string;
+}
+
+/** The fields of the SDK's SubscriptionPreview that the confirmation shows. */
+export interface PreviewLike {
+  immediateTransaction: { details: { totals: Totals } } | null;
+  recurringTransactionDetails: { totals: Totals } | null;
+  updateSummary: {
+    result: { action: "credit" | "charge"; amount: string; currencyCode: string };
+  } | null;
+  nextBilledAt: string | null;
+}
+
+/**
+ * Due now, credit and the new recurring amount of a previewed change. A shorter period or a
+ * smaller plan prorated now nets out as a credit to the customer's balance:
+ * `update_summary.result` says so even without an immediate transaction; a negative
+ * immediate total is the fallback.
+ */
+export function previewAmounts(preview: PreviewLike): BillingPreview {
+  const now = preview.immediateTransaction?.details.totals;
+  const recurring = preview.recurringTransactionDetails?.totals;
+  const total = now ? Number(now.total) : 0;
+  const result = preview.updateSummary?.result;
+  const credit =
+    result?.action === "credit" && Number(result.amount) > 0
+      ? formatMoney(result.amount, result.currencyCode)
+      : now && total < 0
+        ? formatMoney(String(-total), now.currencyCode)
+        : null;
+  return {
+    dueNow: !credit && now && total > 0 ? formatMoney(now.total, now.currencyCode) : null,
+    credit,
+    recurring: recurring ? formatMoney(recurring.total, recurring.currencyCode) : null,
+    nextBilledAt: preview.nextBilledAt ? new Date(preview.nextBilledAt) : null,
+  };
+}
+
 const HISTORY_STATUSES = ["billed", "paid", "past_due", "completed", "canceled"] as const;
 
 function paddleApi(apiKey: string, env: "sandbox" | "live"): BillingApi {
@@ -92,16 +132,7 @@ function paddleApi(apiKey: string, env: "sandbox" | "live"): BillingApi {
         items: [{ priceId, quantity: 1 }],
         prorationBillingMode: mode,
       });
-      const now = preview.immediateTransaction?.details.totals;
-      const recurring = preview.recurringTransactionDetails?.totals;
-      const total = now ? Number(now.total) : 0;
-      return {
-        dueNow: now && total > 0 ? formatMoney(now.total, now.currencyCode) : null,
-        // A shorter period or a smaller plan prorated now comes back as a negative total.
-        credit: now && total < 0 ? formatMoney(String(-total), now.currencyCode) : null,
-        recurring: recurring ? formatMoney(recurring.total, recurring.currencyCode) : null,
-        nextBilledAt: preview.nextBilledAt ? new Date(preview.nextBilledAt) : null,
-      };
+      return previewAmounts(preview);
     },
     changePrice(id, priceId, mode) {
       // items replaces the subscription's items; onPaymentFailure stays prevent_change.
