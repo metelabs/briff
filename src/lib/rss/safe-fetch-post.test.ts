@@ -22,6 +22,12 @@ describe("safeFetch POST", () => {
     req.on("data", (c: Buffer) => (body += c.toString()));
     req.on("end", () => {
       hits.push({ method: req.method ?? "", path: req.url ?? "", body });
+      if (req.url === "/slow") {
+        res.writeHead(200);
+        const tick = setInterval(() => res.write("."), 50);
+        res.on("close", () => clearInterval(tick));
+        return;
+      }
       if (req.url === "/moved") {
         res.writeHead(302, { Location: "/elsewhere" });
         res.end();
@@ -53,5 +59,13 @@ describe("safeFetch POST", () => {
     const moved = await safeFetch(`${base}/moved`, { method: "POST", body: "{}", retries: 0 });
     expect(moved.status).toBe(302);
     expect(hits.map((h) => h.path)).toEqual(["/moved"]);
+  });
+
+  it("gives up on an endpoint that trickles its answer past the total deadline", async () => {
+    const started = Date.now();
+    await expect(
+      safeFetch(`${base}/slow`, { method: "POST", body: "{}", retries: 0, timeoutMs: 400 })
+    ).rejects.toThrow(/timeout/);
+    expect(Date.now() - started).toBeLessThan(2000);
   });
 });

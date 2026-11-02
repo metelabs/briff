@@ -432,8 +432,13 @@ export async function runDeliverTarget(
   if (!event) return { counts: { empty: 1 } };
 
   const result = await sendToTarget(target, event, jobId, deps.post);
-  await recordDeliveryResult(db, payload.orgId, payload.targetId, result);
   const where = { orgId: payload.orgId, targetId: payload.targetId, kind: target.kind };
+  try {
+    await recordDeliveryResult(db, payload.orgId, payload.targetId, result);
+  } catch (err) {
+    // Never let bookkeeping retry a post the endpoint already accepted.
+    log.error({ err, ...where }, "deliver-target: could not record the result");
+  }
   if (result.ok) {
     log.info({ ...where, status: result.status }, "deliver-target: delivered");
     return { counts: { delivered: 1 } };

@@ -174,6 +174,16 @@ function requestOnce(
     );
 
     req.setTimeout(opts.timeoutMs, () => req.destroy(new Error("safe-fetch: timeout")));
+    // A POST (delivery) also gets a total deadline: the socket timeout above only measures
+    // inactivity, so an endpoint trickling bytes could hold the worker for hours.
+    if (opts.method === "POST") {
+      const deadline = setTimeout(() => {
+        const err = new Error("safe-fetch: timeout");
+        req.destroy(err);
+        reject(err);
+      }, opts.timeoutMs);
+      req.on("close", () => clearTimeout(deadline));
+    }
     req.on("error", reject);
     req.end(opts.body);
   });
