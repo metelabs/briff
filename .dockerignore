@@ -11,6 +11,13 @@ src/generated
 docs
 deploy
 *.md
+# The /docs site's sources (docs/_nav.json; traced into the standalone output by next.config.ts).
+!docs/_nav.json
+!docs/*.md
+!docs/getting-started
 !README.md
+!CHANGELOG.md
+!CONTRIBUTING.md
+!SECURITY.md
 !src/llm/prompts/*.md
 npm-debug.log*

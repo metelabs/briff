@@ -1,16 +1,19 @@
-import { STATUS_PATH, TRUST_LINKS } from "@/components/landing/links";
+import { DOCS_URL, STATUS_PATH, TRUST_LINKS } from "@/components/landing/links";
+import { docsHref } from "@/lib/docs/nav";
 import { SUPPORT_EMAIL } from "@/lib/legal";
 
 import packageJson from "../../../package.json";
 
 import { PageContainer } from "./page-container";
 
+const CHANGELOG_PATH = docsHref("project/changelog");
+
 const LINKS = [
   ...TRUST_LINKS.map((link) =>
     link.href === STATUS_PATH ? { ...link, label: `Status · ${packageJson.version}` } : link
   ),
-  { href: "https://www.npmjs.com/package/briff-scan", label: "Docs" },
-  { href: "https://github.com/metelabs/briff/releases", label: "Changelog" },
+  { href: DOCS_URL, label: "Docs" },
+  { href: CHANGELOG_PATH, label: "Changelog" },
   { href: "https://metelabs.dev", label: "Made by Metelabs" },
 ];
 

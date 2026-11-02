@@ -19,7 +19,7 @@ function booleanFlag(fallback: boolean) {
     .transform((v) => (v === undefined ? fallback : v === "true"));
 }
 
-const serverEnvSchema = z.object({
+export const serverEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   BETTER_AUTH_SECRET: z.string().min(32, "BETTER_AUTH_SECRET must be at least 32 characters"),

@@ -237,8 +237,10 @@ future lines remain unresolved unless their tag explicitly names a distro.
 ## Sign-up controls
 
 Registration is open by default; operators can close it with `ALLOW_SIGNUP=false`
-after the first account. Each account gets an organisation with 10 repositories and
-2 streams. The instance admin can view and raise these capacity settings.
+after the first account. Each account gets an organisation. On a self-hosted instance
+it has no repository, stream or member limits. On the hosted service a new organisation
+starts on the Free plan (10 repositories, 2 streams, 1 member); the instance admin can
+view and raise the repository and stream limits.
 Email verification is not required by the current Better Auth configuration.
 
 Sign-up requests share a per-IP auth-hook window: five attempts per hour, covering

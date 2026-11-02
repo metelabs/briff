@@ -28,7 +28,8 @@ Briff is a Next.js app and a worker on Postgres. Two ways to start:
   member); Pro and Team are paid through Paddle from Settings → Billing
   ([docs/BILLING.md](docs/BILLING.md)).
 - **Self-hosted:** one Docker image and Postgres, no plans and no limits; the step-by-step guide is
-  [docs/SELF-HOSTING.md](docs/SELF-HOSTING.md), the short version is under
+  on the docs site at [app.briff.dev/docs/self-hosting/install](https://app.briff.dev/docs/self-hosting/install)
+  (offline: [docs/SELF-HOSTING.md](docs/SELF-HOSTING.md)), the short version is under
   [Self-hosting](#self-hosting) below.
 
 ## What you get
@@ -121,7 +122,9 @@ curl -fsSL -o .env https://raw.githubusercontent.com/metelabs/briff/main/.env.se
 docker compose pull && docker compose up -d
 ```
 
-**[docs/SELF-HOSTING.md](docs/SELF-HOSTING.md)** is the full guide: requirements, install, the
+The full guide is on the docs site, **[app.briff.dev/docs](https://app.briff.dev/docs/self-hosting/install)**
+(every instance serves the same pages at `/docs`; offline, read
+[docs/SELF-HOSTING.md](docs/SELF-HOSTING.md)): requirements, install, the
 first account as instance admin, what works without SMTP, an Anthropic key or a GitHub App,
 connecting repos, a Caddy example, updates, backups, health, logs and troubleshooting.
 [docs/UPGRADING.md](docs/UPGRADING.md) covers versions and breaking changes.

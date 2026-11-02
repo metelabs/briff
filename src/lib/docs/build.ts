@@ -12,7 +12,7 @@ import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
-import { visit } from "unist-util-visit";
+import { SKIP, visit } from "unist-util-visit";
 
 import { SOURCE_URL } from "@/components/landing/links";
 import { caps } from "@/lib/i18n";
@@ -28,6 +28,11 @@ import { DOCS_PAGES, docsHref, type DocsNavPage, type DocsPart } from "./nav";
 // files of this repository (shipped in the image), never env or the database.
 
 const ROOT = process.cwd();
+
+/** A repository file; next.config.ts traces the markdown the image needs, not this call. */
+function repoPath(file: string): string {
+  return path.join(/*turbopackIgnore: true*/ ROOT, file);
+}
 
 export interface TocEntry {
   id: string;
@@ -76,7 +81,7 @@ const parsed = new Map<string, ParsedFile>();
 function parseFile(file: string): ParsedFile {
   const cached = parsed.get(file);
   if (cached) return cached;
-  const tree = parser.parse(readFileSync(path.join(ROOT, file), "utf8"));
+  const tree = parser.parse(readFileSync(repoPath(file), "utf8"));
   const slugger = new GithubSlugger();
   const ids = new Set<string>();
   visit(tree, "heading", (node) => {
@@ -165,18 +170,18 @@ function rewriteUrl(
     problems.push(`${where} leaves the repository`);
     return url;
   }
-  const absolute = path.join(ROOT, target);
-  if (!existsSync(absolute)) {
-    problems.push(`${where}: ${target} does not exist`);
-    return url;
-  }
+  const absolute = repoPath(target);
+  // The image ships the docs' markdown, not the rest of the repository (next.config.ts): a
+  // missing target is a problem in a checkout (the test) and a plain GitHub link in the image.
+  const exists = existsSync(absolute);
+  if (!exists) problems.push(`${where}: ${target} does not exist`);
   const replay = /^docs\/replay\/([^/]+)\.html$/.exec(target);
   if (replay && isPublicReplayId(replay[1])) return `/replay/${replay[1]}`;
   if (target.endsWith(".md")) {
     if (anchor) {
       const place = index.anchors.get(`${target}#${anchor}`);
       if (place) return targetHref(place, pageSlug);
-      if (!parseFile(target).ids.has(anchor)) {
+      if (exists && !parseFile(target).ids.has(anchor)) {
         problems.push(`${where}: no heading #${anchor} in ${target}`);
         return url;
       }
@@ -185,7 +190,7 @@ function rewriteUrl(
     const place = index.files.get(target);
     if (place) return targetHref(place, pageSlug);
   }
-  const kind = statSync(absolute).isDirectory() ? "tree" : "blob";
+  const kind = exists && statSync(absolute).isDirectory() ? "tree" : "blob";
   return `${SOURCE_URL}/${kind}/main/${target}${anchor ? `#${anchor}` : ""}`;
 }
 
@@ -266,6 +271,18 @@ function firstParagraph(nodes: RootContent[]): string {
   return `${cut.slice(0, cut.lastIndexOf(" "))}…`;
 }
 
+/** Text of a block, one string per paragraph or cell, so a callout's label and body stay apart. */
+function blockTexts(node: RootContent): string[] {
+  const out: string[] = [];
+  visit(node, (n: Nodes) => {
+    if (n.type === "paragraph" || n.type === "tableCell" || n.type === "heading") {
+      out.push(toString(n));
+      return SKIP;
+    }
+  });
+  return out;
+}
+
 function searchEntries(page: DocsNavPage & { section: string }, nodes: RootContent[]) {
   const href = docsHref(page.slug);
   const out: SearchEntry[] = [];
@@ -289,7 +306,7 @@ function searchEntries(page: DocsNavPage & { section: string }, nodes: RootConte
       id = headingId(node);
       text = [];
     } else if (node.type !== "code" && node.type !== "html") {
-      text.push(toString(node));
+      text.push(...blockTexts(node));
     }
   }
   flush();

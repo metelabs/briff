@@ -38,8 +38,11 @@ This file is the project guide for every coding agent and for people; `CLAUDE.md
 src/app/                 pages (/ home overview, /bulletins, /b/[id], /alerts, /stack, /repos, /streams, /settings, /settings/billing, /onboarding, /admin, /login, /pricing, /invite/[token]) + route
                          handlers (/api/health, /api/scan, /api/export, /api/auth/[...all], /api/billing/paddle)
 src/proxy.ts             `/` without a session cookie -> rewrite to /landing (docs/LANDING.md)
-src/app/landing, replay/, status/ public pages (no session, no tenant imports: src/test/public-routes.test.ts),
+src/app/landing, replay/, status/, docs/ public pages (no session, no tenant imports: src/test/public-routes.test.ts),
                          robots.ts / sitemap.ts; parts in src/components/landing, src/components/replay
+src/app/docs/            docs site at /docs: pages from docs/_nav.json (src/lib/docs: nav, markdown build,
+                         shiki highlighting; src/components/docs: content, sidebar, search). A doc the nav
+                         reaches must also be in .dockerignore's re-includes and next.config.ts tracing
 src/components/bulletin/ the bulletin page body (BulletinContent, pivot), shared by /b/<id> and the landing sample
 src/components/shell/    app shell: top bar, pill nav, Connect repos sheet, stream picker (scope cookie,
                          src/lib/stream-scope.ts), account menu, footer
@@ -75,7 +78,8 @@ scripts/                 scan-local.ts (tsx; thin wrapper: briff-scan --all-repo
                          build-worker.mjs (esbuild), replay.ts
 deploy/systemd/          systemd user units for the scanner
 docs/                    SCANNER.md (runbook), SOURCES.md (feeds and matching), DESIGN.md (UI system), design/ (mocks),
-                         OPERATIONS.md (health, job alerts, run history, Sentry)
+                         OPERATIONS.md (health, job alerts, run history, Sentry), CONFIGURATION.md (every env
+                         var), getting-started/, _nav.json (the /docs site's table of contents)
 compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhost.example, docs/SELF-HOSTING.md,
                          docs/UPGRADING.md, smoke test scripts/smoke.sh); docker-compose.dev.yml = dev Postgres only
 ```
@@ -585,7 +589,7 @@ Checks before a PR: `npm run typecheck && npm run lint && npm test`. DB-backed t
   worker → heartbeat file younger than 180s (refreshed every 30s, before each claim and on job heartbeats).
 - Self-hosters run `compose.yaml` (pulls the image, builds nothing); CI validates it with
   `docker compose config` against `.env.selfhost.example`. A new env variable goes into both
-  `.env.example` and `.env.selfhost.example`.
+  `.env.example` and `.env.selfhost.example`, and into `docs/CONFIGURATION.md` (a test checks it).
 
 ## Do not (all hit in production)
 
@@ -643,7 +647,7 @@ like, and this section says how a review reports deviations from them.
 - Jobs that can run longer than a few minutes must call `ctx.heartbeat()`; a loop that sends email or polls a batch without it is a finding.
 - Nothing may be delivered twice: check `deliveredAt`, `urgentAt` and the batch `custom_id` mapping on every change to delivery code.
 - Env is read through `getEnv()` at request or job time, never at module top level; the same holds for opening the DB and building auth. No `NEXT_PUBLIC_*`, no secrets in build args or image layers.
-- Public routes (`src/app/landing`, `replay/`, `status/`, `robots.ts`, `sitemap.ts`) never import the DB client, auth, `next/headers` or Server Actions; a page that reads tenant data must call `headers()` (via `getOrgContext`) first so it is never prerendered with another org's data.
+- Public routes (`src/app/landing`, `replay/`, `status/`, `docs/`, `robots.ts`, `sitemap.ts`) never import the DB client, auth, `next/headers` or Server Actions; a page that reads tenant data must call `headers()` (via `getOrgContext`) first so it is never prerendered with another org's data.
 - A fetch of a URL that came from data (feeds, release URLs, model text) that does not go through `safeFetch` / `fetchRssFeed` is a finding (SSRF).
 - Schema changes ship a migration under `prisma/migrations/`; production only runs `prisma migrate deploy`, so a change that needs `migrate dev`, a prompt or a manual step on deploy is a finding.
 - Upper-cased copy goes through `caps()`; CSS or Tailwind `uppercase` or a bare `toLocaleUpperCase()` on user-facing text is a finding (Turkish locale turns "Security" into "SECURİTY").

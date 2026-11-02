@@ -7,10 +7,10 @@ import { PRIVATE_PREFIXES } from "@/components/landing/links";
 
 import { importGraph, runtimeImports } from "./import-graph";
 
-// The public pages (landing, replays, status, robots, sitemap) and the proxy that picks the landing
-// page for `/` must not be able to read a session or tenant data. Walk their runtime imports
-// and fail on anything that opens the database, the auth layer, the request's cookies or a
-// Server Action module. Like the "use server" check next door, this reads source, not a build.
+// The public pages (landing, replays, status, docs, robots, sitemap) and the proxy that picks the
+// landing page for `/` must not be able to read a session or tenant data. Walk their runtime
+// imports and fail on anything that opens the database, the auth layer, the request's cookies or
+// a Server Action module. Like the "use server" check next door, this reads source, not a build.
 // The replay engine shares pure planning with the worker (runtime-urgent-plan.ts, matcher.ts,
 // triage-rule.ts); the DB-bound halves next to them stay out of reach.
 
@@ -25,6 +25,9 @@ const ENTRIES = [
   "src/app/refunds/page.tsx",
   "src/app/dpa/page.tsx",
   "src/app/status/page.tsx",
+  "src/app/docs/layout.tsx",
+  "src/app/docs/[[...slug]]/page.tsx",
+  "src/app/docs/search.json/route.ts",
   "src/app/robots.ts",
   "src/app/sitemap.ts",
   "src/proxy.ts",
@@ -99,7 +102,16 @@ describe("public routes", () => {
 
 describe("robots", () => {
   it("closes every app route folder except the public ones", () => {
-    const PUBLIC = new Set(["replay", "pricing", "terms", "privacy", "refunds", "dpa", "status"]);
+    const PUBLIC = new Set([
+      "replay",
+      "pricing",
+      "terms",
+      "privacy",
+      "refunds",
+      "dpa",
+      "status",
+      "docs",
+    ]);
     const folders = readdirSync(path.join(ROOT, "src/app"), { withFileTypes: true })
       .filter((e) => e.isDirectory() && !e.name.startsWith("_") && e.name !== "fonts")
       .map((e) => e.name)
