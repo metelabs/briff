@@ -64,7 +64,7 @@ export default async function CheckoutPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const ctx = await getOrgContext();
-  if (!ctx) redirect("/login?mode=sign-up");
+  if (!ctx) redirect("/signup");
   const db = getDb();
   const capacity = await loadOrgCapacity(db, ctx.orgId);
   if (!capacity.cloud) notFound();

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { Logo } from "@/components/logo/Logo";
@@ -22,11 +23,16 @@ export function PageContainer({
   return <Tag className={cn(PAGE_CONTAINER, className)}>{children}</Tag>;
 }
 
-/** Header of the pages outside the shell (login, onboarding, a bulletin opened from email). */
+/**
+ * Header of the pages outside the shell (login, onboarding, a bulletin opened from email). The
+ * logo goes to `/`: the landing page for a visitor without a session, Home for a member.
+ */
 export function MinimalHeader({ children }: { children?: ReactNode }) {
   return (
     <PageContainer as="header" className="flex min-h-14 items-center justify-between md:min-h-16">
-      <Logo size={24} />
+      <Link href="/" aria-label="Briff home" className="rounded-[6px]">
+        <Logo size={24} />
+      </Link>
       {children}
     </PageContainer>
   );

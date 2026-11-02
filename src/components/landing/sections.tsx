@@ -85,7 +85,7 @@ export function Hero({ stats, pricing }: { stats: HeroStat[]; pricing: boolean }
         </p>
         <div className="rise mt-7 flex flex-wrap items-center gap-2.5 [--i:3]">
           <Link
-            href="/login?mode=sign-up"
+            href="/signup"
             className={buttonVariants({ variant: "primary", size: "lg" })}
           >
             Create an account

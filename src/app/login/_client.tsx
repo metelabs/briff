@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useResultToast } from "@/components/ui/toast";
 
 import { type AuthFormState, signInAction, signUpAction } from "./actions";
-import { type AuthMode, initialSignup, signupFooter } from "./signup-state";
+import { type AuthMode, signupFooter } from "./signup-state";
 
 const INITIAL: AuthFormState = { error: null };
 
@@ -24,12 +24,13 @@ export interface AuthInvite {
 interface AuthFormProps {
   mode: AuthMode;
   allowSignup: boolean;
-  signup?: boolean;
+  /** Set by the route (/signup, an invite for a new address), never toggled in place. */
+  signup: boolean;
   invite?: AuthInvite;
 }
 
-export function AuthForm({ mode, allowSignup, signup = false, invite }: AuthFormProps) {
-  const [signingUp, setSigningUp] = useState(initialSignup(mode, allowSignup, signup));
+export function AuthForm({ mode, allowSignup, signup, invite }: AuthFormProps) {
+  const signingUp = mode === "bootstrap" || signup;
   const [signInState, signIn, signInPending] = useActionState(signInAction, INITIAL);
   const [signUpState, signUp, signUpPending] = useActionState(signUpAction, INITIAL);
 
@@ -58,12 +59,7 @@ export function AuthForm({ mode, allowSignup, signup = false, invite }: AuthForm
     <>
       <h1 className="type-page rise mb-2 [font-size:clamp(28px,6vw,36px)]">{title}</h1>
       <p className="text-fg-muted rise mb-6 text-[15px] [--i:1]">{lead}</p>
-      <form
-        action={signingUp ? signUp : signIn}
-        className="rise flex flex-col gap-4 [--i:2]"
-        // Switching modes swaps the action; remount so the fields start clean.
-        key={signingUp ? "sign-up" : "sign-in"}
-      >
+      <form action={signingUp ? signUp : signIn} className="rise flex flex-col gap-4 [--i:2]">
         {invite && <input type="hidden" name="invite" value={invite.token} />}
         {signingUp && (
           <div className="grid gap-1.5">
@@ -143,13 +139,12 @@ export function AuthForm({ mode, allowSignup, signup = false, invite }: AuthForm
       {footer === "toggle" && (
         <p className="text-fg-muted mt-[18px] text-center text-[12.5px]">
           {signingUp ? "Already have an account? " : "New here? "}
-          <button
-            type="button"
-            onClick={() => setSigningUp((v) => !v)}
+          <Link
+            href={signingUp ? "/login" : "/signup"}
             className="text-brand rounded-[4px] font-medium underline-offset-4 hover:underline"
           >
             {signingUp ? "Sign in" : "Create an account"}
-          </button>
+          </Link>
         </p>
       )}
       {footer === "closed" && (

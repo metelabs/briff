@@ -61,6 +61,7 @@ export const PRIVATE_PREFIXES = [
   "/repos",
   "/reset-password",
   "/settings",
+  "/signup",
   "/stack",
   "/streams",
 ] as const;

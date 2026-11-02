@@ -35,7 +35,7 @@ This file is the project guide for every coding agent and for people; `CLAUDE.md
 ## Layout
 
 ```
-src/app/                 pages (/ home overview, /bulletins, /b/[id], /alerts, /stack, /repos, /streams, /settings, /settings/billing, /onboarding, /admin, /login, /pricing, /invite/[token]) + route
+src/app/                 pages (/ home overview, /bulletins, /b/[id], /alerts, /stack, /repos, /streams, /settings, /settings/billing, /onboarding, /admin, /login, /signup, /pricing, /invite/[token]) + route
                          handlers (/api/health, /api/scan, /api/export, /api/auth/[...all], /api/billing/paddle)
 src/proxy.ts             `/` without a session cookie -> rewrite to /landing (docs/LANDING.md)
 src/app/landing, replay/, status/ public pages (no session, no tenant imports: src/test/public-routes.test.ts),
@@ -308,7 +308,7 @@ docker compose -f docker-compose.dev.yml up -d   # Postgres 16 on 127.0.0.1:5543
 cp .env.example .env                  # fill BETTER_AUTH_SECRET; DATABASE_URL is preset
 npm ci                                # runs prisma generate
 npm run db:migrate                    # prisma migrate dev
-npm run dev                           # web on :3000; first sign-up at /login owns the instance
+npm run dev                           # web on :3000; first sign-up (/signup or /login) owns the instance
 npm run dev:worker                    # worker with watch
 npm run worker -- --once collect-sources refresh-packages   # one-off: enqueue, drain, exit
 npm run worker -- --once security-scan weekly-bulletin      # (worker scripts load .env themselves)

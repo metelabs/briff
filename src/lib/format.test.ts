@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { plural, shortDate, shortDateTime } from "./format";
+import { fullDate, plural, shortDate, shortDateTime } from "./format";
 
 describe("format", () => {
   it("formats UTC dates the way the bulletin and emails do", () => {
     const d = new Date("2026-10-20T03:41:09Z");
     expect(shortDate(d)).toBe("Tue 20 Oct");
     expect(shortDateTime(d)).toBe("Tue 20 Oct 03:41 UTC");
+    expect(fullDate(d)).toBe("20 Oct 2026");
   });
 
   it("pluralises counts", () => {
