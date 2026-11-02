@@ -1,0 +1,256 @@
+{
+  "sections": [
+    {
+      "title": "Getting started",
+      "pages": [
+        {
+          "slug": "",
+          "title": "What Briff does",
+          "parts": [
+            {
+              "file": "docs/getting-started/what-briff-does.md"
+            },
+            {
+              "file": "README.md",
+              "sections": ["what-you-get", "what-briff-reads", "what-briff-would-have-sent"]
+            }
+          ]
+        },
+        {
+          "slug": "getting-started/connect-repos",
+          "title": "Connect repos",
+          "parts": [
+            {
+              "file": "docs/getting-started/connect-repos.md"
+            }
+          ]
+        },
+        {
+          "slug": "getting-started/first-bulletin",
+          "title": "Your first bulletin",
+          "parts": [
+            {
+              "file": "docs/getting-started/first-bulletin.md"
+            }
+          ]
+        },
+        {
+          "slug": "getting-started/alerts",
+          "title": "Alerts and re-check",
+          "parts": [
+            {
+              "file": "docs/getting-started/alerts.md"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Self-hosting",
+      "pages": [
+        {
+          "slug": "self-hosting/install",
+          "title": "Install",
+          "parts": [
+            {
+              "file": "docs/SELF-HOSTING.md",
+              "sections": [
+                "_intro",
+                "requirements",
+                "install-about-10-minutes",
+                "first-account--instance-admin",
+                "what-works-without-the-optional-parts",
+                "connecting-repos",
+                "trial-on-an-existing-docker-host"
+              ]
+            }
+          ]
+        },
+        {
+          "slug": "self-hosting/configuration",
+          "title": "Configuration",
+          "parts": [
+            {
+              "file": "docs/CONFIGURATION.md"
+            }
+          ]
+        },
+        {
+          "slug": "self-hosting/reverse-proxy",
+          "title": "Reverse proxy",
+          "parts": [
+            {
+              "file": "docs/SELF-HOSTING.md",
+              "sections": ["reverse-proxy-caddy"]
+            }
+          ]
+        },
+        {
+          "slug": "self-hosting/updating",
+          "title": "Updating",
+          "parts": [
+            {
+              "file": "docs/SELF-HOSTING.md",
+              "sections": ["updating"]
+            },
+            {
+              "file": "docs/UPGRADING.md"
+            }
+          ]
+        },
+        {
+          "slug": "self-hosting/backups",
+          "title": "Backups and restore",
+          "parts": [
+            {
+              "file": "docs/SELF-HOSTING.md",
+              "sections": ["backup-and-restore"]
+            }
+          ]
+        },
+        {
+          "slug": "self-hosting/health",
+          "title": "Health and operations",
+          "parts": [
+            {
+              "file": "docs/SELF-HOSTING.md",
+              "sections": ["health-and-logs"]
+            }
+          ]
+        },
+        {
+          "slug": "self-hosting/troubleshooting",
+          "title": "Troubleshooting",
+          "parts": [
+            {
+              "file": "docs/SELF-HOSTING.md",
+              "sections": ["troubleshooting"]
+            }
+          ],
+          "description": "Symptoms of a broken self-hosted Briff install and how to fix each one."
+        }
+      ]
+    },
+    {
+      "title": "Reference",
+      "pages": [
+        {
+          "slug": "reference/briff-scan",
+          "title": "briff-scan CLI",
+          "parts": [
+            {
+              "file": "docs/SCANNER.md",
+              "exclude": ["developing-and-publishing-the-package"]
+            }
+          ]
+        },
+        {
+          "slug": "reference/github-app",
+          "title": "GitHub App setup",
+          "parts": [
+            {
+              "file": "docs/GITHUB-APP.md"
+            }
+          ]
+        },
+        {
+          "slug": "reference/sources",
+          "title": "Sources and matching",
+          "parts": [
+            {
+              "file": "docs/SOURCES.md"
+            }
+          ]
+        },
+        {
+          "slug": "reference/billing",
+          "title": "Billing",
+          "parts": [
+            {
+              "file": "docs/BILLING.md",
+              "sections": ["_intro", "flow", "plan-rules-srclibbillingstatets"]
+            }
+          ]
+        },
+        {
+          "slug": "reference/operations",
+          "title": "Operations",
+          "parts": [
+            {
+              "file": "docs/OPERATIONS.md"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Trust",
+      "pages": [
+        {
+          "slug": "trust/privacy",
+          "title": "What leaves your server",
+          "parts": [
+            {
+              "file": "docs/PRIVACY.md",
+              "exclude": ["your-data-export-and-deletion"]
+            }
+          ]
+        },
+        {
+          "slug": "trust/security",
+          "title": "Security policy",
+          "parts": [
+            {
+              "file": "SECURITY.md"
+            }
+          ]
+        },
+        {
+          "slug": "trust/your-data",
+          "title": "Data export and deletion",
+          "parts": [
+            {
+              "file": "docs/PRIVACY.md",
+              "sections": ["your-data-export-and-deletion"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Project",
+      "pages": [
+        {
+          "slug": "project/contributing",
+          "title": "Contributing",
+          "parts": [
+            {
+              "file": "CONTRIBUTING.md"
+            }
+          ]
+        },
+        {
+          "slug": "project/changelog",
+          "title": "Changelog",
+          "parts": [
+            {
+              "file": "CHANGELOG.md"
+            }
+          ],
+          "tocDepth": 2,
+          "description": "Every Briff release with its features and fixes, newest first."
+        },
+        {
+          "slug": "project/licence",
+          "title": "Licence",
+          "parts": [
+            {
+              "file": "README.md",
+              "sections": ["license"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

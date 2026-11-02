@@ -1,5 +1,16 @@
 import type { NextConfig } from "next";
 
+/** Markdown the docs pages are built from (docs/_nav.json), plus the licence they link to. */
+export const DOCS_SOURCES = [
+  "README.md",
+  "CHANGELOG.md",
+  "CONTRIBUTING.md",
+  "SECURITY.md",
+  "LICENSE",
+  "docs/*.md",
+  "docs/getting-started/*.md",
+];
+
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
@@ -21,6 +32,9 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/landing": ["./src/sources/__fixtures__/**/*"],
     "/replay/*": ["./src/sources/__fixtures__/**/*"],
+    // The docs site reads the repository's markdown at runtime (src/lib/docs/build.ts); a test
+    // keeps these globs and .dockerignore in step with docs/_nav.json.
+    "/docs/\\[\\[\\.\\.\\.slug\\]\\]": DOCS_SOURCES.map((file) => `./${file}`),
   },
   turbopack: {
     rules: {

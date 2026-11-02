@@ -1,5 +1,6 @@
-import { ArrowUpRight, Check } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { OG_IMAGE, SELF_HOST_URL } from "@/components/landing/links";
@@ -82,15 +83,13 @@ export default function PricingPage() {
 
         <p className="rise text-fg-muted mt-4 text-center text-[13px] [--i:7]">
           Running it yourself?{" "}
-          <a
+          <Link
             href={SELF_HOST_URL}
-            target="_blank"
-            rel="noreferrer"
             className="text-brand inline-flex items-center gap-1 font-medium underline-offset-4 hover:underline"
           >
             Self-hosting is free and unlimited
-            <ArrowUpRight className="size-3.5" aria-hidden />
-          </a>
+            <ArrowRight className="size-3.5" aria-hidden />
+          </Link>
         </p>
 
         <section aria-labelledby="faq" className="mx-auto mt-16 max-w-[720px]">

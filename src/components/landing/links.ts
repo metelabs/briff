@@ -4,12 +4,14 @@ import { PUBLIC_REPLAY_IDS } from "@/replay/public-ids";
 // opened; every source link is built from SOURCE_URL, so this is the one place to change.
 export const SOURCE_URL = "https://github.com/metelabs/briff";
 
-/** README section on running your own instance. */
-export const SELF_HOST_URL = `${SOURCE_URL}#self-hosting`;
-export const DOCS_URL = `${SOURCE_URL}#readme`;
-export const PRIVACY_URL = `${SOURCE_URL}/blob/main/docs/PRIVACY.md`;
+/** The docs site (src/app/docs), built from the repository's markdown (docs/_nav.json). */
+export const DOCS_URL = "/docs";
+/** Running your own instance. */
+export const SELF_HOST_URL = "/docs/self-hosting/install";
+/** What leaves your server (docs/PRIVACY.md). */
+export const PRIVACY_URL = "/docs/trust/privacy";
 export const METELABS_URL = "https://metelabs.dev";
-export const SECURITY_POLICY_URL = `${SOURCE_URL}/blob/main/SECURITY.md`;
+export const SECURITY_POLICY_URL = "/docs/trust/security";
 
 /** The public status page (src/app/status); /api/health stays the machine-readable check. */
 export const STATUS_PATH = "/status";

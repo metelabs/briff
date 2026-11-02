@@ -130,7 +130,7 @@ export const PRIVACY: LegalDoc = {
           <p>
             Package names and versions are sent as they are, because they are what Briff reports on.
             If that is too much for a repo, leave it out of every stream. The exact fields are
-            listed in <A href={PRIVACY_URL}>docs/PRIVACY.md</A>.
+            listed in <A href={PRIVACY_URL}>What leaves your server</A>.
           </p>
         </>
       ),

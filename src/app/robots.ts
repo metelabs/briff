@@ -6,6 +6,7 @@ import {
   PRIVATE_PREFIXES,
   STATUS_PATH,
 } from "@/components/landing/links";
+import { DOCS_BASE } from "@/lib/docs/nav";
 import { isCloud } from "@/lib/env";
 import { publicSiteUrl } from "@/lib/public-site";
 
@@ -22,6 +23,7 @@ export default function robots(): MetadataRoute.Robots {
         ...(isCloud() ? [PRICING_PATH] : []),
         ...LEGAL_PATHS,
         STATUS_PATH,
+        DOCS_BASE,
         "/.well-known/security.txt",
       ],
       disallow: [...PRIVATE_PREFIXES],
