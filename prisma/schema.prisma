@@ -647,6 +647,15 @@ enum AlertKind {
   new
 }
 
+enum AlertResolvedBy {
+  // A newer briff-scan upload no longer has an affected version.
+  briff_scan
+  // A GitHub App scan (push or Re-check now).
+  github_app
+  // security-scan: OSV no longer reports the stored version (daily or Re-check now).
+  security_scan
+}
+
 model Alert {
   id          String    @id @default(cuid())
   orgId       String
@@ -666,6 +675,8 @@ model Alert {
   // Set when a later scan of the repo no longer has an affected version of the advisory's
   // package (src/security/resolution.ts); cleared when one comes back. Never deleted.
   resolvedAt  DateTime?
+  // What resolved it (shown on Alerts → Resolved); null on rows resolved before this was kept.
+  resolvedBy  AlertResolvedBy?
   createdAt   DateTime  @default(now())
 
   @@unique([advisoryId, repoId])

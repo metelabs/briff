@@ -13,9 +13,10 @@ import { getDb } from "@/lib/db/client";
 import { withOrg } from "@/lib/db/with-org";
 import { plural } from "@/lib/format";
 import { getEnv } from "@/lib/env";
-import { activeInstallationIds, githubScanInFlight } from "@/lib/github/recheck";
+import { SOURCE_URL } from "@/components/landing/links";
+import { activeInstallationIds, recheckInFlight } from "@/lib/github/recheck";
 import { loadMemberState, markAlertsSeen } from "@/lib/member-state";
-import { localScanCommands } from "@/lib/scan/workflow";
+import { localScanCommands, SCANNER_MAJOR } from "@/lib/scan/workflow";
 import { PRODUCT_LANGUAGE, strings } from "@/lib/i18n";
 import { loadStreamScope, repoScope } from "@/lib/stream-scope";
 import { alertGroupsOf, type AlertPackageGroup } from "@/pipeline/alert-groups";
@@ -24,9 +25,13 @@ import {
   ALERT_SECTIONS,
   alertSectionOf,
   fixedSince,
+  recentlyResolved,
+  repoConnections,
+  resolvedPackages,
   resolvedSince,
   type AlertSection,
 } from "@/pipeline/alert-sections";
+import { ago } from "@/pipeline/home";
 import { weekStartOf } from "@/pipeline/bulletin";
 import { attachInstalls } from "@/pipeline/bulletin-view";
 
@@ -37,6 +42,7 @@ import {
   MarkBacklogReviewed,
   RecheckButton,
   ResolvedCounter,
+  ResolvedList,
 } from "./_client";
 
 export const metadata: Metadata = { title: "Alerts · Briff" };
@@ -73,6 +79,7 @@ export default async function AlertsPage({
         createdAt: true,
         reviewedAt: true,
         resolvedAt: true,
+        resolvedBy: true,
         repo: { select: { name: true } },
         advisory: {
           select: {
@@ -87,17 +94,30 @@ export default async function AlertsPage({
         },
       },
     }),
-    db.repo.findMany({ where: repoScope(scope), select: { githubInstallationId: true } }),
+    db.repo.findMany({
+      where: repoScope(scope),
+      select: { name: true, githubInstallationId: true, lastScannedAt: true },
+    }),
     activeInstallationIds(getDb(), ctx.orgId),
   ]);
   const repoCount = repos.length;
   const githubRepos = repos.filter((r) => r.githubInstallationId !== null).length;
-  const checking = await githubScanInFlight(getDb(), installations);
-  // Resolved alerts (a later scan has no affected version) leave the lists; they only
-  // feed the progress numbers.
+  const scannerRepoRows = repos.filter((r) => r.githubInstallationId === null);
+  const lastUploadAt = scannerRepoRows.reduce<Date | null>(
+    (max, r) => (r.lastScannedAt && (!max || r.lastScannedAt > max) ? r.lastScannedAt : max),
+    null
+  );
+  const connections = Object.fromEntries(
+    [...repoConnections(repos)].map(([name, kinds]) => [name, [...kinds]])
+  );
+  const checking = await recheckInFlight(getDb(), ctx.orgId, installations);
+  const now = new Date();
+  // Resolved alerts (a later scan has no affected version) leave the lists. The Resolved
+  // section and "Fixed since your last visit" read the same 30-day list.
   const rows = allRows.filter((r) => r.resolvedAt === null);
-  const resolvedRows = allRows.filter((r) => r.resolvedAt !== null);
+  const resolvedRows = recentlyResolved(allRows, now);
   const fixed = fixedSince(resolvedRows, lastVisit, weekStart);
+  const resolved = resolvedPackages(resolvedRows);
   const resolvedThisWeek = resolvedSince(resolvedRows, weekStart);
   const baseImages = await loadBaseImageGroups(getDb(), ctx.orgId, repoScope(scope));
   const withInstalls = await attachInstalls(db, rows);
@@ -124,10 +144,15 @@ export default async function AlertsPage({
   // "New this week" always shows; the others when they list something or a fix.
   const shown = (section: AlertSection) =>
     section === "this-week" || groupsOf[section].length > 0 || fixed[section].length > 0;
-  const navSections = ALERT_SECTIONS.filter((s) => shown(s.id)).map((s) => ({
-    ...s,
-    count: groupsOf[s.id].length,
-  }));
+  const navSections = [
+    ...ALERT_SECTIONS.filter((s) => shown(s.id)).map((s) => ({
+      ...s,
+      count: groupsOf[s.id].length,
+    })),
+    { id: "resolved", label: "Resolved", count: resolved.length },
+  ];
+  const scanCommand = `npx briff-scan@${SCANNER_MAJOR}`;
+  const listProps = { connections, scanCommand };
   const apiUrl = getEnv().BETTER_AUTH_URL.replace(/\/$/, "");
   const reviewedGroups = alertGroupsOf(reviewed, wording);
   const scopeName = scope.current?.name ?? "all streams";
@@ -144,9 +169,11 @@ export default async function AlertsPage({
               <ResolvedCounter count={resolvedThisWeek} />
               <RecheckButton
                 githubRepos={installations.length > 0 ? githubRepos : 0}
-                scannerRepos={repoCount - githubRepos}
+                scannerRepos={scannerRepoRows.length}
+                lastUpload={lastUploadAt ? ago(now, lastUploadAt) : null}
                 initialChecking={checking}
                 command={localScanCommands(apiUrl, "<token>").upload}
+                docsUrl={`${SOURCE_URL}/blob/main/docs/SCANNER.md`}
               />
             </>
           ) : undefined
@@ -177,7 +204,7 @@ export default async function AlertsPage({
               <SectionHeader title="New this week" count={plural(thisWeek.length, "package")} />
               <FixedSinceVisit packages={fixed["this-week"]} />
               {thisWeek.length > 0 ? (
-                <AlertList groups={thisWeek} />
+                <AlertList groups={thisWeek} {...listProps} />
               ) : (
                 <Card className="text-fg-muted px-[18px] py-5">
                   No new advisories since Monday.
@@ -191,7 +218,9 @@ export default async function AlertsPage({
                   count={`${plural(advisories(earlier), "advisory", "advisories")} · ${plural(earlier.length, "package")}`}
                 />
                 <FixedSinceVisit packages={fixed.earlier} />
-                {earlier.length > 0 && <AlertList groups={earlier} filters initialLimit={10} />}
+                {earlier.length > 0 && (
+                  <AlertList groups={earlier} filters initialLimit={10} {...listProps} />
+                )}
               </section>
             )}
             {shown("backlog") && (
@@ -208,7 +237,7 @@ export default async function AlertsPage({
                   advisories always stay listed.
                 </p>
                 {backlog.length > 0 && (
-                  <AlertList groups={backlog} filters initialLimit={25} review />
+                  <AlertList groups={backlog} filters initialLimit={25} review {...listProps} />
                 )}
               </section>
             )}
@@ -236,9 +265,24 @@ export default async function AlertsPage({
                     </Link>
                   }
                 />
-                <AlertList groups={reviewedGroups} filters initialLimit={25} />
+                <AlertList groups={reviewedGroups} filters initialLimit={25} {...listProps} />
               </section>
             )}
+            <details id="resolved" className={`group/resolved rise [--i:5] ${SECTION_ANCHOR}`}>
+              <summary className="cursor-pointer list-none marker:content-none">
+                <SectionHeader
+                  title="Resolved"
+                  count={`${plural(resolved.length, "package")} · last 30 days`}
+                  action={
+                    <span className="text-brand">
+                      <span className="group-open/resolved:hidden">Show</span>
+                      <span className="hidden group-open/resolved:inline">Hide</span>
+                    </span>
+                  }
+                />
+              </summary>
+              <ResolvedList packages={resolved} />
+            </details>
           </>
         )}
       </div>

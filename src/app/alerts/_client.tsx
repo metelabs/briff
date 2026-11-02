@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
-import { CommandBox, CopyButton } from "@/components/ui/command-box";
+import { Card } from "@/components/ui/card";
+import { CommandBox, CopyButton, InlineCopy } from "@/components/ui/command-box";
 import { DialogClose, FormDialog } from "@/components/ui/dialog";
 import { EcosystemTag } from "@/components/ui/ecosystem-tag";
 import { FilterChips } from "@/components/ui/filter-chips";
@@ -14,11 +15,17 @@ import { severityKind, Tag } from "@/components/ui/tag";
 import { useToast } from "@/components/ui/toast";
 import { Tooltip, TruncatedText } from "@/components/ui/tooltip";
 import { UpgradeList } from "@/components/ui/upgrade-list";
-import { plural } from "@/lib/format";
+import { plural, shortDateTime } from "@/lib/format";
 import { SCROLL_GAP, scrollToElement, stickyOffset } from "@/lib/scroll";
 import { cn } from "@/lib/utils";
 import type { AlertPackageGroup } from "@/pipeline/alert-groups";
-import type { AlertSection, FixedPackage } from "@/pipeline/alert-sections";
+import {
+  fixHintFor,
+  type FixHint,
+  type FixedPackage,
+  type RepoConnection,
+  type ResolvedPackage,
+} from "@/pipeline/alert-sections";
 import { ecosystemLabel } from "@scan/ecosystems";
 
 import {
@@ -101,12 +108,21 @@ export function AlertList({
   filters = false,
   initialLimit,
   review = false,
+  connections,
+  scanCommand,
 }: {
   groups: AlertPackageGroup[];
   filters?: boolean;
   initialLimit?: number;
   review?: boolean;
+  /** Repo name -> how its scans arrive; gives each package its "how this resolves" line. */
+  connections?: Record<string, RepoConnection[]>;
+  scanCommand?: string;
 }) {
+  const connectionsOf = useMemo(
+    () => new Map(Object.entries(connections ?? {}).map(([name, kinds]) => [name, new Set(kinds)])),
+    [connections]
+  );
   const [severity, setSeverity] = useState("all");
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState(false);
@@ -149,7 +165,13 @@ export function AlertList({
       <div className="bg-surface border-line rounded-card overflow-hidden border">
         {shown.length === 0 && <p className="text-fg-muted px-[18px] py-5">No package matches.</p>}
         {shown.map((g) => (
-          <AlertRow key={`${g.ecosystem ?? "npm"}:${g.packageName}`} group={g} review={review} />
+          <AlertRow
+            key={`${g.ecosystem ?? "npm"}:${g.packageName}`}
+            group={g}
+            review={review}
+            hint={connections ? fixHintFor(g.repos, connectionsOf) : null}
+            scanCommand={scanCommand}
+          />
         ))}
         {visible.length > shown.length && (
           <button
@@ -165,7 +187,42 @@ export function AlertList({
   );
 }
 
-function AlertRow({ group: g, review }: { group: AlertPackageGroup; review: boolean }) {
+const APP_HINT = "Resolves after you push the fix (Briff rescans on push).";
+
+/** How Briff notices the fix, by how the package's repos are connected. */
+function FixHintLine({ hint, scanCommand }: { hint: FixHint; scanCommand?: string }) {
+  const scanner = (
+    <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
+      {hint === "mixed" ? "briff-scan repos resolve" : "Resolves"} on the next upload (nightly)
+      {scanCommand ? ", or now in the repo:" : "."}
+      {scanCommand && <InlineCopy text={scanCommand} command />}
+    </span>
+  );
+  return (
+    <div className="text-fg-muted grid gap-1 text-[12px]">
+      {hint !== "scanner" && (
+        <span>
+          {hint === "mixed"
+            ? "GitHub App repos resolve after you push the fix (Briff rescans on push)."
+            : APP_HINT}
+        </span>
+      )}
+      {hint !== "app" && scanner}
+    </div>
+  );
+}
+
+function AlertRow({
+  group: g,
+  review,
+  hint,
+  scanCommand,
+}: {
+  group: AlertPackageGroup;
+  review: boolean;
+  hint: FixHint | null;
+  scanCommand?: string;
+}) {
   const ids = g.advisories.slice(0, 3);
   return (
     <div className="border-line grid items-start gap-x-4 gap-y-2.5 border-t px-[18px] py-3.5 first:border-t-0 md:grid-cols-[190px_minmax(0,1fr)_auto]">
@@ -221,6 +278,7 @@ function AlertRow({ group: g, review }: { group: AlertPackageGroup; review: bool
           ))}
           {g.advisories.length > ids.length && ` +${g.advisories.length - ids.length} more`}
         </span>
+        {hint && <FixHintLine hint={hint} scanCommand={scanCommand} />}
       </div>
       <div className="flex flex-col items-start gap-2 md:items-end">
         <div className="flex flex-wrap gap-1 md:justify-end">
@@ -244,7 +302,7 @@ function AlertRow({ group: g, review }: { group: AlertPackageGroup; review: bool
 export function AlertSectionNav({
   sections,
 }: {
-  sections: { id: AlertSection; label: string; count: number }[];
+  sections: { id: string; label: string; count: number }[];
 }) {
   const [current, setCurrent] = useState<string>(sections[0]?.id ?? "");
   const navRef = useRef<HTMLElement>(null);
@@ -334,6 +392,8 @@ export function AlertSectionNav({
               const el = document.getElementById(s.id);
               if (!el) return;
               e.preventDefault();
+              // The Resolved section is a collapsed <details>: its pill opens it.
+              if (el instanceof HTMLDetailsElement) el.open = true;
               setCurrent(s.id);
               window.history.replaceState(null, "", `#${s.id}`);
               scrolling.current = true;
@@ -375,6 +435,42 @@ export function FixedSinceVisit({ packages }: { packages: FixedPackage[] }) {
   );
 }
 
+/** Alerts → Resolved: packages a later scan resolved in the window, with what resolved them. */
+export function ResolvedList({ packages }: { packages: ResolvedPackage[] }) {
+  if (packages.length === 0) {
+    return (
+      <Card className="text-fg-muted px-[18px] py-5">Nothing resolved in the last 30 days.</Card>
+    );
+  }
+  return (
+    <div className="bg-surface border-line rounded-card overflow-hidden border">
+      {packages.map((p) => (
+        <div
+          key={p.packageName}
+          className="border-line grid items-start gap-x-4 gap-y-1.5 border-t px-[18px] py-3 first:border-t-0 md:grid-cols-[190px_minmax(0,1fr)_auto]"
+        >
+          <TruncatedText as="b" className="max-w-full font-mono text-[14px] font-medium">
+            {p.packageName}
+          </TruncatedText>
+          <div className="grid min-w-0 gap-0.5">
+            <span className="text-fg-muted font-mono text-[12px] break-all">
+              {p.repos.join(", ")}
+            </span>
+            <span className="text-fg-muted text-[12.5px]">
+              {shortDateTime(p.resolvedAt)} · {p.causes.join(", ")}
+            </span>
+          </div>
+          <div className="flex md:justify-end">
+            <Tag kind={severityKind(p.severity === "UNKNOWN" ? null : p.severity)}>
+              {p.severity.toLowerCase()}
+            </Tag>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Header counter: alerts a scan resolved since Monday. */
 export function ResolvedCounter({ count }: { count: number }) {
   return (
@@ -394,19 +490,27 @@ const POLL_MS = 4000;
 const POLL_LIMIT_MS = 5 * 60_000;
 
 /**
- * "Re-check now": GitHub App repos are rescanned by the worker (shows "Checking…" until the
- * job is done, then reloads the page); repos uploaded by briff-scan get the command instead.
+ * "Re-check now" opens a dialog that says what a re-check does for each kind of repo the
+ * org has, then queues it: GitHub App rescans plus a security-scan of the org (OSV asked
+ * again about every stored version). "Checking…" lasts until both are done, then the
+ * page reloads. briff-scan repos cannot be read from the server; the dialog gives their
+ * upload command.
  */
 export function RecheckButton({
   githubRepos,
   scannerRepos,
+  lastUpload,
   initialChecking,
   command,
+  docsUrl,
 }: {
   githubRepos: number;
   scannerRepos: number;
+  /** "3h ago": the newest briff-scan upload among the scanner repos. */
+  lastUpload: string | null;
   initialChecking: boolean;
   command: string;
+  docsUrl: string;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -441,43 +545,68 @@ export function RecheckButton({
     };
   }, [checking, router, toast]);
 
+  const busy = checking || pending;
+  const one = (n: number, single: string, many: string) => (n === 1 ? single : many);
   const recheck = () => {
-    if (githubRepos === 0) return;
     start(async () => {
       const res = await recheckAction();
       if (res.message) toast(res.message, res.ok ? "ok" : "info");
       setChecking(res.checking);
+      if (res.checking) setOpen(false);
     });
   };
 
-  const busy = checking || pending;
-  const button = (
-    <Button variant="secondary" disabled={busy} onClick={recheck}>
-      <RefreshCw className="size-4" strokeWidth={1.8} aria-hidden />
-      {busy ? "Checking…" : "Re-check now"}
-    </Button>
-  );
-  if (scannerRepos === 0) return button;
   return (
     <FormDialog
       open={open}
       onOpenChange={setOpen}
-      trigger={button}
-      title="Re-check your repos"
-      description={
-        githubRepos > 0
-          ? `Briff is re-checking ${plural(githubRepos, "GitHub App repo")}; this page reloads when it is done. The other ${plural(scannerRepos, "repo")} upload their own scans, so Briff cannot re-check them from here.`
-          : `${plural(scannerRepos, "repo")} upload their own scans with briff-scan, so Briff cannot re-check them from here.`
+      trigger={
+        <Button variant="secondary" disabled={busy}>
+          <RefreshCw className="size-4" strokeWidth={1.8} aria-hidden />
+          {busy ? "Checking…" : "Re-check now"}
+        </Button>
       }
+      title="Re-check your repos"
     >
-      <p className="mb-2 text-[13.5px]">After the fix, run the scanner in the repo:</p>
-      <CommandBox command={command} />
-      <p className="text-fg-muted mt-2.5 text-[12.5px]">
-        Use your scan token from Settings. Repos scanned by the GitHub Action re-check on their next
-        push to main. Fixed advisories leave this page with the next upload.
-      </p>
-      <div className="mt-4 flex justify-end">
+      <div className="grid gap-3 text-[13.5px]">
+        {githubRepos > 0 && (
+          <p>
+            <b className="font-medium">{plural(githubRepos, "repo")} via GitHub App:</b> Briff
+            rescans {one(githubRepos, "it", "them")} now and re-queries advisories; results update
+            here within a minute.
+          </p>
+        )}
+        {scannerRepos > 0 && (
+          <div className="grid gap-2">
+            <p>
+              <b className="font-medium">{plural(scannerRepos, "repo")} via briff-scan:</b> Briff
+              cannot read {one(scannerRepos, "it", "them")} from the server.
+              {githubRepos === 0 &&
+                ` Re-check now asks the advisory database again about the versions ${one(scannerRepos, "it", "they")} last uploaded, so new advisories show up and fixed ones drop.`}{" "}
+              Run this in {one(scannerRepos, "the repo", "each repo")} to upload now:
+            </p>
+            <CommandBox command={command} />
+            <p className="text-fg-muted text-[12.5px]">
+              {one(scannerRepos, "It also uploads", "They also upload")} nightly from your scanner
+              {lastUpload ? ` (last upload ${lastUpload})` : ""}. Use a scan token from Settings.{" "}
+              <a
+                href={docsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-brand font-medium underline-offset-4 hover:underline"
+              >
+                How scanning works
+              </a>
+            </p>
+          </div>
+        )}
+      </div>
+      <div className="mt-5 flex justify-end gap-2">
         <DialogClose render={<Button variant="secondary">Close</Button>} />
+        <Button variant="primary" disabled={busy} onClick={recheck}>
+          <RefreshCw className="size-4" strokeWidth={1.8} aria-hidden />
+          {busy ? "Checking…" : "Re-check now"}
+        </Button>
       </div>
     </FormDialog>
   );

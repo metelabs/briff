@@ -120,42 +120,68 @@ describe.skipIf(!url)("re-check action against Postgres", () => {
   const suffix = Date.now().toString(36);
   const installationId = `9${Date.now()}`;
   let orgId = "";
-  let otherOrgId = "";
+  let scannerOrgId = "";
+  let emptyOrgId = "";
   const jobs = () =>
     db.job.findMany({
       where: { type: "github-scan", dedupeKey: `github-scan:${installationId}:*:force` },
+      select: { id: true, payload: true, status: true },
+    });
+  const securityJobs = (org: string) =>
+    db.job.findMany({
+      where: { type: "security-scan", dedupeKey: `security-scan:org:${org}` },
       select: { id: true, payload: true, status: true },
     });
 
   beforeAll(async () => {
     testDb.client = db;
     orgId = (await db.org.create({ data: { name: `recheck-${suffix}` } })).id;
-    otherOrgId = (await db.org.create({ data: { name: `recheck-other-${suffix}` } })).id;
-    await withOrg(db, orgId).githubInstallation.create({
+    scannerOrgId = (await db.org.create({ data: { name: `recheck-scanner-${suffix}` } })).id;
+    emptyOrgId = (await db.org.create({ data: { name: `recheck-empty-${suffix}` } })).id;
+    const installation = await withOrg(db, orgId).githubInstallation.create({
       data: { orgId, installationId, accountLogin: "acme", accountType: "Organization" },
+    });
+    await withOrg(db, orgId).repo.create({
+      data: {
+        orgId,
+        name: `app-${suffix}`,
+        source: "github",
+        githubInstallationId: installation.id,
+      },
+    });
+    await withOrg(db, scannerOrgId).repo.create({
+      data: { orgId: scannerOrgId, name: `local-${suffix}`, source: "local" },
     });
   });
 
   afterAll(async () => {
     await db.job.deleteMany({ where: { dedupeKey: `github-scan:${installationId}:*:force` } });
-    await db.org.deleteMany({ where: { id: { in: [orgId, otherOrgId] } } });
+    await db.job.deleteMany({
+      where: { dedupeKey: { in: [orgId, scannerOrgId].map((o) => `security-scan:org:${o}`) } },
+    });
+    await db.org.deleteMany({ where: { id: { in: [orgId, scannerOrgId, emptyOrgId] } } });
     await db.$disconnect();
   });
 
-  it("queues one forced scan per installation and then waits ten minutes", async () => {
+  it("queues the App rescans and the org's security-scan, then waits ten minutes", async () => {
     session.orgId = orgId;
     expect(await recheckAction()).toEqual({ ok: true, checking: true, message: null });
     const queued = await jobs();
     expect(queued).toHaveLength(1);
     expect(queued[0].payload).toEqual({ installationId, force: true });
+    const security = await securityJobs(orgId);
+    expect(security.map((j) => j.payload)).toEqual([{ orgId, manual: true }]);
     expect(await recheckStatusAction()).toEqual({ checking: true });
 
     // Still in flight: the button keeps showing "Checking…", nothing new is queued.
     expect(await recheckAction()).toEqual({ ok: true, checking: true, message: null });
     expect(await jobs()).toHaveLength(1);
+    expect(await securityJobs(orgId)).toHaveLength(1);
 
-    // Done, but within the interval: refused with the wait.
+    // "Checking…" waits for both halves.
     await db.job.updateMany({ where: { id: queued[0].id }, data: { status: "succeeded" } });
+    expect(await recheckStatusAction()).toEqual({ checking: true });
+    await db.job.updateMany({ where: { id: security[0].id }, data: { status: "succeeded" } });
     expect(await recheckStatusAction()).toEqual({ checking: false });
     // A follow-up for repos the scan could not read yet still counts as checking.
     const followUp = await db.job.create({
@@ -177,12 +203,23 @@ describe.skipIf(!url)("re-check action against Postgres", () => {
     });
     expect(await recheckAction()).toMatchObject({ ok: true, checking: true });
     expect(await jobs()).toHaveLength(2);
+    expect(await securityJobs(orgId)).toHaveLength(2);
   });
 
-  it("queues nothing for an org without a GitHub App installation", async () => {
-    session.orgId = otherOrgId;
+  it("re-checks briff-scan-only orgs with the security-scan alone", async () => {
+    session.orgId = scannerOrgId;
+    expect(await recheckAction()).toEqual({ ok: true, checking: true, message: null });
+    expect((await securityJobs(scannerOrgId)).map((j) => j.payload)).toEqual([
+      { orgId: scannerOrgId, manual: true },
+    ]);
+    expect(await recheckStatusAction()).toEqual({ checking: true });
+    expect(await jobs()).toHaveLength(2);
+  });
+
+  it("queues nothing for an org without repos", async () => {
+    session.orgId = emptyOrgId;
     expect(await recheckAction()).toMatchObject({ ok: false, checking: false });
     expect(await recheckStatusAction()).toEqual({ checking: false });
-    expect(await jobs()).toHaveLength(2);
+    expect(await securityJobs(emptyOrgId)).toHaveLength(0);
   });
 });

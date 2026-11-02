@@ -89,7 +89,7 @@ describe.skipIf(!url)("alerts resolve on a newer scan", () => {
   const alertOf = (org: string) =>
     withOrg(db, org).alert.findFirstOrThrow({
       where: { advisory: { osvId } },
-      select: { resolvedAt: true, deliveredAt: true },
+      select: { resolvedAt: true, resolvedBy: true, deliveredAt: true },
     });
 
   beforeAll(async () => {
@@ -131,6 +131,7 @@ describe.skipIf(!url)("alerts resolve on a newer scan", () => {
     expect(result).toMatchObject({ alertsResolved: 1, alertsReopened: 0 });
     const alert = await alertOf(orgId);
     expect(alert.resolvedAt).not.toBeNull();
+    expect(alert.resolvedBy).toBe("briff_scan");
     // The row stays, with its delivery state: nothing is emailed again.
     expect(alert.deliveredAt).not.toBeNull();
     expect((await alertOf(otherOrgId)).resolvedAt).toBeNull();
@@ -141,7 +142,7 @@ describe.skipIf(!url)("alerts resolve on a newer scan", () => {
     expect(same).toMatchObject({ alertsResolved: 0, alertsReopened: 0 });
     const [back] = await ingestScan(db, orgId, upload("4.17.19"));
     expect(back).toMatchObject({ alertsResolved: 0, alertsReopened: 1 });
-    expect((await alertOf(orgId)).resolvedAt).toBeNull();
+    expect(await alertOf(orgId)).toMatchObject({ resolvedAt: null, resolvedBy: null });
   });
 
   it("records the covered packages of an older advisory even when OSV no longer answers with it", async () => {
@@ -192,5 +193,6 @@ describe.skipIf(!url)("alerts resolve on a newer scan", () => {
     await ingestScan(db, orgId, upload("4.17.20"));
     const [app] = await ingestScan(db, orgId, removed, new Date(), { completeSnapshots: true });
     expect(app.alertsResolved).toBe(1);
+    expect((await alertOf(orgId)).resolvedBy).toBe("github_app");
   });
 });

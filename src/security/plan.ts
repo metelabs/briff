@@ -359,3 +359,65 @@ export function sortGroups(groups: AlertGroup[]): AlertGroup[] {
       a.packageName.localeCompare(b.packageName)
   );
 }
+
+/** security-scan's payload: the daily run has none; "Re-check now" scopes it to one org. */
+export interface SecurityScanScope {
+  orgId: string | null;
+  manual: boolean;
+}
+
+export function securityScanScope(payload: unknown): SecurityScanScope {
+  if (typeof payload !== "object" || payload === null || Array.isArray(payload)) {
+    return { orgId: null, manual: false };
+  }
+  const { orgId, manual } = payload as Record<string, unknown>;
+  return {
+    orgId: typeof orgId === "string" && orgId.length > 0 ? orgId : null,
+    manual: manual === true,
+  };
+}
+
+/** Dedupe key prefix of an org's "Re-check now" security-scan, apart from the daily run's. */
+export const ORG_SECURITY_SCAN_PREFIX = "security-scan:org:";
+export const orgSecurityScanKey = (orgId: string) => `${ORG_SECURITY_SCAN_PREFIX}${orgId}`;
+
+export interface ScanResolvableAlert {
+  id: string;
+  advisoryId: string;
+  repoId: string;
+  /** The advisory's own package (Advisory.packageId). */
+  packageId: string;
+}
+
+/**
+ * Open alerts the run may resolve: OSV was asked about the alert's own package at the repo's
+ * stored version and no longer reports the advisory for the repo. Not when the repo has the
+ * package only as a requirement (OSV cannot place it), or when one of the repo's answers
+ * named an advisory the run could not store (its pair is unknown, not safe). A package that
+ * is gone from the repo is left to the upload that removed it (`planAlertResolution`).
+ */
+export function planScanResolution(
+  open: readonly ScanResolvableAlert[],
+  queries: readonly PlannedQuery[],
+  atRiskKeys: ReadonlySet<string>,
+  uncertainRepoIds: ReadonlySet<string>
+): string[] {
+  const placed = new Set<string>();
+  const unplaced = new Set<string>();
+  for (const q of queries) {
+    for (const d of q.dependents) {
+      (q.constraint || d.constraint ? unplaced : placed).add(`${d.repoId}\0${q.packageId}`);
+    }
+  }
+  return open
+    .filter((a) => {
+      const key = `${a.repoId}\0${a.packageId}`;
+      return (
+        placed.has(key) &&
+        !unplaced.has(key) &&
+        !uncertainRepoIds.has(a.repoId) &&
+        !atRiskKeys.has(alertKey(a.advisoryId, a.repoId))
+      );
+    })
+    .map((a) => a.id);
+}

@@ -2,6 +2,7 @@ import "server-only";
 
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { JobType } from "@/lib/jobs/types";
+import { ORG_SECURITY_SCAN_PREFIX } from "@/security/plan";
 
 import { cronOf, jobFreshness, SCHEDULED_TYPES, type FreshnessResult } from "./freshness";
 
@@ -23,7 +24,12 @@ export async function loadJobHealth(db: PrismaClient, now: Date = new Date()): P
   const [successes, oldestDue] = await Promise.all([
     db.run.groupBy({
       by: ["jobType"],
-      where: { status: "succeeded", jobType: { in: [...SCHEDULED_TYPES] } },
+      where: {
+        status: "succeeded",
+        jobType: { in: [...SCHEDULED_TYPES] },
+        // An org's re-check covers one org; only the full run proves the schedule works.
+        NOT: { job: { is: { dedupeKey: { startsWith: ORG_SECURITY_SCAN_PREFIX } } } },
+      },
       _max: { finishedAt: true },
     }),
     db.job.findFirst({

@@ -19,6 +19,8 @@ import {
   newAlertCandidates,
   planAlertMerge,
   planQueries,
+  planScanResolution,
+  securityScanScope,
   splitPending,
   type AlertGroup,
   type StackDependency,
@@ -29,6 +31,8 @@ import { publicActionsForScan } from "./action-visibility";
 const FETCH_CONCURRENCY = 8;
 /** Advisories without covered packages refetched per run, on top of the ones OSV answered with. */
 const COVERAGE_BACKFILL_LIMIT = 500;
+/** Upper bound for one org's alert email pass (SMTP to every recipient) under its lock. */
+const DELIVERY_LOCK_HOLD_MS = 10 * 60_000;
 
 interface Wanted {
   modified: string | null;
@@ -306,10 +310,20 @@ async function mergeDuplicates(
  * become Alerts, `backlog` on a repo's first scan and `new` afterwards. One email per
  * org (per recipient) per run carries the new critical/high alerts and, after a first
  * scan, one summary of the backlog. Moderate and low alerts wait for the bulletin.
+ * An open alert whose stored version OSV no longer reports resolves (`planScanResolution`).
+ * "Re-check now" queues it with `{ orgId, manual: true }`: only that org's repos are
+ * queried, and delivery follows the same rules, so nothing already emailed goes out again.
  */
-export async function securityScan({ db, log, heartbeat }: JobContext): Promise<JobResult> {
+export async function securityScan({
+  db,
+  log,
+  heartbeat,
+  payload,
+}: JobContext): Promise<JobResult> {
   const startedAt = new Date();
+  const scope = securityScanScope(payload);
   const counts = {
+    manual: scope.manual ? 1 : 0,
     orgs: 0,
     reposIncluded: 0,
     reposSkipped: 0,
@@ -324,12 +338,16 @@ export async function securityScan({ db, log, heartbeat }: JobContext): Promise<
     alertsDelivered: 0,
     alertsHeld: 0,
     alertsReopened: 0,
+    alertsResolved: 0,
+    deliveryLocked: 0,
     advisoriesBackfilled: 0,
     emailsSent: 0,
     emailsFailed: 0,
   };
 
-  const orgs = await db.org.findMany({ select: { id: true, name: true } });
+  // Merging duplicate advisories moves alerts of every org, whatever the scope.
+  const allOrgs = await db.org.findMany({ select: { id: true, name: true } });
+  const orgs = scope.orgId ? allOrgs.filter((o) => o.id === scope.orgId) : allOrgs;
   counts.orgs = orgs.length;
   const deps: StackDependency[] = [];
   const repoState = new Map<
@@ -422,9 +440,10 @@ export async function securityScan({ db, log, heartbeat }: JobContext): Promise<
   });
   // Rows stored before covered packages were recorded are refetched even when OSV no
   // longer answers with them (the repos upgraded): upload-time resolution needs the list.
-  const backfill = await db.$queryRaw<
-    { osvId: string; packageId: string; name: string; ecosystem: string }[]
-  >`
+  // The daily run does it; a re-check someone is waiting for skips it.
+  const backfill = scope.orgId
+    ? []
+    : await db.$queryRaw<{ osvId: string; packageId: string; name: string; ecosystem: string }[]>`
     SELECT a."osvId", a."packageId", p."name", p."ecosystem"
     FROM "advisory" a JOIN "package" p ON p."id" = a."packageId"
     WHERE a."packages" IS NULL
@@ -451,8 +470,16 @@ export async function securityScan({ db, log, heartbeat }: JobContext): Promise<
       UPDATE "advisory" SET "packages" = '[]'::jsonb
       WHERE "osvId" = ANY(${[...withdrawn]}::text[]) AND "packages" IS NULL`;
   }
-  if (merges.size > 0) await mergeDuplicates(db, orgs, merges, counts);
+  if (merges.size > 0) await mergeDuplicates(db, allOrgs, merges, counts);
 
+  // A repo whose answer names an advisory the run could not store cannot be called safe.
+  const uncertainRepoIds = new Set(
+    queries.flatMap((query, i) =>
+      (hits[i] ?? []).some((h) => advisoryOf(h.id) === undefined)
+        ? query.dependents.map((d) => d.repoId)
+        : []
+    )
+  );
   const matches = queries.map((query, i) => ({
     query,
     advisoryIds: [
@@ -494,9 +521,31 @@ export async function securityScan({ db, log, heartbeat }: JobContext): Promise<
     if (reopen.length > 0) {
       const res = await scoped.alert.updateMany({
         where: { id: { in: reopen.map((a) => a.id) } },
-        data: { resolvedAt: null },
+        data: { resolvedAt: null, resolvedBy: null },
       });
       counts.alertsReopened += res.count;
+    }
+    const open = await scoped.alert.findMany({
+      where: { resolvedAt: null, repo: { included: true } },
+      select: {
+        id: true,
+        advisoryId: true,
+        repoId: true,
+        advisory: { select: { packageId: true } },
+      },
+    });
+    const resolve = planScanResolution(
+      open.map((a) => ({ ...a, packageId: a.advisory.packageId })),
+      queries.filter((q) => q.dependents.some((d) => d.orgId === org.id)),
+      atRiskKeys,
+      uncertainRepoIds
+    );
+    if (resolve.length > 0) {
+      const res = await scoped.alert.updateMany({
+        where: { id: { in: resolve }, resolvedAt: null },
+        data: { resolvedAt: startedAt, resolvedBy: "security_scan" },
+      });
+      counts.alertsResolved += res.count;
     }
     const candidates = newAlertCandidates(
       orgMatches,
@@ -522,102 +571,115 @@ export async function securityScan({ db, log, heartbeat }: JobContext): Promise<
       });
     }
 
-    // Undelivered alerts include earlier runs whose delivery failed or ran without SMTP.
-    const pending = await scoped.alert.findMany({
-      where: { deliveredAt: null },
-      select: {
-        id: true,
-        repoId: true,
-        advisoryId: true,
-        kind: true,
-        repo: { select: { name: true, included: true } },
-        advisory: {
-          select: {
-            osvId: true,
-            summary: true,
-            severity: true,
-            affected: true,
-            fixedVersion: true,
-            package: { select: { name: true, ecosystem: true, actionTags: true } },
-          },
-        },
-      },
-    });
-    // Which installed dependency puts each (advisory, repo) pair at risk right now. Keyed by
-    // advisory, not package: one OSV record can cover several packages (e.g. payload's drivers).
-    const atRisk = new Map<string, StackDependency>();
-    for (const m of orgMatches) {
-      for (const advisoryId of m.advisoryIds) {
-        for (const dep of m.query.dependents) {
-          const key = alertKey(advisoryId, dep.repoId);
-          const prev = atRisk.get(key);
-          if (!prev || (dep.direct && !prev.direct)) atRisk.set(key, dep);
+    // The daily run and an org's re-check can overlap on two workers: the lock makes
+    // one of them deliver; the other leaves the alerts for the next run.
+    await db.$transaction(
+      async (tx) => {
+        const [lock] = await tx.$queryRaw<{ locked: boolean }[]>`
+          SELECT pg_try_advisory_xact_lock(68423::int, hashtext(${org.id})) AS locked`;
+        if (!lock?.locked) {
+          counts.deliveryLocked++;
+          return;
         }
-      }
-    }
-    // A pending alert whose repo no longer has a vulnerable version installed is stale.
-    const live = pending.filter(
-      (a) => a.repo.included && atRisk.has(alertKey(a.advisoryId, a.repoId))
+        // Undelivered alerts include earlier runs whose delivery failed or ran without SMTP.
+        const pending = await scoped.alert.findMany({
+          where: { deliveredAt: null },
+          select: {
+            id: true,
+            repoId: true,
+            advisoryId: true,
+            kind: true,
+            repo: { select: { name: true, included: true } },
+            advisory: {
+              select: {
+                osvId: true,
+                summary: true,
+                severity: true,
+                affected: true,
+                fixedVersion: true,
+                package: { select: { name: true, ecosystem: true, actionTags: true } },
+              },
+            },
+          },
+        });
+        // Which installed dependency puts each (advisory, repo) pair at risk right now. Keyed by
+        // advisory, not package: one OSV record can cover several packages (e.g. payload's drivers).
+        const atRisk = new Map<string, StackDependency>();
+        for (const m of orgMatches) {
+          for (const advisoryId of m.advisoryIds) {
+            for (const dep of m.query.dependents) {
+              const key = alertKey(advisoryId, dep.repoId);
+              const prev = atRisk.get(key);
+              if (!prev || (dep.direct && !prev.direct)) atRisk.set(key, dep);
+            }
+          }
+        }
+        // A pending alert whose repo no longer has a vulnerable version installed is stale.
+        const live = pending.filter(
+          (a) => a.repo.included && atRisk.has(alertKey(a.advisoryId, a.repoId))
+        );
+        const { urgent, backlog, held } = splitPending(live);
+        counts.alertsHeld += held;
+        if ((urgent.length === 0 && backlog.length === 0) || !smtp) return;
+        const groups = new Map<string, AlertGroup>();
+        for (const alert of urgent) {
+          const adv = alert.advisory;
+          const group = groups.get(adv.osvId) ?? {
+            ecosystem: isEcosystem(adv.package.ecosystem) ? adv.package.ecosystem : undefined,
+            actionTags: storedActionTags(adv.package.actionTags),
+            osvId: adv.osvId,
+            packageName: adv.package.name,
+            summary: adv.summary,
+            severity: adv.severity,
+            affected: adv.affected as unknown as OsvRange[],
+            fallbackFixed: adv.fixedVersion,
+            repos: [],
+          };
+          const dep = atRisk.get(alertKey(alert.advisoryId, alert.repoId));
+          group.repos.push({
+            name: alert.repo.name,
+            installedVersion: dep
+              ? dep.name === adv.package.name
+                ? dep.version
+                : `${dep.name}@${dep.version}`
+              : "?",
+            direct: dep?.direct ?? false,
+          });
+          groups.set(adv.osvId, group);
+        }
+
+        const summary = backlogSummary(backlog);
+        const firstScan: FirstScanSummary | null = summary
+          ? { ...summary, url: `${getEnv().BETTER_AUTH_URL.replace(/\/$/, "")}/bulletins` }
+          : null;
+
+        let sent = 0;
+        for (const recipient of await orgRecipients(db, org.id)) {
+          const email = renderSecurityAlertEmail(
+            recipient.language,
+            [...groups.values()],
+            firstScan,
+            getEnv().BETTER_AUTH_URL
+          );
+          const result = await sendMail({ to: recipient.to, ...email }, smtp);
+          if (result.status === "sent") sent++;
+          else if (result.status === "failed") {
+            counts.emailsFailed++;
+            log.warn({ orgId: org.id, error: result.error }, "security: alert email failed");
+          }
+        }
+        counts.emailsSent += sent;
+        // Delivered once anyone received it; a total failure keeps the alerts for the next run.
+        if (sent > 0) {
+          const res = await scoped.alert.updateMany({
+            where: { id: { in: [...urgent, ...backlog].map((a) => a.id) } },
+            data: { deliveredAt: new Date() },
+          });
+          counts.alertsDelivered += res.count;
+        }
+      },
+      { maxWait: 10_000, timeout: DELIVERY_LOCK_HOLD_MS }
     );
-    const { urgent, backlog, held } = splitPending(live);
-    counts.alertsHeld += held;
-    if ((urgent.length === 0 && backlog.length === 0) || !smtp) continue;
-    const groups = new Map<string, AlertGroup>();
-    for (const alert of urgent) {
-      const adv = alert.advisory;
-      const group = groups.get(adv.osvId) ?? {
-        ecosystem: isEcosystem(adv.package.ecosystem) ? adv.package.ecosystem : undefined,
-        actionTags: storedActionTags(adv.package.actionTags),
-        osvId: adv.osvId,
-        packageName: adv.package.name,
-        summary: adv.summary,
-        severity: adv.severity,
-        affected: adv.affected as unknown as OsvRange[],
-        fallbackFixed: adv.fixedVersion,
-        repos: [],
-      };
-      const dep = atRisk.get(alertKey(alert.advisoryId, alert.repoId));
-      group.repos.push({
-        name: alert.repo.name,
-        installedVersion: dep
-          ? dep.name === adv.package.name
-            ? dep.version
-            : `${dep.name}@${dep.version}`
-          : "?",
-        direct: dep?.direct ?? false,
-      });
-      groups.set(adv.osvId, group);
-    }
-
-    const summary = backlogSummary(backlog);
-    const firstScan: FirstScanSummary | null = summary
-      ? { ...summary, url: `${getEnv().BETTER_AUTH_URL.replace(/\/$/, "")}/bulletins` }
-      : null;
-
-    let sent = 0;
-    for (const recipient of await orgRecipients(db, org.id)) {
-      const email = renderSecurityAlertEmail(
-        recipient.language,
-        [...groups.values()],
-        firstScan,
-        getEnv().BETTER_AUTH_URL
-      );
-      const result = await sendMail({ to: recipient.to, ...email }, smtp);
-      if (result.status === "sent") sent++;
-      else if (result.status === "failed") {
-        counts.emailsFailed++;
-        log.warn({ orgId: org.id, error: result.error }, "security: alert email failed");
-      }
-    }
-    counts.emailsSent += sent;
-    // Delivered once anyone received it; a total failure keeps the alerts for the next run.
-    if (sent > 0) {
-      const res = await scoped.alert.updateMany({
-        where: { id: { in: [...urgent, ...backlog].map((a) => a.id) } },
-        data: { deliveredAt: new Date() },
-      });
-      counts.alertsDelivered += res.count;
-    }
   }
 
   if (!smtp && counts.alertsNew + counts.alertsBacklog > 0) {

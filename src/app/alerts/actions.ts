@@ -7,11 +7,13 @@ import { requireOrgContext } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { withOrg } from "@/lib/db/with-org";
 import { enqueueGithubScan } from "@/lib/github/flow";
-import { activeInstallationIds, githubScanInFlight } from "@/lib/github/recheck";
+import { activeInstallationIds, recheckInFlight } from "@/lib/github/recheck";
+import { enqueueJob } from "@/lib/jobs/queue";
 import { plural } from "@/lib/format";
 import { loadStreamScope, repoScope } from "@/lib/stream-scope";
 import { REVIEWABLE } from "@/pipeline/alert-review";
 import { RECHECK_INTERVAL_MS, recheckWaitMs } from "@/pipeline/alert-sections";
+import { orgSecurityScanKey } from "@/security/plan";
 
 export interface ReviewState {
   ok: boolean;
@@ -62,28 +64,26 @@ export async function markPackageReviewedAction(
 
 export interface RecheckState {
   ok: boolean;
-  /** A GitHub App scan of the org is queued or running. */
+  /** A scan of the re-check (GitHub App or the org's security-scan) is queued or running. */
   checking: boolean;
   message: string | null;
 }
 
 /**
  * "Re-check now": a forced scan of every GitHub App installation of the org (the same
- * github-scan job a push queues; ingestion resolves fixed alerts). At most one per
- * RECHECK_INTERVAL_MS per org; repos uploaded by briff-scan cannot be reached from here.
+ * github-scan job a push queues; ingestion resolves fixed alerts) and a security-scan of
+ * the org's repos only, which asks OSV again about every stored version (briff-scan repos
+ * included) and resolves what it no longer reports. At most one per RECHECK_INTERVAL_MS per org.
  */
 export async function recheckAction(): Promise<RecheckState> {
   const ctx = await requireOrgContext();
-  const installations = await activeInstallationIds(getDb(), ctx.orgId);
-  if (installations.length === 0) {
-    return {
-      ok: false,
-      checking: false,
-      message: "No repos are connected through the GitHub App.",
-    };
+  const db = getDb();
+  if ((await withOrg(db, ctx.orgId).repo.count()) === 0) {
+    return { ok: false, checking: false, message: "No repos to re-check yet." };
   }
+  const installations = await activeInstallationIds(db, ctx.orgId);
   const now = new Date();
-  const claimed = await getDb().org.updateMany({
+  const claimed = await db.org.updateMany({
     where: {
       id: ctx.orgId,
       OR: [
@@ -94,9 +94,9 @@ export async function recheckAction(): Promise<RecheckState> {
     data: { recheckRequestedAt: now },
   });
   if (claimed.count === 0) {
-    if (await githubScanInFlight(getDb(), installations))
+    if (await recheckInFlight(db, ctx.orgId, installations))
       return { ok: true, checking: true, message: null };
-    const org = await getDb().org.findUnique({
+    const org = await db.org.findUnique({
       where: { id: ctx.orgId },
       select: { recheckRequestedAt: true },
     });
@@ -111,8 +111,13 @@ export async function recheckAction(): Promise<RecheckState> {
     };
   }
   for (const installationId of installations) {
-    await enqueueGithubScan(getDb(), { installationId, force: true });
+    await enqueueGithubScan(db, { installationId, force: true });
   }
+  await enqueueJob(db, "security-scan", {
+    payload: { orgId: ctx.orgId, manual: true },
+    dedupeKey: orgSecurityScanKey(ctx.orgId),
+    maxAttempts: 3,
+  });
   return { ok: true, checking: true, message: null };
 }
 
@@ -120,5 +125,5 @@ export async function recheckAction(): Promise<RecheckState> {
 export async function recheckStatusAction(): Promise<{ checking: boolean }> {
   const ctx = await requireOrgContext();
   const installations = await activeInstallationIds(getDb(), ctx.orgId);
-  return { checking: await githubScanInFlight(getDb(), installations) };
+  return { checking: await recheckInFlight(getDb(), ctx.orgId, installations) };
 }
