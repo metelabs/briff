@@ -9,9 +9,7 @@ import type { BillingInterval, PaddleEnv, PaidPlanId } from "@/lib/billing/catal
 
 import { startCheckoutAction } from "../actions";
 import { loadPaddle, paddleTheme } from "../paddle";
-
-// The class Paddle.js renders its inline frame into (`frameTarget`, checkout-web skill).
-const FRAME_CLASS = "paddle-checkout-frame";
+import { FRAME_CLASS, startInlineCheckout } from "./flow";
 
 function money(amount: number, currency: string): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(amount);
@@ -41,38 +39,22 @@ export function InlineCheckout({
     if (opened.current) return;
     opened.current = true;
     let active = true;
-    const run = async () => {
-      const res = await startCheckoutAction(terms);
-      if (!active) return;
-      if (!res.ok) return setError(res.message);
-      if (noFrame) return;
-      const paddle = await loadPaddle(config, (event) => {
-        if (event.name === "checkout.loaded") setLoaded(true);
-        if (event.data) setTotals(event.data);
-        if (event.name === "checkout.completed") {
-          router.push("/settings/billing?checkout=success");
-        }
-      });
-      if (!active) return;
-      if (!paddle) return setError("Paddle checkout did not load. Reload the page and try again.");
-      paddle.Checkout.open({
-        items: [{ priceId: res.session.priceId, quantity: 1 }],
-        customer: res.session.customer,
-        customData: { ...res.session.customData },
-        settings: {
-          displayMode: "inline",
-          variant: "one-page",
-          theme: paddleTheme(),
-          allowLogout: false,
-          frameTarget: FRAME_CLASS,
-          frameInitialHeight: 450,
-          frameStyle: "width: 100%; min-width: 286px; background-color: transparent; border: none;",
-          successUrl: `${window.location.origin}/settings/billing?checkout=success`,
-        },
-      });
-    };
-    run().catch(() => {
-      if (active) setError("Paddle checkout did not load. Reload the page and try again.");
+    void startInlineCheckout({
+      start: () => startCheckoutAction(terms),
+      load: () =>
+        loadPaddle(config, (event) => {
+          if (event.name === "checkout.loaded") setLoaded(true);
+          if (event.data) setTotals(event.data);
+          if (event.name === "checkout.completed") {
+            router.push("/settings/billing?checkout=success");
+          }
+        }),
+      noFrame,
+      theme: paddleTheme(),
+      origin: window.location.origin,
+      isActive: () => active,
+    }).then((message) => {
+      if (message) setError(message);
     });
     return () => {
       active = false;

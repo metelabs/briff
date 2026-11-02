@@ -6,7 +6,7 @@ import { Tag } from "@/components/ui/tag";
 import { UsageBar } from "@/components/ui/usage-bar";
 import type { OrgContext } from "@/lib/auth/session";
 import { billingConfig } from "@/lib/billing/config";
-import { scheduledOf } from "@/lib/billing/labels";
+import { lastPaid, scheduledOf } from "@/lib/billing/labels";
 import { liveSubscription } from "@/lib/billing/manage";
 import { ADMIN_PLAN_NOTICE, billingOffer, planSourceOf } from "@/lib/billing/offer";
 import { graceEndsAt } from "@/lib/billing/state";
@@ -23,7 +23,7 @@ import { loadHistory, loadPaymentMethod } from "./billing/load";
 async function LastPayment({ orgId }: { orgId: string }) {
   let last;
   try {
-    last = (await loadHistory(orgId))[0];
+    last = lastPaid(await loadHistory(orgId));
   } catch {
     return <p className="text-fg-muted text-[13.5px]">Paddle did not answer.</p>;
   }

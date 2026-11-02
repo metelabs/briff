@@ -22,3 +22,8 @@ export function subscriptionLabel(sub: { status: string; scheduledChange: unknow
 }
 
 export { scheduledOf };
+
+/** The newest payment that went through (history also lists past_due and canceled ones). */
+export function lastPaid<T extends { status: string }>(history: readonly T[]): T | undefined {
+  return history.find((t) => t.status === "completed" || t.status === "paid");
+}
