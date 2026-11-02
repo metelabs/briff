@@ -19,12 +19,7 @@ import { plural, shortDateTime } from "@/lib/format";
 import { SCROLL_GAP, scrollToElement, stickyOffset } from "@/lib/scroll";
 import { cn } from "@/lib/utils";
 import type { AlertPackageGroup } from "@/pipeline/alert-groups";
-import {
-  fixHintFor,
-  type FixedPackage,
-  type RepoConnection,
-  type ResolvedPackage,
-} from "@/pipeline/alert-sections";
+import { fixHintFor, type RepoConnection, type ResolvedAlert } from "@/pipeline/alert-sections";
 import { ecosystemLabel } from "@scan/ecosystems";
 
 import {
@@ -282,8 +277,6 @@ export function AlertSectionNav({
               const el = document.getElementById(s.id);
               if (!el) return;
               e.preventDefault();
-              // The Resolved section is a collapsed <details>: its pill opens it.
-              if (el instanceof HTMLDetailsElement) el.open = true;
               setCurrent(s.id);
               window.history.replaceState(null, "", `#${s.id}`);
               scrolling.current = true;
@@ -305,57 +298,52 @@ export function AlertSectionNav({
   );
 }
 
-/** "Fixed since your last visit": packages a later scan no longer has at an affected version. */
-export function FixedSinceVisit({ packages }: { packages: FixedPackage[] }) {
-  if (packages.length === 0) return null;
-  return (
-    <div className="bg-ok-soft text-ok rounded-inset mb-3.5 flex flex-wrap items-baseline gap-x-2 gap-y-1 px-3.5 py-2.5 text-[13px]">
-      <span className="inline-flex items-center gap-1.5 font-semibold">
-        <Check className="size-3.5 self-center" strokeWidth={2.2} aria-hidden />
-        Fixed since your last visit
-      </span>
-      {packages.map((p, i) => (
-        <span key={p.packageName}>
-          <b className="font-mono font-medium">{p.packageName}</b>{" "}
-          <span className="font-mono text-[12px]">({p.repos.join(", ")})</span>
-          {i < packages.length - 1 && ","}
-        </span>
-      ))}
-    </div>
-  );
-}
+const OSV_URL = "https://osv.dev/vulnerability/";
 
-/** Alerts → Resolved: packages a later scan resolved in the window, with what resolved them. */
-export function ResolvedList({ packages }: { packages: ResolvedPackage[] }) {
-  if (packages.length === 0) {
-    return (
-      <Card className="text-fg-muted px-[18px] py-5">Nothing resolved in the last 30 days.</Card>
-    );
+/** Alerts -> Resolved: one row per resolved alert, with when and what resolved it. */
+export function ResolvedAlertList({
+  alerts,
+  empty,
+}: {
+  alerts: readonly ResolvedAlert[];
+  empty?: string;
+}) {
+  if (alerts.length === 0) {
+    return empty ? <Card className="text-fg-muted px-[18px] py-5">{empty}</Card> : null;
   }
   return (
     <div className="bg-surface border-line rounded-card overflow-hidden border">
-      {packages.map((p) => (
+      {alerts.map((a) => (
         <div
-          key={`${p.ecosystem ?? "npm"}:${p.packageName}`}
+          key={a.key}
           className="border-line grid items-start gap-x-4 gap-y-1.5 border-t px-[18px] py-3 first:border-t-0 md:grid-cols-[190px_minmax(0,1fr)_auto]"
         >
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             <TruncatedText as="b" className="max-w-full font-mono text-[14px] font-medium">
-              {p.packageName}
+              {a.packageName}
             </TruncatedText>
-            {p.ecosystem && <EcosystemTag>{ecosystemLabel(p.ecosystem)}</EcosystemTag>}
+            {a.ecosystem && <EcosystemTag>{ecosystemLabel(a.ecosystem)}</EcosystemTag>}
           </div>
           <div className="grid min-w-0 gap-0.5">
             <span className="text-fg-muted font-mono text-[12px] break-all">
-              {p.repos.join(", ")}
+              {a.repo} ·{" "}
+              <a
+                href={OSV_URL + encodeURIComponent(a.osvId)}
+                target="_blank"
+                rel="noreferrer"
+                className="hover:text-fg underline-offset-2 hover:underline"
+              >
+                {a.osvId}
+              </a>
             </span>
             <span className="text-fg-muted text-[12.5px]">
-              {shortDateTime(p.resolvedAt)} · {p.causes.join(", ")}
+              {shortDateTime(a.resolvedAt)} · {a.cause}
             </span>
           </div>
-          <div className="flex md:justify-end">
-            <Tag kind={severityKind(p.severity === "UNKNOWN" ? null : p.severity)}>
-              {p.severity.toLowerCase()}
+          <div className="flex flex-wrap items-center gap-1.5 md:justify-end">
+            {a.sinceLastVisit && <Tag kind="ok">new since last visit</Tag>}
+            <Tag kind={severityKind(a.severity === "UNKNOWN" ? null : a.severity)}>
+              {a.severity.toLowerCase()}
             </Tag>
           </div>
         </div>

@@ -7,7 +7,7 @@ import Link from "next/link";
 import { AppShell } from "@/components/shell/app-shell";
 import { ConnectReposButton } from "@/components/shell/connect-sheet";
 import { Card } from "@/components/ui/card";
-import { EmptyState, PageHeader, SectionHeader } from "@/components/ui/section-header";
+import { CountBadge, EmptyState, PageHeader, SectionHeader } from "@/components/ui/section-header";
 import { requireOrgContext } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { withOrg } from "@/lib/db/with-org";
@@ -24,10 +24,9 @@ import { showReviewedParam, splitReviewed } from "@/pipeline/alert-review";
 import {
   ALERT_SECTIONS,
   alertSectionOf,
-  fixedSince,
   recentlyResolved,
   repoConnections,
-  resolvedPackages,
+  resolvedSections,
   resolvedSince,
   type AlertSection,
 } from "@/pipeline/alert-sections";
@@ -38,11 +37,10 @@ import { attachInstalls } from "@/pipeline/bulletin-view";
 import {
   AlertList,
   AlertSectionNav,
-  FixedSinceVisit,
   MarkBacklogReviewed,
   RecheckButton,
+  ResolvedAlertList,
   ResolvedCounter,
-  ResolvedList,
 } from "./_client";
 
 export const metadata: Metadata = { title: "Alerts · Briff" };
@@ -61,7 +59,7 @@ export default async function AlertsPage({
 }) {
   const ctx = await requireOrgContext();
   const showReviewed = showReviewedParam((await searchParams).reviewed);
-  // The previous visit decides what counts as "fixed since your last visit".
+  // The previous visit decides which resolved alerts get the "new since last visit" badge.
   const { alertsSeenAt: lastVisit } = await loadMemberState(getDb(), ctx.orgId, ctx.userId);
   // Opening Alerts clears the top bar's dot; the shell below reads the new time.
   await markAlertsSeen(getDb(), ctx.orgId, ctx.userId);
@@ -112,12 +110,11 @@ export default async function AlertsPage({
   );
   const checking = await recheckInFlight(getDb(), ctx.orgId, installations);
   const now = new Date();
-  // Resolved alerts (a later scan has no affected version) leave the lists. The Resolved
-  // section and "Fixed since your last visit" read the same 30-day list.
+  // Resolved alerts (a later scan has no affected version) leave the lists. The counter and
+  // the Resolved section read the same 30-day list, so its "this week" cards are the count.
   const rows = allRows.filter((r) => r.resolvedAt === null);
   const resolvedRows = recentlyResolved(allRows, now);
-  const fixed = fixedSince(resolvedRows, lastVisit, weekStart);
-  const resolved = resolvedPackages(resolvedRows);
+  const resolved = resolvedSections(resolvedRows, weekStart, lastVisit);
   const resolvedThisWeek = resolvedSince(resolvedRows, weekStart);
   const baseImages = await loadBaseImageGroups(getDb(), ctx.orgId, repoScope(scope));
   const withInstalls = await attachInstalls(db, rows);
@@ -141,15 +138,14 @@ export default async function AlertsPage({
     earlier,
     backlog,
   };
-  // "New this week" always shows; the others when they list something or a fix.
-  const shown = (section: AlertSection) =>
-    section === "this-week" || groupsOf[section].length > 0 || fixed[section].length > 0;
+  // "New this week" always shows; the others when they list something.
+  const shown = (section: AlertSection) => section === "this-week" || groupsOf[section].length > 0;
   const navSections = [
     ...ALERT_SECTIONS.filter((s) => shown(s.id)).map((s) => ({
       ...s,
       count: groupsOf[s.id].length,
     })),
-    { id: "resolved", label: "Resolved", count: resolved.length },
+    { id: "resolved", label: "Resolved", count: resolvedThisWeek },
   ];
   const apiUrl = getEnv().BETTER_AUTH_URL.replace(/\/$/, "");
   // The scanner needs its URL and token in the shell; a bare `npx briff-scan` fails.
@@ -203,7 +199,6 @@ export default async function AlertsPage({
           <>
             <section id="this-week" className={`rise [--i:1] ${SECTION_ANCHOR}`}>
               <SectionHeader title="New this week" count={plural(thisWeek.length, "package")} />
-              <FixedSinceVisit packages={fixed["this-week"]} />
               {thisWeek.length > 0 ? (
                 <AlertList groups={thisWeek} {...listProps} />
               ) : (
@@ -218,7 +213,6 @@ export default async function AlertsPage({
                   title="Earlier"
                   count={`${plural(advisories(earlier), "advisory", "advisories")} · ${plural(earlier.length, "package")}`}
                 />
-                <FixedSinceVisit packages={fixed.earlier} />
                 {earlier.length > 0 && (
                   <AlertList groups={earlier} filters initialLimit={10} {...listProps} />
                 )}
@@ -231,7 +225,6 @@ export default async function AlertsPage({
                   count={`${plural(advisories(backlog), "advisory", "advisories")} · ${plural(backlog.length, "package")}`}
                   action={backlog.length > 0 ? <MarkBacklogReviewed /> : undefined}
                 />
-                <FixedSinceVisit packages={fixed.backlog} />
                 <p className="text-fg-muted mb-3.5 max-w-[72ch] text-[13px]">
                   Known advisories found the first time a repo was scanned. They were summed up in
                   one email, not sent one by one. Mark them as reviewed once you have looked; new
@@ -269,21 +262,31 @@ export default async function AlertsPage({
                 <AlertList groups={reviewedGroups} filters initialLimit={25} {...listProps} />
               </section>
             )}
-            <details id="resolved" className={`group/resolved rise [--i:5] ${SECTION_ANCHOR}`}>
-              <summary className="cursor-pointer list-none marker:content-none">
-                <SectionHeader
-                  title="Resolved"
-                  count={`${plural(resolved.length, "package")} · last 30 days`}
-                  action={
-                    <span className="text-brand">
+            <section id="resolved" className={`rise [--i:5] ${SECTION_ANCHOR}`}>
+              <SectionHeader
+                title="Resolved"
+                count={`${plural(resolved.thisWeek.length, "alert")} this week`}
+              />
+              <ResolvedAlertList
+                alerts={resolved.thisWeek}
+                empty="Nothing resolved since Monday."
+              />
+              {resolved.earlier.length > 0 && (
+                <details className="group/resolved mt-3.5">
+                  <summary className="mb-2.5 flex cursor-pointer list-none items-center gap-2 marker:content-none">
+                    <h3 className="type-h3">Earlier</h3>
+                    <CountBadge>
+                      {plural(resolved.earlier.length, "alert")} · last 30 days
+                    </CountBadge>
+                    <span className="text-brand ml-auto text-[13px] font-medium">
                       <span className="group-open/resolved:hidden">Show</span>
                       <span className="hidden group-open/resolved:inline">Hide</span>
                     </span>
-                  }
-                />
-              </summary>
-              <ResolvedList packages={resolved} />
-            </details>
+                  </summary>
+                  <ResolvedAlertList alerts={resolved.earlier} />
+                </details>
+              )}
+            </section>
           </>
         )}
       </div>

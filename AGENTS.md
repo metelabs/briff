@@ -277,9 +277,11 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   left to the upload. `Alert.resolvedBy` records the cause (`briff_scan` upload, `github_app` scan,
   `security_scan`; null on older rows, "a later scan"); a reopen clears it. Resolved alerts leave the Alerts
   lists, Home counts, the Alerts dot, Repos counts and the weekly bulletin input; stored bulletin
-  pages keep theirs. Alerts shows "Resolved: N this week", per section "Fixed since your last
-  visit" (resolved after the previous `alertsSeenAt`) and a collapsed Resolved section (per package:
-  repos, severity, time, cause), both from the same 30-day list (`recentlyResolved`). Each open
+  pages keep theirs. Alerts shows "Resolved: N this week" and a Resolved section with one card per
+  alert (`resolvedSections`: package, repo, advisory, severity, time, cause): the N alerts resolved
+  since Monday are its cards (`resolvedSince` counts the same rows; a test pins it), older ones of the
+  30-day list (`recentlyResolved`) fold under a collapsed Earlier, and a card resolved after the
+  previous `alertsSeenAt` gets a "new since last visit" label (a badge, not a filter). Each open
   package says how its fix gets noticed by its repos' connection (`fixHintFor`: App repos on push,
   briff-scan repos on the next upload or `npx briff-scan` now). "Re-check now" opens a dialog with a
   line per connection kind (briff-scan repos get the upload command), and its button

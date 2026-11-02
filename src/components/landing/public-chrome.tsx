@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { GitHubMark } from "@/components/icons/github";
 import { Logo } from "@/components/logo/Logo";
 import { PageContainer } from "@/components/shell/page-container";
 import { buttonVariants } from "@/components/ui/button";
@@ -42,6 +43,19 @@ export function PublicHeader({ pricing = false }: { pricing?: boolean }) {
             {item.label}
           </Link>
         ))}
+        <a
+          href={SOURCE_URL}
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Briff on GitHub"
+          className={cn(
+            buttonVariants({ variant: "secondary", size: "md" }),
+            "ml-1 w-9 px-0 md:w-auto md:px-3.5"
+          )}
+        >
+          <GitHubMark className="size-4" />
+          <span className="hidden md:inline">GitHub</span>
+        </a>
         <Link
           href="/login"
           className={cn(buttonVariants({ variant: "primary", size: "md" }), "ml-2")}
@@ -79,7 +93,12 @@ export function PublicFooter({ pricing = false }: { pricing?: boolean }) {
         <span>Contact: {SUPPORT_EMAIL}</span>
         <FooterLink href={DOCS_URL}>Docs</FooterLink>
         {pricing && <FooterLink href="/pricing">Pricing</FooterLink>}
-        <FooterLink href={SOURCE_URL}>Source</FooterLink>
+        <FooterLink href={SOURCE_URL}>
+          <span className="inline-flex items-center gap-1.5">
+            <GitHubMark className="size-3.5" />
+            GitHub
+          </span>
+        </FooterLink>
         <FooterLink href={METELABS_URL}>Made by Metelabs</FooterLink>
         <span className="font-mono tabular-nums">Briff {packageJson.version}</span>
       </PageContainer>

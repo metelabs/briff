@@ -39,7 +39,9 @@ Copy button. The page follows the stream chosen in the top bar.
 
 Briff does not wait for you to mark anything fixed. When a scan no longer finds an affected
 version of the package, the alert is resolved and leaves the lists and counts. Alerts shows how
-many were resolved this week, and a **Fixed since your last visit** group per section.
+many were resolved this week, and the **Resolved** section lists each of them (package, repo,
+advisory, when and which scan resolved it), with a "new since last visit" label on the ones you
+have not seen yet. Older resolutions of the last 30 days are folded under **Earlier**.
 
 **Re-check now** asks for that scan at once: for repos connected through the GitHub App, Briff
 re-scans every installation of the organisation (at most once every 10 minutes) and reloads the
