@@ -10,6 +10,8 @@ export interface BillingConfig {
   clientToken: string;
   /** BRIFF_PADDLE_FAKE: canned API answers, no Paddle.js. */
   fake: boolean;
+  /** BRIFF_CHECKOUT: Briff's checkout page with the inline frame, or Paddle's overlay. */
+  checkout: "inline" | "overlay";
 }
 
 /**
@@ -21,5 +23,10 @@ export function billingConfig(): BillingConfig | null {
   if (!isBillingConfigured()) return null;
   const env = getEnv();
   const fake = env.BRIFF_PADDLE_FAKE && env.NODE_ENV !== "production";
-  return { env: env.PADDLE_ENV, clientToken: fake ? "" : (env.PADDLE_CLIENT_TOKEN ?? ""), fake };
+  return {
+    env: env.PADDLE_ENV,
+    clientToken: fake ? "" : (env.PADDLE_CLIENT_TOKEN ?? ""),
+    fake,
+    checkout: env.BRIFF_CHECKOUT,
+  };
 }

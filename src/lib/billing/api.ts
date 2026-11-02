@@ -5,6 +5,7 @@ import { Environment, LogLevel, Paddle } from "@paddle/paddle-node-sdk";
 import { getEnv } from "@/lib/env";
 
 import { fakeBillingApi } from "./fake-api";
+import { summariseMethod, type PaymentMethodSummary } from "./payment-method";
 import { formatMoney, type PaddleSubscriptionLike } from "./state";
 import type { ProrationBillingMode } from "@paddle/paddle-node-sdk";
 
@@ -15,6 +16,8 @@ import type { ProrationBillingMode } from "@paddle/paddle-node-sdk";
 export interface BillingPreview {
   /** Charged now (formatted, tax included); null when nothing is charged now. */
   dueNow: string | null;
+  /** Credited now for unused time (formatted); null without a credit. */
+  credit: string | null;
   /** The new recurring amount (formatted). */
   recurring: string | null;
   nextBilledAt: Date | null;
@@ -62,6 +65,57 @@ export interface BillingApi {
   ): Promise<BillingTransaction[]>;
   transactionOwner(transactionId: string): Promise<TransactionOwner>;
   invoiceUrl(transactionId: string): Promise<string>;
+  /**
+   * The payment method that pays for these subscriptions: the one their newest payment used,
+   * read fresh from the customer's saved methods (`payment_method.read`). Throws when Paddle
+   * refuses (the API key lacks the permission) or does not answer.
+   */
+  paymentMethod(
+    customerId: string,
+    subscriptionIds: string[]
+  ): Promise<PaymentMethodSummary | null>;
+  /** The subscription's update_payment_method link from `management_urls`, if any. */
+  paymentMethodUpdateUrl(subscriptionId: string): Promise<string | null>;
+}
+
+interface Totals {
+  total: string;
+  currencyCode: string;
+}
+
+/** The fields of the SDK's SubscriptionPreview that the confirmation shows. */
+export interface PreviewLike {
+  immediateTransaction: { details: { totals: Totals } } | null;
+  recurringTransactionDetails: { totals: Totals } | null;
+  updateSummary: {
+    result: { action: "credit" | "charge"; amount: string; currencyCode: string };
+  } | null;
+  nextBilledAt: string | null;
+}
+
+/**
+ * Due now, credit and the new recurring amount of a previewed change. A shorter period or a
+ * smaller plan prorated now nets out as a credit to the customer's balance:
+ * `update_summary.result` says so even without an immediate transaction; a negative
+ * immediate total is the fallback.
+ */
+export function previewAmounts(preview: PreviewLike): BillingPreview {
+  const now = preview.immediateTransaction?.details.totals;
+  const recurring = preview.recurringTransactionDetails?.totals;
+  const total = now ? Number(now.total) : 0;
+  const result = preview.updateSummary?.result;
+  const credit =
+    result?.action === "credit" && Number(result.amount) > 0
+      ? formatMoney(result.amount, result.currencyCode)
+      : now && total < 0
+        ? formatMoney(String(-total), now.currencyCode)
+        : null;
+  return {
+    dueNow: !credit && now && total > 0 ? formatMoney(now.total, now.currencyCode) : null,
+    credit,
+    recurring: recurring ? formatMoney(recurring.total, recurring.currencyCode) : null,
+    nextBilledAt: preview.nextBilledAt ? new Date(preview.nextBilledAt) : null,
+  };
 }
 
 const HISTORY_STATUSES = ["billed", "paid", "past_due", "completed", "canceled"] as const;
@@ -78,13 +132,7 @@ function paddleApi(apiKey: string, env: "sandbox" | "live"): BillingApi {
         items: [{ priceId, quantity: 1 }],
         prorationBillingMode: mode,
       });
-      const now = preview.immediateTransaction?.details.totals;
-      const recurring = preview.recurringTransactionDetails?.totals;
-      return {
-        dueNow: now && Number(now.total) > 0 ? formatMoney(now.total, now.currencyCode) : null,
-        recurring: recurring ? formatMoney(recurring.total, recurring.currencyCode) : null,
-        nextBilledAt: preview.nextBilledAt ? new Date(preview.nextBilledAt) : null,
-      };
+      return previewAmounts(preview);
     },
     changePrice(id, priceId, mode) {
       // items replaces the subscription's items; onPaymentFailure stays prevent_change.
@@ -129,6 +177,36 @@ function paddleApi(apiKey: string, env: "sandbox" | "live"): BillingApi {
     },
     async invoiceUrl(id) {
       return (await paddle.transactions.getInvoicePDF(id)).url;
+    },
+    async paymentMethod(customerId, subscriptionIds) {
+      if (subscriptionIds.length === 0) return null;
+      const [saved, recent] = await Promise.all([
+        paddle.paymentMethods.list(customerId).next(),
+        paddle.transactions
+          .list({
+            customerId: [customerId],
+            subscriptionId: subscriptionIds,
+            status: ["completed", "paid", "billed", "past_due"],
+            orderBy: "created_at[DESC]",
+            perPage: 10,
+          })
+          .next(),
+      ]);
+      // Updating the method in Paddle's portal creates a zero-amount transaction for the
+      // subscription whose payment is authorized, not captured, so the newest attempt of
+      // either kind names the method Paddle charges next.
+      const used = recent
+        .flatMap((t) => t.payments ?? [])
+        .filter((p) => p.status === "captured" || p.status === "authorized")
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+      const id = used?.paymentMethodId ?? used?.storedPaymentMethodId ?? null;
+      // Only the method this org's own payment used, and only while it is still saved: the
+      // customer may pay for other orgs too, and a removed card no longer pays for anything.
+      const match = id ? saved.find((m) => m.id === id) : undefined;
+      return match ? summariseMethod(match) : null;
+    },
+    async paymentMethodUpdateUrl(id) {
+      return (await paddle.subscriptions.get(id)).managementUrls?.updatePaymentMethod ?? null;
     },
   };
 }

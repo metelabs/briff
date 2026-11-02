@@ -152,8 +152,11 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   `occurred_at` against `Subscription.stateAt`. Owner billing actions (`manage.ts`) re-read the
   role and act only on the org's own subscription (found through withOrg); no subscription,
   customer or org id is taken from the browser, an invoice id is checked against the org's
-  subscriptions, the portal opens only for the paying email, and checkout's `custom_data.orgId`
-  is trusted only with its HMAC (`org-link.ts`). Paddle API calls go through `getBillingApi()`.
+  subscriptions, the portal and the update-payment-method link open only for the paying email,
+  and checkout's `custom_data.orgId` is trusted only with its HMAC (`org-link.ts`). A checkout
+  starts only through `startCheckoutAction` (`checkoutSession`), which applies `billingOffer`
+  (`offer.ts`): never the org's current plan, never next to a live subscription, never over
+  Unlimited or a paid plan the admin set. Paddle API calls go through `getBillingApi()`.
 - Page shell: `page.tsx` is a server component; interactive parts live in a `_client.tsx` sibling.
 - Every external fetch of a URL that came from data (feeds, release URLs) goes through
   `safeFetch` / `fetchRssFeed`. Fixed API hosts (npm, OSV) may use `fetchWithRetry`.

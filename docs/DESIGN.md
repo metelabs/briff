@@ -53,7 +53,7 @@ inside itself (never the page) and keeps the active pill scrolled into view.
 Pages outside the shell: **Login**, **Onboarding** and a bulletin opened from an email link without a session use
 a minimal header (`MinimalHeader`: logo only, plus a "Sign out" link on onboarding) in the same container as the
 shell's bar, so the logo sits in the same place on every page. The public pages (landing, `/replay/<id>`) use the same
-header position with a few section links and a secondary "Sign in" button, and the footer line
+header position with a few section links and a primary "Sign in" button (header chrome, outside the one-primary-per-view rule), and the footer line
 with Terms, Privacy, Security, Status, the support address, Docs, Source, Made by Metelabs
 and the version (docs/LANDING.md). The legal pages (`/terms`, `/privacy`, `/refunds`, `/dpa`) put
 a 72ch prose column (15px/1.6 body, H2 per section) under that header, with a table of contents

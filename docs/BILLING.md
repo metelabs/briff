@@ -13,29 +13,67 @@ and the page `src/app/settings/billing/`. API shapes follow `@paddle/paddle-node
 ## Flow
 
 1. An owner opens **Settings → Billing**, picks Pro or Team, monthly or yearly, and clicks
-   Upgrade. Paddle.js opens the overlay checkout with the price id, the owner's email (or the
-   org's existing Paddle customer) and `customData: { orgId, orgSig }`; `orgSig` is an HMAC of
-   the org id keyed from `BETTER_AUTH_SECRET` (`src/lib/billing/org-link.ts`), so a buyer cannot
-   attach a subscription to another org by editing the custom data.
+   Upgrade. With `BRIFF_CHECKOUT=inline` (default) that opens Briff's checkout page
+   `/settings/billing/checkout?plan=pro&interval=month`: the plan summary, what is included,
+   the org's usage against the new limits and a "Secure payment by Paddle" note on the left,
+   Paddle's inline checkout frame on the right (`displayMode: "inline"`, `frameTarget`,
+   `frameInitialHeight`, `frameStyle`, `theme` from the app's theme when it opens). With
+   `BRIFF_CHECKOUT=overlay` the same button opens Paddle's overlay over the billing page. Either
+   way the checkout starts with `startCheckoutAction`, which returns the price id, the owner's
+   email (or the org's existing Paddle customer) and `customData: { orgId, orgSig }`; `orgSig`
+   is an HMAC of the org id keyed from `BETTER_AUTH_SECRET` (`src/lib/billing/org-link.ts`), so
+   a buyer cannot attach a subscription to another org by editing the custom data.
+   The action refuses (with a toast) a plan the org already has, any checkout next to a live
+   subscription, and any checkout while the plan is Unlimited or a paid plan the instance
+   admin set (`billingOffer`, `src/lib/billing/offer.ts`); the page then shows "Your plan is
+   set by the instance admin. Billing is managed outside Paddle; contact support to change it."
+   and only "Compare plans". An admin-set Free (limit overrides only) may still buy a plan,
+   which then belongs to billing (`planSource = paddle`).
 2. Paddle redirects to `/settings/billing?checkout=success` ("Payment received, your plan
    updates in a moment") and the page reloads its data every 3 s for up to 60 s.
 3. Paddle sends `transaction.completed` and `subscription.created` to
    `POST /api/billing/paddle`. The webhook stores the subscription (`Subscription`, a tenant
    table) and sets `Org.plan` from the price's `custom_data.plan` (fallback: the catalog).
 4. Owners change plan (preview, then confirm), cancel at the end of the period, resume a
-   scheduled cancel, open Paddle's customer portal (payment method, invoices, address) and
-   download invoices from the page. Every change Paddle accepts is mirrored at once from its
+   scheduled cancel, see and update the payment method, open Paddle's customer portal
+   (invoices, address) and download invoices from the page. Every change Paddle accepts is mirrored at once from its
    answer and confirmed later by the webhook.
 5. Members see the plan and "ask an owner". Only owners (re-read from the database on every
    action) manage billing, and every action works on the org's own subscription: no
    subscription or customer id ever comes from the browser; an invoice id is checked against the
    org's subscriptions.
 
-Plan changes: a bigger plan, or monthly to yearly on the same plan, is `prorated_immediately`
-(the difference is charged now); a smaller plan, or yearly to monthly, is
-`prorated_next_billing_period` (settled on the next bill, nothing refunded mid-period). Paddle's
+Plan changes: a bigger plan on the same billing period is `prorated_immediately` (the
+difference is charged now); a smaller plan on the same period is `prorated_next_billing_period`
+(settled on the next bill, nothing refunded mid-period). **Every change of billing period is
+`prorated_immediately`**: Paddle refuses the `*_next_billing_period` modes when the billing cycle
+changes (`subscription_new_items_not_valid`: "when changing the billing cycle only
+prorated_immediately, full_immediately or do_not_bill options are allowed"; the first production
+preview, Team monthly to Pro yearly, hit it). Monthly to yearly charges the prorated difference
+now; yearly to monthly credits the unused time, which Paddle uses on the next bills. Paddle's
 default `on_payment_failure: prevent_change` applies: a declined card leaves the plan as it was.
 
+Paddle charges a plan change to the saved payment method without asking for the card again, so
+the confirmation says it in one sentence from the preview: "You pay $351.00 now with Visa ••••
+4242, then $390.00 per year from 2 November 2027" (`chargeSentence`,
+`src/lib/billing/payment-method.ts`; "with your saved payment method" when the card is
+unknown). Only the newest preview opens the dialog, and Confirm sends exactly the previewed
+terms. A refusal Paddle explains with a known error code gets a sentence an owner can act on;
+other refusals show Paddle's detail.
+
+Status chip (`statusChip`, `src/lib/billing/status-chip.ts`): a scheduled or finished cancel
+reads **Canceled** (muted) while its end is more than 30 days away, **Ends soon** (ochre) within
+30 days and **Ended** after it; past_due reads **Payment failed · N days left** until the 14-day
+grace ends.
+
+Payment method (owners): a card with the brand mark (`src/components/ui/payment-brands.tsx`),
+`Visa •••• 4242`, the expiry and **Update**, which opens the subscription's
+`management_urls.update_payment_method` link (else the customer portal), for the payer only. The
+method is the one the newest payment of the org's own subscriptions used, read fresh from
+`customers.paymentMethods.list` once per request. Without `payment_method.read` on the API key
+the card says "Managed in the Paddle portal" instead of failing. Settings → Billing repeats the
+plan, the status chip, the renewal or end date, usage bars, the last payment and the payment
+method, with a "Billing details" link here; members see the plan and "ask an owner".
 The customer portal opens only for the person who pays (the Paddle customer's email equals the
 signed-in owner's): a Paddle customer is one email and may pay for other orgs too, whose
 invoices and cards a co-owner of this org must not see. Billing history lists only the
@@ -109,12 +147,44 @@ Processed `BillingEvent` rows older than 180 days are deleted.
 | `PADDLE_API_KEY`        | web+worker | Server API key (`pdl_sdbx_apikey_...` / `pdl_live_apikey_...`)      |
 | `PADDLE_CLIENT_TOKEN`   | web        | Paddle.js client token (`test_...` / `live_...`), public by design  |
 | `PADDLE_WEBHOOK_SECRET` | web        | The notification destination's secret (`pdl_ntfset_...`)            |
+| `BRIFF_CHECKOUT`        | web        | `inline` (default, Briff's checkout page) or `overlay` (Paddle's)   |
 | `BRIFF_PADDLE_FAKE`     | dev only   | Canned API answers for the billing page; refused in production      |
 
 All are optional: without the API key or the client token the billing page says "Billing is
 not configured on this instance" and nothing else changes; without the webhook secret the
 webhook answers 503. Admin → Configuration lists the missing ones on the hosted service.
 Nothing is read at build time and nothing goes into the image.
+
+## API key permissions
+
+Paddle dashboard → **Developer tools → Authentication → the API key → Edit**. The app reads and
+writes: `subscription.read` + `subscription.write` (plan changes, cancel, resume),
+`transaction.read` (history, invoices, the last payment), `customer.read` (the payer check),
+`customer_portal_session.write` (the portal) and `payment_method.read` (the payment method
+card). Without the last two the page still works: the card says "Managed in the Paddle
+portal" and the portal button reports the missing permission.
+
+## Checkout styling (Paddle dashboard)
+
+The inline frame's insides are Paddle's; Briff controls only the page around it and the
+`theme` (light or dark, from the app's theme when the checkout opens). Set the rest once per
+environment in **Checkout → Checkout settings → Styling** so the frame matches Briff
+(docs/DESIGN.md §3–5):
+
+| Setting                       | Value                                                      |
+| ----------------------------- | ---------------------------------------------------------- |
+| Brand / button colour (light) | `#0B6B67` (petrol, `--brand`), button text `#FFFFFF`       |
+| Brand / button colour (dark)  | `#3CCFC2` (teal, dark `--brand`), button text `#04201E`    |
+| Background (dark)             | `#111A20` (dark `--surface`), text `#E5EDF1`               |
+| Background (light)            | `#FFFFFF` (`--surface`), text `#0D1B24`                    |
+| Border radius                 | 10 px (inputs and buttons, `rounded-control`)              |
+| Font                          | Geist if offered, else the system sans-serif (never Inter) |
+
+Check: open `/settings/billing/checkout?plan=pro&interval=month` in light and dark (account
+menu → Theme) after saving; the pay button should be petrol in light and teal in dark. Paddle
+may limit which fields are styleable per plan; whatever it does not offer stays Paddle's
+default. `BRIFF_CHECKOUT=overlay` switches back to the overlay for a comparison without a
+deploy of new code (an env change and restart).
 
 ## Set up the notification destination
 
@@ -147,8 +217,9 @@ End to end: with the sandbox keys set, open Settings → Billing as an owner, Up
 with `4242 4242 4242 4242`. The page lands on `?checkout=success` and shows Pro within seconds;
 the notification log shows 200 for `transaction.completed` and `subscription.created`. Cancel,
 resume and change plan from the page; use **Developer tools → Simulations** for `past_due` and
-`canceled`. Locally, `BRIFF_PADDLE_FAKE=true` renders the page, the change-plan preview and the
-history without keys (checkout itself needs a real client token).
+`canceled`. Locally, `BRIFF_PADDLE_FAKE=true` renders the page, the change-plan preview, the
+payment method (a fake Visa •••• 4242) and the history without keys; the checkout page shows a
+placeholder where Paddle's frame goes (checkout itself needs a real client token).
 
 ## Live prices
 

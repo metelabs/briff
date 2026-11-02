@@ -172,19 +172,31 @@ describe("planDecision", () => {
 });
 
 describe("prorationMode", () => {
-  it("charges upgrades now and settles downgrades on the next bill", () => {
+  it("charges upgrades now and settles same-period downgrades on the next bill", () => {
     expect(
       prorationMode({ plan: "pro", interval: "month" }, { plan: "team", interval: "month" })
     ).toBe("prorated_immediately");
+    expect(
+      prorationMode({ plan: "team", interval: "year" }, { plan: "pro", interval: "year" })
+    ).toBe("prorated_next_billing_period");
+  });
+
+  // Paddle answered `subscription_new_items_not_valid` ("when changing the billing cycle only
+  // prorated_immediately, full_immediately or do_not_bill options are allowed") to the
+  // production preview of Team monthly -> Pro yearly, which used prorated_next_billing_period.
+  it("prorates every change of billing period now, the only mode Paddle accepts", () => {
     expect(
       prorationMode({ plan: "pro", interval: "month" }, { plan: "pro", interval: "year" })
     ).toBe("prorated_immediately");
     expect(
       prorationMode({ plan: "team", interval: "month" }, { plan: "pro", interval: "year" })
-    ).toBe("prorated_next_billing_period");
+    ).toBe("prorated_immediately");
     expect(
       prorationMode({ plan: "pro", interval: "year" }, { plan: "pro", interval: "month" })
-    ).toBe("prorated_next_billing_period");
+    ).toBe("prorated_immediately");
+    expect(
+      prorationMode({ plan: "team", interval: "year" }, { plan: "pro", interval: "month" })
+    ).toBe("prorated_immediately");
   });
 });
 
