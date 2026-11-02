@@ -10,14 +10,20 @@ import type {
 // I*NotificationResponse types, as the sandbox simulator sends them), signed like Paddle:
 // `Paddle-Signature: ts=<unix>;h1=<hex hmac-sha256 of "<ts>:<raw body>">`.
 
-export const PRO_MONTHLY = "pri_01m6c6eh8vp89cnpqw7vpv2krh";
-export const PRO_YEARLY = "pri_01m6c6ehdk4jnaddj3n1p21w9a";
-export const TEAM_MONTHLY = "pri_01m6c6ehqacmse2ybry03yxe3h";
+export const PRO_MONTHLY = "pri_01m6f8cst11wvmmvpcw6k6q9xa";
+export const PRO_YEARLY = "pri_01m6f8csyaetjaydk2fxa3m9wf";
+export const TEAM_MONTHLY = "pri_01m6f8ct27w63hejyzxa69cdg9";
 
 const PLAN_OF: Record<string, { plan: string; interval: "month" | "year" }> = {
   [PRO_MONTHLY]: { plan: "pro", interval: "month" },
   [PRO_YEARLY]: { plan: "pro", interval: "year" },
   [TEAM_MONTHLY]: { plan: "team", interval: "month" },
+};
+
+// List prices in cents (src/lib/plans.ts), as Paddle sends them.
+const AMOUNT_CENTS: Record<string, Record<"month" | "year", string>> = {
+  pro: { month: "400", year: "4000" },
+  team: { month: "1200", year: "12000" },
 };
 
 export interface SubscriptionFixture {
@@ -78,7 +84,7 @@ export function subscriptionData(f: SubscriptionFixture): ISubscriptionNotificat
           billing_cycle: { interval: terms.interval, frequency: 1 },
           quantity: { minimum: 1, maximum: 1 },
           unit_price: {
-            amount: terms.plan === "team" ? "3900" : "1200",
+            amount: AMOUNT_CENTS[terms.plan]?.[terms.interval] ?? "400",
             currency_code: "USD",
           },
           custom_data: { plan: terms.plan, interval: terms.interval },

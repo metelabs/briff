@@ -217,7 +217,7 @@ describe.skipIf(!url)("POST /api/billing/paddle", () => {
       id: `sub_${suffix}_b`,
       customerId: `ctm_${suffix}_b`,
       customData: checkoutCustomData(AUTH_SECRET, orgId),
-      priceId: "pri_01m6c6ehqacmse2ybry03yxe3h",
+      priceId: "pri_01m6f8ct27w63hejyzxa69cdg9",
     };
     expect(
       await result(

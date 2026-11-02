@@ -11,7 +11,7 @@ function history(now: number): BillingTransaction[] {
     id: `txn_fake_${i}`,
     date: new Date(now - i * 30 * DAY),
     status: "completed",
-    total: "$12.00",
+    total: "$4.00",
     invoiceNumber: `325-${10_420 - i}`,
   }));
 }
@@ -24,9 +24,9 @@ export function fakeBillingApi(): BillingApi {
     getSubscription: fail,
     async previewPriceChange() {
       return {
-        dueNow: "$22.40",
+        dueNow: "$4.80",
         credit: null,
-        recurring: "$39.00",
+        recurring: "$12.00",
         nextBilledAt: new Date(Date.now() + 18 * DAY),
       };
     },

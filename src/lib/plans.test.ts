@@ -82,6 +82,15 @@ describe("plan table helpers", () => {
     expect(monthsFree(PLANS.free)).toBe(0);
   });
 
+  // List prices since 3 Nov 2026 (docs/BILLING.md "Price history"); Paddle's prices must match.
+  it("lists Pro at $4 / $40 and Team at $12 / $120", () => {
+    expect(PRICED_PLANS.map((p) => [p.id, p.monthlyUsd, p.yearlyUsd])).toEqual([
+      ["free", 0, 0],
+      ["pro", 4, 40],
+      ["team", 12, 120],
+    ]);
+  });
+
   it("names the next plan up, and none past Team or for Unlimited", () => {
     expect(nextPlan("free")?.id).toBe("pro");
     expect(nextPlan("pro")?.id).toBe("team");

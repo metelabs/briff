@@ -48,9 +48,9 @@ function fakeApi(remote: (id: string) => PaddleSubscriptionLike) {
     previewPriceChange: async (id, priceId, mode) => (
       calls.push(`preview ${id} ${priceId} ${mode}`),
       {
-        dueNow: "$27.00",
+        dueNow: "$8.00",
         credit: null,
-        recurring: "$39.00",
+        recurring: "$12.00",
         nextBilledAt: new Date("2026-12-02T10:00:00Z"),
       }
     ),
@@ -68,7 +68,7 @@ function fakeApi(remote: (id: string) => PaddleSubscriptionLike) {
     ),
     listTransactions: async (customer, subs) => (
       calls.push(`list ${customer} ${subs.join(",")}`),
-      [{ id: "txn_1", date: new Date(), status: "completed", total: "$12.00", invoiceNumber: "1" }]
+      [{ id: "txn_1", date: new Date(), status: "completed", total: "$4.00", invoiceNumber: "1" }]
     ),
     transactionOwner: async (id) => (
       calls.push(`owner ${id}`),
@@ -194,7 +194,7 @@ describe.skipIf(!url)("billing management, tenant checks and billing-check", () 
       await previewPlanChange(db, api, "sandbox", actor, { plan: "team", interval: "month" })
     ).toMatchObject({
       ok: true,
-      preview: { billing: "now", dueNow: "$27.00" },
+      preview: { billing: "now", dueNow: "$8.00" },
     });
     expect(
       await changePlan(db, api, "sandbox", actor, { plan: "team", interval: "month" })
@@ -212,9 +212,9 @@ describe.skipIf(!url)("billing management, tenant checks and billing-check", () 
     });
     expect(await portalUrl(db, api, { orgId: orgA, ...member })).toMatchObject({ ok: false });
     expect(calls).toEqual([
-      "preview sub_a_live pri_01m6c6ehqacmse2ybry03yxe3h prorated_immediately",
+      "preview sub_a_live pri_01m6f8ct27w63hejyzxa69cdg9 prorated_immediately",
       "method ctm_a sub_a_live",
-      "change sub_a_live pri_01m6c6ehqacmse2ybry03yxe3h prorated_immediately",
+      "change sub_a_live pri_01m6f8ct27w63hejyzxa69cdg9 prorated_immediately",
       "cancel sub_b_live",
     ]);
   });
@@ -334,7 +334,7 @@ describe.skipIf(!url)("billing management, tenant checks and billing-check", () 
     expect(await checkoutSession(db, "sandbox", actor, pro, secret)).toMatchObject({
       ok: true,
       session: {
-        priceId: "pri_01m6c6eh8vp89cnpqw7vpv2krh",
+        priceId: "pri_01m6f8cst11wvmmvpcw6k6q9xa",
         customer: { email: owner.email },
         customData: { orgId },
       },
@@ -397,8 +397,8 @@ describe.skipIf(!url)("billing management, tenant checks and billing-check", () 
     await previewPlanChange(db, api, "sandbox", actor, { plan: "pro", interval: "year" });
     await previewPlanChange(db, api, "sandbox", actor, { plan: "team", interval: "year" });
     expect(calls.filter((c) => c.startsWith("preview"))).toEqual([
-      `preview sub_g_${suffix} pri_01m6c6ehdk4jnaddj3n1p21w9a prorated_immediately`,
-      `preview sub_g_${suffix} pri_01m6c6ehv90djqb9e6qy0yxwq2 prorated_immediately`,
+      `preview sub_g_${suffix} pri_01m6f8csyaetjaydk2fxa3m9wf prorated_immediately`,
+      `preview sub_g_${suffix} pri_01m6f8ct6a0dme5cygpx6yrajv prorated_immediately`,
     ]);
     const preview = await previewPlanChange(db, api, "sandbox", actor, {
       plan: "team",

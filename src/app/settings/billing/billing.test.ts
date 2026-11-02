@@ -85,7 +85,7 @@ const PRO_SUB: SubRow = {
   plan: "pro",
   interval: "month",
   status: "active",
-  paddlePriceId: "pri_01m6c6eh8vp89cnpqw7vpv2krh",
+  paddlePriceId: "pri_01m6f8cst11wvmmvpcw6k6q9xa",
   scheduledChange: null,
   nextBilledAt: new Date("2026-12-02T00:00:00Z"),
   currentPeriodEnd: new Date("2026-12-02T00:00:00Z"),
