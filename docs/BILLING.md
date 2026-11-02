@@ -245,4 +245,5 @@ created with exactly those amounts in USD:
   a year), from the measured LLM cost of the hosted instance; limits unchanged. New sandbox
   prices replaced the ids in `PADDLE_CATALOG.sandbox`; the old four are archived in Paddle. A
   subscription still on an archived price keeps mapping through its `custom_data.plan` (the
-  webhook reads it before the catalog).
+  webhook reads it before the catalog), and Settings → Billing shows it as "Current, at an older
+  price" with Review change enabled, which moves it to the list price from the next bill.
