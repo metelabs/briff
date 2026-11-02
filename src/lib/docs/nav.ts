@@ -20,6 +20,8 @@ const pageSchema = z.object({
   slug: z.string().regex(/^([a-z0-9-]+(\/[a-z0-9-]+)*)?$/),
   title: z.string().min(1),
   parts: z.array(partSchema).min(1),
+  /** Meta description; default: the page's first paragraph. */
+  description: z.string().optional(),
   /** Deepest heading level in "On this page" (default 3). */
   tocDepth: z.union([z.literal(2), z.literal(3)]).optional(),
 });

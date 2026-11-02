@@ -99,7 +99,8 @@ function selectPart(part: DocsPart, problems: string[]): RootContent[] {
   const blocks: { key: string; nodes: RootContent[] }[] = [{ key: "_intro", nodes: [] }];
   for (const node of structuredClone(tree.children)) {
     if (node.type === "heading" && node.depth === 1) continue;
-    if (node.type === "heading" && node.depth === 2) blocks.push({ key: headingId(node), nodes: [node] });
+    if (node.type === "heading" && node.depth === 2)
+      blocks.push({ key: headingId(node), nodes: [node] });
     else blocks[blocks.length - 1].nodes.push(node);
   }
   for (const key of part.sections ?? []) {
@@ -209,9 +210,8 @@ function markCallouts(root: Root) {
           : "";
     const kind = CALLOUTS[label.toLowerCase()];
     if (!kind) return;
-    let rest: PhrasingContent[];
-    if (lead.type === "strong") rest = first.children.slice(1);
-    else rest = [{ ...lead, value: lead.value.slice(label.length) }, ...first.children.slice(1)];
+    const rest: PhrasingContent[] = first.children.slice(1);
+    if (lead.type === "text") rest.unshift({ type: "text", value: lead.value.slice(label.length) });
     const head = rest[0];
     if (head?.type === "text") rest[0] = { ...head, value: head.value.replace(/^[\s:]+/, "") };
     if (rest[0]?.type === "text" && rest[0].value === "") rest.shift();
@@ -342,7 +342,8 @@ async function build(): Promise<DocsBuild> {
       for (const node of nodes) {
         if (node.type !== "heading") continue;
         const key = `${part.file}#${headingId(node)}`;
-        if (!index.anchors.has(key)) index.anchors.set(key, { slug: page.slug, hash: headingId(node) });
+        if (!index.anchors.has(key))
+          index.anchors.set(key, { slug: page.slug, hash: headingId(node) });
       }
       const start = { slug: page.slug, hash: i > 0 && firstHeading ? headingId(firstHeading) : "" };
       if ((!part.sections || part.sections.includes("_intro")) && !index.files.has(part.file)) {
@@ -385,7 +386,7 @@ async function build(): Promise<DocsBuild> {
       slug: page.slug,
       title: page.title,
       section: page.section,
-      description: firstParagraph(children),
+      description: page.description ?? firstParagraph(children),
       hast,
       toc,
       files,

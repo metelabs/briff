@@ -99,7 +99,8 @@ what is off under `warnings`.
 | GitHub App (all six `GITHUB_APP_*`)                                   | Scans through the GitHub Action and the CLI with scan tokens                                                           | No "Connect GitHub" button; no scan on push                                                           |
 | `GITHUB_TOKEN`                                                        | Everything                                                                                                             | GitHub release feeds and security-advisory calls are limited to 60 requests per hour                  |
 
-`BRIFF_LLM_FAKE` is refused in production; it is for development only.
+> **Note**
+> `BRIFF_LLM_FAKE` is refused in production; it is for development only.
 
 ## Connecting repos
 
@@ -172,8 +173,11 @@ docker compose exec -T postgres psql -U briff -d briff -v ON_ERROR_STOP=1 < brif
 docker compose start web worker
 ```
 
-Keep `.env` with the backup: `BETTER_AUTH_SECRET` signs sessions and the links in emails
-(feedback links stop working with a new one). Copy dumps off the server, e.g. a nightly cron
+> **Warning**
+> Keep `.env` with the backup: `BETTER_AUTH_SECRET` signs sessions and the links in emails
+> (feedback links stop working with a new one).
+
+Copy dumps off the server, e.g. a nightly cron
 line `0 2 * * * cd /opt/briff && docker compose exec -T postgres pg_dump -U briff -d briff --clean --if-exists | gzip > /var/backups/briff-$(date +\%F).sql.gz`.
 
 ## Health and logs
