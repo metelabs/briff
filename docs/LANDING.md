@@ -26,14 +26,8 @@ The app serves its own public pages, in the Triage design system, without a sess
   a card per world event or email), and a table of what each sample repo was told by which
   email. An email card shows its to-do lines and folds open into the email itself, inline (its
   body as a `<div>` and its styles scoped to `.mail-body`, `src/lib/email/embed.ts`), not in a frame.
-- The bulletin sample on the landing page is a static Monday bulletin for three fictional repos
-  (`src/components/landing/sample-bulletin.ts`: a security fix per release line, a deadline,
-  three good-to-know items, three advisories with one transitive, five folded minor releases),
-  rendered by the same component as `/b/<id>` (`src/components/bulletin/bulletin-content.tsx`),
-  next to the PHP2Shell replay's fix email in a frame. Extend that fixture, not the renderer.
-- The file list under "How it reads your repos" is `SCANNED_FILE_NAMES` / `SCANNED_NAME_PATTERNS`
-  from `packages/scan/src/files.ts`, the lists `isScannedPath` (the GitHub App's filter) uses. A
-  scanner change shows up in `src/components/landing/__snapshots__/scanned-files.test.ts.snap`.
+- The landing page's structure and the source of every claim on it are in
+  "Landing page" below.
 - Legal pages: the operator's legal name, address, registration number and the backup and log
   retention are placeholders in `src/lib/legal.ts` (`[LEGAL_NAME]`, ...). Fill them there once;
   then remove `LEGAL_PLACEHOLDERS_ALLOWED` from `vitest.config.mts`, and
@@ -48,13 +42,63 @@ The app serves its own public pages, in the Triage design system, without a sess
   instance renders none of it, answers 404 on `/pricing` and `/settings/billing`, and leaves
   `/pricing` out of the sitemap and robots. Every number on the pricing page comes from `PLANS`
   in `src/lib/plans.ts`, the table the limit checks read.
-- Links to the repository (Self-host, Docs, Source, Security) are built from `SOURCE_URL` in
-  `src/components/landing/links.ts`. The repository is private, so they 404 for visitors until
-  it is opened; change that one constant if the source moves.
+- Links to the repository (Self-host, Docs, Source, Security, Changelog, License) are built from
+  `SOURCE_URL` in `src/components/landing/links.ts` (the public `metelabs/briff`); change that
+  one constant if the source moves.
 - Every page stays rendered per request: the root layout reads the theme cookie (no inline
   script, DESIGN.md §10). The replays run once per process (`publicReplay` caches the result);
   the landing page does no I/O. The replays read `src/sources/__fixtures__` at runtime, which
   `next.config.ts` traces into the standalone output.
+
+## Landing page
+
+`src/app/landing/page.tsx` builds every section from fixtures and pure code; it does no I/O.
+The parts live in `src/components/landing/` (`sections.tsx`, `flow-diagram.tsx`,
+`step-art.tsx`, `showcase-tabs.tsx`, `reveal.tsx`). Copy is short on purpose: a section is a
+headline, a picture and at most two sentences per card.
+
+1. **Hero.** One sentence of value, one of trust, "Create an account" (`SIGNUP_PATH`,
+   `/signup`) and "See a real incident" (`/replay/php2shell`). The picture is a screenshot of
+   the page's own Bulletin tab in a browser frame (`shots/bulletin-light.webp` and
+   `-dark.webp`, `next/image`, the theme shows one: the hidden one is never fetched), with the
+   PHP2Shell replay's fix email on top (subject and delay from `replayHighlights`). After a
+   change to the bulletin page or the sample, re-shoot both files: open `/landing` at 1040px
+   wide, device scale 2, `briff-theme` cookie `light` then `dark`, screenshot
+   `#sample-bulletin`, keep the top 630 CSS px, save as 1600px-wide WebP (quality ~80).
+2. **What Briff can and cannot see** (`#trust`). An inline SVG of the data flow (a row from
+   768px, a column below) and four cards. Each claim and where it is true:
+   - Only dependency files are read: the scanner's own lists (`SCANNED_FILE_NAMES`,
+     `SCANNED_NAME_PATTERNS`, `packages/scan/src/files.ts`, the filter the GitHub App uses
+     too); "Show all N file names" lists them (`scanned-files.ts`, snapshot-tested). Source
+     code, `.env` and git history are not in them.
+   - Repo names never reach the model: `repoAliases` (`src/llm/pseudonym.ts`), checked by
+     `llm-payload.integration.test.ts`. The diagram's `repo-2` is what the sample org's
+     `garden.example` gets (code-point order of bakery, garden, orchid-hotel).
+   - Self-host: `compose.yaml`, AGPL-3.0 (`LICENSE`); with `ANTHROPIC_API_KEY` empty nothing
+     goes to a model (docs/PRIVACY.md, "Self-hosting").
+   - Export or delete: `GET /api/export` (one JSON file) and `deleteOrgAction` (every tenant
+     row cascades from `Org`, `org-data.integration.test.ts`), both under Settings → Your data.
+   - Connect without giving access: `briff-scan` uploads rows only (`--dry-run` prints them);
+     the GitHub App's permissions are Contents and Metadata, read-only (docs/GITHUB-APP.md).
+     Links: `/privacy`, docs/PRIVACY.md and the repository.
+3. **How it works** (`#how`): three steps, each with a small SVG (`step-art.tsx`).
+4. **Show, don't tell** (`#sample`): tabs over real components fed with fixtures: the sample
+   bulletin (`sample-bulletin.ts`, `BulletinContent`), the PHP2Shell fix email (`MailFrame`),
+   Stack (`StackCards` with `computeDrift` output) and Alerts (`AlertRow` with
+   `alertGroupsOf` output); the last two come from `sample-screens.ts`, the same three
+   fictional repos as the bulletin. Extend the fixtures, not the renderers. Links to both
+   replays below.
+5. **Coverage strip**: the scanner's `ECOSYSTEMS` (labels from `ecosystemLabel`), GitHub
+   Actions and Docker, as text marks (no third-party logos).
+6. **Built in the open** (`#open`): license, self-hosting guide and changelog links, and the
+   self-hosting commands from docs/SELF-HOSTING.md. No testimonials or star counts.
+7. **Pricing teaser** (hosted only): the three priced plans from `PLANS`, link to `/pricing`.
+8. **Final call to action**, the same two buttons as the hero.
+
+Motion (DESIGN.md §7): `RevealObserver` sets `data-shown` on `[data-reveal]` sections as they
+scroll in; children with `.reveal-item` rise, diagram strokes (`.draw`) draw and markers
+(`.pop`) pop in, once. The hero frame floats slowly (paused on hover). With reduced motion or
+without JavaScript nothing is hidden and nothing moves.
 
 ## briff.dev: recommendation
 
@@ -85,8 +129,8 @@ no code.
 ## Runbook: point briff.dev at the app
 
 Prerequisite: the release that contains the landing page is deployed. Check in a private window:
-`https://app.briff.dev/` shows the landing page (headline "A weekly briefing of what changed in
-the packages and runtimes your repos actually run, ..."), and `https://app.briff.dev/robots.txt`
+`https://app.briff.dev/` shows the landing page (headline "Your stack's weekly briefing, plus
+same-day security alerts."), and `https://app.briff.dev/robots.txt`
 lists `Allow: /`.
 
 1. **Free the domain from the old feed site.** Dokploy → Projects → the project holding the old
