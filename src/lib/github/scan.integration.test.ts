@@ -459,19 +459,18 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
     try {
       const base = `8${Date.now()}`.slice(0, 11);
       const args = { accountLogin: "x", accountType: "User", suspendedAt: null, orgId };
-      const limit = planAllowance("free", "githubInstallations", { cloud: true });
-      expect(limit).toBe(1);
-      expect(await linkInstallation(db, { ...args, installationId: `${base}1`, limit })).toBe(
+      expect(planAllowance("free", "githubInstallations", { cloud: true })).toBe(1);
+      expect(await linkInstallation(db, { ...args, installationId: `${base}1`, cloud: true })).toBe(
         "linked"
       );
       // Two parallel setups for new installations: the lock lets neither pass the limit.
       expect(
         await Promise.all([
-          linkInstallation(db, { ...args, installationId: `${base}2`, limit }),
-          linkInstallation(db, { ...args, installationId: `${base}3`, limit }),
+          linkInstallation(db, { ...args, installationId: `${base}2`, cloud: true }),
+          linkInstallation(db, { ...args, installationId: `${base}3`, cloud: true }),
         ])
       ).toEqual(["at-limit", "at-limit"]);
-      expect(await linkInstallation(db, { ...args, installationId: `${base}1`, limit })).toBe(
+      expect(await linkInstallation(db, { ...args, installationId: `${base}1`, cloud: true })).toBe(
         "already-linked"
       );
       expect(await installationCapacity(db, orgId, true)).toEqual({
@@ -480,7 +479,10 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
         plan: "free",
       });
       expect(await installationCapacity(db, orgId, false)).toMatchObject({ limit: null });
-      expect(await linkInstallation(db, { ...args, installationId: `${base}2`, limit: null })).toBe(
+      // Self-hosted: no limit; and a plan raised under the lock counts at once.
+      expect(await linkInstallation(db, { ...args, installationId: `${base}2` })).toBe("linked");
+      await db.org.update({ where: { id: orgId }, data: { plan: "pro" } });
+      expect(await linkInstallation(db, { ...args, installationId: `${base}3`, cloud: true })).toBe(
         "linked"
       );
     } finally {

@@ -37,8 +37,8 @@ export type LinkResult = "linked" | "already-linked" | "other-org" | "at-limit";
 /**
  * Links an installation to the org that completed the setup flow. An installation belongs
  * to exactly one org (installationId is unique); linking it again from the same org only
- * refreshes the account fields. A new one past the plan's `limit` (null = unlimited) is
- * refused; the count and the insert run under a per-org lock.
+ * refreshes the account fields. On the hosted service a new one past the plan's limit is
+ * refused; the plan, the count and the insert are read and written under a per-org lock.
  */
 export async function linkInstallation(
   db: PrismaClient,
@@ -48,7 +48,8 @@ export async function linkInstallation(
     accountLogin: string;
     accountType: string;
     suspendedAt: Date | null;
-    limit?: number | null;
+    /** Enforce the plan's installation limit (the hosted service, `isCloud()`). */
+    cloud?: boolean;
   }
 ): Promise<LinkResult> {
   const existing = await findInstallation(db, args.installationId);
@@ -66,7 +67,12 @@ export async function linkInstallation(
   try {
     return await scoped.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${`github-installs:${args.orgId}`}))`;
-      const limit = args.limit ?? null;
+      // The plan is read under the lock, so a plan change cannot slip between check and insert.
+      const { plan } = await tx.org.findUniqueOrThrow({
+        where: { id: args.orgId },
+        select: { plan: true },
+      });
+      const limit = planAllowance(plan, "githubInstallations", { cloud: args.cloud ?? false });
       if (limit !== null && (await tx.githubInstallation.count()) >= limit) return "at-limit";
       await tx.githubInstallation.create({
         data: { orgId: args.orgId, installationId: args.installationId, ...data },
