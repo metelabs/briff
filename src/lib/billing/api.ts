@@ -165,7 +165,8 @@ function paddleApi(apiKey: string, env: "sandbox" | "live"): BillingApi {
         .flatMap((t) => t.payments ?? [])
         .find((p) => p.status === "captured" && (p.paymentMethodId || p.storedPaymentMethodId));
       const id = used?.paymentMethodId ?? used?.storedPaymentMethodId ?? null;
-      const match = saved.find((m) => m.id === id) ?? (saved.length === 1 ? saved[0] : null);
+      // Only the method this org's own payment used: the customer may pay for other orgs too.
+      const match = id ? saved.find((m) => m.id === id) : undefined;
       if (match) return summariseMethod(match);
       // A method that is no longer saved still names what paid last.
       return used?.methodDetails ? summariseMethod(used.methodDetails) : null;
