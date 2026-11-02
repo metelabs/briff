@@ -8,7 +8,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/section-header";
 import { Tag } from "@/components/ui/tag";
 import { getOrgContext } from "@/lib/auth/session";
-import { isBillingInterval } from "@/lib/billing/catalog";
+import { isBillingInterval, onArchivedPrice } from "@/lib/billing/catalog";
 import { billingConfig } from "@/lib/billing/config";
 import { longDate } from "@/lib/email/billing-email";
 import { scheduledOf } from "@/lib/billing/labels";
@@ -180,11 +180,17 @@ export default async function BillingPage({
         : "month",
   } as const;
 
+  const liveTerms = live
+    ? ({
+        plan: live.plan === "team" ? "team" : "pro",
+        interval: live.interval === "year" ? "year" : "month",
+      } as const)
+    : null;
   const manageView: ManageView | null =
-    live && config
+    live && liveTerms && config
       ? {
-          plan: live.plan === "team" ? "team" : "pro",
-          interval: live.interval === "year" ? "year" : "month",
+          ...liveTerms,
+          archivedPrice: onArchivedPrice(config.env, liveTerms, live.paddlePriceId),
           cancelAt: cancelAt?.toISOString() ?? null,
           paused: live.status === "paused",
           periodEnd: (live.currentPeriodEnd ?? live.nextBilledAt)?.toISOString() ?? null,

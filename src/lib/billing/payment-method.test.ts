@@ -51,16 +51,16 @@ describe("chargeSentence", () => {
       chargeSentence(
         {
           billing: "now",
-          dueNow: "$351.00",
+          dueNow: "$108.00",
           credit: null,
-          recurring: "$390.00",
+          recurring: "$120.00",
           interval: "year",
           nextBilledAt: "2027-11-02T09:24:19Z",
         },
         "Visa\u00a0••••\u00a04242"
       )
     ).toBe(
-      "You pay $351.00 now with Visa\u00a0••••\u00a04242, then $390.00 per year from 2 November 2027."
+      "You pay $108.00 now with Visa\u00a0••••\u00a04242, then $120.00 per year from 2 November 2027."
     );
   });
 
@@ -71,14 +71,14 @@ describe("chargeSentence", () => {
           billing: "next-bill",
           dueNow: null,
           credit: null,
-          recurring: "$12.00",
+          recurring: "$4.00",
           interval: "month",
           nextBilledAt: "2026-12-02T00:00:00Z",
         },
         null
       )
     ).toBe(
-      "Nothing is charged now. You pay $12.00 per month from 2 December 2026, with your saved payment method."
+      "Nothing is charged now. You pay $4.00 per month from 2 December 2026, with your saved payment method."
     );
   });
 
@@ -88,15 +88,15 @@ describe("chargeSentence", () => {
         {
           billing: "now",
           dueNow: null,
-          credit: "$377.99",
-          recurring: "$12.00",
+          credit: "$116.29",
+          recurring: "$4.00",
           interval: "month",
           nextBilledAt: "2026-12-02T00:00:00Z",
         },
         "Visa\u00a0••••\u00a04242"
       )
     ).toBe(
-      "Nothing is charged now: Paddle credits $377.99 for the unused time and uses it on your next bills. Then $12.00 per month from 2 December 2026, with Visa\u00a0••••\u00a04242."
+      "Nothing is charged now: Paddle credits $116.29 for the unused time and uses it on your next bills. Then $4.00 per month from 2 December 2026, with Visa\u00a0••••\u00a04242."
     );
   });
 });

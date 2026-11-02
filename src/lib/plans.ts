@@ -36,8 +36,8 @@ export const PLANS: Readonly<Record<PlanId, Plan>> = {
   pro: {
     id: "pro",
     name: "Pro",
-    monthlyUsd: 12,
-    yearlyUsd: 120,
+    monthlyUsd: 4,
+    yearlyUsd: 40,
     repos: 50,
     streams: 10,
     members: 3,
@@ -46,8 +46,8 @@ export const PLANS: Readonly<Record<PlanId, Plan>> = {
   team: {
     id: "team",
     name: "Team",
-    monthlyUsd: 39,
-    yearlyUsd: 390,
+    monthlyUsd: 12,
+    yearlyUsd: 120,
     repos: null,
     streams: null,
     members: 10,
@@ -129,12 +129,12 @@ export function nextPlan(plan: PlanId): Plan | null {
   return i === -1 ? null : (PRICED_PLANS[i + 1] ?? null);
 }
 
-/** "$12", "$0". */
+/** "$4", "$0". */
 export function usd(amount: number): string {
   return `$${amount}`;
 }
 
-/** Months a yearly price saves over twelve monthly ones (2 for 120 vs 12 × 12). */
+/** Months a yearly price saves over twelve monthly ones (2 for 40 vs 4 × 12). */
 export function monthsFree(plan: Plan): number {
   if (!plan.monthlyUsd || plan.yearlyUsd === null) return 0;
   return Math.round((plan.monthlyUsd * 12 - plan.yearlyUsd) / plan.monthlyUsd);

@@ -22,10 +22,10 @@ export interface CatalogPrice {
 
 export const PADDLE_CATALOG: Readonly<Record<PaddleEnv, readonly CatalogPrice[]>> = {
   sandbox: [
-    { priceId: "pri_01m6c6eh8vp89cnpqw7vpv2krh", plan: "pro", interval: "month" },
-    { priceId: "pri_01m6c6ehdk4jnaddj3n1p21w9a", plan: "pro", interval: "year" },
-    { priceId: "pri_01m6c6ehqacmse2ybry03yxe3h", plan: "team", interval: "month" },
-    { priceId: "pri_01m6c6ehv90djqb9e6qy0yxwq2", plan: "team", interval: "year" },
+    { priceId: "pri_01m6f8cst11wvmmvpcw6k6q9xa", plan: "pro", interval: "month" },
+    { priceId: "pri_01m6f8csyaetjaydk2fxa3m9wf", plan: "pro", interval: "year" },
+    { priceId: "pri_01m6f8ct27w63hejyzxa69cdg9", plan: "team", interval: "month" },
+    { priceId: "pri_01m6f8ct6a0dme5cygpx6yrajv", plan: "team", interval: "year" },
   ],
   // Filled in when the live catalog exists; until then live checkout reports "not configured".
   live: [],
@@ -49,6 +49,19 @@ export function priceFor(
 
 export function catalogPrice(env: PaddleEnv, priceId: string): CatalogPrice | null {
   return PADDLE_CATALOG[env].find((p) => p.priceId === priceId) ?? null;
+}
+
+/**
+ * A subscription on an archived price of its own plan and interval (the prices before 3 Nov
+ * 2026): moving it to the current list price is a real change, not "the current plan".
+ */
+export function onArchivedPrice(
+  env: PaddleEnv,
+  terms: { plan: PaidPlanId; interval: BillingInterval },
+  priceId: string
+): boolean {
+  const listed = priceFor(env, terms.plan, terms.interval);
+  return listed !== null && listed.priceId !== priceId;
 }
 
 /** Every paid plan has both intervals in this environment. */

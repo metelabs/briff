@@ -126,7 +126,7 @@ function day(iso: string): string {
 }
 
 /**
- * "You pay $27.00 now with Visa •••• 4242, then $390.00 per year from 2 November 2027."
+ * "You pay $108.00 now with Visa •••• 4242, then $120.00 per year from 2 November 2027."
  * Paddle charges a plan change to the saved payment method without a card prompt, so the
  * confirmation names the amount and the method.
  */

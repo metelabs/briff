@@ -54,8 +54,8 @@ now; yearly to monthly credits the unused time, which Paddle uses on the next bi
 default `on_payment_failure: prevent_change` applies: a declined card leaves the plan as it was.
 
 Paddle charges a plan change to the saved payment method without asking for the card again, so
-the confirmation says it in one sentence from the preview: "You pay $351.00 now with Visa ••••
-4242, then $390.00 per year from 2 November 2027" (`chargeSentence`,
+the confirmation says it in one sentence from the preview: "You pay $108.00 now with Visa ••••
+4242, then $120.00 per year from 2 November 2027" (`chargeSentence`,
 `src/lib/billing/payment-method.ts`; "with your saved payment method" when the card is
 unknown). Only the newest preview opens the dialog, and Confirm sends exactly the previewed
 terms. A refusal Paddle explains with a known error code gets a sentence an owner can act on;
@@ -223,10 +223,27 @@ placeholder where Paddle's frame goes (checkout itself needs a real client token
 
 ## Live prices
 
-1. Create the products and prices in the live dashboard with the same `custom_data` as sandbox:
-   `{ "plan": "pro" | "team", "interval": "month" | "year" }`.
+List prices come from `PLANS` (`src/lib/plans.ts`); every Paddle price, sandbox and live, is
+created with exactly those amounts in USD:
+
+| Plan | Monthly | Yearly |
+| ---- | ------- | ------ |
+| Pro  | $4      | $40    |
+| Team | $12     | $120   |
+
+1. Create the products and prices in the live dashboard with the amounts above and the same
+   `custom_data` as sandbox: `{ "plan": "pro" | "team", "interval": "month" | "year" }`.
 2. Add the four live price ids to `PADDLE_CATALOG.live` in `src/lib/billing/catalog.ts` (until
    all four exist, live checkout reports "not configured"). Nothing else in the code names a
    price id.
 3. Set `PADDLE_ENV=live` with the live API key, client token and a live notification destination
    secret.
+
+## Price history
+
+- **3 Nov 2026:** Pro $12 → $4 a month ($120 → $40 a year), Team $39 → $12 a month ($390 → $120
+  a year), from the measured LLM cost of the hosted instance; limits unchanged. New sandbox
+  prices replaced the ids in `PADDLE_CATALOG.sandbox`; the old four are archived in Paddle. A
+  subscription still on an archived price keeps mapping through its `custom_data.plan` (the
+  webhook reads it before the catalog), and Settings → Billing shows it as "Current, at an older
+  price" with Review change enabled, which moves it to the list price from the next bill.

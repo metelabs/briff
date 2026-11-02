@@ -1,7 +1,13 @@
 import { Webhooks, type SubscriptionNotification } from "@paddle/paddle-node-sdk";
 import { describe, expect, it } from "vitest";
 
-import { catalogComplete, PADDLE_CATALOG, priceFor } from "./catalog";
+import {
+  catalogComplete,
+  catalogPrice,
+  onArchivedPrice,
+  PADDLE_CATALOG,
+  priceFor,
+} from "./catalog";
 import { event, PRO_YEARLY, subscriptionData, TEAM_MONTHLY } from "./__fixtures__/events";
 import { checkoutCustomData, signedOrgId } from "./org-link";
 import {
@@ -67,6 +73,22 @@ describe("snapshotOf", () => {
     expect(snapshotOf(notification(data), "sandbox")).toMatchObject({
       plan: "pro",
       interval: "year",
+    });
+  });
+
+  it("maps an archived price (the pre-November sandbox prices) by its custom_data", () => {
+    const data = subscriptionData({
+      id: "sub_archived",
+      customerId: "ctm_1",
+      status: "active",
+      priceId: "pri_01m6c6ehqacmse2ybry03yxe3h",
+    });
+    data.items[0].price!.custom_data = { plan: "team", interval: "month" };
+    expect(catalogPrice("sandbox", "pri_01m6c6ehqacmse2ybry03yxe3h")).toBeNull();
+    expect(snapshotOf(notification(data), "sandbox")).toMatchObject({
+      paddlePriceId: "pri_01m6c6ehqacmse2ybry03yxe3h",
+      plan: "team",
+      interval: "month",
     });
   });
 
@@ -205,11 +227,19 @@ describe("catalog, money and the signed org link", () => {
     expect(catalogComplete("sandbox")).toBe(true);
     expect(catalogComplete("live")).toBe(false);
     expect(new Set(PADDLE_CATALOG.sandbox.map((p) => p.priceId)).size).toBe(4);
-    expect(priceFor("sandbox", "team", "year")?.priceId).toBe("pri_01m6c6ehv90djqb9e6qy0yxwq2");
+    expect(priceFor("sandbox", "team", "year")?.priceId).toBe("pri_01m6f8ct6a0dme5cygpx6yrajv");
+  });
+
+  it("tells a subscription on an archived price of its plan from one on the list price", () => {
+    const proMonth = { plan: "pro", interval: "month" } as const;
+    expect(onArchivedPrice("sandbox", proMonth, "pri_01m6c6eh8vp89cnpqw7vpv2krh")).toBe(true);
+    expect(onArchivedPrice("sandbox", proMonth, "pri_01m6f8cst11wvmmvpcw6k6q9xa")).toBe(false);
+    // No live catalog yet: nothing to move to.
+    expect(onArchivedPrice("live", proMonth, "pri_01m6c6eh8vp89cnpqw7vpv2krh")).toBe(false);
   });
 
   it("formats lowest-unit amounts, zero-decimal currencies included", () => {
-    expect(formatMoney("1200", "USD")).toBe("$12.00");
+    expect(formatMoney("4000", "USD")).toBe("$40.00");
     expect(formatMoney("1200", "JPY")).toBe("¥1,200");
   });
 
