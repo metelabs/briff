@@ -1,9 +1,9 @@
 import { asEcosystem, type Ecosystem } from "@scan/ecosystems";
-import { severityLabel, severityRank } from "@/security/plan";
+import { severityLabel } from "@/security/plan";
 
 // The Alerts page's sections and its progress numbers: which section an alert belongs to,
-// the alerts fixed since the member's last visit (per section), the Resolved section, how
-// an open alert gets noticed as fixed, and the re-check limit.
+// the Resolved section (and its "Resolved: N this week" counter), how an open alert gets
+// noticed as fixed, and the re-check limit.
 
 export type AlertSection = "this-week" | "earlier" | "backlog";
 
@@ -22,52 +22,10 @@ export function alertSectionOf(
 }
 
 export interface ResolvedAlertRow {
-  kind: string;
-  createdAt: Date;
   resolvedAt: Date | null;
-  repo: { name: string };
-  advisory: { package: { name: string } };
 }
 
-export interface FixedPackage {
-  packageName: string;
-  repos: string[];
-}
-
-/**
- * Alerts resolved after `since` (the member's previous visit), one entry per package and
- * section, repos merged; packages in name order. Nothing before a first visit.
- */
-export function fixedSince(
-  rows: readonly ResolvedAlertRow[],
-  since: Date | null,
-  weekStart: Date
-): Record<AlertSection, FixedPackage[]> {
-  const out: Record<AlertSection, Map<string, Set<string>>> = {
-    "this-week": new Map(),
-    earlier: new Map(),
-    backlog: new Map(),
-  };
-  if (since) {
-    for (const row of rows) {
-      if (!row.resolvedAt || row.resolvedAt <= since) continue;
-      const byPackage = out[alertSectionOf(row, weekStart)];
-      const repos = byPackage.get(row.advisory.package.name) ?? new Set<string>();
-      byPackage.set(row.advisory.package.name, repos.add(row.repo.name));
-    }
-  }
-  const list = (m: Map<string, Set<string>>): FixedPackage[] =>
-    [...m]
-      .map(([packageName, repos]) => ({ packageName, repos: [...repos].sort() }))
-      .sort((a, b) => a.packageName.localeCompare(b.packageName));
-  return {
-    "this-week": list(out["this-week"]),
-    earlier: list(out.earlier),
-    backlog: list(out.backlog),
-  };
-}
-
-/** Alerts (advisory x repo) resolved since `weekStart`. */
+/** Alerts (advisory x repo) resolved since `weekStart`: the header counter and Home's tile. */
 export function resolvedSince(
   rows: readonly Pick<ResolvedAlertRow, "resolvedAt">[],
   weekStart: Date
@@ -84,10 +42,10 @@ export function recheckWaitMs(lastRequestedAt: Date | null, now: Date): number {
   return Math.max(0, lastRequestedAt.getTime() + RECHECK_INTERVAL_MS - now.getTime());
 }
 
-/** The Resolved section and "Fixed since your last visit" both read alerts resolved this recently. */
+/** The Resolved section reads alerts resolved this recently. */
 export const RESOLVED_WINDOW_MS = 30 * 86_400_000;
 
-/** Resolved alerts inside the window: the one list both resolved views are built from. */
+/** Resolved alerts inside the window: the list the counter and the Resolved section read. */
 export function recentlyResolved<T extends Pick<ResolvedAlertRow, "resolvedAt">>(
   rows: readonly T[],
   now: Date
@@ -114,72 +72,69 @@ export function resolvedCauseLabel(cause: ResolvedCause): string {
 
 export interface ResolvedSectionRow extends ResolvedAlertRow {
   resolvedBy: ResolvedCause;
-  advisory: { severity: string | null; package: { name: string; ecosystem: string } };
+  repo: { name: string };
+  advisory: {
+    osvId: string;
+    severity: string | null;
+    package: { name: string; ecosystem: string };
+  };
 }
 
-export interface ResolvedPackage {
+/** One card in the Resolved section: one alert (advisory x repo), as the counter counts. */
+export interface ResolvedAlert {
+  key: string;
   packageName: string;
   /** The package's ecosystem when it is not npm (shown as a tag, as on open alerts). */
   ecosystem?: Exclude<Ecosystem, "npm">;
-  repos: string[];
-  /** The most severe of its resolved advisories ("UNKNOWN" when none has a level). */
+  osvId: string;
+  repo: string;
+  /** "UNKNOWN" when the advisory has no level. */
   severity: string;
-  /** The latest resolution. */
   resolvedAt: Date;
-  /** Distinct causes, labelled, in the order of `resolvedCauseLabel`'s cases. */
-  causes: string[];
+  cause: string;
+  /** Resolved after the member's previous visit (a badge, never a filter). */
+  sinceLastVisit: boolean;
 }
 
-const CAUSE_ORDER: ResolvedCause[] = ["briff_scan", "github_app", "security_scan", null];
+export interface ResolvedSections {
+  /** Resolved since Monday: exactly the alerts `resolvedSince` counts. */
+  thisWeek: ResolvedAlert[];
+  /** Resolved before Monday, inside the rows given (the 30-day window). */
+  earlier: ResolvedAlert[];
+}
 
-/** One row per package, latest resolution first. */
-export function resolvedPackages(rows: readonly ResolvedSectionRow[]): ResolvedPackage[] {
-  const byPackage = new Map<
-    string,
-    {
-      packageName: string;
-      ecosystem: Ecosystem | undefined;
-      repos: Set<string>;
-      severity: string | null;
-      resolvedAt: Date;
-      causes: Set<ResolvedCause>;
-    }
-  >();
+/** The Resolved section: one card per resolved alert, latest first, split at the week start. */
+export function resolvedSections(
+  rows: readonly ResolvedSectionRow[],
+  weekStart: Date,
+  lastVisit: Date | null
+): ResolvedSections {
+  const out: ResolvedSections = { thisWeek: [], earlier: [] };
   for (const row of rows) {
     if (!row.resolvedAt) continue;
     const { name } = row.advisory.package;
     const ecosystem = asEcosystem(row.advisory.package.ecosystem);
-    // (ecosystem, name) is the package, as in alertGroupsOf.
-    const key = `${ecosystem ?? "npm"}\0${name}`;
-    const entry = byPackage.get(key) ?? {
+    const alert: ResolvedAlert = {
+      key: `${row.advisory.osvId}\0${row.repo.name}`,
       packageName: name,
-      ecosystem,
-      repos: new Set<string>(),
-      severity: row.advisory.severity,
+      ...(ecosystem && ecosystem !== "npm" ? { ecosystem } : {}),
+      osvId: row.advisory.osvId,
+      repo: row.repo.name,
+      severity: severityLabel(row.advisory.severity),
       resolvedAt: row.resolvedAt,
-      causes: new Set<ResolvedCause>(),
+      cause: resolvedCauseLabel(row.resolvedBy),
+      sinceLastVisit: lastVisit !== null && row.resolvedAt > lastVisit,
     };
-    entry.repos.add(row.repo.name);
-    entry.causes.add(row.resolvedBy);
-    if (severityRank(row.advisory.severity) > severityRank(entry.severity))
-      entry.severity = row.advisory.severity;
-    if (row.resolvedAt > entry.resolvedAt) entry.resolvedAt = row.resolvedAt;
-    byPackage.set(key, entry);
+    (row.resolvedAt >= weekStart ? out.thisWeek : out.earlier).push(alert);
   }
-  return [...byPackage.values()]
-    .map((e) => ({
-      packageName: e.packageName,
-      ...(e.ecosystem && e.ecosystem !== "npm" ? { ecosystem: e.ecosystem } : {}),
-      repos: [...e.repos].sort(),
-      severity: severityLabel(e.severity),
-      resolvedAt: e.resolvedAt,
-      causes: CAUSE_ORDER.filter((c) => e.causes.has(c)).map(resolvedCauseLabel),
-    }))
-    .sort(
-      (a, b) =>
-        b.resolvedAt.getTime() - a.resolvedAt.getTime() ||
-        a.packageName.localeCompare(b.packageName)
-    );
+  const order = (a: ResolvedAlert, b: ResolvedAlert) =>
+    b.resolvedAt.getTime() - a.resolvedAt.getTime() ||
+    a.packageName.localeCompare(b.packageName) ||
+    a.repo.localeCompare(b.repo) ||
+    a.osvId.localeCompare(b.osvId);
+  out.thisWeek.sort(order);
+  out.earlier.sort(order);
+  return out;
 }
 
 /** How a repo's scans reach Briff: the GitHub App (rescans on push) or briff-scan uploads. */
