@@ -80,6 +80,9 @@ export async function sendToTarget(
     return { ok: false, error, retry };
   } catch (err) {
     if (err instanceof SsrfBlockedError) {
+      if (err.reason === "dns_failed") {
+        return { ok: false, error: "Could not resolve the host name.", retry: true };
+      }
       return {
         ok: false,
         error: "Refused: the URL points to a private or internal address.",

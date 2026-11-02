@@ -30,7 +30,7 @@ the audit log (Settings → Members → Activity).
   bulletin, as in the email; the first-scan backlog is not posted.
 
 A post that fails with a timeout (10 seconds), a network error, HTTP 408, 429 or 5xx is retried
-three times (after about 30 s, 1 min and 2 min). HTTP 4xx and refused addresses are not retried.
+three times (after about 30 s, 1 min and 2 min). HTTP 4xx and refused addresses are not retried; a host name that does not resolve is.
 The last error and the time of the last successful delivery are shown in the list.
 
 Briff only connects to public addresses: a URL that resolves to a private, loopback or

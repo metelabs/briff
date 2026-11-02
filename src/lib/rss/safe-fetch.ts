@@ -6,7 +6,7 @@ import type { LookupFunction } from "node:net";
 import type { Readable } from "node:stream";
 import zlib from "node:zlib";
 
-import { checkUrlSync, resolvePublicAddresses } from "./ssrf-guard";
+import { checkUrlSync, resolvePublicAddresses, type SsrfRejection } from "./ssrf-guard";
 
 // SSRF-safe fetch for the RSS read path. Unlike global fetch, this resolves the
 // hostname, validates every resolved IP against the private/reserved ranges,
@@ -41,7 +41,15 @@ const DEFAULT_MAX_REDIRECTS = 5;
 const DEFAULT_RETRIES = 2;
 const DEFAULT_RETRY_BASE_DELAY_MS = 200;
 
-export class SsrfBlockedError extends Error {}
+export class SsrfBlockedError extends Error {
+  constructor(
+    message: string,
+    /** dns_failed is a lookup that failed, not a refusal; a caller may retry it later. */
+    readonly reason: SsrfRejection
+  ) {
+    super(message);
+  }
+}
 
 function isRetryableStatus(status: number): boolean {
   return status === 429 || (status >= 500 && status <= 599);
@@ -54,7 +62,11 @@ const safeLookup: LookupFunction = (hostname, options, callback) => {
   resolvePublicAddresses(hostname)
     .then((res) => {
       if (!res.ok) {
-        callback(new SsrfBlockedError(`blocked host ${hostname}: ${res.reason}`), "", 0);
+        callback(
+          new SsrfBlockedError(`blocked host ${hostname}: ${res.reason}`, res.reason),
+          "",
+          0
+        );
         return;
       }
       if (typeof options === "object" && options?.all) {
@@ -211,7 +223,7 @@ export async function safeFetch(
       let current = rawUrl;
       for (let hop = 0; hop <= maxRedirects; hop++) {
         const sync = checkUrlSync(current);
-        if (!sync.ok) throw new SsrfBlockedError(`blocked url: ${sync.reason}`);
+        if (!sync.ok) throw new SsrfBlockedError(`blocked url: ${sync.reason}`, sync.reason);
 
         const res = await requestOnce(sync.url, { timeoutMs, maxBytes, headers, method, body });
 

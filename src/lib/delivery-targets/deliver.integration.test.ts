@@ -335,6 +335,21 @@ describe.skipIf(!url)("delivery targets against Postgres and a local endpoint", 
     expect(row.lastError).toMatch(/private or internal address/);
   });
 
+  it("retries a host name that does not resolve instead of treating it as refused", async () => {
+    await setPlan("team");
+    const targetId = await rawTarget({
+      kind: "webhook",
+      url: "https://briff-delivery-test.invalid/hook",
+      secret: "s",
+    });
+    const payload = { orgId, targetId, event: "bulletin", bulletinId };
+    await expect(runDeliverTarget(ctx(payload, 1))).rejects.toThrow(/resolve/);
+    const row = await withOrg(db, orgId).deliveryTarget.findFirstOrThrow({
+      where: { id: targetId },
+    });
+    expect(row.lastError).toBe("Could not resolve the host name.");
+  });
+
   it("enqueues each bulletin and alert batch once per matching target", async () => {
     await setPlan("team");
     const all = await rawTarget({ kind: "slack", url: "https://hooks.slack.com/services/a" });
