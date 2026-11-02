@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/metelabs/briff/compare/0.11.0...0.12.0) (2026-11-02)
+
+
+### Features
+
+* **billing:** payment method, inline checkout, Settings billing; fix chip and previews ([#53](https://github.com/metelabs/briff/issues/53)) ([74bc73d](https://github.com/metelabs/briff/commit/74bc73d19a03678007a74a9b147e17e8ab509283))
+
 ## [0.11.0](https://github.com/metelabs/briff/compare/0.10.0...0.11.0) (2026-11-01)
 
 
