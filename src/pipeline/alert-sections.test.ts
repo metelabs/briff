@@ -95,7 +95,7 @@ describe("Resolved section", () => {
     resolvedAt: new Date(at),
     resolvedBy: "briff_scan",
     repo: { name: repo },
-    advisory: { severity: "MODERATE", package: { name: pkg } },
+    advisory: { severity: "MODERATE", package: { name: pkg, ecosystem: "RubyGems" } },
     ...over,
   });
 
@@ -116,13 +116,14 @@ describe("Resolved section", () => {
       resolved("nokogiri", "shop", "2026-11-01T10:00:00Z"),
       resolved("nokogiri", "admin", "2026-11-01T12:00:00Z", {
         resolvedBy: "security_scan",
-        advisory: { severity: "HIGH", package: { name: "nokogiri" } },
+        advisory: { severity: "HIGH", package: { name: "nokogiri", ecosystem: "RubyGems" } },
       }),
       resolved("rack", "shop", "2026-10-30T09:00:00Z", { resolvedBy: null }),
     ]);
     expect(packages).toEqual([
       {
         packageName: "nokogiri",
+        ecosystem: "RubyGems",
         repos: ["admin", "shop"],
         severity: "HIGH",
         resolvedAt: new Date("2026-11-01T12:00:00Z"),
@@ -130,11 +131,27 @@ describe("Resolved section", () => {
       },
       {
         packageName: "rack",
+        ecosystem: "RubyGems",
         repos: ["shop"],
         severity: "MODERATE",
         resolvedAt: new Date("2026-10-30T09:00:00Z"),
         causes: ["a later scan"],
       },
+    ]);
+  });
+
+  it("keeps same-named packages from different ecosystems apart", () => {
+    const packages = resolvedPackages([
+      resolved("requests", "api", "2026-11-01T10:00:00Z", {
+        advisory: { severity: "HIGH", package: { name: "requests", ecosystem: "PyPI" } },
+      }),
+      resolved("requests", "web", "2026-10-31T10:00:00Z", {
+        advisory: { severity: "LOW", package: { name: "requests", ecosystem: "npm" } },
+      }),
+    ]);
+    expect(packages.map((p) => [p.packageName, p.ecosystem, p.repos, p.severity])).toEqual([
+      ["requests", "PyPI", ["api"], "HIGH"],
+      ["requests", undefined, ["web"], "LOW"],
     ]);
   });
 });

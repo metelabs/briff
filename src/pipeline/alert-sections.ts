@@ -1,3 +1,4 @@
+import { asEcosystem, type Ecosystem } from "@scan/ecosystems";
 import { severityLabel, severityRank } from "@/security/plan";
 
 // The Alerts page's sections and its progress numbers: which section an alert belongs to,
@@ -113,11 +114,13 @@ export function resolvedCauseLabel(cause: ResolvedCause): string {
 
 export interface ResolvedSectionRow extends ResolvedAlertRow {
   resolvedBy: ResolvedCause;
-  advisory: { severity: string | null; package: { name: string } };
+  advisory: { severity: string | null; package: { name: string; ecosystem: string } };
 }
 
 export interface ResolvedPackage {
   packageName: string;
+  /** The package's ecosystem when it is not npm (shown as a tag, as on open alerts). */
+  ecosystem?: Exclude<Ecosystem, "npm">;
   repos: string[];
   /** The most severe of its resolved advisories ("UNKNOWN" when none has a level). */
   severity: string;
@@ -133,12 +136,24 @@ const CAUSE_ORDER: ResolvedCause[] = ["briff_scan", "github_app", "security_scan
 export function resolvedPackages(rows: readonly ResolvedSectionRow[]): ResolvedPackage[] {
   const byPackage = new Map<
     string,
-    { repos: Set<string>; severity: string | null; resolvedAt: Date; causes: Set<ResolvedCause> }
+    {
+      packageName: string;
+      ecosystem: Ecosystem | undefined;
+      repos: Set<string>;
+      severity: string | null;
+      resolvedAt: Date;
+      causes: Set<ResolvedCause>;
+    }
   >();
   for (const row of rows) {
     if (!row.resolvedAt) continue;
-    const name = row.advisory.package.name;
-    const entry = byPackage.get(name) ?? {
+    const { name } = row.advisory.package;
+    const ecosystem = asEcosystem(row.advisory.package.ecosystem);
+    // (ecosystem, name) is the package, as in alertGroupsOf.
+    const key = `${ecosystem ?? "npm"}\0${name}`;
+    const entry = byPackage.get(key) ?? {
+      packageName: name,
+      ecosystem,
       repos: new Set<string>(),
       severity: row.advisory.severity,
       resolvedAt: row.resolvedAt,
@@ -149,11 +164,12 @@ export function resolvedPackages(rows: readonly ResolvedSectionRow[]): ResolvedP
     if (severityRank(row.advisory.severity) > severityRank(entry.severity))
       entry.severity = row.advisory.severity;
     if (row.resolvedAt > entry.resolvedAt) entry.resolvedAt = row.resolvedAt;
-    byPackage.set(name, entry);
+    byPackage.set(key, entry);
   }
-  return [...byPackage]
-    .map(([packageName, e]) => ({
-      packageName,
+  return [...byPackage.values()]
+    .map((e) => ({
+      packageName: e.packageName,
+      ...(e.ecosystem && e.ecosystem !== "npm" ? { ecosystem: e.ecosystem } : {}),
       repos: [...e.repos].sort(),
       severity: severityLabel(e.severity),
       resolvedAt: e.resolvedAt,

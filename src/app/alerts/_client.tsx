@@ -446,12 +446,15 @@ export function ResolvedList({ packages }: { packages: ResolvedPackage[] }) {
     <div className="bg-surface border-line rounded-card overflow-hidden border">
       {packages.map((p) => (
         <div
-          key={p.packageName}
+          key={`${p.ecosystem ?? "npm"}:${p.packageName}`}
           className="border-line grid items-start gap-x-4 gap-y-1.5 border-t px-[18px] py-3 first:border-t-0 md:grid-cols-[190px_minmax(0,1fr)_auto]"
         >
-          <TruncatedText as="b" className="max-w-full font-mono text-[14px] font-medium">
-            {p.packageName}
-          </TruncatedText>
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <TruncatedText as="b" className="max-w-full font-mono text-[14px] font-medium">
+              {p.packageName}
+            </TruncatedText>
+            {p.ecosystem && <EcosystemTag>{ecosystemLabel(p.ecosystem)}</EcosystemTag>}
+          </div>
           <div className="grid min-w-0 gap-0.5">
             <span className="text-fg-muted font-mono text-[12px] break-all">
               {p.repos.join(", ")}
