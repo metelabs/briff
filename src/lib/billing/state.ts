@@ -244,15 +244,15 @@ export interface PlanTerms {
 }
 
 /**
- * Upgrades (a bigger plan, or monthly to yearly on the same plan) are charged the prorated
- * difference now; downgrades and yearly to monthly settle on the next bill, so nothing is
- * refunded mid-period (subscription-update skill).
+ * A bigger plan is charged the prorated difference now; a smaller plan on the same billing
+ * period settles on the next bill, so nothing is refunded mid-period (subscription-update
+ * skill). A change of billing period is always prorated now: Paddle refuses the
+ * `*_next_billing_period` modes when the billing cycle changes
+ * (`subscription_new_items_not_valid`), and a yearly to monthly switch credits the unused time.
  */
 export function prorationMode(from: PlanTerms, to: PlanTerms): ProrationBillingMode {
-  const tier = planRank(to.plan) - planRank(from.plan);
-  if (tier > 0) return "prorated_immediately";
-  if (tier < 0) return "prorated_next_billing_period";
-  return from.interval === "month" && to.interval === "year"
+  if (from.interval !== to.interval) return "prorated_immediately";
+  return planRank(to.plan) > planRank(from.plan)
     ? "prorated_immediately"
     : "prorated_next_billing_period";
 }

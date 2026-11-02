@@ -9,6 +9,7 @@ import { billingConfig } from "@/lib/billing/config";
 import * as manage from "@/lib/billing/manage";
 import { requireOrgContext, type OrgContext } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
+import { getEnv } from "@/lib/env";
 
 // Settings -> Billing. Thin wrappers: src/lib/billing/manage.ts checks the role and the
 // subscription's org for every call.
@@ -82,4 +83,27 @@ export async function invoiceUrlAction(transactionId: unknown) {
     .safeParse(transactionId);
   if (!id.success) return { ok: false as const, message: "That invoice does not exist." };
   return manage.invoiceUrl(getDb(), s.api, s.actor, id.data);
+}
+
+export async function startCheckoutAction(input: unknown) {
+  const ctx = await requireOrgContext();
+  const config = billingConfig();
+  if (!config) return NOT_CONFIGURED;
+  const terms = termsSchema.safeParse(input);
+  if (!terms.success)
+    return { ok: false as const, message: "Pick Pro or Team, monthly or yearly." };
+  return manage.checkoutSession(
+    getDb(),
+    config.env,
+    { orgId: ctx.orgId, userId: ctx.userId, email: ctx.email },
+    terms.data,
+    getEnv().BETTER_AUTH_SECRET
+  );
+}
+
+export async function paymentMethodUrlAction() {
+  const ctx = await requireOrgContext();
+  const s = setup(ctx);
+  if (!s) return NOT_CONFIGURED;
+  return manage.paymentMethodUrl(getDb(), s.api, s.actor);
 }

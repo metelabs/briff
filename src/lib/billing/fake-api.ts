@@ -25,6 +25,7 @@ export function fakeBillingApi(): BillingApi {
     async previewPriceChange() {
       return {
         dueNow: "$22.40",
+        credit: null,
         recurring: "$39.00",
         nextBilledAt: new Date(Date.now() + 18 * DAY),
       };
@@ -53,6 +54,20 @@ export function fakeBillingApi(): BillingApi {
     },
     async invoiceUrl() {
       return "https://sandbox-vendors.paddle.com/";
+    },
+    async paymentMethod() {
+      return {
+        brand: "visa",
+        type: "card",
+        network: "visa",
+        last4: "4242",
+        expiryMonth: 1,
+        expiryYear: new Date().getUTCFullYear() + 1,
+        email: null,
+      };
+    },
+    async paymentMethodUpdateUrl() {
+      return "https://sandbox-customer-portal.paddle.com/";
     },
   };
 }

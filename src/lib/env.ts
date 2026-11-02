@@ -89,6 +89,10 @@ const serverEnvSchema = z.object({
   PADDLE_WEBHOOK_SECRET: optionalString,
   // Development only: canned Paddle API answers so the billing page renders without a key.
   BRIFF_PADDLE_FAKE: booleanFlag(false),
+  // Checkout style: Briff's checkout page with Paddle's inline frame (default) or the overlay.
+  BRIFF_CHECKOUT: optionalString
+    .pipe(z.enum(["inline", "overlay"]).optional())
+    .transform((v) => v ?? "inline"),
 });
 
 const cloudEnvSchema = serverEnvSchema.pick({ BRIFF_CLOUD: true });

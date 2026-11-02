@@ -1,5 +1,4 @@
 import { CircleCheck } from "lucide-react";
-import { OrgCapacityNotice } from "@/components/org-capacity-notice";
 import { loadOrgCapacity } from "@/lib/org-capacity";
 import type { Metadata } from "next";
 import type { CSSProperties, ReactNode } from "react";
@@ -33,6 +32,7 @@ import {
   SectionIndex,
   SignOutButton,
 } from "./_client";
+import { BillingSummary } from "./_billing";
 import { InviteForm, MemberList, OrgNameForm, PendingInvites } from "./_members";
 
 export const metadata: Metadata = { title: "Settings · Briff" };
@@ -45,6 +45,7 @@ const SECTIONS = [
   { id: "scan-tokens", label: "Scan tokens" },
   { id: "organisation", label: "Organisation" },
   { id: "members", label: "Members" },
+  { id: "billing", label: "Billing" },
   { id: "your-data", label: "Your data" },
   { id: "account", label: "Account" },
 ];
@@ -121,9 +122,8 @@ export default async function SettingsPage() {
     <AppShell ctx={ctx} active="/settings">
       <PageHeader title="Settings" />
       <div className="grid items-start gap-3 md:grid-cols-[200px_minmax(0,640px)] md:gap-8">
-        <SectionIndex sections={SECTIONS} />
+        <SectionIndex sections={SECTIONS.filter((s) => s.id !== "billing" || capacity.cloud)} />
         <div className="min-w-0">
-          <OrgCapacityNotice capacity={capacity} />
           <Block
             id="profile"
             index={0}
@@ -411,9 +411,20 @@ export default async function SettingsPage() {
             )}
           </Block>
 
+          {capacity.cloud && (
+            <Block
+              id="billing"
+              index={7}
+              title="Billing"
+              sub="The organisation's plan, what it uses of it and how it is paid."
+            >
+              <BillingSummary ctx={ctx} capacity={capacity} />
+            </Block>
+          )}
+
           <Block
             id="your-data"
-            index={7}
+            index={8}
             title="Your data"
             sub="Take a copy of everything Briff keeps for this organisation, or delete it."
           >
@@ -447,7 +458,7 @@ export default async function SettingsPage() {
 
           <Block
             id="account"
-            index={8}
+            index={9}
             title="Account"
             sub="Sign-in email, password and theme. The theme switch is in the menu under your initials."
           >

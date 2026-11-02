@@ -9,7 +9,10 @@ import { memberRole } from "@/lib/members";
 
 import type { BillingApi, BillingTransaction } from "./api";
 import { getBillingApi } from "./api";
-import { priceFor, type PaddleEnv } from "./catalog";
+import { priceFor, type BillingInterval, type PaddleEnv, type PaidPlanId } from "./catalog";
+import { ADMIN_PLAN_NOTICE, billingOffer, planSourceOf } from "./offer";
+import { checkoutCustomData } from "./org-link";
+import { methodLabel, type PaymentMethodState } from "./payment-method";
 import {
   isLive,
   isOpen,
@@ -46,8 +49,11 @@ export interface PlanChangePreview {
   /** "now": the prorated difference is charged today; "next-bill": settled on the next bill. */
   billing: "now" | "next-bill";
   dueNow: string | null;
+  credit: string | null;
   recurring: string | null;
   nextBilledAt: string | null;
+  /** "Visa •••• 4242": what Paddle charges; null when unknown. */
+  method: string | null;
 }
 
 /**
@@ -72,8 +78,23 @@ async function ownersSubscription(
   return sub ? { ok: true, sub } : { ok: false, message: NO_SUBSCRIPTION };
 }
 
+// Paddle's error codes that need words a customer can act on; others keep Paddle's detail.
+const PADDLE_ERRORS: Record<string, string> = {
+  subscription_new_items_not_valid:
+    "Paddle cannot switch your subscription to that plan this way. Nothing changed and nothing was charged.",
+  subscription_locked_pending_changes:
+    "Paddle is still applying the last change to this subscription. Try again in a minute.",
+  subscription_locked_processing:
+    "Paddle is still processing a payment for this subscription. Try again in a minute.",
+  forbidden: "The Paddle API key of this instance is missing a permission for this.",
+};
+
 function paddleMessage(err: unknown, fallback: string): string {
-  if (err instanceof ApiError && err.detail) return `Paddle: ${err.detail}`;
+  if (err instanceof ApiError) {
+    const known = PADDLE_ERRORS[err.code];
+    if (known) return known;
+    if (err.detail) return `Paddle: ${err.detail}`;
+  }
   return fallback;
 }
 
@@ -129,7 +150,10 @@ export async function previewPlanChange(
   const t = target(env, owned.sub, to);
   if (!t.ok) return t;
   try {
-    const p = await api.previewPriceChange(owned.sub.paddleSubscriptionId, t.priceId, t.mode);
+    const [p, method] = await Promise.all([
+      api.previewPriceChange(owned.sub.paddleSubscriptionId, t.priceId, t.mode),
+      paymentMethodState(db, api, actor.orgId),
+    ]);
     return {
       ok: true,
       preview: {
@@ -137,8 +161,10 @@ export async function previewPlanChange(
         to,
         billing: t.mode === "prorated_immediately" ? "now" : "next-bill",
         dueNow: p.dueNow,
+        credit: p.credit,
         recurring: p.recurring,
         nextBilledAt: p.nextBilledAt?.toISOString() ?? null,
+        method: method.kind === "known" ? methodLabel(method.method) : null,
       },
     };
   } catch (err) {
@@ -319,6 +345,139 @@ export async function invoiceUrl(
   } catch (err) {
     log.warn({ err, orgId: actor.orgId }, "billing: invoice failed");
     return { ok: false, message: paddleMessage(err, "Paddle could not find that invoice.") };
+  }
+}
+
+export interface CheckoutSession {
+  priceId: string;
+  customer: { id: string } | { email: string };
+  customData: { orgId: string; orgSig: string };
+}
+
+/**
+ * What Paddle.js opens a checkout with, for owners only and only for a plan the org may buy
+ * (`billingOffer`): never the plan it already has, never next to a live subscription, and
+ * never over a plan the instance admin set. The org's signed id goes into `custom_data`.
+ */
+export async function checkoutSession(
+  db: PrismaClient,
+  env: PaddleEnv,
+  actor: Actor,
+  to: PlanTerms,
+  secret: string
+): Promise<ManageResult<{ session: CheckoutSession }>> {
+  if ((await memberRole(db, actor.orgId, actor.userId)) !== "owner") {
+    return { ok: false, message: NOT_OWNER };
+  }
+  const [org, live] = await Promise.all([
+    db.org.findUniqueOrThrow({
+      where: { id: actor.orgId },
+      select: { plan: true, planSource: true, paddleCustomerId: true },
+    }),
+    liveSubscription(db, actor.orgId),
+  ]);
+  const offer = billingOffer({
+    plan: org.plan,
+    planSource: planSourceOf(org.planSource),
+    subscribed: live !== null,
+  });
+  if (offer.kind === "subscribed") {
+    return {
+      ok: false,
+      message: "This organisation already has a subscription. Change its plan under Billing.",
+    };
+  }
+  if (offer.kind === "admin") return { ok: false, message: ADMIN_PLAN_NOTICE };
+  if (!offer.plans.includes(to.plan)) {
+    return { ok: false, message: "This organisation already has that plan." };
+  }
+  const price = priceFor(env, to.plan, to.interval);
+  if (!price) return { ok: false, message: NOT_CONFIGURED };
+  return {
+    ok: true,
+    session: {
+      priceId: price.priceId,
+      customer: org.paddleCustomerId ? { id: org.paddleCustomerId } : { email: actor.email },
+      customData: checkoutCustomData(secret, actor.orgId),
+    },
+  };
+}
+
+/** The checkout terms an owner may pick, or null when the URL asks for something else. */
+export function checkoutTerms(
+  plan: unknown,
+  interval: unknown,
+  offered: readonly PaidPlanId[]
+): { plan: PaidPlanId; interval: BillingInterval } | null {
+  const p = offered.find((o) => o === plan);
+  const i = interval === "month" || interval === "year" ? interval : null;
+  return p && i ? { plan: p, interval: i } : null;
+}
+
+/**
+ * The method that pays for the org's subscriptions (never another org's of the same payer).
+ * Without `payment_method.read` on the API key, or when Paddle does not answer, it is
+ * "unavailable" and the page points at the portal instead of failing.
+ */
+export async function paymentMethodState(
+  db: PrismaClient,
+  api: BillingApi,
+  orgId: string
+): Promise<PaymentMethodState> {
+  const subs = await orgSubscriptions(db, orgId);
+  const current = subs[0];
+  if (!current) return { kind: "none" };
+  const ids = subs
+    .filter((s) => s.paddleCustomerId === current.paddleCustomerId)
+    .map((s) => s.paddleSubscriptionId);
+  try {
+    const method = await api.paymentMethod(current.paddleCustomerId, ids);
+    return method ? { kind: "known", method } : { kind: "none" };
+  } catch (err) {
+    const forbidden = err instanceof ApiError && err.code === "forbidden";
+    if (!forbidden) log.warn({ err, orgId }, "billing: payment method lookup failed");
+    return { kind: "unavailable" };
+  }
+}
+
+/**
+ * Where "Update" sends the payer: the subscription's update_payment_method link, else the
+ * portal. Same payer rule as the portal: the link opens the Paddle customer's own portal.
+ */
+export async function paymentMethodUrl(
+  db: PrismaClient,
+  api: BillingApi,
+  actor: Actor
+): Promise<ManageResult<{ url: string }>> {
+  if ((await memberRole(db, actor.orgId, actor.userId)) !== "owner") {
+    return { ok: false, message: NOT_OWNER };
+  }
+  const subs = await withOrg(db, actor.orgId).subscription.findMany({
+    orderBy: { stateAt: "desc" },
+    select: { paddleSubscriptionId: true, paddleCustomerId: true, status: true },
+  });
+  const current = subs.find((s) => isOpen(s.status));
+  if (!current) return { ok: false, message: NO_SUBSCRIPTION };
+  try {
+    const payer = await api.customerEmail(current.paddleCustomerId);
+    if (payer && payer.toLowerCase() !== actor.email.toLowerCase()) {
+      return {
+        ok: false,
+        message: `Payment details belong to ${payer}, who pays for this plan. Ask them to update the payment method.`,
+      };
+    }
+    const direct = await api.paymentMethodUpdateUrl(current.paddleSubscriptionId);
+    if (direct) return { ok: true, url: direct };
+    const ids = subs
+      .filter((s) => s.paddleCustomerId === current.paddleCustomerId)
+      .map((s) => s.paddleSubscriptionId);
+    return { ok: true, url: await api.portalUrl(current.paddleCustomerId, ids) };
+  } catch (err) {
+    log.warn({ err, orgId: actor.orgId }, "billing: payment method link failed");
+    return {
+      ok: false,
+      message: paddleMessage(err, "Paddle could not open the payment method page. Try again."),
+    };
   }
 }
 

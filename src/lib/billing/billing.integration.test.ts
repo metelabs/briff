@@ -1,5 +1,5 @@
 import { PrismaPg } from "@prisma/adapter-pg";
-import { Subscription as PaddleSubscription } from "@paddle/paddle-node-sdk";
+import { ApiError, Subscription as PaddleSubscription } from "@paddle/paddle-node-sdk";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PrismaClient } from "@/generated/prisma/client";
@@ -16,11 +16,15 @@ import {
   billingHistory,
   cancelSubscription,
   changePlan,
+  checkoutSession,
   endSubscriptions,
   invoiceUrl,
+  paymentMethodState,
+  paymentMethodUrl,
   portalUrl,
   previewPlanChange,
 } from "./manage";
+import { ADMIN_PLAN_NOTICE } from "./offer";
 import { snapshotOf, type PaddleSubscriptionLike } from "./state";
 import { applySubscription } from "./sync";
 
@@ -43,7 +47,12 @@ function fakeApi(remote: (id: string) => PaddleSubscriptionLike) {
     getSubscription: async (id) => (calls.push(`get ${id}`), remote(id)),
     previewPriceChange: async (id, priceId, mode) => (
       calls.push(`preview ${id} ${priceId} ${mode}`),
-      { dueNow: "$27.00", recurring: "$39.00", nextBilledAt: new Date("2026-12-02T10:00:00Z") }
+      {
+        dueNow: "$27.00",
+        credit: null,
+        recurring: "$39.00",
+        nextBilledAt: new Date("2026-12-02T10:00:00Z"),
+      }
     ),
     changePrice: async (id, priceId, mode) => (
       calls.push(`change ${id} ${priceId} ${mode}`),
@@ -66,6 +75,22 @@ function fakeApi(remote: (id: string) => PaddleSubscriptionLike) {
       { customerId: "ctm_a", subscriptionId: "sub_a_live" }
     ),
     invoiceUrl: async (id) => (calls.push(`invoice ${id}`), "https://invoice.example/pdf"),
+    paymentMethod: async (customer, subs) => (
+      calls.push(`method ${customer} ${subs.join(",")}`),
+      {
+        brand: "visa",
+        type: "card",
+        network: "visa",
+        last4: "4242",
+        expiryMonth: 1,
+        expiryYear: 2030,
+        email: null,
+      }
+    ),
+    paymentMethodUpdateUrl: async (id) => (
+      calls.push(`pmurl ${id}`),
+      "https://portal.example/update-payment-method"
+    ),
   };
   return { api, calls };
 }
@@ -188,6 +213,7 @@ describe.skipIf(!url)("billing management, tenant checks and billing-check", () 
     expect(await portalUrl(db, api, { orgId: orgA, ...member })).toMatchObject({ ok: false });
     expect(calls).toEqual([
       "preview sub_a_live pri_01m6c6ehqacmse2ybry03yxe3h prorated_immediately",
+      "method ctm_a sub_a_live",
       "change sub_a_live pri_01m6c6ehqacmse2ybry03yxe3h prorated_immediately",
       "cancel sub_b_live",
     ]);
@@ -295,5 +321,155 @@ describe.skipIf(!url)("billing management, tenant checks and billing-check", () 
     for (const job of jobs) await billingNotify({ ...ctx, payload: job.payload });
     expect(mail.sent.every((m) => m.to === owner.email)).toBe(true);
     expect(mail.sent.map((m) => m.subject)).toContain(`D-${suffix} is on the Free plan now`);
+  });
+  it("refuses a checkout for the plan the org has, next to a subscription, or over an admin plan", async () => {
+    const orgId = await createOrgForUser(db, { name: `F-${suffix}`, userId: owner.userId });
+    orgs.push(orgId);
+    const actor = { orgId, ...owner };
+    const secret = "a".repeat(32);
+    const pro = { plan: "pro", interval: "month" } as const;
+    const team = { plan: "team", interval: "year" } as const;
+
+    // Free: both plans, with the org's signed id in custom_data.
+    expect(await checkoutSession(db, "sandbox", actor, pro, secret)).toMatchObject({
+      ok: true,
+      session: {
+        priceId: "pri_01m6c6eh8vp89cnpqw7vpv2krh",
+        customer: { email: owner.email },
+        customData: { orgId },
+      },
+    });
+    expect(await checkoutSession(db, "sandbox", { orgId: orgA, ...member }, pro, secret)).toEqual({
+      ok: false,
+      message: "Only an owner can manage billing.",
+    });
+
+    // Pro set by the instance admin, no subscription: nothing to buy (the bug: it offered Pro).
+    await db.org.update({ where: { id: orgId }, data: { plan: "pro", planSource: "admin" } });
+    expect(await checkoutSession(db, "sandbox", actor, pro, secret)).toEqual({
+      ok: false,
+      message: ADMIN_PLAN_NOTICE,
+    });
+    expect(await checkoutSession(db, "sandbox", actor, team, secret)).toMatchObject({ ok: false });
+    await db.org.update({ where: { id: orgId }, data: { plan: "unlimited" } });
+    expect(await checkoutSession(db, "sandbox", actor, team, secret)).toEqual({
+      ok: false,
+      message: ADMIN_PLAN_NOTICE,
+    });
+
+    // An admin-set Free (overrides only) may buy Pro; the paid plan then belongs to billing.
+    await db.org.update({ where: { id: orgId }, data: { plan: "free", planSource: "admin" } });
+    expect(await checkoutSession(db, "sandbox", actor, pro, secret)).toMatchObject({ ok: true });
+    await seed(orgId, `sub_f_${suffix}`, "ctm_f", "active", new Date());
+    const org = await db.org.findUniqueOrThrow({ where: { id: orgId } });
+    expect({ plan: org.plan, planSource: org.planSource }).toEqual({
+      plan: "pro",
+      planSource: "paddle",
+    });
+
+    // A live subscription changes plan under Billing, never through a second checkout.
+    expect(await checkoutSession(db, "sandbox", actor, team, secret)).toMatchObject({
+      ok: false,
+      message: expect.stringContaining("already has a subscription"),
+    });
+
+    // Canceled but still in its paid period: Pro is the current plan, Team can be bought.
+    await withOrg(db, orgId).subscription.updateMany({ data: { status: "canceled" } });
+    expect(await checkoutSession(db, "sandbox", actor, pro, secret)).toEqual({
+      ok: false,
+      message: "This organisation already has that plan.",
+    });
+    expect(await checkoutSession(db, "sandbox", actor, team, secret)).toMatchObject({
+      ok: true,
+      session: { customer: { id: "ctm_f" } },
+    });
+  });
+
+  it("prorates a change of billing period now and words Paddle's refusal", async () => {
+    const orgId = await createOrgForUser(db, { name: `G-${suffix}`, userId: owner.userId });
+    orgs.push(orgId);
+    await seed(orgId, `sub_g_${suffix}`, "ctm_g", "active", new Date());
+    const actor = { orgId, ...owner };
+    const { api, calls } = fakeApi((id) =>
+      entity(subscriptionData({ id, customerId: "ctm_g", status: "active", priceId: TEAM_MONTHLY }))
+    );
+    // Pro monthly -> Pro yearly and -> Team yearly: Paddle allows only immediate modes.
+    await previewPlanChange(db, api, "sandbox", actor, { plan: "pro", interval: "year" });
+    await previewPlanChange(db, api, "sandbox", actor, { plan: "team", interval: "year" });
+    expect(calls.filter((c) => c.startsWith("preview"))).toEqual([
+      `preview sub_g_${suffix} pri_01m6c6ehdk4jnaddj3n1p21w9a prorated_immediately`,
+      `preview sub_g_${suffix} pri_01m6c6ehv90djqb9e6qy0yxwq2 prorated_immediately`,
+    ]);
+    const preview = await previewPlanChange(db, api, "sandbox", actor, {
+      plan: "team",
+      interval: "month",
+    });
+    expect(preview).toMatchObject({ ok: true, preview: { method: "Visa\u00a0••••\u00a04242" } });
+
+    const rejecting: typeof api = {
+      ...api,
+      previewPriceChange: async () => {
+        throw new ApiError(
+          {
+            type: "request_error",
+            code: "subscription_new_items_not_valid",
+            detail: "the new items are not valid for updating this subscription",
+            documentation_url: "",
+          },
+          null
+        );
+      },
+    };
+    expect(
+      await previewPlanChange(db, rejecting, "sandbox", actor, { plan: "team", interval: "year" })
+    ).toEqual({
+      ok: false,
+      message:
+        "Paddle cannot switch your subscription to that plan this way. Nothing changed and nothing was charged.",
+    });
+  });
+
+  it("shows the org's payment method, or the portal note without payment_method.read", async () => {
+    const orgId = await createOrgForUser(db, { name: `H-${suffix}`, userId: owner.userId });
+    orgs.push(orgId);
+    expect(
+      await paymentMethodState(
+        db,
+        fakeApi(() => entity(subscriptionData({ id: "x", customerId: "y", status: "active" }))).api,
+        orgId
+      )
+    ).toEqual({ kind: "none" });
+    await seed(orgId, `sub_h_${suffix}`, "ctm_h", "active", new Date());
+    const { api, calls } = fakeApi((id) =>
+      entity(subscriptionData({ id, customerId: "ctm_h", status: "active" }))
+    );
+    expect(await paymentMethodState(db, api, orgId)).toMatchObject({
+      kind: "known",
+      method: { last4: "4242" },
+    });
+    const forbidden: typeof api = {
+      ...api,
+      paymentMethod: async () => {
+        throw new ApiError(
+          {
+            type: "request_error",
+            code: "forbidden",
+            detail: "not authorized to read customer-payment-method",
+            documentation_url: "",
+          },
+          null
+        );
+      },
+    };
+    expect(await paymentMethodState(db, forbidden, orgId)).toEqual({ kind: "unavailable" });
+
+    // Update opens the subscription's own payment method link, for the payer only.
+    expect(await paymentMethodUrl(db, api, { orgId, ...owner })).toMatchObject({ ok: false });
+    const payer: typeof api = { ...api, customerEmail: async () => owner.email };
+    expect(await paymentMethodUrl(db, payer, { orgId, ...owner })).toEqual({
+      ok: true,
+      url: "https://portal.example/update-payment-method",
+    });
+    expect(calls).toContain(`pmurl sub_h_${suffix}`);
   });
 });

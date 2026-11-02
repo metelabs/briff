@@ -58,8 +58,11 @@ vi.mock("@/lib/org-capacity", () => ({ loadOrgCapacity: async () => state.capaci
 vi.mock("@/components/shell/app-shell", () => ({
   AppShell: ({ children }: { children: ReactNode }) => createElement("main", null, children),
 }));
+vi.mock("./_payment-method", () => ({ PaymentMethodRow: () => null }));
+vi.mock("./load", () => ({ loadHistory: async () => [], loadPaymentMethod: async () => null }));
 vi.mock("./_client", () => ({
-  CheckoutPanel: () => createElement("div", null, "CHECKOUT"),
+  CheckoutPanel: ({ plans }: { plans: string[] }) =>
+    createElement("div", null, `CHECKOUT ${plans.join(",")}`),
   ManagePanel: ({ view }: { view: { cancelAt: string | null } }) =>
     createElement("div", null, `MANAGE ${view.cancelAt ?? "renews"}`),
   InvoiceButton: () => null,
@@ -108,7 +111,45 @@ describe("/settings/billing", () => {
     const text = await render();
     expect(text).toContain("Free: no subscription");
     expect(text).toContain("3 / 10");
-    expect(text).toContain("CHECKOUT");
+    expect(text).toContain("CHECKOUT pro,team");
+  });
+
+  it("shows the admin notice instead of a checkout for an admin-set plan", async () => {
+    state.capacity = { ...FREE, plan: "pro" };
+    state.planSource = "admin";
+    const text = await render();
+    expect(text).toContain("Your plan is set by the instance admin");
+    expect(text).not.toContain("CHECKOUT");
+    expect(text).toContain("Compare plans");
+
+    state.capacity = { ...FREE, plan: "unlimited" };
+    expect(await render()).toContain("Your plan is set by the instance admin");
+  });
+
+  it("still offers a plan to an org whose admin-set plan is Free", async () => {
+    state.planSource = "admin";
+    expect(await render()).toContain("CHECKOUT pro,team");
+  });
+
+  it("reads Canceled for a far end date and Ends soon for a near one", async () => {
+    state.capacity = { ...FREE, plan: "team" };
+    const far = new Date(Date.now() + 365 * 86_400_000).toISOString();
+    state.sub = {
+      ...PRO_SUB,
+      plan: "team",
+      scheduledChange: { action: "cancel", effectiveAt: far, resumeAt: null },
+    };
+    let text = await render();
+    expect(text).toContain("CANCELED");
+    expect(text).not.toContain("ENDS SOON");
+    const near = new Date(Date.now() + 5 * 86_400_000).toISOString();
+    state.sub = {
+      ...PRO_SUB,
+      plan: "team",
+      scheduledChange: { action: "cancel", effectiveAt: near, resumeAt: null },
+    };
+    text = await render();
+    expect(text).toContain("ENDS SOON");
   });
 
   it("shows the renewal and the manage panel for a Pro subscription", async () => {

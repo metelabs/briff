@@ -1,6 +1,6 @@
 "use client";
 
-import { initializePaddle, type Paddle } from "@paddle/paddle-js";
+import type { Paddle } from "@paddle/paddle-js";
 import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -17,19 +17,23 @@ import { Callout } from "@/components/ui/callout";
 import { ConfirmDialog, FormDialog } from "@/components/ui/dialog";
 import { Segmented } from "@/components/ui/segmented";
 import { useToast } from "@/components/ui/toast";
-import type { BillingInterval, CatalogPrice, PaddleEnv, PaidPlanId } from "@/lib/billing/catalog";
+import type { BillingInterval, PaddleEnv, PaidPlanId } from "@/lib/billing/catalog";
 import type { PlanChangePreview } from "@/lib/billing/manage";
-import { limitLabel, monthsFree, PLANS, usd, type PlanId } from "@/lib/plans";
+import { chargeSentence } from "@/lib/billing/payment-method";
+import { limitLabel, monthsFree, PLANS, usd } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 
 import {
   cancelSubscriptionAction,
   changePlanAction,
   invoiceUrlAction,
+  paymentMethodUrlAction,
   portalUrlAction,
   previewPlanChangeAction,
   resumeSubscriptionAction,
+  startCheckoutAction,
 } from "./actions";
+import { checkoutHref, loadPaddle, paddleTheme } from "./paddle";
 
 const PAID: readonly PaidPlanId[] = ["pro", "team"];
 const INTERVALS = [
@@ -72,15 +76,19 @@ function PlanChoice({
   onChange,
   interval,
   current,
+  plans = PAID,
+  disabled = false,
 }: {
   value: PaidPlanId;
   onChange: (plan: PaidPlanId) => void;
   interval: BillingInterval;
   current?: { plan: PaidPlanId; interval: BillingInterval };
+  plans?: readonly PaidPlanId[];
+  disabled?: boolean;
 }) {
   return (
     <div role="radiogroup" aria-label="Plan" className="mt-4 grid gap-2 min-[560px]:grid-cols-2">
-      {PAID.map((id) => {
+      {plans.map((id) => {
         const p = PLANS[id];
         const selected = value === id;
         const isCurrent = current?.plan === id && current.interval === interval;
@@ -91,6 +99,7 @@ function PlanChoice({
             type="button"
             role="radio"
             aria-checked={selected}
+            disabled={disabled}
             onClick={() => onChange(id)}
             className={cn(
               "rounded-inset flex flex-col items-stretch justify-start border p-3.5 text-left transition-colors duration-150",
@@ -142,42 +151,40 @@ function usePoll(active: boolean, onTimeout: () => void) {
   }, [active, router]);
 }
 
-function paddleTheme(): "light" | "dark" {
-  const set = document.documentElement.dataset.theme;
-  if (set === "light" || set === "dark") return set;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
-
 export interface CheckoutConfig {
   env: PaddleEnv;
   clientToken: string;
   fake: boolean;
+  checkout: "inline" | "overlay";
 }
 
-/** Owners without a subscription: pick Pro or Team and pay in Paddle's overlay checkout. */
+/**
+ * Owners without a subscription: pick a plan the org may buy (`billingOffer`), then pay on
+ * Briff's checkout page (inline frame) or in Paddle's overlay (BRIFF_CHECKOUT=overlay). The
+ * checkout's price, customer and signed org id come from `startCheckoutAction`, which refuses
+ * a plan the org already has.
+ */
 export function CheckoutPanel({
   config,
-  prices,
-  currentPlan,
+  plans,
   preselect,
-  customer,
-  customData,
   awaitingCheckout,
 }: {
   config: CheckoutConfig;
-  prices: CatalogPrice[];
-  currentPlan: PlanId;
+  plans: readonly PaidPlanId[];
   preselect: { plan: PaidPlanId; interval: BillingInterval };
-  customer: { id: string } | { email: string };
-  customData: { orgId: string; orgSig: string };
   awaitingCheckout: boolean;
 }) {
   const toast = useToast();
+  const router = useRouter();
   const [interval, setBillingInterval] = useState<BillingInterval>(preselect.interval);
-  const [plan, setPlan] = useState<PaidPlanId>(preselect.plan);
+  const [plan, setPlan] = useState<PaidPlanId>(
+    plans.includes(preselect.plan) ? preselect.plan : (plans[0] ?? "pro")
+  );
   // Kept from the first render: FlashToast strips ?checkout=success from the URL.
   const [waiting, setWaiting] = useState(awaitingCheckout);
   const [timedOut, setTimedOut] = useState(false);
+  const [pending, start] = useTransition();
   const paddle = useRef<Promise<Paddle | undefined> | null>(null);
 
   usePoll(waiting, () => {
@@ -185,38 +192,42 @@ export function CheckoutPanel({
     setTimedOut(true);
   });
 
-  async function open() {
-    const item = prices.find((p) => p.plan === plan && p.interval === interval);
-    if (!item) return toast("This plan is not available on this instance.", "error");
-    if (config.fake) {
-      return toast("BRIFF_PADDLE_FAKE is on: checkout needs a real Paddle client token.", "error");
+  function open() {
+    if (config.checkout === "inline") {
+      router.push(checkoutHref(plan, interval));
+      return;
     }
-    paddle.current ??= initializePaddle({
-      token: config.clientToken,
-      environment: config.env === "live" ? "production" : "sandbox",
-      eventCallback: (event) => {
+    start(async () => {
+      const res = await startCheckoutAction({ plan, interval });
+      if (!res.ok) return toast(res.message, "error");
+      if (config.fake) {
+        return toast(
+          "BRIFF_PADDLE_FAKE is on: checkout needs a real Paddle client token.",
+          "error"
+        );
+      }
+      paddle.current ??= loadPaddle(config, (event) => {
         if (event.name === "checkout.completed") setWaiting(true);
-      },
-    });
-    const instance = await paddle.current;
-    if (!instance)
-      return toast("Paddle checkout did not load. Reload the page and try again.", "error");
-    instance.Checkout.open({
-      items: [{ priceId: item.priceId, quantity: 1 }],
-      customer,
-      customData: { ...customData },
-      settings: {
-        displayMode: "overlay",
-        variant: "one-page",
-        theme: paddleTheme(),
-        allowLogout: false,
-        successUrl: `${window.location.origin}/settings/billing?checkout=success`,
-      },
+      });
+      const instance = await paddle.current;
+      if (!instance)
+        return toast("Paddle checkout did not load. Reload the page and try again.", "error");
+      instance.Checkout.open({
+        items: [{ priceId: res.session.priceId, quantity: 1 }],
+        customer: res.session.customer,
+        customData: { ...res.session.customData },
+        settings: {
+          displayMode: "overlay",
+          variant: "one-page",
+          theme: paddleTheme(),
+          allowLogout: false,
+          successUrl: `${window.location.origin}/settings/billing?checkout=success`,
+        },
+      });
     });
   }
 
-  const upgradeLabel =
-    currentPlan === plan ? `Subscribe to ${PLANS[plan].name}` : `Upgrade to ${PLANS[plan].name}`;
+  const upgradeLabel = `Upgrade to ${PLANS[plan].name}`;
   return (
     <Panel index={2}>
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -247,9 +258,9 @@ export function CheckoutPanel({
           message="Paddle has not confirmed the payment yet. Reload this page in a minute; your plan changes as soon as it does."
         />
       )}
-      <PlanChoice value={plan} onChange={setPlan} interval={interval} />
+      <PlanChoice value={plan} onChange={setPlan} interval={interval} plans={plans} />
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <Button variant="primary" onClick={open} disabled={waiting}>
+        <Button variant="primary" onClick={open} disabled={waiting || pending}>
           {upgradeLabel}
         </Button>
         <span className="text-fg-muted text-[12.5px]">
@@ -284,7 +295,11 @@ function PreviewLines({ preview }: { preview: PlanChangePreview }) {
       <div className="border-line flex justify-between gap-3 border-t py-2.5">
         <dt>Due now</dt>
         <dd className="font-medium tabular-nums">
-          {preview.billing === "now" && preview.dueNow ? preview.dueNow : "Nothing"}
+          {preview.billing === "now" && preview.dueNow
+            ? preview.dueNow
+            : preview.credit
+              ? `Nothing (${preview.credit} credit)`
+              : "Nothing"}
         </dd>
       </div>
       <div className="border-line flex justify-between gap-3 border-t border-b py-2.5">
@@ -311,23 +326,38 @@ export function ManagePanel({ view }: { view: ManageView }) {
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState<PlanChangePreview | null>(null);
   const [pending, start] = useTransition();
+  // Only the newest preview may open the dialog: an older answer arriving late must not show
+  // (and then confirm) terms the owner has already moved away from.
+  const previewSeq = useRef(0);
   const unchanged = plan === view.plan && interval === view.interval;
 
   function review() {
+    const seq = ++previewSeq.current;
+    const terms = { plan, interval };
     start(async () => {
-      const res = await previewPlanChangeAction({ plan, interval });
+      const res = await previewPlanChangeAction(terms);
+      if (seq !== previewSeq.current) return;
       if (!res.ok) return toast(res.message, "error");
       setPreview(res.preview);
       setOpen(true);
     });
   }
 
+  function choose(next: { plan?: PaidPlanId; interval?: BillingInterval }) {
+    previewSeq.current++;
+    if (next.plan) setPlan(next.plan);
+    if (next.interval) setBillingInterval(next.interval);
+  }
+
   function confirm() {
+    if (!preview) return;
+    // Exactly the terms the owner saw in the preview, not whatever the cards say now.
+    const terms = preview.to;
     start(async () => {
-      const res = await changePlanAction({ plan, interval });
+      const res = await changePlanAction(terms);
       if (!res.ok) return toast(res.message, "error");
       setOpen(false);
-      toast(`Plan changed to ${PLANS[plan].name}. Paddle sends the receipt.`);
+      toast(`Plan changed to ${PLANS[terms.plan].name}. Paddle sends the receipt.`);
       router.refresh();
     });
   }
@@ -369,14 +399,14 @@ export function ManagePanel({ view }: { view: ManageView }) {
           <div>
             <h2 className="type-h2">Change plan</h2>
             <p className="text-fg-muted mt-1 text-[13.5px]">
-              A bigger plan or yearly billing charges the prorated difference now; a smaller plan or
-              monthly billing settles on your next bill.
+              A bigger plan or another billing period is prorated now (yearly to monthly credits the
+              unused time); a smaller plan on the same period settles on your next bill.
             </p>
           </div>
           <Segmented
             label="Billing period"
             value={interval}
-            onChange={setBillingInterval}
+            onChange={(next) => choose({ interval: next })}
             options={INTERVALS}
           />
         </div>
@@ -396,7 +426,7 @@ export function ManagePanel({ view }: { view: ManageView }) {
         )}
         <PlanChoice
           value={plan}
-          onChange={setPlan}
+          onChange={(next) => choose({ plan: next })}
           interval={interval}
           current={{ plan: view.plan, interval: view.interval }}
         />
@@ -452,11 +482,15 @@ export function ManagePanel({ view }: { view: ManageView }) {
       <FormDialog
         open={open}
         onOpenChange={setOpen}
-        title={`Switch to ${PLANS[plan].name} ${interval === "year" ? "yearly" : "monthly"}?`}
+        title={
+          preview
+            ? `Switch to ${PLANS[preview.to.plan].name} ${preview.to.interval === "year" ? "yearly" : "monthly"}?`
+            : "Switch plan?"
+        }
         description={
-          preview?.billing === "now"
-            ? "The new plan starts now; Paddle charges the prorated difference to your saved payment method."
-            : "The new plan starts now; the difference is settled on your next bill, nothing is refunded today."
+          preview
+            ? `The new plan starts now. ${chargeSentence({ ...preview, interval: preview.to.interval }, preview.method)}`
+            : ""
         }
       >
         {preview && <PreviewLines preview={preview} />}
@@ -490,6 +524,28 @@ export function InvoiceButton({ transactionId }: { transactionId: string }) {
       }
     >
       Invoice
+    </Button>
+  );
+}
+
+/** "Update" on the payment method card: Paddle's update-payment-method page, else the portal. */
+export function UpdatePaymentMethodButton({ label = "Update" }: { label?: string }) {
+  const toast = useToast();
+  const [pending, start] = useTransition();
+  return (
+    <Button
+      variant="secondary"
+      size="sm"
+      disabled={pending}
+      onClick={() =>
+        start(async () => {
+          const res = await paymentMethodUrlAction();
+          if (!res.ok) return toast(res.message, "error");
+          window.location.assign(res.url);
+        })
+      }
+    >
+      {label}
     </Button>
   );
 }

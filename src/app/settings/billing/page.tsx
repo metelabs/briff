@@ -6,24 +6,25 @@ import { Suspense, type CSSProperties, type ReactNode } from "react";
 import { AppShell } from "@/components/shell/app-shell";
 import { buttonVariants } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/section-header";
-import { Tag, type TagKind } from "@/components/ui/tag";
+import { Tag } from "@/components/ui/tag";
 import { getOrgContext } from "@/lib/auth/session";
-import { getBillingApi } from "@/lib/billing/api";
-import { isBillingInterval, isPaidPlanId, PADDLE_CATALOG } from "@/lib/billing/catalog";
+import { isBillingInterval } from "@/lib/billing/catalog";
 import { billingConfig } from "@/lib/billing/config";
 import { longDate } from "@/lib/email/billing-email";
 import { scheduledOf } from "@/lib/billing/labels";
-import { billingHistory, liveSubscription } from "@/lib/billing/manage";
-import { checkoutCustomData } from "@/lib/billing/org-link";
+import { liveSubscription } from "@/lib/billing/manage";
+import { ADMIN_PLAN_NOTICE, billingOffer, planSourceOf } from "@/lib/billing/offer";
 import { graceEndsAt } from "@/lib/billing/state";
+import { statusChip } from "@/lib/billing/status-chip";
 import { getDb } from "@/lib/db/client";
 import { withOrg } from "@/lib/db/with-org";
-import { getEnv } from "@/lib/env";
 import { loadOrgCapacity } from "@/lib/org-capacity";
 import { atLimit, PLANS } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 
 import { CheckoutPanel, InvoiceButton, ManagePanel, type ManageView } from "./_client";
+import { PaymentMethodRow } from "./_payment-method";
+import { loadHistory, loadPaymentMethod } from "./load";
 
 export const metadata: Metadata = { title: "Billing · Briff" };
 
@@ -49,20 +50,15 @@ function Card({
   );
 }
 
-const STATUS_TAG: Record<string, { kind: TagKind; label: string }> = {
-  active: { kind: "ok", label: "Active" },
-  trialing: { kind: "ok", label: "Trial" },
-  past_due: { kind: "upgrade", label: "Payment failed" },
-  paused: { kind: "wait", label: "Paused" },
-  canceled: { kind: "wait", label: "Canceled" },
-};
+async function PaymentMethod({ orgId }: { orgId: string }) {
+  const state = await loadPaymentMethod(orgId);
+  return <PaymentMethodRow state={state} now={new Date()} canUpdate />;
+}
 
 async function History({ orgId }: { orgId: string }) {
-  const api = getBillingApi();
-  if (!api) return null;
   let rows;
   try {
-    rows = await billingHistory(getDb(), api, orgId);
+    rows = await loadHistory(orgId);
   } catch {
     return (
       <p className="text-fg-muted text-[13.5px]">
@@ -120,10 +116,7 @@ export default async function BillingPage({
   const config = billingConfig();
   const owner = ctx.role === "owner";
   const [org, live, latest, owners] = await Promise.all([
-    db.org.findUniqueOrThrow({
-      where: { id: ctx.orgId },
-      select: { planSource: true, paddleCustomerId: true },
-    }),
+    db.org.findUniqueOrThrow({ where: { id: ctx.orgId }, select: { planSource: true } }),
     liveSubscription(db, ctx.orgId),
     withOrg(db, ctx.orgId).subscription.findFirst({ orderBy: { stateAt: "desc" } }),
     withOrg(db, ctx.orgId).orgMember.findMany({
@@ -137,6 +130,14 @@ export default async function BillingPage({
   const scheduled = live ? scheduledOf(live.scheduledChange) : null;
   const cancelAt = scheduled?.action === "cancel" ? new Date(scheduled.effectiveAt) : null;
   const grace = live?.status === "past_due" ? graceEndsAt(live) : null;
+  const now = new Date();
+  // A canceled subscription keeps its plan to the end of the period it paid for.
+  const ended = !live && latest?.status === "canceled" ? latest : null;
+  const offer = billingOffer({
+    plan: capacity.plan,
+    planSource: planSourceOf(org.planSource),
+    subscribed: live !== null,
+  });
   const rows = [
     { label: "Repos", used: capacity.repos, limit: capacity.repoLimit },
     { label: "Streams", used: capacity.streams, limit: capacity.streamLimit },
@@ -154,21 +155,24 @@ export default async function BillingPage({
     status = `The last payment failed. ${plan.name} stays until ${longDate(grace)} while Paddle retries; update the payment method to keep it.`;
   else if (live?.nextBilledAt)
     status = `${PLANS[live.plan].name}, billed ${live.interval === "year" ? "yearly" : "monthly"}. Renews on ${longDate(live.nextBilledAt)}.`;
+  else if (
+    ended?.currentPeriodEnd &&
+    ended.currentPeriodEnd.getTime() > now.getTime() &&
+    capacity.plan === ended.plan
+  )
+    status = `Canceled: ${plan.name} ends on ${longDate(ended.currentPeriodEnd)}, then the organisation moves to Free.`;
   else if (org.planSource === "admin" && capacity.plan !== "free")
     status = `${plan.name} was set by the instance admin, without a subscription.`;
   else status = "Free: no subscription, nothing to pay.";
-  const tag = cancelAt
-    ? { kind: "wait" as const, label: "Ends soon" }
-    : live
-      ? STATUS_TAG[live.status]
+  const tag = live
+    ? statusChip({ status: live.status, endsAt: cancelAt, graceEndsAt: grace }, now)
+    : ended
+      ? statusChip({ status: "canceled", endsAt: ended.currentPeriodEnd, graceEndsAt: null }, now)
       : null;
+  const offered = offer.kind === "checkout" ? offer.plans : [];
 
   const preselect = {
-    plan: isPaidPlanId(one(params.plan))
-      ? (one(params.plan) as "pro" | "team")
-      : capacity.plan === "pro"
-        ? "team"
-        : "pro",
+    plan: offered.find((p) => p === one(params.plan)) ?? offered[0] ?? "pro",
     interval: isBillingInterval(one(params.interval))
       ? (one(params.interval) as "month" | "year")
       : live?.interval === "year"
@@ -226,7 +230,12 @@ export default async function BillingPage({
           </dl>
         </Card>
 
-        {!config ? (
+        {offer.kind === "admin" ? (
+          <Card index={2}>
+            <h2 className="type-h2">Set by the instance admin</h2>
+            <p className="text-fg-muted mt-1.5 text-[13.5px]">{ADMIN_PLAN_NOTICE}</p>
+          </Card>
+        ) : !config ? (
           <Card index={2}>
             <h2 className="type-h2">Billing is not configured on this instance</h2>
             <p className="text-fg-muted mt-1.5 text-[13.5px]">
@@ -244,16 +253,30 @@ export default async function BillingPage({
           </Card>
         ) : manageView ? (
           <ManagePanel view={manageView} />
-        ) : capacity.plan === "unlimited" ? null : (
+        ) : offer.kind === "checkout" ? (
           <CheckoutPanel
-            config={{ env: config.env, clientToken: config.clientToken, fake: config.fake }}
-            prices={[...PADDLE_CATALOG[config.env]]}
-            currentPlan={capacity.plan}
+            config={{
+              env: config.env,
+              clientToken: config.clientToken,
+              fake: config.fake,
+              checkout: config.checkout,
+            }}
+            plans={offer.plans}
             preselect={preselect}
-            customer={org.paddleCustomerId ? { id: org.paddleCustomerId } : { email: ctx.email }}
-            customData={checkoutCustomData(getEnv().BETTER_AUTH_SECRET, ctx.orgId)}
             awaitingCheckout={one(params.checkout) === "success"}
           />
+        ) : null}
+
+        {config && owner && live && (
+          <Card index={3}>
+            <h2 className="type-h2">Payment method</h2>
+            <p className="text-fg-muted mt-1 mb-3 text-[13.5px]">
+              Paddle charges renewals and plan changes to this method, without asking again.
+            </p>
+            <Suspense fallback={<div className="bg-surface-2 rounded-inset h-10" aria-hidden />}>
+              <PaymentMethod orgId={ctx.orgId} />
+            </Suspense>
+          </Card>
         )}
 
         {config && owner && sub && (

@@ -39,7 +39,10 @@ export function PublicHeader({ pricing = false }: { pricing?: boolean }) {
             {item.label}
           </Link>
         ))}
-        <Link href="/login" className={cn(buttonVariants({ size: "md" }), "ml-2")}>
+        <Link
+          href="/login"
+          className={cn(buttonVariants({ variant: "primary", size: "md" }), "ml-2")}
+        >
           Sign in
         </Link>
       </nav>
