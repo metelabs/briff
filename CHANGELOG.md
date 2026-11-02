@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.13.0](https://github.com/metelabs/briff/compare/0.12.0...0.13.0) (2026-11-02)
+
+
+### Features
+
+* **docs:** documentation site at /docs ([#56](https://github.com/metelabs/briff/issues/56)) ([b765b8d](https://github.com/metelabs/briff/commit/b765b8daac7f27cfb45293eebe170071f29540bb))
+* **landing:** trust-first landing page with product visuals ([#57](https://github.com/metelabs/briff/issues/57)) ([c6f51fb](https://github.com/metelabs/briff/commit/c6f51fb5539a830315ebf011bc7ada486174246b))
+
+
+### Bug Fixes
+
+* **auth:** /signup route and logo link; feat(alerts): OSV re-check, Resolved section ([#55](https://github.com/metelabs/briff/issues/55)) ([8fd6869](https://github.com/metelabs/briff/commit/8fd68699f7e79261aa8d7164f9185a9f5e646918))
+
 ## [0.12.0](https://github.com/metelabs/briff/compare/0.11.0...0.12.0) (2026-11-02)
 
 
