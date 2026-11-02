@@ -38,8 +38,8 @@ function Price({ plan, period }: { plan: Plan; period: Period }) {
  * a member on "ask an owner", a visitor without a session on sign-up (the page redirects).
  */
 function ctaFor(plan: Plan, period: Period, billing: boolean): { href: string; label: string } {
-  if (plan.id === "free") return { href: "/login?mode=sign-up", label: "Create an account" };
-  if (!billing) return { href: "/login?mode=sign-up", label: "Start free, upgrade later" };
+  if (plan.id === "free") return { href: "/signup", label: "Create an account" };
+  if (!billing) return { href: "/signup", label: "Start free, upgrade later" };
   const interval = period === "monthly" ? "month" : "year";
   return {
     href: `/settings/billing?plan=${plan.id}&interval=${interval}`,

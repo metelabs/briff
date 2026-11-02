@@ -11,7 +11,7 @@ import { requireOrgContext } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { withOrg } from "@/lib/db/with-org";
 import { smtpConfig } from "@/lib/email/mailer";
-import { plural, shortDate, shortDateTime } from "@/lib/format";
+import { fullDate, plural, shortDate, shortDateTime } from "@/lib/format";
 import { listScanTokens } from "@/lib/scan/token-store";
 import { loadMembers, loadOpenInvites, loadOrgEvents, ORG_NAME_MAX } from "@/lib/members";
 import { eventSentence } from "@/lib/org-events";
@@ -95,7 +95,7 @@ export default async function SettingsPage() {
   const [profile, user, streams, tokens, org, github, capacity, members, invites, events] =
     await Promise.all([
       scoped.interestProfile.findFirst({
-        select: { text: true, weights: true, refreshedAt: true, model: true, promptVersion: true },
+        select: { text: true, weights: true, refreshedAt: true },
       }),
       // The user row is the signed-in user's own (not tenant data).
       db.user.findUniqueOrThrow({
@@ -132,8 +132,7 @@ export default async function SettingsPage() {
               <>
                 Briff reads this when it writes your bulletin, and refreshes it from your feedback
                 before each one; your edits are kept.
-                {profile?.refreshedAt &&
-                  ` Last refresh ${profile.refreshedAt.toISOString().slice(0, 10)} (${profile.model}, ${profile.promptVersion}).`}
+                {profile?.refreshedAt && ` Last refreshed ${fullDate(profile.refreshedAt)}.`}
               </>
             }
           >

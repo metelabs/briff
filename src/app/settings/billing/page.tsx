@@ -106,7 +106,7 @@ export default async function BillingPage({
 }) {
   const ctx = await getOrgContext();
   // /pricing links here: a visitor without an account goes to sign-up.
-  if (!ctx) redirect("/login?mode=sign-up");
+  if (!ctx) redirect("/signup");
   const db = getDb();
   const capacity = await loadOrgCapacity(db, ctx.orgId);
   // Self-hosted instances have no plans: the page does not exist there.

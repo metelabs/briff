@@ -35,7 +35,7 @@ This file is the project guide for every coding agent and for people; `CLAUDE.md
 ## Layout
 
 ```
-src/app/                 pages (/ home overview, /bulletins, /b/[id], /alerts, /stack, /repos, /streams, /settings, /settings/billing, /onboarding, /admin, /login, /pricing, /invite/[token]) + route
+src/app/                 pages (/ home overview, /bulletins, /b/[id], /alerts, /stack, /repos, /streams, /settings, /settings/billing, /onboarding, /admin, /login, /signup, /pricing, /invite/[token]) + route
                          handlers (/api/health, /api/scan, /api/export, /api/auth/[...all], /api/billing/paddle)
 src/proxy.ts             `/` without a session cookie -> rewrite to /landing (docs/LANDING.md)
 src/app/landing, replay/, status/ public pages (no session, no tenant imports: src/test/public-routes.test.ts),
@@ -265,13 +265,24 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   other package (`Advisory.packages`; a multi-package record's stored ranges may be another
   package's, so those are never resolved on upload; rows stored before it are refetched by
   security-scan, 500 per run, also when OSV no longer answers with them; withdrawn ones get `[]`); versions the ranges cannot place keep it open), and an affected version coming back clears it, as does a
-  security-scan that OSV says is at risk again (no second email). Resolved alerts leave the Alerts
+  security-scan that OSV says is at risk again (no second email). security-scan also resolves
+  (`planScanResolution`, `src/security/plan.ts`): an open alert whose own package OSV was asked about
+  at the repo's stored version and no longer reports; never from a requirement or a GitHub Actions
+  tag, never for a repo whose answer named an advisory the run could not store or that was
+  uploaded during the run (checked under ingestion's per-org lock), and a package that is gone is
+  left to the upload. `Alert.resolvedBy` records the cause (`briff_scan` upload, `github_app` scan,
+  `security_scan`; null on older rows, "a later scan"); a reopen clears it. Resolved alerts leave the Alerts
   lists, Home counts, the Alerts dot, Repos counts and the weekly bulletin input; stored bulletin
-  pages keep theirs. Alerts shows "Resolved: N this week" and per section "Fixed since your last
-  visit" (resolved after the previous `alertsSeenAt`). "Re-check now" (`recheckAction`) queues a
-  forced `github-scan` per GitHub App installation (own dedupe key `...:force`), once per 10 minutes per org
-  (`Org.recheckRequestedAt`), polls until no scan of the installations (follow-ups included) is pending or running and reloads; briff-scan repos get the
-  upload command instead. The sticky section bar (`AlertSectionNav`) is `data-sticky-top`;
+  pages keep theirs. Alerts shows "Resolved: N this week", per section "Fixed since your last
+  visit" (resolved after the previous `alertsSeenAt`) and a collapsed Resolved section (per package:
+  repos, severity, time, cause), both from the same 30-day list (`recentlyResolved`). Each open
+  package says how its fix gets noticed by its repos' connection (`fixHintFor`: App repos on push,
+  briff-scan repos on the next upload or `npx briff-scan` now). "Re-check now" opens a dialog with a
+  line per connection kind (briff-scan repos get the upload command), and its button
+  (`recheckAction`) queues a forced `github-scan` per GitHub App installation (own dedupe key
+  `...:force`) and a `security-scan` of the org only (payload `{ orgId, manual: true }`, dedupe key
+  `security-scan:org:<orgId>`), once per 10 minutes per org (`Org.recheckRequestedAt`), polls until
+  none of them (follow-ups included) is pending or running (`recheckInFlight`) and reloads. The sticky section bar (`AlertSectionNav`) is `data-sticky-top`;
   `stickyOffset` counts a stacked bar from its CSS `top`.
 - In-page scrolls from buttons and section links go through `scrollToElement`
   (`src/lib/scroll.ts`): smooth unless reduced motion, below the sticky bar (`data-sticky-top`;
@@ -308,7 +319,7 @@ docker compose -f docker-compose.dev.yml up -d   # Postgres 16 on 127.0.0.1:5543
 cp .env.example .env                  # fill BETTER_AUTH_SECRET; DATABASE_URL is preset
 npm ci                                # runs prisma generate
 npm run db:migrate                    # prisma migrate dev
-npm run dev                           # web on :3000; first sign-up at /login owns the instance
+npm run dev                           # web on :3000; first sign-up (/signup or /login) owns the instance
 npm run dev:worker                    # worker with watch
 npm run worker -- --once collect-sources refresh-packages   # one-off: enqueue, drain, exit
 npm run worker -- --once security-scan weekly-bulletin      # (worker scripts load .env themselves)
@@ -419,7 +430,12 @@ Checks before a PR: `npm run typecheck && npm run lint && npm test`. DB-backed t
   place; only a severity rise across the email threshold reopens handled matches.
 - security-scan: OSV querybatch with installed versions of **included** repos (direct + transitive,
   direct first), Advisory upsert (refetch only when OSV `modified` moved), one Alert per
-  (advisory × repo) ever, one email per org per run.
+  (advisory × repo) ever, one email per org per run. An org's re-check (`{ orgId }` payload,
+  `securityScanScope`) queries only that org's repos and skips the coverage backfill; duplicate
+  advisories are still merged across every org. Delivery follows the same rules under a per-org
+  advisory lock (a run that cannot take it leaves the alerts for the next one), so the daily run and
+  a re-check never email the same alert twice. Health and ops-check count only full runs as the
+  schedule's success.
   - One Advisory per vulnerability (`src/security/aliases.ts`): OSV returns the GHSA next to the
     GO-_/PYSEC-_ entry; records linked through `aliases` (not `related`) are merged under the
     GHSA id, else the CVE, else the native id, the others kept in `Advisory.aliases` (shown on

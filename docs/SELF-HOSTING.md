@@ -49,7 +49,7 @@ curl -s http://127.0.0.1:3000/api/health
 
 You should see `{"ok":true,"db":"ok",...}`. `warnings` lists the optional features that are
 off because their variables are empty. Then set up the [reverse proxy](#reverse-proxy-caddy),
-open `https://briff.example.com/login` and create your account.
+open `https://briff.example.com/signup` and create your account.
 
 `docker compose up -d` waits for Postgres to be healthy, starts `web` (which applies the
 migrations), and starts `worker` only once `web` is healthy, so the worker never runs against

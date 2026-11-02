@@ -75,7 +75,7 @@ describe("pricing on the hosted service only", () => {
     expect(html(false)).not.toContain("/settings/billing");
     expect(html(true)).toContain('href="/settings/billing?plan=pro&amp;interval=month"');
     expect(html(true)).toContain('href="/settings/billing?plan=team&amp;interval=month"');
-    expect(html(true)).toContain('href="/login?mode=sign-up"');
+    expect(html(true)).toContain('href="/signup"');
   });
 
   it("drops the beta note when checkout is configured", () => {

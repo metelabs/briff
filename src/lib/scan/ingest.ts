@@ -288,12 +288,15 @@ export async function ingestScan(
       if (plan.resolve.length > 0)
         await tx.alert.updateMany({
           where: { id: { in: plan.resolve } },
-          data: { resolvedAt: now },
+          data: {
+            resolvedAt: now,
+            resolvedBy: options.completeSnapshots ? "github_app" : "briff_scan",
+          },
         });
       if (plan.reopen.length > 0)
         await tx.alert.updateMany({
           where: { id: { in: plan.reopen } },
-          data: { resolvedAt: null },
+          data: { resolvedAt: null, resolvedBy: null },
         });
 
       let runtimesChanged = false;

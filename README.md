@@ -149,7 +149,7 @@ docker compose -f docker-compose.dev.yml up -d   # Postgres 16 on 127.0.0.1:5543
 cp .env.example .env                  # set BETTER_AUTH_SECRET; DATABASE_URL is preset
 npm ci                                # also runs prisma generate
 npm run db:migrate                    # prisma migrate dev
-npm run dev                           # web on :3000; the first sign-up at /login owns the instance
+npm run dev                           # web on :3000; the first sign-up (/signup or /login) owns the instance
 npm run dev:worker                    # worker with watch
 ```
 
