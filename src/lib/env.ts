@@ -70,6 +70,10 @@ export const serverEnvSchema = z.object({
   BRIFF_MODEL_TRIAGE: optionalString.transform((v) => v ?? "claude-haiku-5-5"),
   BRIFF_MODEL_SYNTHESIS: optionalString.transform((v) => v ?? "claude-sonnet-5-5"),
   BRIFF_URGENT_EMAIL: booleanFlag(true),
+  // Largest POST /api/scan body in bytes (default 5 MB); bigger uploads get 413.
+  BRIFF_SCAN_MAX_BYTES: optionalString
+    .transform((v) => (v === undefined ? 5 * 1024 * 1024 : Number(v)))
+    .pipe(z.number().int().positive()),
   // Weekly synthesis and triage go through the Message Batches API (50% price, minutes of latency).
   BRIFF_LLM_BATCH: booleanFlag(true),
   // Development only: a deterministic stand-in for the Anthropic API (refused in production).

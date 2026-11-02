@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import type { BulletinView, BulletinViewItem } from "@/pipeline/bulletin-view";
+import {
+  CONDENSED_NOTE,
+  type BulletinView,
+  type BulletinViewItem,
+} from "@/pipeline/bulletin-view";
 
 import { renderSecurityAlertEmail, renderUrgentEmail } from "./alert-email";
 import { bulletinPageUrl, isCommand, kickerLine, renderBulletinEmail } from "./bulletin-email";
@@ -145,6 +149,13 @@ describe("renderBulletinEmail", () => {
     const old = { ...view, streamId: null, streamName: null };
     expect(kickerLine(old, strings("en"))).toBe("Briff · Week 2026-W42");
     expect(renderBulletinEmail(old, links).text).toContain("Briff · Week 2026-W42");
+  });
+
+  it("marks a condensed edition in both parts, and only that", () => {
+    const condensed = renderBulletinEmail({ ...view, condensed: true }, links);
+    expect(condensed.html).toContain(CONDENSED_NOTE);
+    expect(condensed.text).toContain(CONDENSED_NOTE);
+    expect(email.text).not.toContain("Condensed edition");
   });
 
   it("has a plain-text alternative with sections, repos, actions and folded versions", () => {

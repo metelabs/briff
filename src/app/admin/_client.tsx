@@ -10,7 +10,8 @@ import { Select } from "@/components/ui/select";
 import { FieldHelp, FormStatus, Label } from "@/components/ui/label";
 import { SearchField } from "@/components/ui/search-field";
 import { useToast } from "@/components/ui/toast";
-import { limitLabel, PLAN_IDS, PLANS, type PlanId } from "@/lib/plans";
+import { limitLabel, PLAN_ALLOWANCES, PLAN_IDS, PLANS, type PlanId } from "@/lib/plans";
+import { formatUsd } from "@/llm/pricing";
 import { initialSearch, searchSync, withSearch } from "@/lib/search-sync";
 
 import {
@@ -74,6 +75,7 @@ export function EditLimitsButton({
     plan: PlanId;
     repoOverride: number | null;
     streamOverride: number | null;
+    llmBudgetOverride: number | null;
   };
 }) {
   const [open, setOpen] = useState(false);
@@ -93,9 +95,11 @@ export function EditLimitsButton({
     plan: org.plan,
     repoLimit: org.repoOverride,
     streamLimit: org.streamOverride,
+    llmBudgetUsd: org.llmBudgetOverride,
   };
   const [plan, setPlan] = useState<PlanId>(current.plan);
   const base = PLANS[plan];
+  const planBudget = PLAN_ALLOWANCES[plan].llmBudgetUsd;
   return (
     <FormDialog
       open={open}
@@ -154,6 +158,24 @@ export function EditLimitsButton({
           Leave an override empty to use the plan&apos;s limit. It counts only above the plan&apos;s
           limit.
         </FieldHelp>
+        <div className="grid gap-1.5">
+          <Label htmlFor={`llm-budget-${org.id}`}>Monthly AI budget (USD)</Label>
+          <Input
+            id={`llm-budget-${org.id}`}
+            type="number"
+            name="llmBudgetUsd"
+            min={0}
+            max={10000}
+            step={0.01}
+            inputMode="decimal"
+            defaultValue={current.llmBudgetUsd ?? ""}
+            placeholder={planBudget === null ? "plan: no budget" : `plan: ${formatUsd(planBudget)}`}
+          />
+          <FieldHelp>
+            Replaces the plan&apos;s budget, higher or lower. Past it, weekly bulletins are a
+            condensed edition; security alerts never change.
+          </FieldHelp>
+        </div>
         {!state.ok && <FormStatus ok={false} message={state.message} />}
         <div className="mt-1 flex flex-wrap justify-end gap-2">
           <DialogClose render={<Button variant="secondary">Cancel</Button>} />

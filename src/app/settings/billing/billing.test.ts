@@ -22,6 +22,8 @@ const state = vi.hoisted(() => ({
   configured: true,
   sub: null as SubRow | null,
   planSource: "default",
+  llmBudgetUsd: null as number | null,
+  usageMicros: 0,
 }));
 vi.mock("@/lib/auth/session", () => ({
   getOrgContext: async () => ({
@@ -44,7 +46,11 @@ vi.mock("@/lib/billing/manage", () => ({
 vi.mock("@/lib/db/client", () => ({
   getDb: () => ({
     org: {
-      findUniqueOrThrow: async () => ({ planSource: state.planSource, paddleCustomerId: null }),
+      findUniqueOrThrow: async () => ({
+        planSource: state.planSource,
+        llmBudgetUsd: state.llmBudgetUsd,
+        paddleCustomerId: null,
+      }),
     },
   }),
 }));
@@ -52,6 +58,9 @@ vi.mock("@/lib/db/with-org", () => ({
   withOrg: () => ({
     subscription: { findFirst: async () => state.sub },
     orgMember: { findMany: async () => [{ user: { email: "boss@example.com" } }] },
+    orgUsage: {
+      aggregate: async () => ({ _sum: { estimatedUsdMicros: state.usageMicros } }),
+    },
   }),
 }));
 vi.mock("@/lib/org-capacity", () => ({ loadOrgCapacity: async () => state.capacity }));
@@ -107,6 +116,23 @@ describe("/settings/billing", () => {
     state.configured = true;
     state.sub = null;
     state.planSource = "default";
+    state.llmBudgetUsd = null;
+    state.usageMicros = 0;
+  });
+
+  it("shows this month's AI usage against the plan's budget, or the admin's", async () => {
+    state.usageMicros = 120_000;
+    expect(await render()).toContain("AI usage this month");
+    expect(await render()).toContain("$0.12 of $0.50");
+    state.usageMicros = 610_000;
+    const over = await render();
+    expect(over).toContain("$0.61 of $0.50");
+    expect(over).toContain("weekly bulletins are a condensed edition");
+    state.llmBudgetUsd = 5;
+    expect(await render()).toContain("$0.61 of $5.00");
+    state.capacity = { ...FREE, plan: "unlimited" };
+    state.llmBudgetUsd = null;
+    expect(await render()).toContain("$0.61 · no budget");
   });
 
   it("offers checkout to a Free owner", async () => {

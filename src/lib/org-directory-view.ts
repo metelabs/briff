@@ -28,6 +28,12 @@ export interface OrgRow {
   /** The limits in force (limitsFor); null = unlimited, as on every self-hosted org. */
   repoLimit: number | null;
   streamLimit: number | null;
+  /** The admin's monthly LLM budget (Org.llmBudgetUsd); null = the plan's. */
+  llmBudgetOverride: number | null;
+  /** The budget in force (llmBudgetFor); null = none. */
+  llmBudget: number | null;
+  /** This calendar month (UTC), from OrgUsage. */
+  usage: { requests: number; inputTokens: number; outputTokens: number; usd: number };
 }
 
 /** Uploads beyond the repo limit are refused, so "at" the limit is where it bites. */
@@ -35,8 +41,10 @@ export function atLimit(row: Pick<OrgRow, "repos" | "repoLimit" | "streams" | "s
   return reached(row.repos, row.repoLimit) || reached(row.streams, row.streamLimit);
 }
 
-export function customLimits(row: Pick<OrgRow, "repoOverride" | "streamOverride">): boolean {
-  return row.repoOverride !== null || row.streamOverride !== null;
+export function customLimits(
+  row: Pick<OrgRow, "repoOverride" | "streamOverride" | "llmBudgetOverride">
+): boolean {
+  return row.repoOverride !== null || row.streamOverride !== null || row.llmBudgetOverride !== null;
 }
 
 export function parseOrgQuery(params: Record<string, string | string[] | undefined>): {

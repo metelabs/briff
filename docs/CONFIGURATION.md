@@ -70,14 +70,15 @@ How to create the app: [GitHub App setup](GITHUB-APP.md#runbook-create-the-app).
 
 ## Operations
 
-| Variable               | Default | What it does                                                                                                                             |
-| ---------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `MIGRATE_ON_START`     | `true`  | `web` applies pending database migrations on start; `false` skips it (run `prisma migrate deploy` yourself). The worker never migrates.  |
-| `LOG_LEVEL`            |         | `debug`, `info`, `warn` or `error`. Unset: `info` in production, `debug` otherwise.                                                      |
-| `OPS_ALERT_EMAIL`      |         | Comma-separated recipients of job failure and overdue alerts. Unset: the instance admin.                                                 |
-| `ALERT_WEBHOOK_URL`    |         | An `http(s)` URL that also gets each alert as JSON (`text` for Slack and Telegram, `content` for Discord). A secret; it is never logged. |
-| `SENTRY_DSN`           |         | Error reporting from the web server and the worker, without personal data. Unset: Sentry is never loaded.                                |
-| `BRIFF_RSS_USER_AGENT` |         | User-Agent of feed requests. Unset: `Mozilla/5.0 (compatible; Briff/1.0; +https://briff.dev)`.                                           |
+| Variable               | Default   | What it does                                                                                                                             |
+| ---------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `MIGRATE_ON_START`     | `true`    | `web` applies pending database migrations on start; `false` skips it (run `prisma migrate deploy` yourself). The worker never migrates.  |
+| `LOG_LEVEL`            |           | `debug`, `info`, `warn` or `error`. Unset: `info` in production, `debug` otherwise.                                                      |
+| `OPS_ALERT_EMAIL`      |           | Comma-separated recipients of job failure and overdue alerts. Unset: the instance admin.                                                 |
+| `ALERT_WEBHOOK_URL`    |           | An `http(s)` URL that also gets each alert as JSON (`text` for Slack and Telegram, `content` for Discord). A secret; it is never logged. |
+| `SENTRY_DSN`           |           | Error reporting from the web server and the worker, without personal data. Unset: Sentry is never loaded.                                |
+| `BRIFF_RSS_USER_AGENT` |           | User-Agent of feed requests. Unset: `Mozilla/5.0 (compatible; Briff/1.0; +https://briff.dev)`.                                           |
+| `BRIFF_SCAN_MAX_BYTES` | `5242880` | Largest `POST /api/scan` body in bytes (5 MB). A bigger upload gets `413`; `briff-scan --chunk` sends fewer repos per upload.            |
 
 Details of the alerts and the health endpoint: [Operations](OPERATIONS.md).
 

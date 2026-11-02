@@ -18,7 +18,10 @@ import { graceEndsAt } from "@/lib/billing/state";
 import { statusChip } from "@/lib/billing/status-chip";
 import { getDb } from "@/lib/db/client";
 import { withOrg } from "@/lib/db/with-org";
+import { llmBudgetFor, overBudget } from "@/lib/llm-budget";
 import { loadOrgCapacity } from "@/lib/org-capacity";
+import { loadMonthUsage } from "@/lib/usage";
+import { formatUsd } from "@/llm/pricing";
 import { atLimit, PLANS } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 
@@ -115,8 +118,11 @@ export default async function BillingPage({
   const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
   const config = billingConfig();
   const owner = ctx.role === "owner";
-  const [org, live, latest, owners] = await Promise.all([
-    db.org.findUniqueOrThrow({ where: { id: ctx.orgId }, select: { planSource: true } }),
+  const [org, live, latest, owners, usage] = await Promise.all([
+    db.org.findUniqueOrThrow({
+      where: { id: ctx.orgId },
+      select: { planSource: true, llmBudgetUsd: true },
+    }),
     liveSubscription(db, ctx.orgId),
     withOrg(db, ctx.orgId).subscription.findFirst({ orderBy: { stateAt: "desc" } }),
     withOrg(db, ctx.orgId).orgMember.findMany({
@@ -124,7 +130,13 @@ export default async function BillingPage({
       orderBy: { createdAt: "asc" },
       select: { user: { select: { email: true } } },
     }),
+    loadMonthUsage(db, ctx.orgId),
   ]);
+  const llmBudget = llmBudgetFor(
+    { plan: capacity.plan, llmBudgetUsd: org.llmBudgetUsd },
+    { cloud: true }
+  );
+  const condensed = overBudget(usage.usd, llmBudget);
   const plan = PLANS[capacity.plan];
   const sub = live ?? latest;
   const scheduled = live ? scheduledOf(live.scheduledChange) : null;
@@ -233,7 +245,20 @@ export default async function BillingPage({
                 </dd>
               </div>
             ))}
+            <div className="border-line flex items-center justify-between gap-3 border-t py-2.5 text-[13.5px]">
+              <dt>AI usage this month</dt>
+              <dd className={cn("tabular-nums", condensed && "text-upgrade font-medium")}>
+                {llmBudget === null
+                  ? `${formatUsd(usage.usd)} · no budget`
+                  : `${formatUsd(usage.usd)} of ${formatUsd(llmBudget)}`}
+              </dd>
+            </div>
           </dl>
+          <p className="text-fg-muted text-[12.5px]">
+            {condensed
+              ? "The AI budget is used up: weekly bulletins are a condensed edition until the month ends. Same-day security alerts are not affected."
+              : "Estimated cost of the AI that writes your weekly bulletins; it resets on the 1st (UTC)."}
+          </p>
         </Card>
 
         {offer.kind === "admin" ? (

@@ -70,6 +70,21 @@ async function main(): Promise<void> {
     })
   );
 
+  write(
+    "ops-llm-budget",
+    renderOpsAlertEmail({
+      ...opsSample,
+      jobType: "llm-budget:org_sample:2026-11:100",
+      kind: "budget",
+      lastSuccessAt: null,
+      error: null,
+      suppressed: 0,
+      headline: "LLM budget 100%: Acme Studio",
+      summary:
+        "The organisation has used an estimated $3.02 of its $3.00 monthly LLM budget (Pro plan). Its weekly bulletins run in economy mode until the month ends.",
+    })
+  );
+
   const org = await db.org.findFirstOrThrow({
     orderBy: { createdAt: "asc" },
     select: { id: true },
@@ -234,6 +249,17 @@ async function main(): Promise<void> {
     "billing-canceled",
     renderBillingEmail(
       { kind: "canceled", plan: "team", endsAt: new Date("2026-12-02T10:00:00Z") },
+      billing
+    )
+  );
+  write(
+    "billing-llm-budget-80",
+    renderBillingEmail({ kind: "llm-budget", threshold: 80, spentUsd: 2.41, budgetUsd: 3 }, billing)
+  );
+  write(
+    "billing-llm-budget-100",
+    renderBillingEmail(
+      { kind: "llm-budget", threshold: 100, spentUsd: 3.02, budgetUsd: 3 },
       billing
     )
   );

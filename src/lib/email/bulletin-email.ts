@@ -19,6 +19,7 @@ import {
 } from "./layout";
 import {
   advisoryCount,
+  CONDENSED_NOTE,
   restCount,
   type BulletinView,
   type BulletinViewItem,
@@ -187,7 +188,7 @@ ${view.know.map((item) => knowRow(item, t, view.language, detailsUrl(item))).joi
     footer: t.footer,
     assetBaseUrl: links.baseUrl,
     body: `<div class="b-muted" style="font-size:13px;color:${C.muted};margin:0 0 8px;">${esc(kickerLine(view, t))}</div>
-${view.summary ? `<p class="b-text" style="font-size:17px;line-height:1.5;margin:0;font-weight:500;color:${C.text};">${esc(view.summary)}</p>` : ""}
+${view.summary ? `<p class="b-text" style="font-size:17px;line-height:1.5;margin:0;font-weight:500;color:${C.text};">${esc(view.summary)}</p>` : ""}${view.condensed ? `\n<p class="b-muted" style="font-size:13px;line-height:1.5;margin:10px 0 0;color:${C.muted};">${esc(CONDENSED_NOTE)}</p>` : ""}
 ${actHtml}
 ${knowHtml}
 ${restHtml}`,
@@ -195,6 +196,7 @@ ${restHtml}`,
 
   const textParts: string[] = [kickerLine(view, t), ""];
   if (view.summary) textParts.push(view.summary, "");
+  if (view.condensed) textParts.push(CONDENSED_NOTE, "");
   textParts.push(caps(t.act_title), "");
   if (view.act.length === 0) textParts.push(t.nothing_to_do, "");
   for (const item of view.act) {

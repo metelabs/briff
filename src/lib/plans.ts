@@ -180,3 +180,30 @@ export function monthsFree(plan: Plan): number {
 export function limitLabel(limit: number | null, noun: string): string {
   return limit === null ? `Unlimited ${noun}s` : plural(limit, noun);
 }
+
+// --- Operations allowances: monthly LLM budget and abuse limits (docs/OPERATIONS.md) ---------
+
+export interface PlanAllowances {
+  /** Monthly LLM budget (estimated USD, src/lib/llm-budget.ts); null = none. */
+  llmBudgetUsd: number | null;
+  /** `POST /api/scan` uploads per UTC day; null = unlimited. */
+  scanUploadsPerDay: number | null;
+  /** Linked GitHub App installations; null = unlimited. */
+  githubInstallations: number | null;
+}
+
+export const PLAN_ALLOWANCES: Readonly<Record<PlanId, PlanAllowances>> = {
+  free: { llmBudgetUsd: 0.5, scanUploadsPerDay: 20, githubInstallations: 1 },
+  pro: { llmBudgetUsd: 3, scanUploadsPerDay: 200, githubInstallations: 5 },
+  team: { llmBudgetUsd: 10, scanUploadsPerDay: 1000, githubInstallations: null },
+  unlimited: { llmBudgetUsd: null, scanUploadsPerDay: null, githubInstallations: null },
+};
+
+/** A per-plan allowance that only the hosted service enforces; null = unlimited. */
+export function planAllowance(
+  plan: PlanId,
+  key: "scanUploadsPerDay" | "githubInstallations",
+  { cloud }: { cloud: boolean }
+): number | null {
+  return cloud ? PLAN_ALLOWANCES[plan][key] : null;
+}

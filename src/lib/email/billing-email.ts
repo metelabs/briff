@@ -18,7 +18,8 @@ import { emailShell, safeUrl } from "./layout";
 export type BillingEmail =
   | { kind: "plan-changed"; from: PlanId; to: PlanId }
   | { kind: "payment-failed"; plan: PlanId; graceEndsAt: Date | null }
-  | { kind: "canceled"; plan: PlanId; endsAt: Date };
+  | { kind: "canceled"; plan: PlanId; endsAt: Date }
+  | { kind: "llm-budget"; threshold: 80 | 100; spentUsd: number; budgetUsd: number };
 
 const REASON =
   "You get this because you are an owner of this organisation on Briff. Payments are handled by Paddle, our merchant of record.";
@@ -71,6 +72,23 @@ function copy(
         note: "Update the payment method from the billing page (Manage payment method and invoices). Paddle retries the charge on its own.",
         action: "Update payment method",
       };
+    }
+    case "llm-budget": {
+      const spent = `$${email.spentUsd.toFixed(2)}`;
+      const budget = `$${email.budgetUsd.toFixed(2)}`;
+      return email.threshold === 100
+        ? {
+            subject: `${org} used this month's AI budget`,
+            lead: `${org} has used an estimated ${spent} of its ${budget} monthly AI budget. Until the month ends, the weekly bulletin is a condensed edition written by a smaller model. Same-day security alerts are not affected.`,
+            note: "A larger plan has a larger budget. The budget starts again on the 1st (UTC).",
+            action: "Open billing",
+          }
+        : {
+            subject: `${org} used 80% of this month's AI budget`,
+            lead: `${org} has used an estimated ${spent} of its ${budget} monthly AI budget. Once it is used up, the weekly bulletin becomes a condensed edition written by a smaller model until the month ends. Same-day security alerts are never affected.`,
+            note: "A larger plan has a larger budget. The budget starts again on the 1st (UTC).",
+            action: "Open billing",
+          };
     }
     case "canceled": {
       const plan = PLANS[email.plan].name;

@@ -17,7 +17,13 @@ import { collectRepos } from "@scan/collect";
 
 import type { Http } from "./api";
 import type { GithubAppConfig } from "./config";
-import { linkInstallation, removeInstallationRepos, findInstallation } from "./installations";
+import {
+  findInstallation,
+  installationCapacity,
+  linkInstallation,
+  removeInstallationRepos,
+} from "./installations";
+import { planAllowance } from "@/lib/plans";
 import { scanInstallation, scannedTreeEntries } from "./scan";
 
 // GitHub responses recorded from the public api.github.com for vercel/ms (repo, branch,
@@ -446,5 +452,39 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
     expect(await linkInstallation(db, { ...args, orgId: appOrg })).toBe("linked");
     expect(await linkInstallation(db, { ...args, orgId: appOrg })).toBe("already-linked");
     expect(await linkInstallation(db, { ...args, orgId: cliOrg })).toBe("other-org");
+  });
+
+  it("refuses a new installation past the plan's limit, never a relink", async () => {
+    const orgId = (await db.org.create({ data: { name: "install-limit", plan: "free" } })).id;
+    try {
+      const base = `8${Date.now()}`.slice(0, 11);
+      const args = { accountLogin: "x", accountType: "User", suspendedAt: null, orgId };
+      const limit = planAllowance("free", "githubInstallations", { cloud: true });
+      expect(limit).toBe(1);
+      expect(await linkInstallation(db, { ...args, installationId: `${base}1`, limit })).toBe(
+        "linked"
+      );
+      // Two parallel setups for new installations: the lock lets neither pass the limit.
+      expect(
+        await Promise.all([
+          linkInstallation(db, { ...args, installationId: `${base}2`, limit }),
+          linkInstallation(db, { ...args, installationId: `${base}3`, limit }),
+        ])
+      ).toEqual(["at-limit", "at-limit"]);
+      expect(await linkInstallation(db, { ...args, installationId: `${base}1`, limit })).toBe(
+        "already-linked"
+      );
+      expect(await installationCapacity(db, orgId, true)).toEqual({
+        used: 1,
+        limit: 1,
+        plan: "free",
+      });
+      expect(await installationCapacity(db, orgId, false)).toMatchObject({ limit: null });
+      expect(await linkInstallation(db, { ...args, installationId: `${base}2`, limit: null })).toBe(
+        "linked"
+      );
+    } finally {
+      await db.org.deleteMany({ where: { id: orgId } });
+    }
   });
 });

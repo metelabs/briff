@@ -4,6 +4,7 @@ import type { PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
 import type { Logger } from "@/lib/log";
 import type { JsonRequest, LlmClient, TokenMeter } from "@/llm/client";
+import type { LlmUsageRecord } from "@/lib/usage";
 import { repoAliases } from "@/llm/pseudonym";
 import { loadPrompt } from "@/llm/prompts";
 
@@ -81,6 +82,8 @@ export async function refreshProfile(args: {
   language: string;
   meter: TokenMeter;
   log: Logger;
+  /** Per-org usage rollup (OrgUsage); the meter is the run's total. */
+  onUsage?: (record: LlmUsageRecord) => Promise<void>;
 }): Promise<"refreshed" | "unchanged"> {
   const scoped = withOrg(args.db, args.orgId);
   const profile = await scoped.interestProfile.findFirst();
@@ -119,6 +122,7 @@ export async function refreshProfile(args: {
     })
   );
   args.meter.add("profile", res.model, res.usage);
+  await args.onUsage?.({ task: "profile", model: res.model, usage: res.usage, batch: false });
   const text = res.data.text.trim().slice(0, 2000);
   const data = { text, refreshedAt: new Date(), model: res.model, promptVersion: prompt.version };
   if (profile) await scoped.interestProfile.update({ where: { id: profile.id }, data });

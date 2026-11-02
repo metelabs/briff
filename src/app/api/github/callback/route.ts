@@ -2,11 +2,11 @@ import { redirect } from "next/navigation";
 
 import { getOrgContext } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
-import { getEnv } from "@/lib/env";
+import { getEnv, isCloud } from "@/lib/env";
 import { appJwt, exchangeOAuthCode, getInstallation, userInstallationIds } from "@/lib/github/api";
 import { githubAppConfig } from "@/lib/github/config";
 import { enqueueGithubScan, reposUrl } from "@/lib/github/flow";
-import { linkInstallation } from "@/lib/github/installations";
+import { installationCapacity, linkInstallation } from "@/lib/github/installations";
 import { verifyState } from "@/lib/github/state";
 import { log } from "@/lib/log";
 
@@ -45,14 +45,20 @@ export async function GET(request: Request): Promise<Response> {
       installationId
     );
     const db = getDb();
+    const { limit } = await installationCapacity(db, ctx.orgId, isCloud());
     const result = await linkInstallation(db, {
       orgId: ctx.orgId,
       installationId,
       accountLogin: info.account?.login ?? "",
       accountType: info.account?.type ?? "",
       suspendedAt: info.suspended_at ? new Date(info.suspended_at) : null,
+      limit,
     });
     if (result === "other-org") return Response.redirect(reposUrl("other-org"), 303);
+    if (result === "at-limit") {
+      log.info({ orgId: ctx.orgId, installationId, limit }, "github: installation limit reached");
+      return Response.redirect(reposUrl("at-limit"), 303);
+    }
     await enqueueGithubScan(db, { installationId, force: true });
     log.info(
       { orgId: ctx.orgId, installationId, result },

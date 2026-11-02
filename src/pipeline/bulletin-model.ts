@@ -76,6 +76,8 @@ export interface BulletinView {
   minorCount: number;
   model: string;
   promptVersion: string;
+  /** Written in economy mode (the org was past its monthly LLM budget); absent = false. */
+  condensed?: boolean;
   createdAt: Date;
   emailStatus: string;
   /** When the bulletin email went out; null until it was sent. */
@@ -116,3 +118,7 @@ export function allItems(
 ): BulletinViewItem[] {
   return [...view.act, ...view.know, ...view.rest, ...view.minor];
 }
+
+/** Shown on a condensed bulletin's page and in its email. */
+export const CONDENSED_NOTE =
+  "Condensed edition: this organisation reached its monthly AI budget, so a smaller model wrote this bulletin. Same-day security alerts are not affected.";

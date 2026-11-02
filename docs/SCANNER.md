@@ -420,14 +420,16 @@ set and falls back to `SCANNER_TOKEN`.
 
 ## Troubleshooting
 
-| Symptom                                 | Cause                                             | Fix                                                     |
-| --------------------------------------- | ------------------------------------------------- | ------------------------------------------------------- |
-| `HTTP 401 Unauthorized`                 | Unknown token (typo, other instance, deleted org) | Create a token in Settings, paste it into `BRIFF_TOKEN` |
-| `HTTP 401 This scan token was revoked.` | The token was revoked in Settings                 | Create a new token, replace `BRIFF_TOKEN`               |
-| `HTTP 409 No org exists yet`            | Legacy `SCANNER_TOKEN` and nobody has signed up   | Sign up, then switch to a scan token                    |
-| `npm: not found` in the journal         | Node is not on the login-shell PATH               | Check `sh -lc 'which npm'`; adjust `ExecStart`          |
-| A repo is missing                       | No lockfile or runtime file, or it is a worktree  | `npm run scan:local -- --dry-run` shows what was found  |
-| A runtime shows as `image ...`          | The image is not in `IMAGE_RUNTIMES`              | Add it in `packages/scan/src/runtimes.ts` with a test   |
+| Symptom                                 | Cause                                                                                                             | Fix                                                     |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `HTTP 401 Unauthorized`                 | Unknown token (typo, other instance, deleted org)                                                                 | Create a token in Settings, paste it into `BRIFF_TOKEN` |
+| `HTTP 401 This scan token was revoked.` | The token was revoked in Settings                                                                                 | Create a new token, replace `BRIFF_TOKEN`               |
+| `HTTP 409 No org exists yet`            | Legacy `SCANNER_TOKEN` and nobody has signed up                                                                   | Sign up, then switch to a scan token                    |
+| `HTTP 413 ... SCAN_TOO_LARGE`           | One upload is over 5 MB (`BRIFF_SCAN_MAX_BYTES` on a self-hosted instance)                                        | Upload fewer repos at a time: `--chunk 5`               |
+| `HTTP 429 ... SCAN_RATE_LIMIT`          | The organisation used its scan uploads for the day (hosted plans: Free 20, Pro 200, Team 1000; each chunk counts) | Wait until 00:00 UTC, scan less often, or upgrade       |
+| `npm: not found` in the journal         | Node is not on the login-shell PATH                                                                               | Check `sh -lc 'which npm'`; adjust `ExecStart`          |
+| A repo is missing                       | No lockfile or runtime file, or it is a worktree                                                                  | `npm run scan:local -- --dry-run` shows what was found  |
+| A runtime shows as `image ...`          | The image is not in `IMAGE_RUNTIMES`                                                                              | Add it in `packages/scan/src/runtimes.ts` with a test   |
 
 ## GitHub Actions
 

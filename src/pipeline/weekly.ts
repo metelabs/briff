@@ -7,6 +7,9 @@ import { withOrg } from "@/lib/db/with-org";
 import { getEnv } from "@/lib/env";
 import { PRODUCT_LANGUAGE, strings, type Language } from "@/lib/i18n";
 import { getLlm, jsonMany, TokenMeter, type JsonRequest, type JsonResponse } from "@/llm/client";
+import { ECONOMY_MAX_TOKENS } from "@/lib/llm-budget";
+import { notifyBudgetThreshold } from "@/lib/llm-budget-notify";
+import { loadOrgBudget, recordLlmUsage } from "@/lib/usage";
 import { loadPrompt } from "@/llm/prompts";
 import { serviceByKey, serviceForPackage } from "@/lib/services";
 import type { OsvRange } from "@/sources/osv";
@@ -348,6 +351,8 @@ export interface PreparedStream {
   /** Length of the JSON the model receives (tracks the input shrink next to the token count). */
   inputChars: number;
   candidates: number;
+  /** The org was past its monthly LLM budget: triage model, shorter output, "Condensed edition". */
+  economy?: boolean;
 }
 
 /**
@@ -473,7 +478,7 @@ export function synthesisRequest(
     user: JSON.stringify(input),
     schema: SYNTHESIS_JSON_SCHEMA,
     parse: (v) => restoreSynthesisOutput(synthesisOutputSchema.parse(v), aliases),
-    maxTokens: 16000,
+    maxTokens: prepared.economy ? ECONOMY_MAX_TOKENS : 16000,
     effort: "medium",
   };
 }
@@ -564,6 +569,7 @@ export async function storeBulletin(
     summary: [assembled.summary, ...(prepared.eolFacts ?? [])].filter(Boolean).join("\n\n"),
     minorCount: prepared.minorCount,
     inputHash: prepared.inputHash,
+    condensed: prepared.economy === true,
     emailStatus: "pending" as const,
     emailError: null,
     emailSentAt: null,
@@ -654,6 +660,8 @@ export async function weeklyBulletin({ db, log, heartbeat }: JobContext): Promis
     emailsSent: 0,
     emailsFailed: 0,
     llmUnavailable: 0,
+    economyOrgs: 0,
+    budgetNotices: 0,
     errors: 0,
   };
   const meter = new TokenMeter();
@@ -677,6 +685,7 @@ export async function weeklyBulletin({ db, log, heartbeat }: JobContext): Promis
 
   const toSynthesise: PreparedStream[] = [];
   const toRedeliver: { orgId: string; bulletinId: string }[] = [];
+  const spentOrgs = new Set<string>();
 
   const orgs = await db.org.findMany({ select: { id: true } });
   for (const org of orgs) {
@@ -691,7 +700,9 @@ export async function weeklyBulletin({ db, log, heartbeat }: JobContext): Promis
 
   const { entries, batch: billedAsBatch } = await jsonMany(
     client,
-    toSynthesise.map((p) => synthesisRequest(p, ctx.model, prompt.text)),
+    toSynthesise.map((p) =>
+      synthesisRequest(p, p.economy ? env.BRIFF_MODEL_TRIAGE : ctx.model, prompt.text)
+    ),
     { batch: llm.batch, onPoll: heartbeat }
   );
   for (const [index, entry] of entries.entries()) {
@@ -704,6 +715,13 @@ export async function weeklyBulletin({ db, log, heartbeat }: JobContext): Promis
     }
     meter.add("synthesis", entry.response.model, entry.response.usage, {
       batch: llm.batch ? billedAsBatch : undefined,
+    });
+    await recordUsage(prepared.orgId, {
+      task: "synthesis",
+      model: entry.response.model,
+      usage: entry.response.usage,
+      batch: llm.batch && billedAsBatch,
+      bulletin: true,
     });
     try {
       const stored = await storeBulletin(db, prepared, entry.response, ctx, log);
@@ -726,6 +744,17 @@ export async function weeklyBulletin({ db, log, heartbeat }: JobContext): Promis
     }
   }
 
+  // Owners hear about 80 % / 100 % of the budget once the week's spend is on record.
+  for (const orgId of spentOrgs) {
+    try {
+      await heartbeat();
+      if ((await notifyBudgetThreshold(db, orgId, log, new Date(), heartbeat)) !== "none")
+        counts.budgetNotices++;
+    } catch (err) {
+      log.error({ err, orgId }, "bulletin: budget notice failed");
+    }
+  }
+
   const failedOrgs = counts.orgs > 0 && counts.errors === counts.orgs;
   const failedStreams = counts.streams > 0 && counts.streamErrors === counts.streams;
   if (failedOrgs || failedStreams) {
@@ -739,6 +768,19 @@ export async function weeklyBulletin({ db, log, heartbeat }: JobContext): Promis
   log.info(counts, "bulletin: done");
   return { counts, tokens: meter.toJSON() };
 
+  /** Usage on record never fails a bulletin: it is the estimate, not the delivery. */
+  async function recordUsage(
+    orgId: string,
+    record: Parameters<typeof recordLlmUsage>[2]
+  ): Promise<void> {
+    spentOrgs.add(orgId);
+    try {
+      await recordLlmUsage(db, orgId, record);
+    } catch (err) {
+      log.error({ err, orgId }, "bulletin: usage record failed");
+    }
+  }
+
   async function deliver(orgId: string, bulletinId: string, logger: Logger): Promise<void> {
     const delivered = await deliverBulletin(db, orgId, bulletinId, logger);
     counts.emailsSent += delivered.emailsSent;
@@ -746,6 +788,18 @@ export async function weeklyBulletin({ db, log, heartbeat }: JobContext): Promis
   }
 
   async function prepareOrg(orgId: string): Promise<void> {
+    let economy = false;
+    try {
+      economy = (await loadOrgBudget(db, orgId, now)).economy;
+    } catch (err) {
+      log.warn({ err, orgId }, "bulletin: budget check failed, writing the full edition");
+    }
+    if (economy) {
+      counts.economyOrgs++;
+      log.info({ orgId }, "bulletin: past the monthly LLM budget, condensed edition");
+    }
+    // The model is part of the input hash, so a condensed edition never reuses a full one.
+    const orgCtx: SynthesisContext = economy ? { ...ctx, model: env.BRIFF_MODEL_TRIAGE } : ctx;
     try {
       if (
         (await refreshProfile({
@@ -756,6 +810,7 @@ export async function weeklyBulletin({ db, log, heartbeat }: JobContext): Promis
           language: ctx.language,
           meter,
           log,
+          onUsage: (record) => recordUsage(orgId, record),
         })) === "refreshed"
       ) {
         counts.profilesRefreshed++;
@@ -771,7 +826,7 @@ export async function weeklyBulletin({ db, log, heartbeat }: JobContext): Promis
       }
       counts.streams++;
       try {
-        await prepareWeekly(orgId, stream);
+        await prepareWeekly(orgId, stream, orgCtx, economy);
       } catch (err) {
         counts.streamErrors++;
         log.error({ err, orgId, streamId: stream.id }, "bulletin: stream failed");
@@ -779,8 +834,14 @@ export async function weeklyBulletin({ db, log, heartbeat }: JobContext): Promis
     }
   }
 
-  async function prepareWeekly(orgId: string, stream: StreamRef): Promise<void> {
-    const prepared = await prepareStream(db, orgId, stream, ctx);
+  async function prepareWeekly(
+    orgId: string,
+    stream: StreamRef,
+    orgCtx: SynthesisContext,
+    economy: boolean
+  ): Promise<void> {
+    const found = await prepareStream(db, orgId, stream, orgCtx);
+    const prepared = found && { ...found, economy };
     if (!prepared) {
       counts.empty++;
       log.info({ orgId, streamId: stream.id }, "bulletin: nothing to report");

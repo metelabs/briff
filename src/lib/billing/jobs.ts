@@ -20,15 +20,19 @@ export const RECONCILE_AFTER_MS = DAY_MS;
 export const EVENT_RETENTION_MS = 180 * DAY_MS;
 
 const plan = z.enum(PLAN_IDS);
-const noticeSchema = z
-  .object({ orgId: z.string().min(1), userId: z.string().min(1) })
-  .and(
-    z.discriminatedUnion("kind", [
-      z.object({ kind: z.literal("plan-changed"), from: plan, to: plan }),
-      z.object({ kind: z.literal("payment-failed"), plan }),
-      z.object({ kind: z.literal("canceled"), plan, endsAt: z.string() }),
-    ])
-  );
+const noticeSchema = z.object({ orgId: z.string().min(1), userId: z.string().min(1) }).and(
+  z.discriminatedUnion("kind", [
+    z.object({ kind: z.literal("plan-changed"), from: plan, to: plan }),
+    z.object({ kind: z.literal("payment-failed"), plan }),
+    z.object({ kind: z.literal("canceled"), plan, endsAt: z.string() }),
+    z.object({
+      kind: z.literal("llm-budget"),
+      threshold: z.union([z.literal(80), z.literal(100)]),
+      spentUsd: z.number(),
+      budgetUsd: z.number(),
+    }),
+  ])
+);
 
 /**
  * billing-notify: one billing email to one owner of the org (queueNotices makes one job per
@@ -58,6 +62,8 @@ export async function billingNotify(ctx: JobContext): Promise<JobResult> {
       plan: notice.plan,
       graceEndsAt: sub ? graceEndsAt(sub) : null,
     };
+  } else if (notice.kind === "llm-budget") {
+    email = notice;
   } else if (notice.kind === "canceled") {
     email = { kind: "canceled", plan: notice.plan, endsAt: new Date(notice.endsAt) };
   } else {

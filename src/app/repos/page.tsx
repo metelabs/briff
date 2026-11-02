@@ -14,7 +14,7 @@ import { plural, shortDateTime } from "@/lib/format";
 import { connectionLabel, dependencySummary, isNewRepo, runtimeChips } from "@/lib/repos";
 import { GITHUB_FLOW_MESSAGES, isGithubFlowStatus } from "@/lib/github/status";
 import { loadOrgLimits } from "@/lib/org-limits";
-import { PLANS } from "@/lib/plans";
+import { PLAN_ALLOWANCES, PLANS } from "@/lib/plans";
 import { loadStreamScope } from "@/lib/stream-scope";
 
 import { RepoList, type RepoListRow } from "./_client";
@@ -182,7 +182,22 @@ export default async function ReposPage({
           ) : (
             <CircleAlert aria-hidden className="text-upgrade mt-0.5 size-4 shrink-0" />
           )}
-          {githubStatus.text}
+          <span>
+            {githubStatus.text}
+            {query.github === "at-limit" && (
+              <>
+                {" "}
+                Limit: {plural(PLAN_ALLOWANCES[limits.plan].githubInstallations ?? 0, "installation")} on the{" "}
+                {PLANS[limits.plan].name} plan.{" "}
+                <Link
+                  href="/settings/billing"
+                  className="text-brand font-medium underline-offset-4 hover:underline"
+                >
+                  Upgrade
+                </Link>
+              </>
+            )}
+          </span>
         </p>
       )}
       {repos.length === 0 ? (

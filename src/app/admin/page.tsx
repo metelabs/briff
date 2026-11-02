@@ -10,9 +10,10 @@ import { TruncatedText } from "@/components/ui/tooltip";
 import { requireAdminContext } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { envWarnings, isCloud } from "@/lib/env";
-import { plural } from "@/lib/format";
+import { compactCount, plural } from "@/lib/format";
 import { caps } from "@/lib/i18n";
 import { loadJobHealth } from "@/lib/ops/health";
+import { loadLlmCost, type LlmCost } from "@/lib/ops/llm-cost";
 import { loadOrgDirectory } from "@/lib/org-directory";
 import {
   customLimits,
@@ -25,6 +26,7 @@ import {
 } from "@/lib/org-directory-view";
 import { atLimit as reached, PLANS } from "@/lib/plans";
 import { cn } from "@/lib/utils";
+import { formatUsd } from "@/llm/pricing";
 
 import { EditLimitsButton, OrgSearch, TestEmailButton } from "./_client";
 
@@ -32,7 +34,7 @@ export const metadata: Metadata = { title: "Admin · Briff" };
 
 const RUNS_WINDOW_DAYS = 7;
 
-function Stat({ value, caption }: { value: number; caption: string }) {
+function Stat({ value, caption }: { value: number | string; caption: string }) {
   return (
     <div className="bg-surface border-line rounded-tile border px-3.5 pt-3.5 pb-3">
       <b className="type-stat text-fg block tabular-nums">{value}</b>
@@ -52,6 +54,106 @@ function Usage({ used, limit }: { used: number; limit: number | null }) {
   );
 }
 
+/** "$0.42 / $3.00", ochre with "over" once the estimate reaches the budget. */
+function Budget({ usd, budget }: { usd: number; budget: number | null }) {
+  const over = budget !== null && usd >= budget;
+  return (
+    <span className={cn("tabular-nums", over && "text-upgrade font-medium")}>
+      {formatUsd(usd)}
+      {budget !== null && (
+        <span className={over ? "" : "text-fg-muted"}> / {formatUsd(budget)}</span>
+      )}
+      {over && <span className="ml-1.5 text-[12px]">over</span>}
+    </span>
+  );
+}
+
+/** Instance totals this and last month (UTC), per task and model, from every run's tokens. */
+function LlmCostCard({ cost }: { cost: LlmCost }) {
+  const keys = [...new Set([...cost.thisMonth.lines, ...cost.lastMonth.lines].map((l) => l.key))];
+  const usdOf = (lines: LlmCost["thisMonth"]["lines"], key: string) =>
+    lines.filter((l) => l.key === key).reduce((sum, l) => sum + l.usd, 0);
+  const tokensOf = (key: string) =>
+    cost.thisMonth.lines
+      .filter((l) => l.key === key)
+      .reduce((sum, l) => ({ in: sum.in + l.inputTokens, out: sum.out + l.outputTokens }), {
+        in: 0,
+        out: 0,
+      });
+  const unpriced = [...new Set([...cost.thisMonth.unpriced, ...cost.lastMonth.unpriced])];
+  return (
+    <Card className="mt-5 min-w-0">
+      <CardHeader>
+        <CardTitle>LLM cost</CardTitle>
+        <CardDescription>
+          Estimated from every run&apos;s tokens at list prices (batch at half). Calendar months,
+          UTC. Triage is shared by every organisation, so it shows here and not per organisation.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-2">
+          <Stat value={formatUsd(cost.thisMonth.usd)} caption="this month" />
+          <Stat value={formatUsd(cost.lastMonth.usd)} caption="last month" />
+        </div>
+        {keys.length === 0 ? (
+          <p className="text-fg-muted mt-3 text-[13.5px]">No LLM runs in these two months.</p>
+        ) : (
+          <div className="border-line rounded-inset mt-3 overflow-x-auto border">
+            <table className="w-full min-w-[520px] border-separate border-spacing-0 text-[13px]">
+              <thead>
+                <tr>
+                  <th scope="col" className={TH}>
+                    {caps("Task · model")}
+                  </th>
+                  <th scope="col" className={TH}>
+                    {caps("Tokens this month")}
+                  </th>
+                  <th scope="col" className={cn(TH, "text-right")}>
+                    {caps("This month")}
+                  </th>
+                  <th scope="col" className={cn(TH, "text-right")}>
+                    {caps("Last month")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {keys.map((key) => {
+                  const tokens = tokensOf(key);
+                  return (
+                    <tr key={key} className="group/row">
+                      <th
+                        scope="row"
+                        className={cn(TD, "text-left font-mono text-[12.5px] font-normal")}
+                      >
+                        {key}
+                      </th>
+                      <td className={cn(TD, "tabular-nums")}>
+                        {compactCount(tokens.in)}
+                        <span className="text-fg-muted"> in / {compactCount(tokens.out)} out</span>
+                      </td>
+                      <td className={cn(TD, "text-right tabular-nums")}>
+                        {formatUsd(usdOf(cost.thisMonth.lines, key))}
+                      </td>
+                      <td className={cn(TD, "text-fg-muted text-right tabular-nums")}>
+                        {formatUsd(usdOf(cost.lastMonth.lines, key))}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {unpriced.length > 0 && (
+          <p className="text-fg-muted mt-2 text-[12.5px]">
+            Unpriced, counted as $0: <span className="font-mono">{unpriced.join(", ")}</span>
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 const TH = "bg-surface-2 text-fg-muted type-label px-3.5 py-2.5 text-left whitespace-nowrap";
 const TD =
   "group-hover/row:bg-surface-2 border-line border-t px-3.5 py-2.5 whitespace-nowrap transition-colors";
@@ -60,7 +162,7 @@ const TD =
 function OrgTable({ rows, cloud }: { rows: OrgRow[]; cloud: boolean }) {
   return (
     <div className="bg-surface border-line rounded-card overflow-x-auto border">
-      <table className="w-full min-w-[820px] border-separate border-spacing-0 text-[13px]">
+      <table className="w-full min-w-[960px] border-separate border-spacing-0 text-[13px]">
         <thead>
           <tr>
             <th scope="col" className={cn(TH, "border-line sticky left-0 z-1 border-r")}>
@@ -82,6 +184,9 @@ function OrgTable({ rows, cloud }: { rows: OrgRow[]; cloud: boolean }) {
             </th>
             <th scope="col" className={TH}>
               {caps("Streams used")}
+            </th>
+            <th scope="col" className={TH}>
+              {caps("AI this month")}
             </th>
             <th scope="col" className={TH}>
               {caps("Created")}
@@ -132,6 +237,13 @@ function OrgTable({ rows, cloud }: { rows: OrgRow[]; cloud: boolean }) {
               <td className={TD}>
                 <Usage used={org.streams} limit={org.streamLimit} />
               </td>
+              <td className={TD}>
+                <Budget usd={org.usage.usd} budget={cloud ? org.llmBudget : null} />
+                <span className="text-fg-muted block text-[12px] tabular-nums">
+                  {plural(org.usage.requests, "call")} · {compactCount(org.usage.inputTokens)} in /{" "}
+                  {compactCount(org.usage.outputTokens)} out
+                </span>
+              </td>
               <td className={cn(TD, "text-fg-muted tabular-nums")}>
                 {org.createdAt.toISOString().slice(0, 10)}
               </td>
@@ -145,7 +257,7 @@ function OrgTable({ rows, cloud }: { rows: OrgRow[]; cloud: boolean }) {
           {rows.length === 0 && (
             <tr>
               <td
-                colSpan={cloud ? 8 : 6}
+                colSpan={cloud ? 9 : 7}
                 className="text-fg-muted border-line border-t px-3.5 py-5"
               >
                 No organisation matches.
@@ -169,11 +281,12 @@ export default async function AdminPage({
   const cloud = isCloud();
   const now = new Date();
   const since = new Date(now.getTime() - RUNS_WINDOW_DAYS * 86_400_000);
-  const [orgs, users, failedRuns, health] = await Promise.all([
-    loadOrgDirectory(db, { cloud }),
+  const [orgs, users, failedRuns, health, llmCost] = await Promise.all([
+    loadOrgDirectory(db, { cloud, now }),
     db.user.count(),
     db.run.count({ where: { status: "failed", startedAt: { gte: since } } }),
     loadJobHealth(db, now),
+    loadLlmCost(db, now),
   ]);
   const totals = orgs.reduce(
     (sum, o) => ({ repos: sum.repos + o.repos, streams: sum.streams + o.streams }),
@@ -253,9 +366,11 @@ export default async function AdminPage({
             <h2 className="type-h2">Organisations</h2>
             <p className="text-fg-muted mt-1 max-w-[72ch] text-[13.5px]">
               {cloud
-                ? `The instance admin view: every organisation, its plan and the repos and streams it uses (Free: ${PLANS.free.repos} repos, ${PLANS.free.streams} streams). Edit limits sets the plan, or raises one organisation's limits above it; Unlimited is for your own organisation and friends. A plan set here is never lowered by Paddle billing.`
+                ? `The instance admin view: every organisation, its plan and the repos and streams it uses (Free: ${PLANS.free.repos} repos, ${PLANS.free.streams} streams). Edit limits sets the plan, raises one organisation's limits above it, or sets its monthly AI budget; Unlimited is for your own organisation and friends. A plan set here is never lowered by Paddle billing.`
                 : "The instance admin view: every organisation on this instance and the repos and streams it uses. A self-hosted instance has no plans or limits."}{" "}
-              Only the instance admin, the first account, sees it.
+              AI this month is the estimated cost, LLM calls and tokens of the weekly synthesis and
+              profile refreshes this calendar month (UTC), at list prices. Only the instance admin,
+              the first account, sees it.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -308,6 +423,8 @@ export default async function AdminPage({
             )}
           </div>
         </section>
+
+        <LlmCostCard cost={llmCost} />
 
         <Card className="mt-5">
           <CardHeader>

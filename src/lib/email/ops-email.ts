@@ -15,7 +15,7 @@ import { C, emailShell, esc, FONT, MONO, tag } from "./layout";
 // so the phone layout needs no media query of its own.
 
 export interface OpsAlertEmail {
-  kind: "failed" | "stale";
+  kind: "failed" | "stale" | "budget";
   jobType: string;
   /** When it failed, or when the job became stale. */
   at: Date;
@@ -45,11 +45,13 @@ export function opsAlertHeadline(
   alert: Pick<OpsAlertEmail, "kind" | "jobType"> & { headline?: string }
 ): string {
   if (alert.headline) return alert.headline;
+  if (alert.kind === "budget") return `LLM budget: ${alert.jobType}`;
   return alert.kind === "failed" ? `Job failed: ${alert.jobType}` : `Job overdue: ${alert.jobType}`;
 }
 
 function lead(alert: OpsAlertEmail): string {
   if (alert.summary) return alert.summary;
+  if (alert.kind === "budget") return "An organisation reached a share of its monthly LLM budget.";
   if (alert.kind === "failed") {
     const tries = alert.attempts
       ? ` after ${alert.attempts} ${alert.attempts === 1 ? "attempt" : "attempts"}`
@@ -73,15 +75,24 @@ function detailRow(label: string, valueHtml: string, last = false): string {
 export function renderOpsAlertEmail(alert: OpsAlertEmail): RenderedEmail {
   const headline = opsAlertHeadline(alert);
   const base = alert.baseUrl.replace(/\/$/, "");
-  const runsUrl = `${base}/admin/runs`;
+  const budget = alert.kind === "budget";
+  const runsUrl = budget ? `${base}/admin#organisations` : `${base}/admin/runs`;
   const excerpt = errorExcerpt(alert.error);
+  const atLabel = budget ? "Reached at" : alert.kind === "failed" ? "Failed at" : "Overdue since";
   const rows: string[] = [
     detailRow(
-      "Job",
+      budget ? "Alert" : "Job",
       `<span style="font-family:${MONO};font-size:15px;">${esc(alert.jobType)}</span>`
     ),
-    detailRow(alert.kind === "failed" ? "Failed at" : "Overdue since", esc(utcStamp(alert.at))),
-    detailRow("Last success", esc(alert.lastSuccessAt ? utcStamp(alert.lastSuccessAt) : "never")),
+    detailRow(atLabel, esc(utcStamp(alert.at))),
+    ...(budget
+      ? []
+      : [
+          detailRow(
+            "Last success",
+            esc(alert.lastSuccessAt ? utcStamp(alert.lastSuccessAt) : "never")
+          ),
+        ]),
   ];
   if (excerpt) {
     rows.push(`<tr><td class="b-muted" style="${LABEL_STYLE}">${esc(caps("Error"))}</td></tr>
@@ -105,14 +116,14 @@ export function renderOpsAlertEmail(alert: OpsAlertEmail): RenderedEmail {
     base
   );
 
-  const body = `${tag(alert.kind === "failed" ? "Failed" : "Overdue", "upgrade")}
+  const body = `${tag(budget ? "Budget" : alert.kind === "failed" ? "Failed" : "Overdue", "upgrade")}
 <div style="height:12px;line-height:12px;">&nbsp;</div>
 ${emailHeadline(headline)}
 ${emailParagraph(lead(alert))}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="m-fixed" style="margin:6px 0 0;">
 ${rows.join("\n")}
 </table>
-${primaryButton(runsUrl, "Open runs in Admin")}
+${primaryButton(runsUrl, budget ? "Open organisations in Admin" : "Open runs in Admin")}
 ${suppressedLine}`;
 
   const text = [
@@ -120,13 +131,15 @@ ${suppressedLine}`;
     "",
     lead(alert),
     "",
-    `Job: ${alert.jobType}`,
-    `${alert.kind === "failed" ? "Failed at" : "Overdue since"}: ${utcStamp(alert.at)}`,
-    `Last success: ${alert.lastSuccessAt ? utcStamp(alert.lastSuccessAt) : "never"}`,
+    `${budget ? "Alert" : "Job"}: ${alert.jobType}`,
+    `${atLabel}: ${utcStamp(alert.at)}`,
+    ...(budget
+      ? []
+      : [`Last success: ${alert.lastSuccessAt ? utcStamp(alert.lastSuccessAt) : "never"}`]),
     ...(excerpt ? ["", "Error:", excerpt] : []),
     "",
     `Instance: ${base}`,
-    `Runs: ${runsUrl}`,
+    `${budget ? "Admin" : "Runs"}: ${runsUrl}`,
     ...(alert.suppressed > 0
       ? [
           "",

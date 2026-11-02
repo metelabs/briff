@@ -21,3 +21,10 @@ export function shortDateTime(date: Date): string {
 export function plural(n: number, one: string, many = `${one}s`): string {
   return `${n} ${n === 1 ? one : many}`;
 }
+
+/** Token counts: "950", "12.4k", "1.36M". */
+export function compactCount(n: number): string {
+  if (n < 1000) return String(n);
+  if (n < 1_000_000) return `${Number((n / 1000).toFixed(n < 10_000 ? 1 : 0))}k`;
+  return `${Number((n / 1_000_000).toFixed(2))}M`;
+}

@@ -155,6 +155,9 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
         streamId: stream.id,
       },
     });
+    await scoped.orgUsage.create({
+      data: { orgId, day: new Date("2026-11-02"), requests: 1, estimatedUsdMicros: 1500 },
+    });
     return orgId;
   }
 
@@ -183,6 +186,7 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
       orgEvent: await s.orgEvent.count(),
       subscription: await s.subscription.count(),
       deliveryTarget: await s.deliveryTarget.count(),
+      orgUsage: await s.orgUsage.count(),
     };
   }
 
@@ -252,6 +256,7 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
       "invites",
       "events",
       "deliveryTargets",
+      "usage",
     ]) {
       expect(data[key], key).toHaveLength(1);
     }

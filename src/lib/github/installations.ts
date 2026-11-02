@@ -2,6 +2,7 @@ import "server-only";
 
 import type { PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
+import { planAllowance, type PlanId } from "@/lib/plans";
 import { removeRepo } from "@/lib/repo-removal";
 
 export interface InstallationRow {
@@ -31,12 +32,13 @@ export function findInstallation(
   return db.githubInstallation.findUnique({ where: { installationId }, select: ROW });
 }
 
-export type LinkResult = "linked" | "already-linked" | "other-org";
+export type LinkResult = "linked" | "already-linked" | "other-org" | "at-limit";
 
 /**
  * Links an installation to the org that completed the setup flow. An installation belongs
  * to exactly one org (installationId is unique); linking it again from the same org only
- * refreshes the account fields.
+ * refreshes the account fields. A new one past the plan's `limit` (null = unlimited) is
+ * refused; the count and the insert run under a per-org lock.
  */
 export async function linkInstallation(
   db: PrismaClient,
@@ -46,6 +48,7 @@ export async function linkInstallation(
     accountLogin: string;
     accountType: string;
     suspendedAt: Date | null;
+    limit?: number | null;
   }
 ): Promise<LinkResult> {
   const existing = await findInstallation(db, args.installationId);
@@ -61,10 +64,15 @@ export async function linkInstallation(
     return "already-linked";
   }
   try {
-    await scoped.githubInstallation.create({
-      data: { orgId: args.orgId, installationId: args.installationId, ...data },
+    return await scoped.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${`github-installs:${args.orgId}`}))`;
+      const limit = args.limit ?? null;
+      if (limit !== null && (await tx.githubInstallation.count()) >= limit) return "at-limit";
+      await tx.githubInstallation.create({
+        data: { orgId: args.orgId, installationId: args.installationId, ...data },
+      });
+      return "linked";
     });
-    return "linked";
   } catch (err) {
     // A concurrent setup for the same installation won the unique key.
     const again = await findInstallation(db, args.installationId);
@@ -120,4 +128,17 @@ export async function removeInstallationRepos(
     if (gone) removed.push(gone.name);
   }
   return removed;
+}
+
+/** The org's linked installations and its plan's limit (null = unlimited). */
+export async function installationCapacity(
+  db: PrismaClient,
+  orgId: string,
+  cloud: boolean
+): Promise<{ used: number; limit: number | null; plan: PlanId }> {
+  const [org, used] = await Promise.all([
+    db.org.findUniqueOrThrow({ where: { id: orgId }, select: { plan: true } }),
+    withOrg(db, orgId).githubInstallation.count(),
+  ]);
+  return { used, limit: planAllowance(org.plan, "githubInstallations", { cloud }), plan: org.plan };
 }
