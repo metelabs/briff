@@ -161,15 +161,18 @@ function paddleApi(apiKey: string, env: "sandbox" | "live"): BillingApi {
           })
           .next(),
       ]);
+      // Updating the method in Paddle's portal creates a zero-amount transaction for the
+      // subscription whose payment is authorized, not captured, so the newest attempt of
+      // either kind names the method Paddle charges next.
       const used = recent
         .flatMap((t) => t.payments ?? [])
-        .find((p) => p.status === "captured" && (p.paymentMethodId || p.storedPaymentMethodId));
+        .filter((p) => p.status === "captured" || p.status === "authorized")
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
       const id = used?.paymentMethodId ?? used?.storedPaymentMethodId ?? null;
-      // Only the method this org's own payment used: the customer may pay for other orgs too.
+      // Only the method this org's own payment used, and only while it is still saved: the
+      // customer may pay for other orgs too, and a removed card no longer pays for anything.
       const match = id ? saved.find((m) => m.id === id) : undefined;
-      if (match) return summariseMethod(match);
-      // A method that is no longer saved still names what paid last.
-      return used?.methodDetails ? summariseMethod(used.methodDetails) : null;
+      return match ? summariseMethod(match) : null;
     },
     async paymentMethodUpdateUrl(id) {
       return (await paddle.subscriptions.get(id)).managementUrls?.updatePaymentMethod ?? null;

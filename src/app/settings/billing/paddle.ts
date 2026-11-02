@@ -18,6 +18,10 @@ export function loadPaddle(
     token: config.clientToken,
     environment: config.env === "live" ? "production" : "sandbox",
     eventCallback: (event) => listener?.(event),
+  }).catch((err: unknown) => {
+    // A failed script download is retried on the next attempt, not cached for the page.
+    instance = null;
+    throw err;
   });
   return instance;
 }

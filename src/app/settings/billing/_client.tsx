@@ -209,7 +209,10 @@ export function CheckoutPanel({
       paddle.current ??= loadPaddle(config, (event) => {
         if (event.name === "checkout.completed") setWaiting(true);
       });
-      const instance = await paddle.current;
+      const instance = await paddle.current.catch(() => {
+        paddle.current = null;
+        return undefined;
+      });
       if (!instance)
         return toast("Paddle checkout did not load. Reload the page and try again.", "error");
       instance.Checkout.open({

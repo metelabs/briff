@@ -41,7 +41,7 @@ export function InlineCheckout({
     if (opened.current) return;
     opened.current = true;
     let active = true;
-    void (async () => {
+    const run = async () => {
       const res = await startCheckoutAction(terms);
       if (!active) return;
       if (!res.ok) return setError(res.message);
@@ -70,7 +70,10 @@ export function InlineCheckout({
           successUrl: `${window.location.origin}/settings/billing?checkout=success`,
         },
       });
-    })();
+    };
+    run().catch(() => {
+      if (active) setError("Paddle checkout did not load. Reload the page and try again.");
+    });
     return () => {
       active = false;
       opened.current = false;
