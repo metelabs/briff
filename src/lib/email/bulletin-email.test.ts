@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  CONDENSED_NOTE,
-  type BulletinView,
-  type BulletinViewItem,
-} from "@/pipeline/bulletin-view";
+import { CONDENSED_NOTE, type BulletinView, type BulletinViewItem } from "@/pipeline/bulletin-view";
 
 import { renderSecurityAlertEmail, renderUrgentEmail } from "./alert-email";
 import { bulletinPageUrl, isCommand, kickerLine, renderBulletinEmail } from "./bulletin-email";

@@ -6,7 +6,14 @@ import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
 import { getEnv } from "@/lib/env";
 import { PRODUCT_LANGUAGE, strings, type Language } from "@/lib/i18n";
-import { getLlm, jsonMany, TokenMeter, type JsonRequest, type JsonResponse } from "@/llm/client";
+import {
+  billedUsage,
+  getLlm,
+  jsonMany,
+  TokenMeter,
+  type JsonRequest,
+  type JsonResponse,
+} from "@/llm/client";
 import { ECONOMY_MAX_TOKENS } from "@/lib/llm-budget";
 import { notifyBudgetThreshold } from "@/lib/llm-budget-notify";
 import { loadOrgBudget, recordLlmUsage } from "@/lib/usage";
@@ -685,7 +692,6 @@ export async function weeklyBulletin({ db, log, heartbeat }: JobContext): Promis
 
   const toSynthesise: PreparedStream[] = [];
   const toRedeliver: { orgId: string; bulletinId: string }[] = [];
-  const spentOrgs = new Set<string>();
 
   const orgs = await db.org.findMany({ select: { id: true } });
   for (const org of orgs) {
@@ -711,6 +717,19 @@ export async function weeklyBulletin({ db, log, heartbeat }: JobContext): Promis
     if (!entry.ok) {
       counts.streamErrors++;
       log.error({ err: entry.error, ...where }, "bulletin: synthesis failed");
+      // An unusable answer is still billed: it counts against the budget.
+      const billed = billedUsage(entry.error);
+      if (billed) {
+        meter.add("synthesis", billed.model, billed.usage, {
+          batch: llm.batch ? billedAsBatch : undefined,
+        });
+        await recordUsage(prepared.orgId, {
+          task: "synthesis",
+          model: billed.model,
+          usage: billed.usage,
+          batch: llm.batch && billedAsBatch,
+        });
+      }
       continue;
     }
     meter.add("synthesis", entry.response.model, entry.response.usage, {
@@ -744,8 +763,10 @@ export async function weeklyBulletin({ db, log, heartbeat }: JobContext): Promis
     }
   }
 
-  // Owners hear about 80 % / 100 % of the budget once the week's spend is on record.
-  for (const orgId of spentOrgs) {
+  // Owners hear about 80 % / 100 % of the budget once the week's spend is on record. Every
+  // org is checked, not only those that spent this run, so a notice that failed earlier is
+  // retried by the next run (the claim makes it once per month either way).
+  for (const { id: orgId } of orgs) {
     try {
       await heartbeat();
       if ((await notifyBudgetThreshold(db, orgId, log, new Date(), heartbeat)) !== "none")
@@ -773,7 +794,6 @@ export async function weeklyBulletin({ db, log, heartbeat }: JobContext): Promis
     orgId: string,
     record: Parameters<typeof recordLlmUsage>[2]
   ): Promise<void> {
-    spentOrgs.add(orgId);
     try {
       await recordLlmUsage(db, orgId, record);
     } catch (err) {

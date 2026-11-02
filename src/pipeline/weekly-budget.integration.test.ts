@@ -132,6 +132,7 @@ describe.skipIf(!url)("weekly bulletin under the monthly LLM budget", () => {
     await db.job.deleteMany({ where: { dedupeKey: { contains: suffix } } });
     await db.job.deleteMany({ where: { dedupeKey: { contains: overOrg } } });
     await db.opsAlert.deleteMany({ where: { jobType: { contains: overOrg } } });
+    await db.opsAlert.deleteMany({ where: { jobType: { contains: underOrg } } });
     await db.org.deleteMany({ where: { id: { in: orgIds } } });
     await db.user.deleteMany({ where: { id: userId } });
     await db.source.deleteMany({ where: { id: { in: sourceIds } } });
@@ -218,5 +219,11 @@ describe.skipIf(!url)("weekly bulletin under the monthly LLM budget", () => {
       model: "fake:claude-sonnet-5-5",
       condensed: false,
     });
+    // No request this run, but the threshold notice is still checked (and claimed once).
+    const org = await db.org.findUniqueOrThrow({
+      where: { id: underOrg },
+      select: { llmBudgetNotifiedPct: true },
+    });
+    expect(org.llmBudgetNotifiedPct).toBe(100);
   });
 });

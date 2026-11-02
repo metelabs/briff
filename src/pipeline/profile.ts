@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
 import type { Logger } from "@/lib/log";
-import type { JsonRequest, LlmClient, TokenMeter } from "@/llm/client";
+import { billedUsage, type JsonRequest, type LlmClient, type TokenMeter } from "@/llm/client";
 import type { LlmUsageRecord } from "@/lib/usage";
 import { repoAliases } from "@/llm/pseudonym";
 import { loadPrompt } from "@/llm/prompts";
@@ -97,30 +97,40 @@ export async function refreshProfile(args: {
   if (feedback.length === 0) return "unchanged";
 
   const prompt = loadPrompt("profile");
-  const res = await args.llm.json(
-    profileRequest({
-      model: args.model,
-      system: prompt.text,
-      language: args.language,
-      currentText: profile?.text ?? "",
-      weights: parseWeights(profile?.weights),
-      feedback: feedback.map((f) => ({ kind: f.kind, title: f.item.title })),
-      repoNames: (await scoped.repo.findMany({ select: { name: true } })).map((r) => r.name),
-      privateActionNames: (
-        await scoped.dependency.findMany({
-          where: { package: { ecosystem: "GitHub Actions" } },
-          distinct: ["packageId"],
-          select: { package: { select: { name: true } } },
-        })
-      ).map((d) => d.package.name),
-      packageNames: (
-        await scoped.dependency.findMany({
-          distinct: ["packageId"],
-          select: { package: { select: { name: true } } },
-        })
-      ).map((d) => d.package.name),
-    })
-  );
+  const request = profileRequest({
+    model: args.model,
+    system: prompt.text,
+    language: args.language,
+    currentText: profile?.text ?? "",
+    weights: parseWeights(profile?.weights),
+    feedback: feedback.map((f) => ({ kind: f.kind, title: f.item.title })),
+    repoNames: (await scoped.repo.findMany({ select: { name: true } })).map((r) => r.name),
+    privateActionNames: (
+      await scoped.dependency.findMany({
+        where: { package: { ecosystem: "GitHub Actions" } },
+        distinct: ["packageId"],
+        select: { package: { select: { name: true } } },
+      })
+    ).map((d) => d.package.name),
+    packageNames: (
+      await scoped.dependency.findMany({
+        distinct: ["packageId"],
+        select: { package: { select: { name: true } } },
+      })
+    ).map((d) => d.package.name),
+  });
+  let res;
+  try {
+    res = await args.llm.json(request);
+  } catch (err) {
+    // An unusable answer is still billed: it counts against the budget.
+    const billed = billedUsage(err);
+    if (billed) {
+      args.meter.add("profile", billed.model, billed.usage);
+      await args.onUsage?.({ task: "profile", ...billed, batch: false });
+    }
+    throw err;
+  }
   args.meter.add("profile", res.model, res.usage);
   await args.onUsage?.({ task: "profile", model: res.model, usage: res.usage, batch: false });
   const text = res.data.text.trim().slice(0, 2000);

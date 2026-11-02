@@ -187,8 +187,9 @@ export default async function ReposPage({
             {query.github === "at-limit" && (
               <>
                 {" "}
-                Limit: {plural(PLAN_ALLOWANCES[limits.plan].githubInstallations ?? 0, "installation")} on the{" "}
-                {PLANS[limits.plan].name} plan.{" "}
+                Limit:{" "}
+                {plural(PLAN_ALLOWANCES[limits.plan].githubInstallations ?? 0, "installation")} on
+                the {PLANS[limits.plan].name} plan.{" "}
                 <Link
                   href="/settings/billing"
                   className="text-brand font-medium underline-offset-4 hover:underline"

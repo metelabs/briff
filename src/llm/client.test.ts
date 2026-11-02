@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
 import {
+  billedUsage,
+  decodeMessage,
   jsonMany,
   runBatch,
   TokenMeter,
@@ -201,5 +203,30 @@ describe("TokenMeter", () => {
       "synthesis:batch": true,
     });
     expect(meter.toJSON()).not.toHaveProperty("profile:batch");
+  });
+});
+
+describe("billed usage of unusable answers", () => {
+  it("keeps the usage on every decode failure, and only there", () => {
+    const failing = [
+      message('{"n":1}', "max_tokens"),
+      message("not json"),
+      message('{"n":"x"}'),
+      message("", "refusal"),
+    ];
+    for (const m of failing) {
+      let caught: unknown;
+      try {
+        decodeMessage(request(1), m);
+      } catch (err) {
+        caught = err;
+      }
+      expect(billedUsage(caught)).toEqual({
+        usage: { inputTokens: 10, outputTokens: 2 },
+        model: "m-1",
+      });
+    }
+    expect(decodeMessage(request(1), message('{"n":1}')).data).toEqual({ n: 1 });
+    expect(billedUsage(new Error("network"))).toBeNull();
   });
 });
