@@ -195,4 +195,28 @@ describe.skipIf(!url)("weekly bulletin under the monthly LLM budget", () => {
       await db.job.count({ where: { type: "billing-notify", dedupeKey: { contains: overOrg } } })
     ).toBe(1);
   });
+
+  it("keeps a stored edition when only the budget mode changed (no second email)", async () => {
+    const before = await withOrg(db, underOrg).bulletin.findFirstOrThrow({
+      select: { id: true, updatedAt: true },
+    });
+    // Pro's $3 is now used up, but the week's input is the same.
+    await withOrg(db, underOrg).orgUsage.updateMany({ data: { estimatedUsdMicros: 5_000_000 } });
+    await weeklyBulletin({
+      db,
+      log,
+      jobId: `budget-rerun-${suffix}`,
+      payload: {},
+      heartbeat: async () => {},
+    });
+    const after = await withOrg(db, underOrg).bulletin.findFirstOrThrow({
+      select: { id: true, updatedAt: true, model: true, condensed: true },
+    });
+    expect(after).toMatchObject({
+      id: before.id,
+      updatedAt: before.updatedAt,
+      model: "fake:claude-sonnet-5-5",
+      condensed: false,
+    });
+  });
 });

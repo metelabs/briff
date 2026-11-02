@@ -798,8 +798,6 @@ export async function weeklyBulletin({ db, log, heartbeat }: JobContext): Promis
       counts.economyOrgs++;
       log.info({ orgId }, "bulletin: past the monthly LLM budget, condensed edition");
     }
-    // The model is part of the input hash, so a condensed edition never reuses a full one.
-    const orgCtx: SynthesisContext = economy ? { ...ctx, model: env.BRIFF_MODEL_TRIAGE } : ctx;
     try {
       if (
         (await refreshProfile({
@@ -826,7 +824,7 @@ export async function weeklyBulletin({ db, log, heartbeat }: JobContext): Promis
       }
       counts.streams++;
       try {
-        await prepareWeekly(orgId, stream, orgCtx, economy);
+        await prepareWeekly(orgId, stream, economy);
       } catch (err) {
         counts.streamErrors++;
         log.error({ err, orgId, streamId: stream.id }, "bulletin: stream failed");
@@ -834,13 +832,10 @@ export async function weeklyBulletin({ db, log, heartbeat }: JobContext): Promis
     }
   }
 
-  async function prepareWeekly(
-    orgId: string,
-    stream: StreamRef,
-    orgCtx: SynthesisContext,
-    economy: boolean
-  ): Promise<void> {
-    const found = await prepareStream(db, orgId, stream, orgCtx);
+  async function prepareWeekly(orgId: string, stream: StreamRef, economy: boolean): Promise<void> {
+    // Hashed with the normal synthesis model: the budget mode alone never regenerates (and
+    // re-sends) a bulletin already stored this week; only a changed input does.
+    const found = await prepareStream(db, orgId, stream, ctx);
     const prepared = found && { ...found, economy };
     if (!prepared) {
       counts.empty++;
