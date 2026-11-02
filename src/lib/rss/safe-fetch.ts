@@ -205,7 +205,7 @@ export async function safeFetch(
 
         const res = await requestOnce(sync.url, { timeoutMs, maxBytes, headers, method, body });
 
-        if (res.location && res.status >= 300 && res.status < 400) {
+        if (method === "GET" && res.location && res.status >= 300 && res.status < 400) {
           if (hop === maxRedirects) throw new Error("safe-fetch: too many redirects");
           current = new URL(res.location, sync.url).toString();
           continue;
