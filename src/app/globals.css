@@ -420,6 +420,11 @@ summary::-webkit-details-marker {
 .landing-float:hover {
   animation-play-state: paused;
 }
+/* Below-the-fold sections skip style and layout until they come near the viewport. */
+section[data-reveal] {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
 [data-reveal] .reveal-item,
 [data-reveal] .draw,
 [data-reveal] .pop {
