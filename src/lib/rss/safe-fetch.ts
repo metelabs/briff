@@ -30,6 +30,9 @@ export interface SafeFetchOptions {
   retries?: number;
   retryBaseDelayMs?: number;
   headers?: Record<string, string>;
+  /** POST sends `body` once per attempt and never follows a redirect (the 3xx is returned). */
+  method?: "GET" | "POST";
+  body?: string;
 }
 
 const DEFAULT_TIMEOUT_MS = 12000;
@@ -38,7 +41,7 @@ const DEFAULT_MAX_REDIRECTS = 5;
 const DEFAULT_RETRIES = 2;
 const DEFAULT_RETRY_BASE_DELAY_MS = 200;
 
-class SsrfBlockedError extends Error {}
+export class SsrfBlockedError extends Error {}
 
 function isRetryableStatus(status: number): boolean {
   return status === 429 || (status >= 500 && status <= 599);
@@ -100,6 +103,8 @@ function requestOnce(
   target: URL,
   opts: Required<Pick<SafeFetchOptions, "timeoutMs" | "maxBytes">> & {
     headers: Record<string, string>;
+    method: "GET" | "POST";
+    body?: string;
   }
 ): Promise<RawResponse> {
   const transport = target.protocol === "https:" ? https : http;
@@ -107,8 +112,14 @@ function requestOnce(
     const req = transport.request(
       target,
       {
-        method: "GET",
-        headers: { "Accept-Encoding": "gzip, deflate, br", ...opts.headers },
+        method: opts.method,
+        headers: {
+          "Accept-Encoding": "gzip, deflate, br",
+          ...(opts.body !== undefined
+            ? { "Content-Length": String(Buffer.byteLength(opts.body)) }
+            : {}),
+          ...opts.headers,
+        },
         lookup: safeLookup,
       },
       (res) => {
@@ -119,7 +130,7 @@ function requestOnce(
         const lastModified = headerValue(res.headers["last-modified"]);
 
         // Don't read the body of a redirect — we only need the Location header.
-        if (location && status >= 300 && status < 400) {
+        if (location && status >= 300 && status < 400 && opts.method === "GET") {
           res.resume();
           resolve({ status, location, contentType, body: "", etag, lastModified });
           return;
@@ -164,7 +175,7 @@ function requestOnce(
 
     req.setTimeout(opts.timeoutMs, () => req.destroy(new Error("safe-fetch: timeout")));
     req.on("error", reject);
-    req.end();
+    req.end(opts.body);
   });
 }
 
@@ -179,6 +190,8 @@ export async function safeFetch(
     retries = DEFAULT_RETRIES,
     retryBaseDelayMs = DEFAULT_RETRY_BASE_DELAY_MS,
     headers = {},
+    method = "GET",
+    body,
   } = options;
 
   let lastError: unknown = null;
@@ -190,7 +203,7 @@ export async function safeFetch(
         const sync = checkUrlSync(current);
         if (!sync.ok) throw new SsrfBlockedError(`blocked url: ${sync.reason}`);
 
-        const res = await requestOnce(sync.url, { timeoutMs, maxBytes, headers });
+        const res = await requestOnce(sync.url, { timeoutMs, maxBytes, headers, method, body });
 
         if (res.location && res.status >= 300 && res.status < 400) {
           if (hop === maxRedirects) throw new Error("safe-fetch: too many redirects");

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { eventSentence } from "./org-events";
+import { deliveryTargetDetail, EVENT_TYPE_NAMES, eventSentence } from "./org-events";
 
 const base = { actor: "Ada", targetEmail: "bob@example.com", detail: null };
 
@@ -46,5 +46,23 @@ describe("eventSentence", () => {
     expect(eventSentence({ ...base, type: "plan_changed", detail: "admin:team:unlimited" })).toBe(
       "The instance admin changed the plan from Team to Unlimited"
     );
+  });
+
+  it("describes integration changes and audit exports, naming the target only by its mask", () => {
+    const detail = deliveryTargetDetail("slack", "hooks.slack.com …WXYZ");
+    expect(eventSentence({ ...base, type: "delivery_target_created", detail })).toBe(
+      "Ada added a Slack webhook (hooks.slack.com …WXYZ)"
+    );
+    expect(
+      eventSentence({
+        ...base,
+        type: "delivery_target_disabled",
+        detail: deliveryTargetDetail("webhook", "example.com …hook"),
+      })
+    ).toBe("Ada turned off a webhook (example.com …hook)");
+    expect(eventSentence({ ...base, type: "audit_exported", detail: null })).toBe(
+      "Ada exported the audit log"
+    );
+    expect(EVENT_TYPE_NAMES.delivery_target_deleted).toBe("delivery_target.deleted");
   });
 });

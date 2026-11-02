@@ -14,6 +14,8 @@ export const JOB_TYPES = [
   "billing-check",
   // Billing email to an org's owners: payload { orgId, kind, ... } (src/lib/billing/jobs.ts).
   "billing-notify",
+  // One Slack / webhook post: payload { orgId, targetId, event, ... } (src/lib/delivery-targets).
+  "deliver-target",
 ] as const;
 
 export type JobType = (typeof JOB_TYPES)[number];

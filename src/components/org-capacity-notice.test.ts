@@ -15,6 +15,8 @@ const FREE: OrgCapacity = {
   streamLimit: 2,
   members: 1,
   memberLimit: 1,
+  deliveryTargets: 0,
+  auditExport: false,
 };
 
 const html = (capacity: OrgCapacity) =>

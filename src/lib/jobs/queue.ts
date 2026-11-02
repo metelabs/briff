@@ -50,6 +50,34 @@ export async function enqueueJob(
   });
 }
 
+/**
+ * Enqueue at most once per dedupe key, ever: a job with the key in any state (pending,
+ * running, succeeded, failed) is returned instead. For deliveries that must never repeat.
+ */
+export async function enqueueJobOnce(
+  db: PrismaClient,
+  type: JobType,
+  options: EnqueueOptions & { dedupeKey: string }
+): Promise<EnqueueResult> {
+  const { dedupeKey } = options;
+  return db.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${dedupeKey}))`;
+    const existing = await tx.job.findFirst({ where: { dedupeKey }, select: { id: true } });
+    if (existing) return { id: existing.id, created: false };
+    const job = await tx.job.create({
+      data: {
+        type,
+        dedupeKey,
+        payload: options.payload ?? {},
+        runAfter: options.runAfter ?? new Date(),
+        maxAttempts: options.maxAttempts ?? 5,
+      },
+      select: { id: true },
+    });
+    return { id: job.id, created: true };
+  });
+}
+
 export interface ScheduleOptions {
   dedupeKey: string;
   runAfter: Date;

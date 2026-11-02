@@ -163,12 +163,21 @@
           ]
         },
         {
+          "slug": "reference/integrations",
+          "title": "Slack and webhooks",
+          "parts": [
+            {
+              "file": "docs/INTEGRATIONS.md"
+            }
+          ]
+        },
+        {
           "slug": "reference/billing",
           "title": "Billing",
           "parts": [
             {
               "file": "docs/BILLING.md",
-              "sections": ["_intro", "flow", "plan-rules-srclibbillingstatets"]
+              "sections": ["_intro", "plans", "flow", "plan-rules-srclibbillingstatets"]
             }
           ]
         },

@@ -87,6 +87,19 @@ export function PricingCards({ billing = false }: { billing?: boolean }) {
                 </li>
               ))}
             </ul>
+            {plan.extras.length > 0 && (
+              <ul
+                aria-label={`Included in ${plan.name}`}
+                className="border-line mt-4 grid gap-2 border-t pt-4 text-[14px]"
+              >
+                {plan.extras.map((line) => (
+                  <li key={line} className="flex items-center gap-2">
+                    <Check aria-hidden className="text-brand size-4 shrink-0" />
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            )}
             <div className="mt-auto pt-5">
               <Link
                 href={ctaFor(plan, period, billing).href}

@@ -9,7 +9,7 @@ import { SCHEDULE } from "./scheduler";
 
 describe("SCHEDULE", () => {
   it("schedules every job type but the on-demand ones (GitHub App scan, billing email) exactly once", () => {
-    const onDemand: readonly string[] = ["github-scan", "billing-notify"];
+    const onDemand: readonly string[] = ["github-scan", "deliver-target", "billing-notify"];
     const scheduled = JOB_TYPES.filter((t) => !onDemand.includes(t));
     expect(SCHEDULE.map((s) => s.type).sort()).toEqual([...scheduled].sort());
     for (const entry of SCHEDULE) expect(cron.validate(entry.cron)).toBe(true);

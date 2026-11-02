@@ -2,6 +2,7 @@ import "server-only";
 
 import type { PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
+import { maskUrl } from "@/lib/delivery-targets/format";
 import { ensureUserHasOrg, lockMembers } from "@/lib/members";
 
 // "Your data" (Settings): the org's export and its deletion. docs/PRIVACY.md lists what
@@ -12,7 +13,8 @@ export const EXPORT_VERSION = 1;
 /**
  * The export as named sections, each loaded only when the stream reaches it, so a large
  * org is never held in memory as one object. Secrets are never part of it: scan tokens
- * appear without their hash, invites without their link's hash, users without sessions,
+ * appear without their hash, invites without their link's hash, delivery targets without their
+ * secret and with a masked URL, users without sessions,
  * accounts or password hashes.
  */
 export function orgExportSections(
@@ -93,6 +95,26 @@ export function orgExportSections(
             createdAt: true,
           },
         }),
+    ],
+    [
+      "deliveryTargets",
+      async () =>
+        (
+          await scoped.deliveryTarget.findMany({
+            orderBy: { createdAt: "asc" },
+            select: {
+              kind: true,
+              url: true,
+              streamId: true,
+              bulletin: true,
+              alert: true,
+              enabled: true,
+              lastDeliveredAt: true,
+              lastError: true,
+              createdAt: true,
+            },
+          })
+        ).map(({ url, ...t }) => ({ ...t, url: maskUrl(url) })),
     ],
     [
       "profile",

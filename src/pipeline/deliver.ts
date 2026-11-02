@@ -3,6 +3,7 @@ import { renderBulletinEmail } from "@/lib/email/bulletin-email";
 import { sendMail, smtpConfig } from "@/lib/email/mailer";
 import { orgRecipients } from "@/lib/email/recipients";
 import { withOrg } from "@/lib/db/with-org";
+import { enqueueBulletinDeliveries } from "@/lib/delivery-targets/deliver";
 import { getEnv } from "@/lib/env";
 import { signFeedbackToken } from "@/lib/feedback-token";
 import type { Logger } from "@/lib/log";
@@ -13,6 +14,8 @@ export interface DeliveryCounts {
   emailsSent: number;
   emailsFailed: number;
   emailSkipped: number;
+  /** Slack / webhook posts queued for this bulletin (once per target, ever). */
+  targetsQueued: number;
 }
 
 /** Emails the bulletin to every org member, each with their own signed feedback links. */
@@ -23,7 +26,12 @@ export async function deliverBulletin(
   log: Logger
 ): Promise<DeliveryCounts> {
   const env = getEnv();
-  const counts: DeliveryCounts = { emailsSent: 0, emailsFailed: 0, emailSkipped: 0 };
+  const counts: DeliveryCounts = {
+    emailsSent: 0,
+    emailsFailed: 0,
+    emailSkipped: 0,
+    targetsQueued: 0,
+  };
   const view = await loadBulletinView(db, orgId, bulletinId);
   if (!view) throw new Error(`bulletin ${bulletinId} not found for org ${orgId}`);
   if (view.preview) throw new Error(`bulletin ${bulletinId} is a preview and is never emailed`);
@@ -54,5 +62,13 @@ export async function deliverBulletin(
       emailSentAt: counts.emailsSent > 0 ? new Date() : null,
     },
   });
+  try {
+    counts.targetsQueued = await enqueueBulletinDeliveries(db, orgId, {
+      id: bulletinId,
+      streamId: view.streamId,
+    });
+  } catch (err) {
+    log.error({ err, bulletinId }, "deliver: could not queue Slack / webhook delivery");
+  }
   return counts;
 }

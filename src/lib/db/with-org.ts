@@ -28,6 +28,7 @@ export const TENANT_MODELS = [
   "OrgInvite",
   "OrgEvent",
   "Subscription",
+  "DeliveryTarget",
 ] as const;
 
 export type TenantModel = (typeof TENANT_MODELS)[number];

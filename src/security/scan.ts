@@ -1,6 +1,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { mapLimit } from "@/lib/concurrency";
 import { withOrg } from "@/lib/db/with-org";
+import { enqueueAlertDeliveries } from "@/lib/delivery-targets/deliver";
 import { renderSecurityAlertEmail, type FirstScanSummary } from "@/lib/email/alert-email";
 import { sendMail, smtpConfig } from "@/lib/email/mailer";
 import { orgRecipients } from "@/lib/email/recipients";
@@ -342,6 +343,7 @@ export async function securityScan({
     alertsNew: 0,
     alertsBacklog: 0,
     alertsDelivered: 0,
+    targetsQueued: 0,
     alertsHeld: 0,
     alertsReopened: 0,
     alertsResolved: 0,
@@ -715,6 +717,17 @@ export async function securityScan({
             data: { deliveredAt: new Date() },
           });
           counts.alertsDelivered += res.count;
+        }
+        if (sent > 0 && urgent.length > 0) {
+          try {
+            counts.targetsQueued += await enqueueAlertDeliveries(
+              db,
+              org.id,
+              urgent.map((a) => a.id)
+            );
+          } catch (err) {
+            log.error({ err, orgId: org.id }, "security: could not queue Slack / webhook delivery");
+          }
         }
       },
       { maxWait: 10_000, timeout: DELIVERY_LOCK_HOLD_MS }

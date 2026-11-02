@@ -2,6 +2,7 @@ import { refreshRuntimeLifecycle } from "@/lib/runtime-eol-catalog";
 
 import { baseImageScan } from "@/security/base-images";
 import { billingCheck, billingNotify } from "@/lib/billing/jobs";
+import { deliverTarget } from "@/lib/delivery-targets/deliver";
 import { githubScan } from "@/lib/github/scan";
 import type { JobType } from "@/lib/jobs/types";
 import { opsCheck } from "@/lib/ops/check";
@@ -25,4 +26,5 @@ export const handlers: Record<JobType, JobHandler> = {
   "github-scan": githubScan,
   "billing-check": billingCheck,
   "billing-notify": billingNotify,
+  "deliver-target": deliverTarget,
 };

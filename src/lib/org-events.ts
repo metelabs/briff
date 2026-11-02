@@ -36,7 +36,46 @@ export function eventSentence(event: OrgEventFacts): string {
       return `${actor} created the organisation`;
     case "plan_changed":
       return planSentence(event.detail);
+    case "delivery_target_created":
+      return `${actor} added ${targetLabel(event.detail)}`;
+    case "delivery_target_enabled":
+      return `${actor} turned on ${targetLabel(event.detail)}`;
+    case "delivery_target_disabled":
+      return `${actor} turned off ${targetLabel(event.detail)}`;
+    case "delivery_target_deleted":
+      return `${actor} removed ${targetLabel(event.detail)}`;
+    case "audit_exported":
+      return `${actor} exported the audit log`;
   }
+}
+
+/** The stored names of the event types (`@map` in the schema), used by the CSV export. */
+export const EVENT_TYPE_NAMES: Readonly<Record<OrgEventType, string>> = {
+  member_invited: "member.invited",
+  invite_accepted: "invite.accepted",
+  invite_revoked: "invite.revoked",
+  member_removed: "member.removed",
+  role_changed: "role.changed",
+  org_renamed: "org.renamed",
+  org_created: "org.created",
+  plan_changed: "plan.changed",
+  delivery_target_created: "delivery_target.created",
+  delivery_target_enabled: "delivery_target.enabled",
+  delivery_target_disabled: "delivery_target.disabled",
+  delivery_target_deleted: "delivery_target.deleted",
+  audit_exported: "audit.exported",
+};
+
+/** `delivery_target.*` detail: "<kind>:<masked url>", e.g. "slack:hooks.slack.com …a1B2". */
+export function deliveryTargetDetail(kind: "slack" | "webhook", maskedUrl: string): string {
+  return `${kind}:${maskedUrl}`;
+}
+
+function targetLabel(detail: string | null): string {
+  const [kind, ...rest] = (detail ?? "").split(":");
+  const where = rest.join(":");
+  const name = kind === "slack" ? "a Slack webhook" : "a webhook";
+  return where ? `${name} (${where})` : name;
 }
 
 /** `plan.changed` detail: "<source>:<from>:<to>", source paddle (billing) or admin. */

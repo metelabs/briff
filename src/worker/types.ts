@@ -8,6 +8,9 @@ export interface JobContext {
   payload: Prisma.JsonValue;
   /** Extends the job lock; long waits (batch polls) call it so the runner does not release the job. */
   heartbeat: () => Promise<void>;
+  /** This attempt (1-based) and the job's cap; a handler may give up quietly on the last one. */
+  attempt?: number;
+  maxAttempts?: number;
 }
 
 export interface JobResult {

@@ -10,6 +10,26 @@ plan management in `manage.ts`, jobs), the webhook route `src/app/api/billing/pa
 and the page `src/app/settings/billing/`. API shapes follow `@paddle/paddle-node-sdk` and
 `@paddle/paddle-js`.
 
+## Plans
+
+Limits and features come from `PLANS` in `src/lib/plans.ts` (prices too; nothing else types
+them). Every plan includes the weekly bulletin per stream, same-day security alerts, re-check on
+demand and stack drift / end-of-life dates (`INCLUDED_FEATURES`).
+
+| Plan      | Repos     | Streams   | Members   | Slack and webhook delivery | Audit log export | Support               |
+| --------- | --------- | --------- | --------- | -------------------------- | ---------------- | --------------------- |
+| Free      | 10        | 2         | 1         | no                         | no               | 2 business days       |
+| Pro       | 50        | 10        | 3         | no                         | no               | 2 business days       |
+| Team      | unlimited | unlimited | 10        | yes (unlimited targets)    | yes              | 1 business day        |
+| Unlimited | unlimited | unlimited | unlimited | yes                        | yes              | (admin-set, not sold) |
+
+Team's extras (`Plan.extras`) are listed on its pricing card. `limitsFor` returns
+`deliveryTargets` (0 = not on the plan, null = unlimited) and `auditExport`; Settings →
+Integrations and the `/api/export/audit` route read them, and the server actions and the
+`deliver-target` job check them again (docs/INTEGRATIONS.md). An org that moves down keeps its
+integrations, paused. Priority support is a promise in the terms (`src/components/legal/terms.tsx`),
+not code.
+
 ## Flow
 
 1. An owner opens **Settings → Billing**, picks Pro or Team, monthly or yearly, and clicks

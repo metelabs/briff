@@ -146,6 +146,15 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
         stateAt: new Date(),
       },
     });
+    await scoped.deliveryTarget.create({
+      data: {
+        orgId,
+        kind: "webhook",
+        url: `https://hooks.example.com/${name}/full-path-secret`,
+        secret: `whsec_${name}_signing`,
+        streamId: stream.id,
+      },
+    });
     return orgId;
   }
 
@@ -173,6 +182,7 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
       // createOrgForUser writes the org.created event.
       orgEvent: await s.orgEvent.count(),
       subscription: await s.subscription.count(),
+      deliveryTarget: await s.deliveryTarget.count(),
     };
   }
 
@@ -241,6 +251,7 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
       "members",
       "invites",
       "events",
+      "deliveryTargets",
     ]) {
       expect(data[key], key).toHaveLength(1);
     }
@@ -259,6 +270,12 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
     expect(text).not.toContain("hash:secret");
     expect(text).not.toContain(`tok-alice-${suffix}`);
     expect(text).not.toContain(bob);
+    expect(text).not.toContain(`whsec_mine-${suffix}_signing`);
+    expect(text).not.toContain("full-path-secret");
+    expect(data.deliveryTargets[0]).toMatchObject({
+      kind: "webhook",
+      url: "hooks.example.com …cret",
+    });
   });
 
   it("deletes the org with everything attached and the user who has no other org", async () => {
