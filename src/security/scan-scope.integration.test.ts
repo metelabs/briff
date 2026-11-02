@@ -19,6 +19,8 @@ const osv = vi.hoisted(() => ({
   during: null as null | (() => Promise<void>),
 }));
 const sent = vi.hoisted(() => [] as { to: string }[]);
+/** Runs after each send: stands in for a slow SMTP pass. */
+const mail = vi.hoisted(() => ({ afterSend: null as null | (() => void) }));
 
 vi.mock("@/sources/osv", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/sources/osv")>();
@@ -41,6 +43,7 @@ vi.mock("@/lib/email/mailer", () => ({
   smtpConfig: () => ({ host: "h", port: 587, user: "u", pass: "p", from: "f@example.com" }),
   sendMail: async (msg: MailMessage) => {
     sent.push({ to: msg.to });
+    mail.afterSend?.();
     return { status: "sent", messageId: "m" };
   },
 }));
@@ -80,8 +83,8 @@ describe.skipIf(!url)("security-scan scoped to one org", () => {
       const user = await db.user.create({
         data: { id: `scoped-${name}-${suffix}`, name, email },
       });
-      await db.orgMember.create({ data: { orgId, userId: user.id } });
       const scoped = withOrg(db, orgId);
+      await scoped.orgMember.create({ data: { orgId, userId: user.id } });
       const repo = await scoped.repo.create({
         data: { orgId, name: `repo-${name}-${suffix}`, source: "local", included: true },
       });
@@ -196,6 +199,40 @@ describe.skipIf(!url)("security-scan scoped to one org", () => {
     } finally {
       await db.run.delete({ where: { id: run.id } });
       await db.job.delete({ where: { id: job.id } });
+    }
+  });
+
+  it("stops starting new alert emails near the delivery lock's time limit", async () => {
+    const orgId = (await db.org.create({ data: { name: `scoped-c-${suffix}` } })).id;
+    const scoped = withOrg(db, orgId);
+    const emails = [`scoped-c1-${suffix}@example.com`, `scoped-c2-${suffix}@example.com`];
+    for (const [i, email] of emails.entries()) {
+      const user = await db.user.create({
+        data: { id: `scoped-c${i}-${suffix}`, name: "c", email },
+      });
+      await scoped.orgMember.create({ data: { orgId, userId: user.id } });
+    }
+    const repo = await scoped.repo.create({
+      data: { orgId, name: `repo-c-${suffix}`, source: "local", included: true },
+    });
+    await scoped.dependency.create({
+      data: { orgId, repoId: repo.id, packageId, installedVersion: "1.0.0", direct: true },
+    });
+    const realNow = Date.now();
+    mail.afterSend = () => {
+      vi.spyOn(Date, "now").mockReturnValue(realNow + 9 * 60_000);
+    };
+    try {
+      const before = sent.length;
+      await run({ orgId, manual: true });
+      expect(sent.slice(before).map((m) => m.to)).toEqual([emails[0]]);
+      // Someone received it, so it is not sent again by the next run.
+      expect((await alertOf(orgId)).deliveredAt).not.toBeNull();
+    } finally {
+      mail.afterSend = null;
+      vi.restoreAllMocks();
+      await db.org.delete({ where: { id: orgId } });
+      await db.user.deleteMany({ where: { email: { in: emails } } });
     }
   });
 });

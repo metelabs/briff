@@ -33,6 +33,12 @@ const FETCH_CONCURRENCY = 8;
 const COVERAGE_BACKFILL_LIMIT = 500;
 /** Upper bound for one org's alert email pass (SMTP to every recipient) under its lock. */
 const DELIVERY_LOCK_HOLD_MS = 10 * 60_000;
+/**
+ * No new recipient is started this close to the hold limit: one send can take about a minute
+ * (mailer connection, greeting and socket timeouts), and past the limit the lock is released
+ * while mail is still going out, so an overlapping run could send the same alerts again.
+ */
+const DELIVERY_SEND_RESERVE_MS = 2 * 60_000;
 
 interface Wanted {
   modified: string | null;
@@ -599,6 +605,7 @@ export async function securityScan({
     // one of them deliver; the other leaves the alerts for the next run.
     await db.$transaction(
       async (tx) => {
+        const sendUntil = Date.now() + DELIVERY_LOCK_HOLD_MS - DELIVERY_SEND_RESERVE_MS;
         const [lock] = await tx.$queryRaw<{ locked: boolean }[]>`
           SELECT pg_try_advisory_xact_lock(68423::int, hashtext(${org.id})) AS locked`;
         if (!lock?.locked) {
@@ -678,7 +685,15 @@ export async function securityScan({
           : null;
 
         let sent = 0;
-        for (const recipient of await orgRecipients(db, org.id)) {
+        const recipients = await orgRecipients(db, org.id);
+        for (const [i, recipient] of recipients.entries()) {
+          if (Date.now() > sendUntil) {
+            log.warn(
+              { orgId: org.id, skipped: recipients.length - i },
+              "security: alert email pass hit its time limit; remaining recipients skipped"
+            );
+            break;
+          }
           const email = renderSecurityAlertEmail(
             recipient.language,
             [...groups.values()],
