@@ -11,6 +11,15 @@ export interface ShowcaseTab {
   panel: ReactNode;
 }
 
+/** The tab a key moves to from `current` (arrows wrap, Home/End jump), or null for other keys. */
+export function tabAfterKey(key: string, current: number, count: number): number | null {
+  if (key === "ArrowRight") return (current + 1) % count;
+  if (key === "ArrowLeft") return (current - 1 + count) % count;
+  if (key === "Home") return 0;
+  if (key === "End") return count - 1;
+  return null;
+}
+
 /**
  * The landing page's product tour: a tab list over real screens rendered on the server.
  * Every panel stays in the DOM (hidden ones with `hidden`), so switching is instant and
@@ -21,12 +30,9 @@ export function ShowcaseTabs({ tabs }: { tabs: ShowcaseTab[] }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const base = useId();
   const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>, i: number) => {
-    const step =
-      e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : e.key === "Home" ? -i : 0;
-    const last = e.key === "End" ? tabs.length - 1 - i : 0;
-    if (!step && !last) return;
+    const next = tabAfterKey(e.key, i, tabs.length);
+    if (next === null) return;
     e.preventDefault();
-    const next = (i + step + last + tabs.length) % tabs.length;
     setActive(next);
     refs.current[next]?.focus();
   };
