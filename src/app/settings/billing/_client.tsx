@@ -82,7 +82,7 @@ function PlanChoice({
   value: PaidPlanId;
   onChange: (plan: PaidPlanId) => void;
   interval: BillingInterval;
-  current?: { plan: PaidPlanId; interval: BillingInterval };
+  current?: { plan: PaidPlanId; interval: BillingInterval; archivedPrice?: boolean };
   plans?: readonly PaidPlanId[];
   disabled?: boolean;
 }) {
@@ -109,7 +109,9 @@ function PlanChoice({
             <span className="flex items-center justify-between gap-2">
               <b className="text-[15px] font-medium">{p.name}</b>
               {isCurrent ? (
-                <span className="text-fg-muted text-[12px]">Current</span>
+                <span className="text-fg-muted text-[12px]">
+                  {current.archivedPrice ? "Current, at an older price" : "Current"}
+                </span>
               ) : (
                 selected && <Check aria-hidden className="text-brand size-4" />
               )}
@@ -277,6 +279,8 @@ export function CheckoutPanel({
 export interface ManageView {
   plan: PaidPlanId;
   interval: BillingInterval;
+  /** On an archived price of this plan: the current list price is offered as a change. */
+  archivedPrice: boolean;
   /** A scheduled cancel's date; null when the subscription renews. */
   cancelAt: string | null;
   /** Paused in Paddle: resumed from the portal; no plan change. */
@@ -332,7 +336,7 @@ export function ManagePanel({ view }: { view: ManageView }) {
   // Only the newest preview may open the dialog: an older answer arriving late must not show
   // (and then confirm) terms the owner has already moved away from.
   const previewSeq = useRef(0);
-  const unchanged = plan === view.plan && interval === view.interval;
+  const unchanged = plan === view.plan && interval === view.interval && !view.archivedPrice;
 
   function review() {
     const seq = ++previewSeq.current;
@@ -431,7 +435,11 @@ export function ManagePanel({ view }: { view: ManageView }) {
           value={plan}
           onChange={(next) => choose({ plan: next })}
           interval={interval}
-          current={{ plan: view.plan, interval: view.interval }}
+          current={{
+            plan: view.plan,
+            interval: view.interval,
+            archivedPrice: view.archivedPrice,
+          }}
         />
         <div className="mt-4">
           <Button

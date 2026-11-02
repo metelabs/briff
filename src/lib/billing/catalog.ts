@@ -51,6 +51,19 @@ export function catalogPrice(env: PaddleEnv, priceId: string): CatalogPrice | nu
   return PADDLE_CATALOG[env].find((p) => p.priceId === priceId) ?? null;
 }
 
+/**
+ * A subscription on an archived price of its own plan and interval (the prices before 3 Nov
+ * 2026): moving it to the current list price is a real change, not "the current plan".
+ */
+export function onArchivedPrice(
+  env: PaddleEnv,
+  terms: { plan: PaidPlanId; interval: BillingInterval },
+  priceId: string
+): boolean {
+  const listed = priceFor(env, terms.plan, terms.interval);
+  return listed !== null && listed.priceId !== priceId;
+}
+
 /** Every paid plan has both intervals in this environment. */
 export function catalogComplete(env: PaddleEnv): boolean {
   return PAID_PLAN_IDS.every((plan) =>

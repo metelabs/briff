@@ -10,7 +10,7 @@ import { createOrgForUser } from "@/lib/org";
 
 import type { BillingApi } from "./api";
 import { setBillingApiForTests } from "./api";
-import { subscriptionData, TEAM_MONTHLY } from "./__fixtures__/events";
+import { PRO_MONTHLY, subscriptionData, TEAM_MONTHLY } from "./__fixtures__/events";
 import { billingCheck, billingNotify } from "./jobs";
 import {
   billingHistory,
@@ -246,6 +246,41 @@ describe.skipIf(!url)("billing management, tenant checks and billing-check", () 
 
     await billingHistory(db, api, orgB);
     expect(calls).toContain("list ctm_b sub_b_live");
+  });
+
+  it("moves a subscription on an archived price to its plan's current list price", async () => {
+    const orgId = await createOrgForUser(db, { name: `Archived-${suffix}`, userId: owner.userId });
+    orgs.push(orgId);
+    const archived = "pri_01m6c6eh8vp89cnpqw7vpv2krh";
+    // The fixture's custom_data says Pro monthly, as on the archived Paddle price.
+    const old = entity(
+      subscriptionData({
+        id: `sub_archived_${suffix}`,
+        customerId: "ctm_archived",
+        status: "active",
+        priceId: archived,
+      })
+    );
+    await withOrg(db, orgId).$transaction((tx) =>
+      applySubscription(tx, orgId, snapshotOf(old, "sandbox"), new Date(), new Date())
+    );
+    const { api, calls } = fakeApi((id) =>
+      entity(subscriptionData({ id, customerId: "ctm_archived", status: "active" }))
+    );
+    const actor = { orgId, ...owner };
+    const proMonth = { plan: "pro", interval: "month" } as const;
+
+    expect(await previewPlanChange(db, api, "sandbox", actor, proMonth)).toMatchObject({
+      ok: true,
+      preview: { billing: "next-bill" },
+    });
+    expect(await changePlan(db, api, "sandbox", actor, proMonth)).toEqual({ ok: true });
+    expect(calls).toContain(`change sub_archived_${suffix} ${PRO_MONTHLY} prorated_next_billing_period`);
+    // Once on the list price, the same terms are the current plan again.
+    expect(await previewPlanChange(db, api, "sandbox", actor, proMonth)).toEqual({
+      ok: false,
+      message: "That is the current plan.",
+    });
   });
 
   it("cancels live subscriptions at once before an org is deleted", async () => {

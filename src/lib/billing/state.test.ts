@@ -1,7 +1,13 @@
 import { Webhooks, type SubscriptionNotification } from "@paddle/paddle-node-sdk";
 import { describe, expect, it } from "vitest";
 
-import { catalogComplete, catalogPrice, PADDLE_CATALOG, priceFor } from "./catalog";
+import {
+  catalogComplete,
+  catalogPrice,
+  onArchivedPrice,
+  PADDLE_CATALOG,
+  priceFor,
+} from "./catalog";
 import { event, PRO_YEARLY, subscriptionData, TEAM_MONTHLY } from "./__fixtures__/events";
 import { checkoutCustomData, signedOrgId } from "./org-link";
 import {
@@ -222,6 +228,14 @@ describe("catalog, money and the signed org link", () => {
     expect(catalogComplete("live")).toBe(false);
     expect(new Set(PADDLE_CATALOG.sandbox.map((p) => p.priceId)).size).toBe(4);
     expect(priceFor("sandbox", "team", "year")?.priceId).toBe("pri_01m6f8ct6a0dme5cygpx6yrajv");
+  });
+
+  it("tells a subscription on an archived price of its plan from one on the list price", () => {
+    const proMonth = { plan: "pro", interval: "month" } as const;
+    expect(onArchivedPrice("sandbox", proMonth, "pri_01m6c6eh8vp89cnpqw7vpv2krh")).toBe(true);
+    expect(onArchivedPrice("sandbox", proMonth, "pri_01m6f8cst11wvmmvpcw6k6q9xa")).toBe(false);
+    // No live catalog yet: nothing to move to.
+    expect(onArchivedPrice("live", proMonth, "pri_01m6c6eh8vp89cnpqw7vpv2krh")).toBe(false);
   });
 
   it("formats lowest-unit amounts, zero-decimal currencies included", () => {
