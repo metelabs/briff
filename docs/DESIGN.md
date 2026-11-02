@@ -241,7 +241,8 @@ Numbers in tables and tiles are always `tabular-nums`. Do not use Bricolage belo
   shows final values, and smooth scroll becomes instant.
 - In-page scrolls (section index, count tiles, repo chips) are smooth and stop 12px below the sticky bar
   (64px, 104px on mobile), never under it.
-- Nothing loops. No skeleton shimmer; use a static `--surface-2` block.
+- Nothing loops, except the landing page hero's slow float (docs/LANDING.md, off with reduced
+  motion). No skeleton shimmer; use a static `--surface-2` block.
 
 ## 8. Components
 

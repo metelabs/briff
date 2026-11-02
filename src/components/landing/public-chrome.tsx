@@ -14,16 +14,19 @@ import { DOCS_URL, METELABS_URL, SOURCE_URL, TRUST_LINKS } from "./links";
 // position (DESIGN.md §2) plus a few section links and Sign in; no session, no shell.
 
 const NAV = [
-  { href: "/#replays", label: "Replays" },
-  { href: "/#coverage", label: "Coverage" },
-  { href: "/#reads", label: "What it reads" },
+  { href: "/#trust", label: "What it sees" },
+  { href: "/#how", label: "How it works" },
   { href: "/#sample", label: "Sample" },
-  { href: "/#privacy", label: "Privacy" },
+  { href: "/#open", label: "Open source" },
 ] as const;
 
 /** `pricing`: the hosted service (BRIFF_CLOUD); a self-hosted instance never links to plans. */
 export function PublicHeader({ pricing = false }: { pricing?: boolean }) {
-  const nav = pricing ? [...NAV, { href: "/pricing", label: "Pricing" }] : NAV;
+  const nav = [
+    ...NAV,
+    { href: DOCS_URL, label: "Docs" },
+    ...(pricing ? [{ href: "/pricing", label: "Pricing" }] : []),
+  ];
   return (
     <PageContainer as="header" className="flex min-h-14 items-center justify-between md:min-h-16">
       <Link href="/" aria-label="Briff home" className="rounded-[6px]">

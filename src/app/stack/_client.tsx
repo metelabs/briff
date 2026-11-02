@@ -128,7 +128,15 @@ function EntryGroup({ title, entries }: { title: string; entries: StackEntry[] }
   );
 }
 
-function RepoCard({ card, index }: { card: StackCardView; index: number }) {
+function RepoCard({
+  card,
+  index,
+  repoLink,
+}: {
+  card: StackCardView;
+  index: number;
+  repoLink: boolean;
+}) {
   return (
     <article
       aria-labelledby={`stack-${card.id}`}
@@ -138,12 +146,16 @@ function RepoCard({ card, index }: { card: StackCardView; index: number }) {
       <header className="flex flex-wrap items-start gap-x-3 gap-y-2">
         <div className="min-w-0 grow basis-64">
           <h3 id={`stack-${card.id}`} className="font-mono text-[14.5px] font-medium break-all">
-            <Link
-              href={`/repos?show=all#repo-${card.id}`}
-              className="hover:text-brand underline-offset-4 hover:underline"
-            >
-              {card.repo}
-            </Link>
+            {repoLink ? (
+              <Link
+                href={`/repos?show=all#repo-${card.id}`}
+                className="hover:text-brand underline-offset-4 hover:underline"
+              >
+                {card.repo}
+              </Link>
+            ) : (
+              card.repo
+            )}
           </h3>
           <p className="text-fg-muted mt-0.5 text-[12.5px]">
             {card.connection} · last scan {card.lastScan}
@@ -199,8 +211,17 @@ function Stat({
   );
 }
 
-/** Summary strip, filters and one card per repo, most urgent first (computeDrift's order). */
-export function StackCards({ cards }: { cards: StackCardView[] }) {
+/**
+ * Summary strip, filters and one card per repo, most urgent first (computeDrift's order).
+ * `repoLinks: false` for the landing page's sample, whose repos have no Repos page.
+ */
+export function StackCards({
+  cards,
+  repoLinks = true,
+}: {
+  cards: StackCardView[];
+  repoLinks?: boolean;
+}) {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const counts = {
@@ -274,7 +295,7 @@ export function StackCards({ cards }: { cards: StackCardView[] }) {
           items={visible.map((c, i) => ({
             key: c.id,
             estimate: estimateHeight(c),
-            node: <RepoCard card={c} index={i} />,
+            node: <RepoCard card={c} index={i} repoLink={repoLinks} />,
           }))}
         />
       )}

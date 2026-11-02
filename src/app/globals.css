@@ -399,6 +399,66 @@ summary::-webkit-details-marker {
   }
 }
 
+/* Landing page (src/components/landing, docs/LANDING.md). Scroll reveals: RevealObserver marks
+   <html data-reveal-ready> once it has shown what is already on screen, so nothing is hidden
+   without JavaScript or with reduced motion. A section shows with data-shown; its children
+   with .reveal-item rise in order (--i), its diagram strokes draw and its markers pop in. The
+   hero frame's float is the one loop on any page (DESIGN.md §7), paused on hover. */
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+.landing-float {
+  animation: landing-float 7s ease-in-out 0.8s infinite;
+}
+.landing-frame:hover .landing-float,
+.landing-float:hover {
+  animation-play-state: paused;
+}
+/* Below-the-fold sections skip style and layout until they come near the viewport. */
+section[data-reveal] {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
+[data-reveal] .reveal-item,
+[data-reveal] .draw,
+[data-reveal] .pop {
+  transition:
+    opacity 0.5s var(--ease-entrance),
+    transform 0.5s var(--ease-entrance),
+    stroke-dashoffset 0.9s var(--ease-entrance);
+  transition-delay: calc(min(var(--i, 0), 10) * 70ms);
+}
+[data-reveal] .draw {
+  stroke-dasharray: var(--len, 400);
+  stroke-dashoffset: 0;
+}
+[data-reveal] .pop {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+[data-reveal-ready] [data-reveal]:not([data-shown]) .reveal-item {
+  opacity: 0;
+  transform: translateY(14px);
+}
+[data-reveal-ready] [data-reveal]:not([data-shown]) .draw {
+  stroke-dashoffset: var(--len, 400);
+}
+[data-reveal-ready] [data-reveal]:not([data-shown]) .pop {
+  opacity: 0;
+  transform: scale(0.6);
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-float {
+    animation: none;
+  }
+}
+
 /* Legal pages (src/components/legal): plain prose, body text one step up from 14px. */
 .legal-prose {
   font-size: 15px;

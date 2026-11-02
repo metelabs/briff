@@ -12,6 +12,11 @@ export const SELF_HOST_URL = "/docs/self-hosting/install";
 export const PRIVACY_URL = "/docs/trust/privacy";
 export const METELABS_URL = "https://metelabs.dev";
 export const SECURITY_POLICY_URL = "/docs/trust/security";
+export const CHANGELOG_URL = "/docs/project/changelog";
+export const LICENSE_URL = "/docs/project/licence";
+
+/** Account creation (the sign-up page). */
+export const SIGNUP_PATH = "/signup";
 
 /** The public status page (src/app/status); /api/health stays the machine-readable check. */
 export const STATUS_PATH = "/status";

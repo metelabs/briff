@@ -1,526 +1,534 @@
 import { ECOSYSTEMS, ecosystemLabel } from "@scan/ecosystems";
-import { RUNTIME_IDS } from "@scan/runtimes";
 
-import { ArrowRight, ArrowUpRight } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Download,
+  FileX,
+  GitBranch,
+  Mail,
+  Server,
+  ShieldCheck,
+  SquareTerminal,
+  VenetianMask,
+} from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
-import { BulletinContent } from "@/components/bulletin/bulletin-content";
-import { MailFrame } from "@/components/replay/mail-frame";
 import { buttonVariants } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
-import { CodeBlock, CommandBox } from "@/components/ui/command-box";
-import { CountBadge } from "@/components/ui/section-header";
 import { Tag } from "@/components/ui/tag";
-import { shortDate } from "@/lib/format";
-import { limitLabel, PLANS } from "@/lib/plans";
-import { caps, strings } from "@/lib/i18n";
-import { localScanCommands, scanWorkflowYaml, WORKFLOW_PATH } from "@/lib/scan/workflow";
+import { limitLabel, PRICED_PLANS, PLANS } from "@/lib/plans";
 import { cn } from "@/lib/utils";
-import type { BulletinView } from "@/pipeline/bulletin-model";
-import type { ReplayHighlight } from "@/replay/public";
-import { delayLabel, timeLabel } from "@/replay/render";
-import type { ReplayEmail } from "@/replay/types";
 
-import { PRIVACY_URL, SELF_HOST_URL } from "./links";
+import { FlowDiagram } from "./flow-diagram";
+import {
+  CHANGELOG_URL,
+  LICENSE_URL,
+  PRIVACY_URL,
+  SELF_HOST_URL,
+  SIGNUP_PATH,
+  SOURCE_URL,
+} from "./links";
 import type { ScannedFileList } from "./scanned-files";
+import bulletinDark from "./shots/bulletin-dark.webp";
+import bulletinLight from "./shots/bulletin-light.webp";
+import { ConnectArt, DeliverArt, NightlyArt } from "./step-art";
 
 // The landing page's sections. Everything they show comes from props the page builds from
-// the replays and the scanner's lists; nothing here reads a session or the database.
+// the replays, the scanner's lists and PLANS; nothing here reads a session or the database.
+// Sections marked data-reveal rise in when scrolled to (RevealObserver, globals.css).
 
-const rise = (i: number): CSSProperties => ({ "--i": i }) as CSSProperties;
+const order = (i: number): CSSProperties => ({ "--i": i }) as CSSProperties;
+
+const LINK =
+  "text-brand inline-flex items-center gap-1 font-medium underline-offset-4 hover:underline";
+
+function External({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <a href={href} target="_blank" rel="noreferrer" className={LINK}>
+      {children}
+      <ArrowUpRight className="size-3.5" aria-hidden />
+    </a>
+  );
+}
+
+function Internal({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link href={href} className={LINK}>
+      {children}
+      <ArrowRight className="size-3.5" aria-hidden />
+    </Link>
+  );
+}
 
 function SectionHead({
   id,
+  eyebrow,
   title,
-  count,
-  children,
+  lead,
+  center = false,
 }: {
   id: string;
+  eyebrow: string;
   title: string;
-  count?: number;
-  children: ReactNode;
+  lead?: string;
+  center?: boolean;
 }) {
   return (
-    <div className="rise mb-5 max-w-[72ch]">
-      <div className="flex items-center gap-2">
-        <h2 id={id} className="type-page scroll-mt-6 text-[clamp(24px,3vw,32px)]">
-          {title}
-        </h2>
-        {count !== undefined && <CountBadge>{count}</CountBadge>}
-      </div>
-      <p className="text-fg-muted mt-2 text-[15px]">{children}</p>
+    <div className={cn("reveal-item mb-8 max-w-[44rem]", center && "mx-auto text-center")}>
+      <p className="text-brand text-[13px] font-semibold">{eyebrow}</p>
+      <h2
+        id={id}
+        className="font-display mt-2 scroll-mt-24 text-[clamp(28px,3.6vw,42px)] leading-[1.05] font-semibold tracking-[-0.03em] text-balance"
+      >
+        {title}
+      </h2>
+      {lead && <p className="text-fg-muted mt-3 text-[17px] leading-[1.5]">{lead}</p>}
     </div>
   );
 }
 
-export interface HeroStat {
-  value: string;
-  caption: string;
+function CtaButtons({ incidentHref }: { incidentHref: string }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2.5">
+      <Link href={SIGNUP_PATH} className={buttonVariants({ variant: "primary", size: "lg" })}>
+        Create an account
+        <ArrowRight className="size-4" aria-hidden />
+      </Link>
+      <Link href={incidentHref} className={buttonVariants({ variant: "secondary", size: "lg" })}>
+        See a real incident
+      </Link>
+    </div>
+  );
+}
+
+export interface HeroIncident {
   href: string;
-  security: boolean;
+  delay: string;
+  subject: string;
 }
 
 /** `pricing`: the hosted service (BRIFF_CLOUD) names its Free plan; a self-hosted instance does not. */
-export function Hero({ stats, pricing }: { stats: HeroStat[]; pricing: boolean }) {
+export function Hero({ pricing, incident }: { pricing: boolean; incident: HeroIncident }) {
   return (
-    <section className="grid items-end gap-10 pt-10 pb-14 min-[980px]:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] min-[980px]:pb-20 md:pt-16">
+    <section className="grid items-center gap-x-12 gap-y-12 pt-10 pb-20 min-[980px]:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] min-[980px]:pb-28 md:pt-16">
       <div className="min-w-0">
-        <p className="rise text-fg-muted text-[13px]">
-          Weekly on Monday · security the same day · email only
-        </p>
+        <p className="text-fg-muted text-[13.5px]">Weekly on Monday · security the same day</p>
         <h1
-          className="rise font-display mt-4 max-w-[24ch] text-[clamp(31px,4.4vw,50px)] leading-[1.04] font-semibold tracking-[-0.035em] text-balance [--i:1]"
+          className="font-display mt-4 text-[clamp(36px,5.2vw,62px)] leading-[1.02] font-semibold tracking-[-0.04em] text-balance"
           style={{ fontVariationSettings: '"opsz" 96' }}
         >
-          A weekly briefing of what changed in the packages and runtimes your repos actually run,
-          and a same-day email when a <span className="text-sec">security fix</span> lands for one
-          of them.
+          Your stack&apos;s weekly briefing, plus{" "}
+          <span className="text-sec whitespace-nowrap">same-day</span> security alerts.
         </h1>
-        <p className="rise text-fg-muted mt-5 max-w-[56ch] text-[16px] [--i:2]">
-          From npm to Hex: Briff reads package pins, runtime versions, Docker images and Actions
-          references. It follows their releases, advisories and support dates, then names the
-          affected repos and the step to take.
+        <p className="text-fg mt-6 max-w-[34rem] text-[18px] leading-[1.5] text-pretty">
+          Briff reads lockfiles and manifests, never your source code.{" "}
+          <span className="text-fg-muted">Self-host it or let us run it.</span>
         </p>
-        <div className="rise mt-7 flex flex-wrap items-center gap-2.5 [--i:3]">
-          <Link href="/signup" className={buttonVariants({ variant: "primary", size: "lg" })}>
-            Create an account
-            <ArrowRight className="size-4" aria-hidden />
-          </Link>
-          <a
-            href={SELF_HOST_URL}
-            target="_blank"
-            rel="noreferrer"
-            className={buttonVariants({ variant: "secondary", size: "lg" })}
-          >
-            Self-host
-            <ArrowUpRight className="text-fg-muted size-4" aria-hidden />
-          </a>
+        <div className="mt-8">
+          <CtaButtons incidentHref={incident.href} />
         </div>
-        <p className="rise text-fg-muted mt-3 max-w-[56ch] text-[12.5px] [--i:4]">
-          {pricing ? (
-            <>
-              Sign-ups are open. Free: {limitLabel(PLANS.free.repos, "repo")} and{" "}
-              {limitLabel(PLANS.free.streams, "stream")} per organisation;{" "}
-              <Link href="/pricing" className="text-brand underline-offset-4 hover:underline">
-                Pro and Team
-              </Link>{" "}
-              for more. Self-host with one Docker image and Postgres, free and unlimited.
-            </>
-          ) : (
-            "Sign-ups are open. Self-host with one Docker image and Postgres, free and unlimited."
-          )}
+        <p className="text-fg-muted mt-4 text-[13px]">
+          {pricing
+            ? `Free for ${limitLabel(PLANS.free.repos, "repo")} · Open source, AGPL`
+            : "Open source, AGPL · One Docker image and Postgres"}
         </p>
       </div>
-      <ul className="grid gap-2 min-[560px]:grid-cols-3 min-[980px]:grid-cols-1">
-        {stats.map((s, i) => (
-          <li key={s.caption} className="rise" style={rise(i + 3)}>
-            <a
-              href={s.href}
-              className="bg-surface border-line hover:border-line-strong hover:shadow-lift ease-entrance rounded-tile grid h-full grid-cols-[8rem_minmax(0,1fr)] items-baseline gap-3 border px-4 py-3.5 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 min-[560px]:grid-cols-1 min-[560px]:gap-2 min-[980px]:grid-cols-[8rem_minmax(0,1fr)] min-[980px]:gap-3"
-            >
-              <b className={cn("type-stat whitespace-nowrap", s.security ? "text-sec" : "text-fg")}>
-                {s.value}
-              </b>
-              <span className="text-fg-muted text-[13px] leading-[1.35]">{s.caption}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
+      <HeroVisual incident={incident} />
     </section>
   );
 }
 
-export interface ReplayCardData {
-  id: string;
-  title: string;
-  lead: string;
-  emails: number;
-  highlights: ReplayHighlight[];
-}
-
-/** "20 Oct 20:32 UTC". */
-function dayTime(d: Date): string {
-  return `${shortDate(d).slice(4)} ${timeLabel(d)}`;
-}
-
-function ReplayCard({ data, index }: { data: ReplayCardData; index: number }) {
+/**
+ * The sample bulletin as a screenshot in a browser frame (light and dark files, the theme
+ * picks one; both are the landing page's own sample, see docs/LANDING.md for how to
+ * re-shoot them), with the PHP2Shell replay's fix email on top.
+ */
+function HeroVisual({ incident }: { incident: HeroIncident }) {
+  const image = {
+    alt: "A Monday bulletin in Briff: two items need attention, with a command for each repo",
+    // Explicit so the hero also renders where the .webp import is a plain URL (Vitest).
+    width: 1600,
+    height: 1034,
+    sizes: "(min-width: 1200px) 640px, (min-width: 980px) 55vw, 100vw",
+    fetchPriority: "high" as const,
+    className: "block h-auto w-full",
+  };
   return (
-    <article
-      className="rise bg-surface border-line border-t-sec rounded-card flex min-w-0 flex-col border border-t-[3px] p-[15px] min-[560px]:p-[18px]"
-      style={rise(index + 1)}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <Tag kind="security">Security</Tag>
-        <span className="text-fg-muted text-[12.5px]">
-          {data.emails} emails, replayed hour by hour
-        </span>
+    <div className="landing-frame relative min-w-0">
+      <div className="landing-float">
+        <div className="bg-surface border-line shadow-raised overflow-hidden rounded-[18px] border">
+          <div className="border-line flex items-center gap-1.5 border-b px-3.5 py-2.5">
+            <span className="bg-line size-2.5 rounded-full" />
+            <span className="bg-line size-2.5 rounded-full" />
+            <span className="bg-line size-2.5 rounded-full" />
+            <span className="bg-surface-2 text-fg-muted mx-auto rounded-full px-4 py-0.5 font-mono text-[11.5px]">
+              Weekly · W44
+            </span>
+          </div>
+          <div className="relative">
+            <Image
+              {...image}
+              alt={image.alt}
+              src={bulletinLight}
+              className={cn(image.className, "dark:hidden")}
+            />
+            <Image
+              {...image}
+              alt={image.alt}
+              src={bulletinDark}
+              className={cn(image.className, "hidden dark:block")}
+            />
+          </div>
+        </div>
       </div>
-      <h3 className="type-h3 mt-2.5">{data.title}</h3>
-      <p className="text-fg-muted mt-1.5 text-[13.5px]">{data.lead}</p>
-      <ol className="mt-4 grid gap-3">
-        {data.highlights.map((h) => (
+      <Link
+        href={incident.href}
+        className="bg-surface border-line shadow-raised hover:border-line-strong ease-entrance relative z-[1] mx-3 -mt-14 flex max-w-[340px] gap-3 rounded-[14px] border p-3.5 transition-[transform,border-color] duration-200 hover:-translate-y-0.5 min-[980px]:absolute min-[980px]:-bottom-8 min-[980px]:-left-8 min-[980px]:mx-0 min-[980px]:mt-0 min-[980px]:w-[340px]"
+      >
+        <span className="bg-sec-soft text-sec grid size-9 shrink-0 place-items-center rounded-[10px]">
+          <Mail className="size-[18px]" aria-hidden />
+        </span>
+        <span className="min-w-0">
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <Tag kind="security">Security</Tag>
+            <b className="text-sec text-[13px] font-semibold whitespace-nowrap tabular-nums">
+              {incident.delay}
+            </b>
+            <span className="text-fg-muted text-[12.5px]">after the advisory</span>
+          </span>
+          <span className="mt-1 line-clamp-2 block text-[13px] leading-[1.35] font-medium">
+            {incident.subject}
+          </span>
+        </span>
+      </Link>
+    </div>
+  );
+}
+
+const TRUST_CARDS = [
+  {
+    icon: FileX,
+    title: "No source code, ever",
+    body: "Briff reads package manifests, lockfiles, Dockerfiles and version files. Application code, .env files and git history are never opened.",
+  },
+  {
+    icon: VenetianMask,
+    title: "Repo names never reach the model",
+    body: "Before any model call, each repo name becomes repo-1, repo-2. The answer is mapped back on Briff's server.",
+  },
+  {
+    icon: Server,
+    title: "Run it on your own server",
+    body: "One Docker image and Postgres, open source under AGPL-3.0. Leave the model key empty and nothing goes to a model.",
+  },
+  {
+    icon: Download,
+    title: "Export or delete everything",
+    body: "Settings exports your organisation as one JSON file. Deleting it removes every row it owns, at once.",
+  },
+] as const;
+
+export function TrustSection({ files }: { files: ScannedFileList }) {
+  const count = files.names.length + files.patterns.length;
+  return (
+    <section data-reveal className="pb-24 md:pb-32">
+      <SectionHead
+        id="trust"
+        eyebrow="Trust first"
+        title="What Briff can and cannot see"
+        lead="The scanner reads dependency files. Everything else stays where it is."
+      />
+      <FlowDiagram />
+      <p
+        className="reveal-item font-display mt-6 flex items-center justify-center gap-2.5 text-center text-[clamp(19px,2vw,23px)] font-semibold tracking-[-0.02em]"
+        style={order(8)}
+      >
+        <ShieldCheck className="text-ok size-6 shrink-0" strokeWidth={1.8} aria-hidden />
+        Nothing else leaves your repo.
+      </p>
+
+      <ul className="mt-10 grid gap-3 min-[560px]:grid-cols-2 min-[1100px]:grid-cols-4">
+        {TRUST_CARDS.map((c, i) => (
           <li
-            key={h.email.at.toISOString()}
-            className="bg-surface-2 rounded-inset grid gap-2 px-3.5 py-3"
+            key={c.title}
+            className="reveal-item bg-surface border-line hover:border-line-strong hover:shadow-lift ease-entrance rounded-card flex flex-col border p-[18px] transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5"
+            style={order(8 + i)}
           >
-            <div className="grid gap-x-3 gap-y-0.5 text-[13px] min-[560px]:grid-cols-[8.5rem_minmax(0,1fr)]">
-              <time
-                dateTime={h.trigger.at.toISOString()}
-                className="text-fg-muted font-mono text-[12px] leading-[1.6] tabular-nums"
-              >
-                {dayTime(h.trigger.at)}
-              </time>
-              <span className="text-fg-muted">
-                Published: <span className="text-fg">{h.trigger.title}</span>
-              </span>
+            <span className="bg-brand-soft text-brand grid size-10 place-items-center rounded-[12px]">
+              <c.icon className="size-5" strokeWidth={1.8} aria-hidden />
+            </span>
+            <h3 className="type-h2 mt-4">{c.title}</h3>
+            <p className="text-fg-muted mt-2 text-[14px] leading-[1.5]">{c.body}</p>
+            {i === 0 && (
+              <details className="group/files mt-auto pt-3">
+                <summary className="text-brand cursor-pointer text-[13px] font-medium">
+                  <span className="group-open/files:hidden">Show</span>
+                  <span className="hidden group-open/files:inline">Hide</span> all {count} file
+                  names
+                </summary>
+                <ul className="mt-2 flex flex-wrap gap-1" aria-label="Files Briff reads">
+                  {[...files.names, ...files.patterns].map((f) => (
+                    <li key={f} className="max-w-full min-w-0">
+                      <Chip className="text-[11.5px] break-all whitespace-normal">{f}</Chip>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+            {i === 2 && (
+              <p className="mt-auto pt-3 text-[13px]">
+                <Internal href={SELF_HOST_URL}>Self-hosting guide</Internal>
+              </p>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      <div
+        className="reveal-item bg-surface-2 border-line rounded-card mt-3 grid gap-5 border p-[18px] min-[980px]:grid-cols-[13rem_minmax(0,1fr)_minmax(0,1fr)] min-[980px]:items-start"
+        style={order(12)}
+      >
+        <h3 className="type-h2">Connect without giving access</h3>
+        <div className="flex gap-3">
+          <SquareTerminal
+            className="text-brand mt-0.5 size-5 shrink-0"
+            strokeWidth={1.8}
+            aria-hidden
+          />
+          <p className="text-[14px] leading-[1.5]">
+            <code className="font-mono text-[13px] font-medium">briff-scan</code> runs on your
+            machine or in CI and uploads only the dependency list.{" "}
+            <span className="text-fg-muted">
+              <code className="font-mono text-[12.5px] whitespace-nowrap">--dry-run</code> shows it
+              first.
+            </span>
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <GitBranch className="text-brand mt-0.5 size-5 shrink-0" strokeWidth={1.8} aria-hidden />
+          <p className="text-[14px] leading-[1.5]">
+            The GitHub App needs read access to contents only{" "}
+            <span className="text-fg-muted">
+              (plus the metadata GitHub requires) and fetches only the files above.
+            </span>
+          </p>
+        </div>
+      </div>
+
+      <p className="reveal-item mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[14px]" style={order(13)}>
+        <Internal href="/privacy">Privacy policy</Internal>
+        <Internal href={PRIVACY_URL}>Every outbound connection</Internal>
+        <External href={SOURCE_URL}>Read the code on GitHub</External>
+      </p>
+    </section>
+  );
+}
+
+const STEPS = [
+  {
+    art: ConnectArt,
+    title: "Connect",
+    body: "Install the GitHub App, or run briff-scan in CI or on your laptop.",
+  },
+  {
+    art: NightlyArt,
+    title: "Checked every night",
+    body: "Your versions are checked against new advisories, releases and end-of-life dates.",
+  },
+  {
+    art: DeliverArt,
+    title: "Told what to do",
+    body: "A bulletin every Monday, and a same-day email for critical and high fixes.",
+  },
+] as const;
+
+export function HowSection() {
+  return (
+    <section data-reveal className="pb-24 md:pb-32">
+      <SectionHead id="how" eyebrow="How it works" title="Three steps, then it runs itself" />
+      <ol className="grid gap-3 min-[768px]:grid-cols-3">
+        {STEPS.map((s, i) => (
+          <li
+            key={s.title}
+            className="reveal-item bg-surface border-line rounded-card border p-[18px]"
+            style={order(i * 2)}
+          >
+            <div className="bg-surface-2 rounded-inset grid h-[132px] place-items-center">
+              <s.art />
             </div>
-            <div className="grid gap-x-3 gap-y-0.5 text-[13px] min-[560px]:grid-cols-[8.5rem_minmax(0,1fr)]">
-              <time
-                dateTime={h.email.at.toISOString()}
-                className="text-fg font-mono text-[12px] leading-[1.6] font-medium tabular-nums"
-              >
-                {dayTime(h.email.at)}
-              </time>
-              <span>
-                <b className="text-sec font-semibold tabular-nums">
-                  {delayLabel(h.email.delayMinutes)}
-                </b>{" "}
-                Briff emails: <span className="font-medium">{h.email.subject}</span>
-              </span>
-            </div>
+            <p className="text-fg-muted mt-4 font-mono text-[12px]">0{i + 1}</p>
+            <h3 className="type-h3 mt-1">{s.title}</h3>
+            <p className="text-fg-muted mt-1.5 text-[14.5px] leading-[1.5]">{s.body}</p>
           </li>
         ))}
       </ol>
-      <div className="mt-auto pt-4 text-[13.5px] font-medium">
-        <Link
-          href={`/replay/${data.id}`}
-          className="text-brand inline-flex items-center gap-1 underline-offset-4 hover:underline"
-        >
-          Open the replay
-          <ArrowRight className="size-3.5" aria-hidden />
-        </Link>
-      </div>
-    </article>
-  );
-}
-
-export function ReplaysSection({ cards }: { cards: ReplayCardData[] }) {
-  return (
-    <section className="pb-16">
-      <SectionHead id="replays" title="What Briff would have sent" count={cards.length}>
-        Two real incidents from October 2026, replayed through Briff&apos;s own pipeline: the items
-        the vendors published, with their timestamps, sample repos, and the production email
-        templates. No model is involved in a security email.
-      </SectionHead>
-      <div className="grid items-stretch gap-3 min-[768px]:grid-cols-2">
-        {cards.map((c, i) => (
-          <ReplayCard key={c.id} data={c} index={i} />
-        ))}
-      </div>
     </section>
   );
 }
 
-function PathCard({
-  title,
-  tag,
-  index,
-  children,
-}: {
+export interface ReplayLink {
+  id: string;
   title: string;
-  tag?: string;
-  index: number;
+}
+
+export function ShowcaseSection({
+  children,
+  replays,
+}: {
   children: ReactNode;
+  replays: ReplayLink[];
 }) {
   return (
-    <Card
-      className="rise flex min-w-0 flex-col gap-3 p-[15px] min-[560px]:p-[18px]"
-      style={rise(index)}
-    >
-      <div className="flex min-h-[22px] items-center justify-between gap-2">
-        <h3 className="type-h3">{title}</h3>
-        {tag && <Tag kind="brand">{tag}</Tag>}
+    <section data-reveal className="pb-24 md:pb-32">
+      <SectionHead
+        id="sample"
+        eyebrow="Show, don't tell"
+        title="What lands in your inbox, and what you see in the app"
+      />
+      <div className="reveal-item" style={order(1)}>
+        {children}
       </div>
-      {children}
-    </Card>
-  );
-}
-
-export function ReadsSection({ files, apiUrl }: { files: ScannedFileList; apiUrl: string }) {
-  const commands = localScanCommands(apiUrl, "brf_…");
-  return (
-    <section className="pb-16">
-      <SectionHead id="reads" title="How it reads your repos">
-        Three ways in, one list of files. Each path parses the same files into package, version and
-        runtime rows with the same code, and never reads source code.
-      </SectionHead>
-      <div className="grid gap-3 min-[980px]:grid-cols-3">
-        <PathCard title="GitHub App" tag="Recommended" index={1}>
-          <p className="text-[14px]">
-            Install it on the repos you pick, from Settings after you sign in. Permissions: contents
-            and metadata, read-only. Briff reads the default branch&apos;s list of paths, fetches
-            only the files below, and rescans when a push changes one of them.
-          </p>
-        </PathCard>
-        <PathCard title="GitHub Action" index={2}>
-          <p className="text-[14px]">
-            One workflow per repo. The scanner runs in your CI and uploads the rows with a scan
-            token from Settings; nothing else leaves the runner.
-          </p>
-          <details className="group/wf mt-auto">
-            <summary className="text-brand cursor-pointer text-[13px] font-medium marker:content-none">
-              <span className="group-open/wf:hidden">Show</span>
-              <span className="hidden group-open/wf:inline">Hide</span> {WORKFLOW_PATH}
-            </summary>
-            <CodeBlock className="mt-2" label={WORKFLOW_PATH} code={scanWorkflowYaml(apiUrl)} />
-          </details>
-        </PathCard>
-        <PathCard title="Local CLI" index={3}>
-          <p className="text-[14px]">
-            On a laptop or a build box, in one repo or every repo under a folder.{" "}
-            <code className="font-mono text-[13px]">--dry-run</code> prints what would be sent and
-            sends nothing.
-          </p>
-          <CommandBox className="mt-auto" command={commands.dryRun} />
-        </PathCard>
-      </div>
-
-      <Card className="rise mt-3 p-[15px] [--i:4] min-[560px]:p-[18px]">
-        <div className="grid gap-5 min-[980px]:grid-cols-[minmax(0,1fr)_minmax(0,2.2fr)]">
-          <div className="min-w-0">
-            <h3 className="type-h3">The files it reads</h3>
-            <p className="text-fg-muted mt-2 text-[13.5px]">
-              Only these names, at most {files.maxDepth} directories deep, never inside{" "}
-              {files.skippedDirs.join(", ")} or a dot-directory, except .github/workflows for uses
-              references.
-            </p>
-            <p className="mt-3 text-[13.5px]">
-              <b className="font-semibold">Never read:</b> application source code, READMEs,
-              environment files, issues, pull requests or git history. File contents become rows and
-              are not stored.
-            </p>
-          </div>
-          <div className="min-w-0">
-            <div className="grid gap-4 min-[560px]:grid-cols-2">
-              {files.groups.map((group) => (
-                <div key={group.label} className="min-w-0">
-                  <h4 className="text-fg-muted mb-2 text-[12.5px] font-semibold">{group.label}</h4>
-                  <ul className="flex flex-wrap gap-1.5" aria-label={`${group.label} files`}>
-                    {group.files.map((file) => (
-                      <li key={file} className="max-w-full min-w-0">
-                        <Chip className="break-all whitespace-normal">{file}</Chip>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </Card>
+      <p
+        className="reveal-item mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[14px]"
+        style={order(2)}
+      >
+        <span className="text-fg-muted">Replay a real incident:</span>
+        {replays.map((r) => (
+          <Link key={r.id} href={`/replay/${r.id}`} className={LINK}>
+            {r.title}
+            <ArrowRight className="size-3.5" aria-hidden />
+          </Link>
+        ))}
+      </p>
     </section>
   );
 }
 
-export function CoverageSection() {
+/** Ecosystems from the scanner's own list, plus Actions and base images, as quiet text marks. */
+export function CoverageStrip() {
+  const marks = [
+    ...ECOSYSTEMS.filter((e) => e !== "GitHub Actions").map(ecosystemLabel),
+    "GitHub Actions",
+    "Docker",
+  ];
   return (
-    <section className="pb-16">
-      <SectionHead id="coverage" title="What Briff covers">
-        Package pins checked against OSV, registry metadata and fix advice for each ecosystem. Fix
-        commands stay on the installed release line; without a safe fix, read the advisory.
-      </SectionHead>
-      <ul className="rise mb-5 flex flex-wrap gap-2" aria-label="Package ecosystems">
-        {ECOSYSTEMS.filter((e) => e !== "GitHub Actions").map((e) => (
-          <li key={e}>
-            <Tag kind="brand">{ecosystemLabel(e)}</Tag>
+    <section data-reveal aria-labelledby="coverage" className="pb-24 md:pb-32">
+      <div className="reveal-item border-line border-y py-8">
+        <h2 id="coverage" className="text-fg-muted text-center text-[13.5px]">
+          Packages, runtimes, Actions and base images across
+        </h2>
+        <ul className="mt-5 flex flex-wrap justify-center gap-x-7 gap-y-3">
+          {marks.map((m) => (
+            <li
+              key={m}
+              className="text-fg-muted hover:text-fg font-mono text-[15px] font-medium tracking-[-0.01em] transition-colors duration-150"
+            >
+              {m}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+export function OpenSection() {
+  const items = [
+    { label: "Open source, AGPL-3.0", href: LICENSE_URL },
+    { label: "Self-hostable", href: SELF_HOST_URL },
+    { label: "Changelog", href: CHANGELOG_URL },
+  ];
+  return (
+    <section data-reveal className="pb-24 md:pb-32">
+      <div className="grid items-center gap-10 min-[980px]:grid-cols-2">
+        <div>
+          <SectionHead
+            id="open"
+            eyebrow="Built in the open"
+            title="Read the code. Run your own."
+            lead="The app, the scanner and the code behind every claim on this page live in one public repository."
+          />
+          <ul className="reveal-item flex flex-wrap gap-2" style={order(1)}>
+            {items.map((it) => (
+              <li key={it.label}>
+                <Link
+                  href={it.href}
+                  className={cn(buttonVariants({ variant: "secondary", size: "md" }))}
+                >
+                  {it.label}
+                  <ArrowRight className="text-fg-muted size-4" aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div
+          className="reveal-item bg-surface border-line rounded-card overflow-hidden border"
+          style={order(2)}
+        >
+          <div className="border-line text-fg-muted flex items-center gap-2 border-b px-4 py-2.5 font-mono text-[12px]">
+            <SquareTerminal className="size-4" aria-hidden />
+            /opt/briff
+          </div>
+          <pre className="no-scrollbar overflow-x-auto px-4 py-4 font-mono text-[12.5px] leading-[1.9]">
+            <span className="text-fg-subtle">$ </span>curl -fsSLO …/briff/main/compose.yaml{"\n"}
+            <span className="text-fg-subtle">$ </span>docker compose up -d{"\n"}
+            <span className="text-ok">✓</span> web, worker, postgres{" "}
+            <span className="text-fg-muted">healthy</span>
+          </pre>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function PricingTeaser() {
+  return (
+    <section data-reveal className="pb-24 md:pb-32">
+      <SectionHead id="pricing" eyebrow="Pricing" title="Start free, pay when it pays off" />
+      <ul className="grid gap-3 min-[768px]:grid-cols-3">
+        {PRICED_PLANS.map((p, i) => (
+          <li
+            key={p.id}
+            className="reveal-item bg-surface border-line rounded-card border p-[18px]"
+            style={order(i + 1)}
+          >
+            <h3 className="type-h2">{p.name}</h3>
+            <p className="mt-3">
+              <b className="type-stat">${p.monthlyUsd ?? 0}</b>
+              <span className="text-fg-muted text-[13px]"> / month</span>
+            </p>
+            <p className="text-fg-muted mt-2 text-[13.5px]">{limitLabel(p.repos, "repo")}</p>
           </li>
         ))}
       </ul>
-      <div className="grid gap-3 min-[768px]:grid-cols-2">
-        <PathCard title="Packages" index={1}>
-          <p className="text-[14px]">
-            npm, pnpm and yarn; Composer; PyPI with Poetry, uv, Pipfile and requirements; Go
-            modules; Bundler; Cargo; Maven POMs, Gradle lockfiles and version catalogs; NuGet;
-            Dart/Flutter pub; SwiftPM; Elixir Hex.
-          </p>
-          <p className="text-fg-muted text-[13.5px]">
-            Curated ecosystem news reaches only streams whose repos use the matching ecosystem or
-            runtime. Package releases also come from their public repositories.
-          </p>
-        </PathCard>
-        <PathCard title="Runtimes and support dates" index={2}>
-          <p className="text-[14px]">Detected runtimes: {RUNTIME_IDS.join(", ")}.</p>
-          <p className="text-fg-muted text-[13.5px]">
-            Support dates refresh daily from endoflife.date, with “EOL in N days” facts. Lifecycle
-            coverage includes Debian, Ubuntu and Alpine; Rust and Valkey have no lifecycle catalog
-            entry.
-          </p>
-        </PathCard>
-        <PathCard title="GitHub Actions" index={3}>
-          <p className="text-[14px]">
-            Workflow uses references are their own ecosystem, checked against OSV. Fix advice names
-            a tag and its SHA when available, so you can pin the action. Local actions, docker
-            references and expressions are skipped.
-          </p>
-        </PathCard>
-        <PathCard title="Docker base images" index={4}>
-          <p className="text-[14px]">
-            When Debian, Ubuntu or Alpine publishes a fix for a base package in your image’s release
-            (OpenSSL, zlib, libc, curl and a few more), one alert per image: rebuild on the latest
-            tag, or migrate an end-of-life distro.
-          </p>
-          <p className="text-fg-muted text-[13.5px]">
-            Briff cannot see the packages inside an image, so it reports fixes from the last 14 days
-            only; older ones are assumed to be in your image. Packages added by Dockerfile commands
-            are outside this check.
-          </p>
-        </PathCard>
-      </div>
-    </section>
-  );
-}
-
-export function SampleSection({
-  view,
-  alert,
-  replayId,
-}: {
-  view: BulletinView;
-  alert: ReplayEmail;
-  replayId: string;
-}) {
-  return (
-    <section className="pb-16">
-      <SectionHead id="sample" title="What a bulletin looks like">
-        A Monday bulletin for three fictional repos, rendered by the same component as the app: what
-        needs attention with the fix for each repo, what is good to know, the week&apos;s new
-        advisories and the minor releases folded away. Switch to By repo to read it per repo. In
-        production a model writes the headline and one line per item; here they are written by hand.
-      </SectionHead>
-
-      <div className="rise border-line bg-surface-2 rounded-card overflow-hidden border [--i:1]">
-        <div className="border-line bg-surface flex items-center gap-3 border-b px-4 py-2.5">
-          <span className="text-fg-muted min-w-0 truncate font-mono text-[12px]">
-            Sample · {view.streamName} bulletin · {shortDate(view.createdAt)}
-          </span>
-          <Link
-            href={`/replay/${replayId}`}
-            className="text-brand ml-auto shrink-0 text-[12.5px] font-medium underline-offset-4 hover:underline"
-          >
-            Replay a real incident
-          </Link>
-        </div>
-        <div className="bg-bg px-[15px] pb-6 min-[560px]:px-6">
-          <BulletinContent
-            view={view}
-            t={strings(view.language)}
-            feedback={null}
-            notice={null}
-            signedIn={false}
-            headlineAs="h3"
-          />
-        </div>
-      </div>
-
-      <div className="mt-8 grid gap-5 min-[980px]:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
-        <div className="rise min-w-0 [--i:2]">
-          <h3 className="type-h3">The security email</h3>
-          <p className="text-fg-muted mt-2 text-[14px]">
-            From the PHP2Shell replay. Sent on the first hourly run after the fix is public: what
-            each repo runs, the fixed versions, one step per repo and every source folded into one
-            block. A repo on an end-of-life line is told to migrate, never handed a command for a
-            major it is not on.
-          </p>
-          <p className="text-fg-muted mt-3 font-mono text-[12.5px] tabular-nums">
-            {shortDate(alert.at)} · {timeLabel(alert.at)}
-            {alert.delayMinutes !== null && ` · ${delayLabel(alert.delayMinutes)}`}
-          </p>
-        </div>
-        <div className="rise min-w-0 [--i:3]">
-          <MailFrame subject={alert.subject} html={alert.html} className="bg-surface" />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export function PrivacySection() {
-  const rows = [
-    {
-      to: "api.anthropic.com",
-      gets: "Public release notes and advisories, package names and versions, repo aliases (repo-1, repo-2)",
-      never: "Repo names, emails, tokens",
-    },
-    {
-      to: "api.osv.dev",
-      gets: "Ecosystem, package name and installed version",
-      never: "Repo names",
-    },
-    {
-      to: "Package registries",
-      gets: "Public package names for npm, Composer, PyPI, Go, RubyGems, crates.io, Maven, NuGet, pub and Hex; public SwiftPM releases on GitHub",
-      never: "Your installed versions, repo names",
-    },
-    {
-      to: "endoflife.date",
-      gets: "Fixed public product names for daily support-date refreshes",
-      never: "Installed versions, repo names",
-    },
-    {
-      to: "github.com",
-      gets: "Requests for public release feeds and advisories; with the App, the listed files of the repos you picked",
-      never: "Your other repos or files",
-    },
-    {
-      to: "Curated source feeds",
-      gets: "Public feed requests for releases, advisories and ecosystem news",
-      never: "Repo names, installed versions",
-    },
-    { to: "Your SMTP relay", gets: "The email itself", never: "Tokens, password hashes" },
-  ];
-  return (
-    <section className="pb-20">
-      <SectionHead id="privacy" title="What leaves your server">
-        Briff keeps repo names and the package, version and runtime rows from your files. The
-        recipients below cover registries, lifecycle data and source feeds; self-hosted, leave the
-        Anthropic key empty and nothing goes there, leave SMTP empty and no email leaves.
-      </SectionHead>
-      <Card className="rise overflow-hidden [--i:1]">
-        <div className="bg-surface-2 text-fg-muted type-label hidden grid-cols-[minmax(0,0.9fr)_minmax(0,2fr)_minmax(0,1.1fr)] gap-4 px-[18px] py-2.5 min-[768px]:grid">
-          <span>{caps("Recipient")}</span>
-          <span>{caps("Receives")}</span>
-          <span>{caps("Never")}</span>
-        </div>
-        {rows.map((r, i) => (
-          <div
-            key={r.to}
-            className={cn(
-              "border-line grid gap-1 border-t px-[18px] py-3 text-[13.5px] min-[768px]:grid-cols-[minmax(0,0.9fr)_minmax(0,2fr)_minmax(0,1.1fr)] min-[768px]:gap-4",
-              i === 0 && "max-[767px]:border-t-0"
-            )}
-          >
-            <span className="font-mono text-[12.5px] font-medium">{r.to}</span>
-            <span>{r.gets}</span>
-            <span className="text-fg-muted">
-              <span className="min-[768px]:hidden">Never: </span>
-              {r.never}
-            </span>
-          </div>
-        ))}
-      </Card>
-      <p className="rise mt-3 text-[13.5px] [--i:2]">
-        <a
-          href={PRIVACY_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="text-brand inline-flex items-center gap-1 font-medium underline-offset-4 hover:underline"
-        >
-          The full list, with the code behind each claim
-          <ArrowUpRight className="size-3.5" aria-hidden />
-        </a>
+      <p className="reveal-item mt-5 text-[14px]" style={order(4)}>
+        <Link href="/pricing" className={LINK}>
+          Compare plans
+          <ArrowRight className="size-3.5" aria-hidden />
+        </Link>
       </p>
+    </section>
+  );
+}
+
+export function FinalCta({ incidentHref }: { incidentHref: string }) {
+  return (
+    <section data-reveal className="pb-24">
+      <div className="reveal-item bg-surface border-line rounded-card border px-6 py-12 text-center md:py-16">
+        <h2 className="font-display mx-auto max-w-[20ch] text-[clamp(28px,3.6vw,42px)] leading-[1.05] font-semibold tracking-[-0.03em] text-balance">
+          Your first bulletin arrives next Monday.
+        </h2>
+        <p className="text-fg-muted mx-auto mt-3 max-w-[40ch] text-[16px]">
+          Connect a repo in a few minutes; the nightly security check picks it up.
+        </p>
+        <div className="mt-8 flex justify-center">
+          <CtaButtons incidentHref={incidentHref} />
+        </div>
+      </div>
     </section>
   );
 }

@@ -3,7 +3,7 @@ import semver from "semver";
 import { severityLabel, severityRank } from "@/security/plan";
 import { affectedInstalls, fixedVersionFor, type OsvRange } from "@/sources/osv";
 
-import { declarationOf, mergeFixedLists, type AlertRow } from "./bulletin-view";
+import { declarationOf, mergeFixedLists, type AlertRow } from "./alert-rows";
 import { asEcosystem, type Ecosystem, type PackageManager } from "@scan/ecosystems";
 
 import { byInstallVariant, recommendFixes, releaseLine, type RepoFix } from "./fixes";
