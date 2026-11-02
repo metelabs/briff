@@ -16,7 +16,7 @@ import { getEnv } from "@/lib/env";
 import { SOURCE_URL } from "@/components/landing/links";
 import { activeInstallationIds, recheckInFlight } from "@/lib/github/recheck";
 import { loadMemberState, markAlertsSeen } from "@/lib/member-state";
-import { localScanCommands, SCANNER_MAJOR } from "@/lib/scan/workflow";
+import { localScanCommands } from "@/lib/scan/workflow";
 import { PRODUCT_LANGUAGE, strings } from "@/lib/i18n";
 import { loadStreamScope, repoScope } from "@/lib/stream-scope";
 import { alertGroupsOf, type AlertPackageGroup } from "@/pipeline/alert-groups";
@@ -151,9 +151,10 @@ export default async function AlertsPage({
     })),
     { id: "resolved", label: "Resolved", count: resolved.length },
   ];
-  const scanCommand = `npx briff-scan@${SCANNER_MAJOR}`;
-  const listProps = { connections, scanCommand };
   const apiUrl = getEnv().BETTER_AUTH_URL.replace(/\/$/, "");
+  // The scanner needs its URL and token in the shell; a bare `npx briff-scan` fails.
+  const scanCommand = localScanCommands(apiUrl, "<token>").upload;
+  const listProps = { connections, scanCommand };
   const reviewedGroups = alertGroupsOf(reviewed, wording);
   const scopeName = scope.current?.name ?? "all streams";
 
@@ -172,7 +173,7 @@ export default async function AlertsPage({
                 scannerRepos={scannerRepoRows.length}
                 lastUpload={lastUploadAt ? ago(now, lastUploadAt) : null}
                 initialChecking={checking}
-                command={localScanCommands(apiUrl, "<token>").upload}
+                command={scanCommand}
                 docsUrl={`${SOURCE_URL}/blob/main/docs/SCANNER.md`}
               />
             </>

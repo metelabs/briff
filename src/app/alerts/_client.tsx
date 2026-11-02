@@ -194,7 +194,7 @@ function FixHintLine({ hint, scanCommand }: { hint: FixHint; scanCommand?: strin
   const scanner = (
     <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
       {hint === "mixed" ? "briff-scan repos resolve" : "Resolves"} on the next upload (nightly)
-      {scanCommand ? ", or now in the repo:" : "."}
+      {scanCommand ? ", or now in the repo with a scan token from Settings:" : "."}
       {scanCommand && <InlineCopy text={scanCommand} command />}
     </span>
   );
