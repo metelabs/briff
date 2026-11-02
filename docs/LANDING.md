@@ -80,7 +80,7 @@ headline, a picture and at most two sentences per card.
      row cascades from `Org`, `org-data.integration.test.ts`), both under Settings → Your data.
    - Connect without giving access: `briff-scan` uploads rows only (`--dry-run` prints them);
      the GitHub App's permissions are Contents and Metadata, read-only (docs/GITHUB-APP.md).
-     Links: `/privacy`, docs/PRIVACY.md and the repository.
+     Links: `/privacy`, `/docs/trust/privacy` (docs/PRIVACY.md) and the repository.
 3. **How it works** (`#how`): three steps, each with a small SVG (`step-art.tsx`).
 4. **Show, don't tell** (`#sample`): tabs over real components fed with fixtures: the sample
    bulletin (`sample-bulletin.ts`, `BulletinContent`), the PHP2Shell fix email (`MailFrame`),
@@ -90,7 +90,7 @@ headline, a picture and at most two sentences per card.
    replays below.
 5. **Coverage strip**: the scanner's `ECOSYSTEMS` (labels from `ecosystemLabel`), GitHub
    Actions and Docker, as text marks (no third-party logos).
-6. **Built in the open** (`#open`): license, self-hosting guide and changelog links, and the
+6. **Built in the open** (`#open`): license, self-hosting guide and changelog links (pages of the docs site), and the
    self-hosting commands from docs/SELF-HOSTING.md. No testimonials or star counts.
 7. **Pricing teaser** (hosted only): the three priced plans from `PLANS`, link to `/pricing`.
 8. **Final call to action**, the same two buttons as the hero.

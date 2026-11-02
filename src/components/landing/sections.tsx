@@ -54,6 +54,15 @@ function External({ href, children }: { href: string; children: ReactNode }) {
   );
 }
 
+function Internal({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link href={href} className={LINK}>
+      {children}
+      <ArrowRight className="size-3.5" aria-hidden />
+    </Link>
+  );
+}
+
 function SectionHead({
   id,
   eyebrow,
@@ -140,6 +149,9 @@ export function Hero({ pricing, incident }: { pricing: boolean; incident: HeroIn
 function HeroVisual({ incident }: { incident: HeroIncident }) {
   const image = {
     alt: "A Monday bulletin in Briff: two items need attention, with a command for each repo",
+    // Explicit so the hero also renders where the .webp import is a plain URL (Vitest).
+    width: 1600,
+    height: 1034,
     sizes: "(min-width: 1200px) 640px, (min-width: 980px) 55vw, 100vw",
     fetchPriority: "high" as const,
     className: "block h-auto w-full",
@@ -268,7 +280,7 @@ export function TrustSection({ files }: { files: ScannedFileList }) {
             )}
             {i === 2 && (
               <p className="mt-auto pt-3 text-[13px]">
-                <External href={SELF_HOST_URL}>Self-hosting guide</External>
+                <Internal href={SELF_HOST_URL}>Self-hosting guide</Internal>
               </p>
             )}
           </li>
@@ -307,11 +319,8 @@ export function TrustSection({ files }: { files: ScannedFileList }) {
       </div>
 
       <p className="reveal-item mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[14px]" style={order(13)}>
-        <Link href="/privacy" className={LINK}>
-          Privacy policy
-          <ArrowRight className="size-3.5" aria-hidden />
-        </Link>
-        <External href={PRIVACY_URL}>Every outbound connection</External>
+        <Internal href="/privacy">Privacy policy</Internal>
+        <Internal href={PRIVACY_URL}>Every outbound connection</Internal>
         <External href={SOURCE_URL}>Read the code on GitHub</External>
       </p>
     </section>
@@ -445,15 +454,13 @@ export function OpenSection() {
           <ul className="reveal-item flex flex-wrap gap-2" style={order(1)}>
             {items.map((it) => (
               <li key={it.label}>
-                <a
+                <Link
                   href={it.href}
-                  target="_blank"
-                  rel="noreferrer"
                   className={cn(buttonVariants({ variant: "secondary", size: "md" }))}
                 >
                   {it.label}
-                  <ArrowUpRight className="text-fg-muted size-4" aria-hidden />
-                </a>
+                  <ArrowRight className="text-fg-muted size-4" aria-hidden />
+                </Link>
               </li>
             ))}
           </ul>
