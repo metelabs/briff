@@ -44,6 +44,7 @@ describe("Resolved section", () => {
   ): ResolvedSectionRow => ({
     resolvedAt: at === null ? null : new Date(at),
     resolvedBy: "briff_scan",
+    repoId: `id-${repo}`,
     repo: { name: repo },
     advisory: {
       osvId: `GHSA-${pkg}-${++seq}`,
@@ -113,6 +114,23 @@ describe("Resolved section", () => {
     expect(resolvedSections(rows, weekStart, null).thisWeek.some((a) => a.sinceLastVisit)).toBe(
       false
     );
+  });
+
+  it("keys each card by advisory and repo id, so same-named repos stay two cards", () => {
+    const advisory = {
+      osvId: "GHSA-same",
+      severity: "HIGH",
+      package: { name: "next", ecosystem: "npm" },
+    };
+    const { thisWeek } = resolvedSections(
+      [
+        resolved("next", "web", "2026-11-01T10:00:00Z", { repoId: "local-web", advisory }),
+        resolved("next", "web", "2026-11-01T10:00:00Z", { repoId: "github-web", advisory }),
+      ],
+      weekStart,
+      null
+    );
+    expect(new Set(thisWeek.map((a) => a.key)).size).toBe(2);
   });
 
   it("tags only non-npm ecosystems and labels a missing severity", () => {

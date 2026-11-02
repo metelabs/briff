@@ -72,6 +72,8 @@ export function resolvedCauseLabel(cause: ResolvedCause): string {
 
 export interface ResolvedSectionRow extends ResolvedAlertRow {
   resolvedBy: ResolvedCause;
+  /** Repo names are unique per source only; the id keeps two same-named repos' cards apart. */
+  repoId: string;
   repo: { name: string };
   advisory: {
     osvId: string;
@@ -115,7 +117,7 @@ export function resolvedSections(
     const { name } = row.advisory.package;
     const ecosystem = asEcosystem(row.advisory.package.ecosystem);
     const alert: ResolvedAlert = {
-      key: `${row.advisory.osvId}\0${row.repo.name}`,
+      key: `${row.advisory.osvId}\0${row.repoId}`,
       packageName: name,
       ...(ecosystem && ecosystem !== "npm" ? { ecosystem } : {}),
       osvId: row.advisory.osvId,
