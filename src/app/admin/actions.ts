@@ -62,6 +62,8 @@ export interface OrgPlanSettings {
   /** Overrides; null = the plan's limit. */
   repoLimit: number | null;
   streamLimit: number | null;
+  /** Monthly LLM budget in USD; null = the plan's. */
+  llmBudgetUsd: number | null;
 }
 
 export interface LimitsState extends AdminState {
@@ -77,11 +79,17 @@ const override = (max: number) =>
     z.coerce.number().int().min(1).max(max).nullable()
   );
 
+const budget = z.preprocess(
+  (v) => (v === undefined || (typeof v === "string" && v.trim() === "") ? null : v),
+  z.coerce.number().min(0).max(10000).nullable()
+);
+
 const planSchema = z.object({
   orgId: z.string().min(1),
   plan: z.enum(PLAN_IDS),
   repoLimit: override(100000),
   streamLimit: override(10000),
+  llmBudgetUsd: budget,
 });
 
 export async function saveOrgPlanAction(_prev: LimitsState, form: FormData): Promise<LimitsState> {
@@ -90,8 +98,15 @@ export async function saveOrgPlanAction(_prev: LimitsState, form: FormData): Pro
     return { ok: false, message: "Plans and limits are off on this instance (BRIFF_CLOUD)." };
   const parsed = planSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success)
-    return { ok: false, message: "Pick a plan; overrides are empty or positive whole numbers." };
+    return {
+      ok: false,
+      message:
+        "Pick a plan; overrides are empty or positive whole numbers, the AI budget empty or 0 to 10000 USD.",
+    };
   const { orgId, plan, repoLimit, streamLimit } = parsed.data;
+  // Cents: the estimate is compared in micro-dollars, the form shows two decimals.
+  const llmBudgetUsd =
+    parsed.data.llmBudgetUsd === null ? null : Math.round(parsed.data.llmBudgetUsd * 100) / 100;
   const db = getDb();
   // Same lock as billing (src/lib/billing/sync.ts): a webhook cannot interleave with this write.
   const saved = await withOrg(db, orgId).$transaction(async (tx) => {
@@ -105,6 +120,7 @@ export async function saveOrgPlanAction(_prev: LimitsState, form: FormData): Pro
         plan,
         repoLimit,
         streamLimit,
+        llmBudgetUsd,
         // A plan the admin set is never lowered by billing (planDecision).
         ...(changed ? { planUpdatedAt: new Date(), planSource: "admin" as const } : {}),
       },
@@ -128,6 +144,6 @@ export async function saveOrgPlanAction(_prev: LimitsState, form: FormData): Pro
   return {
     ok: true,
     message: `Saved: ${PLANS[plan].name} plan. Rescan any repositories previously skipped.`,
-    saved: { plan, repoLimit, streamLimit },
+    saved: { plan, repoLimit, streamLimit, llmBudgetUsd },
   };
 }

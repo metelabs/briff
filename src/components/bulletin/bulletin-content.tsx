@@ -24,6 +24,7 @@ import {
   advisoryCount,
   allItems,
   BULLETIN_ALERT_LIMIT,
+  CONDENSED_NOTE,
   restCount,
   type BulletinView,
   type BulletinViewAlert,
@@ -104,6 +105,9 @@ export function BulletinContent({
             </Headline_>
             {view.summary && (
               <p className="text-fg-muted max-w-[56ch] text-[16px]">{view.summary}</p>
+            )}
+            {view.condensed && (
+              <p className="text-fg-muted mt-3 max-w-[56ch] text-[12.5px]">{CONDENSED_NOTE}</p>
             )}
             {notice && (
               <p

@@ -9,6 +9,7 @@ export const GITHUB_FLOW_STATUSES = [
   "invalid-state",
   "forbidden",
   "other-org",
+  "at-limit",
   "failed",
 ] as const;
 export type GithubFlowStatus = (typeof GITHUB_FLOW_STATUSES)[number];
@@ -45,6 +46,10 @@ export const GITHUB_FLOW_MESSAGES: Record<GithubFlowStatus, { ok: boolean; text:
   "other-org": {
     ok: false,
     text: "That GitHub installation is already connected to another Briff organisation.",
+  },
+  "at-limit": {
+    ok: false,
+    text: "GitHub installation limit reached on your plan. Upgrade for more installations, or add repos to an installation you already connected. An app installed on GitHub but refused here can be uninstalled there.",
   },
   failed: { ok: false, text: "Connecting GitHub failed. Try again in a minute." },
 };

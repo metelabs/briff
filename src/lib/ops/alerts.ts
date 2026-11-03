@@ -12,7 +12,7 @@ import {
 import { getEnv } from "@/lib/env";
 import type { Logger } from "@/lib/log";
 
-export type OpsAlertKind = "failed" | "stale";
+export type OpsAlertKind = "failed" | "stale" | "budget";
 
 export interface OpsAlertInput {
   kind: OpsAlertKind;
@@ -115,7 +115,7 @@ export function webhookPayload(alert: OpsAlertInput, baseUrl: string): WebhookPa
   const text = [
     `Briff: ${opsAlertHeadline(alert)} (${when})`,
     ...(error ? [error] : []),
-    `${baseUrl.replace(/\/$/, "")}/admin/runs`,
+    `${baseUrl.replace(/\/$/, "")}${alert.kind === "budget" ? "/admin" : "/admin/runs"}`,
   ].join("\n");
   return { text, content: text, kind: alert.kind, job: alert.jobType, error };
 }

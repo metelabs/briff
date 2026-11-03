@@ -45,4 +45,20 @@ describe("billing emails", () => {
       ).subject
     ).toBe("Acme Studio: Pro ends on 2 December 2026");
   });
+
+  it("tells owners about the AI budget at 80 % and when it is used up", () => {
+    const at80 = renderBillingEmail(
+      { kind: "llm-budget", threshold: 80, spentUsd: 2.4, budgetUsd: 3 },
+      args
+    );
+    expect(at80.subject).toBe("Acme Studio used 80% of this month's AI budget");
+    expect(at80.text).toContain("an estimated $2.40 of its $3.00 monthly AI budget");
+    expect(at80.text).toContain("Same-day security alerts are never affected.");
+    const used = renderBillingEmail(
+      { kind: "llm-budget", threshold: 100, spentUsd: 3.05, budgetUsd: 3 },
+      args
+    );
+    expect(used.subject).toBe("Acme Studio used this month's AI budget");
+    expect(used.text).toContain("the weekly bulletin is a condensed edition");
+  });
 });

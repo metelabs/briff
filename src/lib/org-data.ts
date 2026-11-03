@@ -165,6 +165,22 @@ export function orgExportSections(
         }),
     ],
     ["baseImageAlerts", () => scoped.baseImageAlert.findMany({ orderBy: { createdAt: "asc" } })],
+    [
+      "usage",
+      () =>
+        scoped.orgUsage.findMany({
+          orderBy: { day: "asc" },
+          select: {
+            day: true,
+            requests: true,
+            bulletins: true,
+            inputTokens: true,
+            outputTokens: true,
+            estimatedUsdMicros: true,
+            scanUploads: true,
+          },
+        }),
+    ],
     ["baseImageWatches", () => scoped.baseImageWatch.findMany({ orderBy: { since: "asc" } })],
     [
       "repos",

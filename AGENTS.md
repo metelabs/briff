@@ -55,7 +55,10 @@ src/lib/scan/            /api/scan schema + ingest, scan tokens (tokens.ts pure,
 src/lib/rss/, platforms/ ported from an earlier feed aggregator (SSRF-safe fetch, RSS/Atom parser, HN/GH/PH)
 src/lib/match/           deterministic item -> org matcher + stack loader
 src/lib/streams.ts       bulletin streams: slugs, membership writes, Repo.included sync
-src/lib/plans.ts         plans (PLANS: prices, limits) and limitsFor; checks in org-limits.ts, usage in org-capacity.ts
+src/lib/plans.ts         plans (PLANS: prices, limits; PLAN_ALLOWANCES: AI budget, scan uploads a day, GitHub installations) and limitsFor;
+                         checks in org-limits.ts, usage in org-capacity.ts
+src/lib/usage.ts         OrgUsage rollup (per org and UTC day: LLM tokens + estimated cost, scan uploads); budget maths
+                         in llm-budget.ts (pure), 80/100 % notices in llm-budget-notify.ts
 src/lib/billing/         Paddle billing (docs/BILLING.md): catalog (price ids per PADDLE_ENV), state.ts (pure rules),
                          sync.ts (the only Org.plan writer besides Admin), webhook, manage.ts (owner actions), jobs
 src/lib/delivery-targets/ Slack / webhook delivery (docs/INTEGRATIONS.md): format.ts (Block Kit, signed JSON, pure),
@@ -68,7 +71,8 @@ src/lib/runtime-security.ts  runtime security items: pattern, Item.metadata shap
 src/security/            security-scan: OSV query plan, alert dedupe (plan.ts, pure) and the job (scan.ts)
 src/pipeline/            triage-items, weekly-bulletin (selection, synthesis, assembly), delivery,
                          feedback -> weights, profile refresh, bulletin view model
-src/llm/                 Anthropic client (structured output + zod), fake client, prompt loader
+src/llm/                 Anthropic client (structured output + zod), fake client, prompt loader, pricing.ts (USD per
+                         model, estimateUsd over Run.tokens; unknown models cost 0, "unpriced")
 src/llm/prompts/*.md     versioned prompts (`<!-- version: x-vN -->` first line); bump the version on edit
                          (synthesis is at `synthesis-v8`: text describes its own ref; action is a command or covers every affected repo; a security headline names `fix_versions`;
                          repo names are aliases, see `src/llm/pseudonym.ts`)
@@ -93,7 +97,7 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
 - **Tenant data only through `withOrg(getDb(), orgId)`.** It pins `orgId` into every
   where/data clause and throws on conflicts. Tenant models: OrgMember, Repo, Dependency,
   RepoRuntime, ItemMatch, Alert, Bulletin, BulletinItem, Feedback, InterestProfile, Deadline,
-  BulletinStream, StreamRepo, ScanToken, GithubInstallation, OrgInvite, OrgEvent, Subscription, DeliveryTarget. Creates
+  BulletinStream, StreamRepo, ScanToken, GithubInstallation, OrgInvite, OrgEvent, Subscription, DeliveryTarget, OrgUsage. Creates
   still pass `orgId` explicitly (Prisma types require it; the layer verifies it). Nested
   relation writes and raw SQL bypass the layer, so do not use them for tenant tables.
   Global catalog tables (Package, Service, Source, Item, Advisory, Job, Run, OpsAlert, BillingEvent) use `getDb()`.
@@ -109,7 +113,8 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   decide whether the user goes too.
   The instance admin's organisation table (`loadOrgDirectory`, `src/lib/org-directory.ts`, only
   `/admin` behind `requireAdminContext`) reads per-org counts of members, repos and streams, each
-  org's plan, plan source, overrides and subscription status, and each org's first owner's email across orgs in a fixed number of
+  org's plan, plan source, overrides (AI budget included) and subscription status, this month's
+  `OrgUsage` sums (LLM calls, tokens, estimated cost), and each org's first owner's email across orgs in a fixed number of
   grouped queries; it reads nothing else and is never shown to anyone but the instance admin.
   These rules cover the application (`src/`, `packages/`). `scripts/smoke.sh` is an external
   black-box check of a throw-away compose stack: it cannot reach `withOrg` from a shell, so it
@@ -312,10 +317,22 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   `assertMemberCapacity`, seats from `countMembers` in `src/lib/members.ts`: members plus pending invites; the invite
   write rechecks the limit under the membership lock). Over a limit
   nothing is deleted; new repos, streams or members are refused. Only the hosted service sets
-  `BRIFF_CLOUD=true` (`isCloud()`); otherwise every org is unlimited and nothing plan-related
-  renders: no capacity line, no plan column or Edit limits in Admin, `/pricing` and
+  `BRIFF_CLOUD=true` (`isCloud()`); otherwise every org is unlimited (no AI budget, no daily scan
+  upload or GitHub installation limit) and nothing plan-related renders: no capacity line, no plan column or Edit limits in Admin, `/pricing` and
   `/settings/billing` are 404, no pricing link on the public pages, sitemap or robots. Prices and
   limits shown anywhere come from `PLANS`, never typed twice.
+- LLM budget and abuse limits (docs/OPERATIONS.md "LLM cost and the monthly budget", "Abuse
+  limits"): every synthesis and profile request adds its tokens and estimated cost
+  (`src/llm/pricing.ts`) to the org's `OrgUsage` day (`recordLlmUsage`); triage is shared and only
+  in `Run.tokens`. Budget = `Org.llmBudgetUsd` (admin, replaces the plan's) or
+  `PLAN_ALLOWANCES[*].llmBudgetUsd`. At or past it the weekly bulletin of the org runs in economy mode
+  (`BRIFF_MODEL_TRIAGE`, `ECONOMY_MAX_TOKENS`, `Bulletin.condensed` → "Condensed edition" note);
+  never skipped, and nothing on the security path reads the budget. 80 % / 100 % notices are
+  claimed on the org row (`llmBudgetNotifiedMonth` / `Pct`) in the transaction that queues the
+  owners' billing-notify jobs, so each goes out once per month. `/api/scan` caps the body
+  (`BRIFF_SCAN_MAX_BYTES`, `readCapped`, 413) and counts uploads per org and UTC day with a
+  conditional increment (`takeScanUpload`, 429); GitHub installations per org are checked in
+  `linkInstallation` under a per-org advisory lock.
 - Streams: a `BulletinStream` is a named repo set with its own weekly bulletin and email.
   `Repo.included` means "in at least one stream" and stays the gate for triage and security
   alerts; change membership only through `src/lib/streams.ts`, which writes the membership and
@@ -665,7 +682,7 @@ like, and this section says how a review reports deviations from them.
 
 ### Repository invariants
 
-- Tenant data (OrgMember, Repo, Dependency, RepoRuntime, ItemMatch, Alert, Bulletin, BulletinItem, Feedback, InterestProfile, Deadline, BulletinStream, StreamRepo, ScanToken, GithubInstallation, OrgInvite, OrgEvent, Subscription, DeliveryTarget) must be read and written through `withOrg(getDb(), orgId)`. A nested relation write or raw SQL on these tables is a finding. The only reads outside the layer are the ones listed under Conventions (`getOrgContext`, `listUserOrgs`, `ensureUserHasOrg`, `findInviteByToken`, `findScanTokenByHash`, `findInstallation`, `resolveSubscriptionOrg`, billing-check's org id list, the `deleteOrg` membership count, the admin's `loadOrgDirectory`).
+- Tenant data (OrgMember, Repo, Dependency, RepoRuntime, ItemMatch, Alert, Bulletin, BulletinItem, Feedback, InterestProfile, Deadline, BulletinStream, StreamRepo, ScanToken, GithubInstallation, OrgInvite, OrgEvent, Subscription, DeliveryTarget, OrgUsage) must be read and written through `withOrg(getDb(), orgId)`. A nested relation write or raw SQL on these tables is a finding. The only reads outside the layer are the ones listed under Conventions (`getOrgContext`, `listUserOrgs`, `ensureUserHasOrg`, `findInviteByToken`, `findScanTokenByHash`, `findInstallation`, `resolveSubscriptionOrg`, billing-check's org id list, the `deleteOrg` membership count, the admin's `loadOrgDirectory`).
 - `Org.plan` is written only by the billing module (`applyOrgPlan`) and the admin's Edit limits action; any other writer is a finding, and so is a billing path that lowers an `admin` plan or touches `unlimited`. A Paddle webhook event must be processed at most once (BillingEvent id) and an older `occurred_at` must never overwrite a newer subscription state. A billing action that takes a subscription, customer or org id from the browser, or skips the owner check, is a finding (P0).
 - Owner-only actions (invite, resend, revoke, change role, remove member, rename, delete org) check the role on the server inside the membership transaction; a check only in the page or UI is a finding, and so is any path that lets the last owner be removed, demoted or leave. `scripts/smoke.sh` is outside this rule (Conventions: it uses `psql` against its own throw-away stack). A new tenant table that does not cascade from `Org` is a finding (`org-data.integration.test.ts` must cover it).
 - Fix commands and derived actions never recommend a higher major than the installed release line. A command or sentence that crosses the line is a finding, with one exception: An end-of-life line gets the EOL sentence, which names the lowest supported line; that is the only derived action allowed to name a higher major, and it is worded as a migration, not a fix command. (`src/pipeline/runtime-fixes.ts`, "node 18 is end-of-life and will not get this fix; move to 22.23.4 or later"; an EOL line has no fix on its own major, so naming the supported line is the only truthful action.) An EOL sentence in command form (`npm i ...`, a `FROM`/image tag, "set node X") is a finding.

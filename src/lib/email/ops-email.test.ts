@@ -35,4 +35,21 @@ describe("renderOpsAlertEmail", () => {
     expect(email.text).toContain("2 more alerts of this kind were held back");
     expect(email.html).not.toContain("ERROR");
   });
+
+  it("words a budget alert as a notice and links to the organisation table", () => {
+    const email = renderOpsAlertEmail({
+      ...base,
+      kind: "budget",
+      jobType: "llm-budget:org1:2026-11:80",
+      error: null,
+      lastSuccessAt: null,
+      headline: "LLM budget 80%: Acme",
+      summary: "The organisation has used an estimated $2.40 of its $3.00 monthly LLM budget.",
+    });
+    expect(email.subject).toBe("Briff · LLM budget 80%: Acme");
+    expect(email.html).toContain('href="https://briff.example.com/admin#organisations"');
+    expect(email.text).toContain("Reached at: 2026-11-02 04:01 UTC");
+    expect(email.text).not.toContain("Last success");
+    expect(email.text).toContain("Admin: https://briff.example.com/admin#organisations");
+  });
 });

@@ -17,6 +17,9 @@ const row = (i: number, over: Partial<OrgRow> = {}): OrgRow => ({
   streamOverride: null,
   repoLimit: 10,
   streamLimit: 2,
+  llmBudgetOverride: null,
+  llmBudget: 0.5,
+  usage: { requests: 0, inputTokens: 0, outputTokens: 0, usd: 0 },
   ...over,
 });
 
@@ -27,6 +30,8 @@ describe("orgPage", () => {
   // Unlimited never counts as at the limit, however much it uses.
   rows[14] = row(15, { plan: "unlimited", repos: 400, repoLimit: null, streamLimit: null });
   rows[19] = row(20, { name: "Acme Studio", ownerEmail: "Lead@Acme.example" });
+  // A budget set by the admin is a custom limit too.
+  rows[24] = row(25, { llmBudgetOverride: 1, llmBudget: 1 });
 
   it("pages 25 rows at a time, newest first, and clamps the page", () => {
     const first = orgPage(rows, { q: "", filter: "all", page: 1 });
@@ -48,8 +53,9 @@ describe("orgPage", () => {
   it("filters orgs at a limit and orgs with custom limits, and counts both", () => {
     const res = orgPage(rows, { q: "", filter: "at-limit", page: 1 });
     expect(res.rows.map((r) => r.id)).toEqual(["o05"]);
-    expect(res.counts).toEqual({ all: 30, "at-limit": 1, custom: 1 });
+    expect(res.counts).toEqual({ all: 30, "at-limit": 1, custom: 2 });
     expect(orgPage(rows, { q: "", filter: "custom", page: 1 }).rows.map((r) => r.id)).toEqual([
+      "o25",
       "o10",
     ]);
   });

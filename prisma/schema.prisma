@@ -106,6 +106,11 @@ model Org {
   baseImageAlerts Boolean @default(true)
   // Last "Re-check now" on Alerts: GitHub App rescans are limited to one per 10 minutes.
   recheckRequestedAt DateTime?
+  // Monthly LLM budget in USD (src/lib/llm-budget.ts): the admin's override, null = the plan's.
+  llmBudgetUsd Float?
+  // The highest budget threshold (80 or 100) owners were told about, and in which month.
+  llmBudgetNotifiedMonth DateTime? @db.Date
+  llmBudgetNotifiedPct   Int       @default(0)
   baseAlerts BaseImageAlert[]
   baseWatches BaseImageWatch[]
   id                  String               @id @default(cuid())
@@ -131,6 +136,7 @@ model Org {
   events              OrgEvent[]
   subscriptions       Subscription[]
   deliveryTargets     DeliveryTarget[]
+  usage               OrgUsage[]
 
   @@index([paddleCustomerId])
   @@map("org")
@@ -762,6 +768,8 @@ model Bulletin {
   // its own preview slot next to the real one.
   preview       Boolean         @default(false)
   previewKey    String          @default("")
+  // Written in economy mode (the org was past its monthly LLM budget): triage model, shorter output.
+  condensed     Boolean         @default(false)
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   items         BulletinItem[]
@@ -932,9 +940,32 @@ model Run {
   @@map("run")
 }
 
+// Per-org usage per UTC day (src/lib/usage.ts): LLM tokens and their estimated cost, written by
+// the jobs as each request completes, and scan uploads (the daily upload limit). The monthly
+// budget and Admin sum the days of the month. Triage is shared across orgs and is not here.
+model OrgUsage {
+  id                 String   @id @default(cuid())
+  orgId              String
+  org                Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  day                DateTime @db.Date
+  requests           Int      @default(0)
+  bulletins          Int      @default(0)
+  inputTokens        Int      @default(0)
+  outputTokens       Int      @default(0)
+  estimatedUsdMicros Int      @default(0)
+  scanUploads        Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([orgId, day])
+  @@map("org_usage")
+}
+
 enum OpsAlertKind {
   failed
   stale
+  // An org reached 80 % or 100 % of its monthly LLM budget (jobType llm-budget:<org>:<month>:<pct>).
+  budget
 }
 
 // Operator alerts (job failed for good, scheduled job stale): one per (jobType, kind) per 24h.

@@ -60,10 +60,19 @@ export interface LlmClient {
 }
 
 export class LlmOutputError extends Error {
-  constructor(message: string) {
+  /** Set when the model answered (and billed) but the answer was unusable. */
+  readonly billed?: { usage: LlmUsage; model: string };
+
+  constructor(message: string, billed?: { usage: LlmUsage; model: string }) {
     super(message);
     this.name = "LlmOutputError";
+    this.billed = billed;
   }
+}
+
+/** The usage of a request that was billed but failed to decode; null otherwise. */
+export function billedUsage(err: unknown): { usage: LlmUsage; model: string } | null {
+  return err instanceof LlmOutputError && err.billed ? err.billed : null;
 }
 
 /** The parts of a Messages API response that decoding needs (the SDK's Message fits). */
@@ -90,9 +99,11 @@ export function decodeMessage<T>(req: JsonRequest<T>, message: ModelMessage): Js
     inputTokens: message.usage.input_tokens,
     outputTokens: message.usage.output_tokens,
   };
-  if (message.stop_reason === "refusal") throw new LlmOutputError(`${req.task}: model refused`);
+  const billed = { usage, model: message.model };
+  if (message.stop_reason === "refusal")
+    throw new LlmOutputError(`${req.task}: model refused`, billed);
   if (message.stop_reason === "max_tokens") {
-    throw new LlmOutputError(`${req.task}: output hit max_tokens (${req.maxTokens})`);
+    throw new LlmOutputError(`${req.task}: output hit max_tokens (${req.maxTokens})`, billed);
   }
   const text = message.content
     .flatMap((b) => (b.type === "text" && b.text ? [b.text] : []))
@@ -101,9 +112,14 @@ export function decodeMessage<T>(req: JsonRequest<T>, message: ModelMessage): Js
   try {
     decoded = JSON.parse(text);
   } catch {
-    throw new LlmOutputError(`${req.task}: output is not JSON`);
+    throw new LlmOutputError(`${req.task}: output is not JSON`, billed);
   }
-  return { data: req.parse(decoded), usage, model: message.model };
+  try {
+    return { data: req.parse(decoded), usage, model: message.model };
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    throw new LlmOutputError(`${req.task}: output does not match the schema: ${detail}`, billed);
+  }
 }
 
 export type BatchItemResult =
