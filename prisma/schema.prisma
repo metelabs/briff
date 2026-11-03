@@ -130,6 +130,7 @@ model Org {
   invites             OrgInvite[]
   events              OrgEvent[]
   subscriptions       Subscription[]
+  deliveryTargets     DeliveryTarget[]
 
   @@index([paddleCustomerId])
   @@map("org")
@@ -202,6 +203,11 @@ enum OrgEventType {
   org_renamed     @map("org.renamed")
   org_created     @map("org.created")
   plan_changed    @map("plan.changed")
+  delivery_target_created  @map("delivery_target.created")
+  delivery_target_enabled  @map("delivery_target.enabled")
+  delivery_target_disabled @map("delivery_target.disabled")
+  delivery_target_deleted  @map("delivery_target.deleted")
+  audit_exported           @map("audit.exported")
 }
 
 // Audit log of membership and org changes, shown to owners under Settings -> Members.
@@ -707,6 +713,7 @@ model BulletinStream {
   updatedAt DateTime     @updatedAt
   repos     StreamRepo[]
   bulletins Bulletin[]
+  deliveryTargets DeliveryTarget[]
 
   @@unique([orgId, slug])
   @@map("bulletin_stream")
@@ -1026,4 +1033,37 @@ model BaseImageFix {
   firstSeenAt DateTime @default(now())
   @@unique([ecosystem, package, version])
   @@map("base_image_fix")
+}
+
+enum DeliveryTargetKind {
+  slack
+  webhook
+}
+
+// A Slack incoming webhook or a generic webhook that gets the bulletin and same-day alerts
+// (docs/INTEGRATIONS.md, src/lib/delivery-targets/). A Team feature on the hosted service.
+model DeliveryTarget {
+  id              String             @id @default(cuid())
+  orgId           String
+  org             Org                @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  // null = every stream of the org.
+  streamId        String?
+  stream          BulletinStream?    @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  kind            DeliveryTargetKind
+  // Plain text (no secret-at-rest helper in the repo); the UI shows only host and last 4 chars.
+  url             String
+  // HMAC-SHA256 key for kind = webhook; shown once when the target is created.
+  secret          String?
+  bulletin        Boolean            @default(true)
+  alert           Boolean            @default(true)
+  enabled         Boolean            @default(true)
+  lastDeliveredAt DateTime?
+  lastError       String?
+  lastErrorAt     DateTime?
+  createdByUserId String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([orgId])
+  @@map("delivery_target")
 }

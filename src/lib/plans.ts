@@ -20,6 +20,11 @@ export interface Plan {
   members: number | null;
   /** One sentence for the pricing card. */
   pitch: string;
+  /** Slack and webhook delivery targets; null = unlimited, 0 = not on this plan. */
+  deliveryTargets: number | null;
+  auditExport: boolean;
+  /** What the plan adds on top of INCLUDED_FEATURES, listed on its pricing card. */
+  extras: readonly string[];
 }
 
 export const PLANS: Readonly<Record<PlanId, Plan>> = {
@@ -32,6 +37,9 @@ export const PLANS: Readonly<Record<PlanId, Plan>> = {
     streams: 2,
     members: 1,
     pitch: "For one developer and a handful of repos.",
+    deliveryTargets: 0,
+    auditExport: false,
+    extras: [],
   },
   pro: {
     id: "pro",
@@ -42,6 +50,9 @@ export const PLANS: Readonly<Record<PlanId, Plan>> = {
     streams: 10,
     members: 3,
     pitch: "For a freelancer or a small studio with many client repos.",
+    deliveryTargets: 0,
+    auditExport: false,
+    extras: [],
   },
   team: {
     id: "team",
@@ -52,6 +63,9 @@ export const PLANS: Readonly<Record<PlanId, Plan>> = {
     streams: null,
     members: 10,
     pitch: "For a team that ships every repo it has.",
+    deliveryTargets: null,
+    auditExport: true,
+    extras: ["Slack and webhook delivery", "Audit log export", "Priority support (1 business day)"],
   },
   // The founder's own org and friends; set in Admin, never sold.
   unlimited: {
@@ -63,13 +77,16 @@ export const PLANS: Readonly<Record<PlanId, Plan>> = {
     streams: null,
     members: null,
     pitch: "",
+    deliveryTargets: null,
+    auditExport: true,
+    extras: [],
   },
 };
 
 /** The plans on the pricing page, in order. */
 export const PRICED_PLANS: readonly Plan[] = [PLANS.free, PLANS.pro, PLANS.team];
 
-/** Included on every plan; the plans differ only in their limits. */
+/** Included on every plan; the plans differ in their limits and Team's `extras`. */
 export const INCLUDED_FEATURES: readonly string[] = [
   "Weekly bulletin per stream",
   "Same-day security alerts",
@@ -88,6 +105,9 @@ export interface OrgLimits {
   repoLimit: number | null;
   streamLimit: number | null;
   memberLimit: number | null;
+  /** Slack / webhook targets (src/lib/delivery-targets); 0 = not on the plan. */
+  deliveryTargets: number | null;
+  auditExport: boolean;
 }
 
 export interface OrgPlanRow {
@@ -108,14 +128,30 @@ function withOverride(planLimit: number | null, override: number | null): number
  * its columns say; on the hosted service the plan's limits, raised by the admin's overrides.
  */
 export function limitsFor(org: OrgPlanRow, { cloud }: { cloud: boolean }): OrgLimits {
-  if (!cloud) return { plan: "unlimited", repoLimit: null, streamLimit: null, memberLimit: null };
+  if (!cloud) {
+    return {
+      plan: "unlimited",
+      repoLimit: null,
+      streamLimit: null,
+      memberLimit: null,
+      deliveryTargets: null,
+      auditExport: true,
+    };
+  }
   const plan = PLANS[org.plan];
   return {
     plan: plan.id,
     repoLimit: withOverride(plan.repos, org.repoLimit),
     streamLimit: withOverride(plan.streams, org.streamLimit),
     memberLimit: plan.members,
+    deliveryTargets: plan.deliveryTargets,
+    auditExport: plan.auditExport,
   };
+}
+
+/** The cheapest sold plan that has delivery targets and the audit export ("Included in Team"). */
+export function teamFeaturePlan(): Plan {
+  return PRICED_PLANS.find((p) => p.deliveryTargets !== 0 && p.auditExport) ?? PLANS.team;
 }
 
 /** False for null (unlimited). */

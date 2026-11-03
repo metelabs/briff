@@ -38,6 +38,8 @@ describe.skipIf(!url)("organisation capacity notice", () => {
       streamLimit: 10,
       members: 0,
       memberLimit: 3,
+      deliveryTargets: 0,
+      auditExport: false,
     });
     vi.stubEnv("BRIFF_CLOUD", "false");
     resetEnvCache();

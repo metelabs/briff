@@ -151,6 +151,7 @@ export default async function CheckoutPage({
                 limitLabel(plan.streams, "stream"),
                 limitLabel(plan.members, "member"),
                 ...INCLUDED_FEATURES,
+                ...plan.extras,
               ].map((f) => (
                 <li key={f} className="flex items-center gap-2">
                   <Check aria-hidden className="text-brand size-4 shrink-0" />

@@ -1,6 +1,7 @@
 import { CircleCheck } from "lucide-react";
 import { loadOrgCapacity } from "@/lib/org-capacity";
 import type { Metadata } from "next";
+import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
 import { AppShell } from "@/components/shell/app-shell";
@@ -13,6 +14,8 @@ import { withOrg } from "@/lib/db/with-org";
 import { smtpConfig } from "@/lib/email/mailer";
 import { fullDate, plural, shortDate, shortDateTime } from "@/lib/format";
 import { listScanTokens } from "@/lib/scan/token-store";
+import { listDeliveryTargets, targetsAllowed } from "@/lib/delivery-targets/store";
+import { teamFeaturePlan } from "@/lib/plans";
 import { loadMembers, loadOpenInvites, loadOrgEvents, ORG_NAME_MAX } from "@/lib/members";
 import { eventSentence } from "@/lib/org-events";
 import { buttonVariants } from "@/components/ui/button";
@@ -33,6 +36,7 @@ import {
   SignOutButton,
 } from "./_client";
 import { BillingSummary } from "./_billing";
+import { NewTargetButton, TargetList } from "./_integrations";
 import { InviteForm, MemberList, OrgNameForm, PendingInvites } from "./_members";
 
 export const metadata: Metadata = { title: "Settings · Briff" };
@@ -41,6 +45,7 @@ const SECTIONS = [
   { id: "profile", label: "Profile" },
   { id: "weights", label: "Weights" },
   { id: "delivery", label: "Delivery" },
+  { id: "integrations", label: "Integrations" },
   { id: "github", label: "GitHub App" },
   { id: "scan-tokens", label: "Scan tokens" },
   { id: "organisation", label: "Organisation" },
@@ -92,7 +97,7 @@ export default async function SettingsPage() {
   const db = getDb();
   const scoped = withOrg(db, ctx.orgId);
   const owner = ctx.role === "owner";
-  const [profile, user, streams, tokens, org, github, capacity, members, invites, events] =
+  const [profile, user, streams, tokens, org, github, capacity, members, invites, events, targets] =
     await Promise.all([
       scoped.interestProfile.findFirst({
         select: { text: true, weights: true, refreshedAt: true },
@@ -113,7 +118,10 @@ export default async function SettingsPage() {
       loadMembers(db, ctx.orgId),
       owner ? loadOpenInvites(db, ctx.orgId) : Promise.resolve([]),
       owner ? loadOrgEvents(db, ctx.orgId) : Promise.resolve([]),
+      listDeliveryTargets(db, ctx.orgId),
     ]);
+  const integrationsOn = targetsAllowed(capacity);
+  const team = teamFeaturePlan();
   const ownerCount = members.filter((m) => m.role === "owner").length;
   const weights = Object.entries(parseWeights(profile?.weights));
   const emailReady = smtpConfig() !== null;
@@ -240,8 +248,73 @@ export default async function SettingsPage() {
           </Block>
 
           <Block
-            id="github"
+            id="integrations"
             index={3}
+            title="Integrations"
+            sub="Post each stream's weekly bulletin and the same-day security alerts to a Slack channel or to your own webhook, next to the email."
+          >
+            {!integrationsOn ? (
+              <div className="bg-brand-soft rounded-inset mb-3 flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                <div className="min-w-0 flex-1 basis-[260px]">
+                  <b className="font-medium">Included in {team.name}</b>
+                  <small className="text-fg-muted block text-[12.5px]">
+                    Slack and webhook delivery and the audit log export come with the {team.name}{" "}
+                    plan.
+                    {targets.length > 0 &&
+                      " The integrations below are kept but paused: nothing is sent until the plan includes them again."}
+                  </small>
+                </div>
+                <Link
+                  href="/settings/billing"
+                  className={buttonVariants({ variant: owner ? "primary" : "secondary" })}
+                >
+                  {owner ? `Upgrade to ${team.name}` : "See plans"}
+                </Link>
+              </div>
+            ) : (
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <span className="text-fg-muted text-[12.5px]">
+                  {owner
+                    ? plural(targets.length, "integration")
+                    : "Only owners can add or change integrations."}
+                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link
+                    href="/docs/reference/integrations"
+                    className="text-brand mr-2 text-[13.5px] underline-offset-4 hover:underline"
+                  >
+                    How it works
+                  </Link>
+                  {owner && (
+                    <NewTargetButton streams={streams.map((s) => ({ id: s.id, name: s.name }))} />
+                  )}
+                </div>
+              </div>
+            )}
+            {(integrationsOn || targets.length > 0) && (
+              <TargetList
+                canManage={owner}
+                paused={!integrationsOn}
+                targets={targets.map((t) => ({
+                  id: t.id,
+                  kind: t.kind,
+                  urlLabel: t.urlLabel,
+                  streamName: t.streamName,
+                  bulletin: t.bulletin,
+                  alert: t.alert,
+                  enabled: t.enabled,
+                  signed: t.signed,
+                  lastDelivered: t.lastDeliveredAt ? shortDateTime(t.lastDeliveredAt) : null,
+                  lastError: t.lastError,
+                  lastErrorAt: t.lastErrorAt ? shortDateTime(t.lastErrorAt) : null,
+                }))}
+              />
+            )}
+          </Block>
+
+          <Block
+            id="github"
+            index={4}
             title="GitHub App"
             sub="Recommended. Briff scans the repos you pick on GitHub, on install and after every push that changes a lockfile, manifest or runtime file. It reads only those files (Contents and Metadata, read-only)."
           >
@@ -295,7 +368,7 @@ export default async function SettingsPage() {
 
           <Block
             id="scan-tokens"
-            index={4}
+            index={5}
             title="Scan tokens"
             sub="Scanners (the GitHub Action, briff-scan on a laptop or server) send package names, versions and runtimes with one of these tokens. Each token belongs to this org; revoke one to cut off the scanner that uses it."
           >
@@ -324,7 +397,7 @@ export default async function SettingsPage() {
 
           <Block
             id="organisation"
-            index={5}
+            index={6}
             title="Organisation"
             sub={
               owner
@@ -341,7 +414,7 @@ export default async function SettingsPage() {
 
           <Block
             id="members"
-            index={6}
+            index={7}
             title="Members"
             sub={
               owner
@@ -382,7 +455,22 @@ export default async function SettingsPage() {
                   />
                 </div>
                 <div className="border-line mt-5 border-t pt-4">
-                  <h3 className="mb-1 text-[13px] font-medium">Activity</h3>
+                  <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-[13px] font-medium">Activity</h3>
+                    {capacity.auditExport ? (
+                      <a
+                        href="/api/export/audit"
+                        download
+                        className={buttonVariants({ variant: "secondary", size: "sm" })}
+                      >
+                        Export audit log (CSV)
+                      </a>
+                    ) : (
+                      <span className="text-fg-muted text-[12.5px]">
+                        Audit log export: included in {team.name}
+                      </span>
+                    )}
+                  </div>
                   {events.length === 0 ? (
                     <p className="text-fg-muted text-[13.5px]">Nothing yet.</p>
                   ) : (
@@ -413,7 +501,7 @@ export default async function SettingsPage() {
           {capacity.cloud && (
             <Block
               id="billing"
-              index={7}
+              index={8}
               title="Billing"
               sub="The organisation's plan, what it uses of it and how it is paid."
             >
@@ -423,7 +511,7 @@ export default async function SettingsPage() {
 
           <Block
             id="your-data"
-            index={8}
+            index={9}
             title="Your data"
             sub="Take a copy of everything Briff keeps for this organisation, or delete it."
           >
@@ -457,7 +545,7 @@ export default async function SettingsPage() {
 
           <Block
             id="account"
-            index={9}
+            index={10}
             title="Account"
             sub="Sign-in email, password and theme. The theme switch is in the menu under your initials."
           >

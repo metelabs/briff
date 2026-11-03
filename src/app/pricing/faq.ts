@@ -5,7 +5,7 @@ export const FAQ: { id: string; q: string; a: string }[] = [
   {
     id: "free",
     q: "Is it free? What does the beta mean?",
-    a: `${PLANS.free.name} is free for good: ${PLANS.free.repos} repos, ${PLANS.free.streams} streams and the whole product. Briff is in beta and billing has not opened yet, so nobody is charged. When it opens, Pro and Team start; your plan stays ${PLANS.free.name} until you choose to upgrade.`,
+    a: `${PLANS.free.name} is free for good: ${PLANS.free.repos} repos, ${PLANS.free.streams} streams, the weekly bulletin and same-day security alerts. Briff is in beta and billing has not opened yet, so nobody is charged. When it opens, Pro and Team start; your plan stays ${PLANS.free.name} until you choose to upgrade.`,
   },
   {
     id: "limits",

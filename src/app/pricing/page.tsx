@@ -19,7 +19,7 @@ import { FAQ } from "./faq";
 export const dynamic = "force-dynamic";
 
 const TITLE = "Pricing · Briff";
-const DESCRIPTION = `Free for ${PLANS.free.repos} repos. Pro and Team for more repos, streams and people. Every plan gets the weekly bulletin and same-day security alerts; self-hosting is free and unlimited.`;
+const DESCRIPTION = `Free for ${PLANS.free.repos} repos. Pro and Team for more repos, streams and people; Team adds Slack and webhook delivery and the audit log export. Every plan gets the weekly bulletin and same-day security alerts; self-hosting is free and unlimited.`;
 
 export function generateMetadata(): Metadata {
   if (!isCloud()) return {};
@@ -51,11 +51,11 @@ export default function PricingPage() {
         <header className="rise mx-auto max-w-[720px] pt-10 pb-6 text-center md:pt-14">
           <p className="text-fg-muted text-[13px]">Pricing</p>
           <h1 className="type-page mt-2 text-balance">
-            Every plan gets the whole product. Plans differ in repos, streams and people.
+            Every plan gets the bulletin and the alerts. Plans differ in repos, streams and people.
           </h1>
           <p className="text-fg-muted mx-auto mt-3 max-w-[56ch] text-[16px]">
-            Pick by how many repos, streams and people you need. Everything else is the same on
-            every plan, Free included.
+            Pick by how many repos, streams and people you need. {PLANS.team.name} also posts to
+            Slack or your own webhooks and exports the audit log.
           </p>
         </header>
 

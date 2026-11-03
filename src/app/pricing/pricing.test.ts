@@ -6,7 +6,7 @@ import { PublicFooter, PublicHeader } from "@/components/landing/public-chrome";
 import { SiteFooter } from "@/components/shell/site-footer";
 import { Accordion } from "@/components/ui/accordion";
 import { resetEnvCache } from "@/lib/env";
-import { PRICED_PLANS } from "@/lib/plans";
+import { PLANS, PRICED_PLANS } from "@/lib/plans";
 
 import robots from "../robots";
 import sitemap from "../sitemap";
@@ -67,6 +67,18 @@ describe("pricing on the hosted service only", () => {
     }
     expect(html).toContain("Unlimited repos");
     expect(html).toContain("10 members");
+  });
+
+  it("lists Team's extras on the Team card only", () => {
+    const html = renderToStaticMarkup(createElement(PricingCards));
+    const cards = html.split("<li style=").slice(1);
+    expect(cards).toHaveLength(3);
+    for (const extra of PLANS.team.extras) {
+      expect(cards[2]).toContain(extra);
+      expect(cards[0]).not.toContain(extra);
+      expect(cards[1]).not.toContain(extra);
+    }
+    expect(cards[2]).toContain('aria-label="Included in Team"');
   });
 
   it("sends paid plans to Settings -> Billing once billing is configured", () => {

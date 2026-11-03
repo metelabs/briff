@@ -6,7 +6,7 @@ import type { LookupFunction } from "node:net";
 import type { Readable } from "node:stream";
 import zlib from "node:zlib";
 
-import { checkUrlSync, resolvePublicAddresses } from "./ssrf-guard";
+import { checkUrlSync, resolvePublicAddresses, type SsrfRejection } from "./ssrf-guard";
 
 // SSRF-safe fetch for the RSS read path. Unlike global fetch, this resolves the
 // hostname, validates every resolved IP against the private/reserved ranges,
@@ -30,6 +30,9 @@ export interface SafeFetchOptions {
   retries?: number;
   retryBaseDelayMs?: number;
   headers?: Record<string, string>;
+  /** POST sends `body` once per attempt and never follows a redirect (the 3xx is returned). */
+  method?: "GET" | "POST";
+  body?: string;
 }
 
 const DEFAULT_TIMEOUT_MS = 12000;
@@ -38,7 +41,15 @@ const DEFAULT_MAX_REDIRECTS = 5;
 const DEFAULT_RETRIES = 2;
 const DEFAULT_RETRY_BASE_DELAY_MS = 200;
 
-class SsrfBlockedError extends Error {}
+export class SsrfBlockedError extends Error {
+  constructor(
+    message: string,
+    /** dns_failed is a lookup that failed, not a refusal; a caller may retry it later. */
+    readonly reason: SsrfRejection
+  ) {
+    super(message);
+  }
+}
 
 function isRetryableStatus(status: number): boolean {
   return status === 429 || (status >= 500 && status <= 599);
@@ -51,7 +62,11 @@ const safeLookup: LookupFunction = (hostname, options, callback) => {
   resolvePublicAddresses(hostname)
     .then((res) => {
       if (!res.ok) {
-        callback(new SsrfBlockedError(`blocked host ${hostname}: ${res.reason}`), "", 0);
+        callback(
+          new SsrfBlockedError(`blocked host ${hostname}: ${res.reason}`, res.reason),
+          "",
+          0
+        );
         return;
       }
       if (typeof options === "object" && options?.all) {
@@ -100,6 +115,8 @@ function requestOnce(
   target: URL,
   opts: Required<Pick<SafeFetchOptions, "timeoutMs" | "maxBytes">> & {
     headers: Record<string, string>;
+    method: "GET" | "POST";
+    body?: string;
   }
 ): Promise<RawResponse> {
   const transport = target.protocol === "https:" ? https : http;
@@ -107,8 +124,14 @@ function requestOnce(
     const req = transport.request(
       target,
       {
-        method: "GET",
-        headers: { "Accept-Encoding": "gzip, deflate, br", ...opts.headers },
+        method: opts.method,
+        headers: {
+          "Accept-Encoding": "gzip, deflate, br",
+          ...(opts.body !== undefined
+            ? { "Content-Length": String(Buffer.byteLength(opts.body)) }
+            : {}),
+          ...opts.headers,
+        },
         lookup: safeLookup,
       },
       (res) => {
@@ -119,7 +142,7 @@ function requestOnce(
         const lastModified = headerValue(res.headers["last-modified"]);
 
         // Don't read the body of a redirect — we only need the Location header.
-        if (location && status >= 300 && status < 400) {
+        if (location && status >= 300 && status < 400 && opts.method === "GET") {
           res.resume();
           resolve({ status, location, contentType, body: "", etag, lastModified });
           return;
@@ -163,8 +186,18 @@ function requestOnce(
     );
 
     req.setTimeout(opts.timeoutMs, () => req.destroy(new Error("safe-fetch: timeout")));
+    // A POST (delivery) also gets a total deadline: the socket timeout above only measures
+    // inactivity, so an endpoint trickling bytes could hold the worker for hours.
+    if (opts.method === "POST") {
+      const deadline = setTimeout(() => {
+        const err = new Error("safe-fetch: timeout");
+        req.destroy(err);
+        reject(err);
+      }, opts.timeoutMs);
+      req.on("close", () => clearTimeout(deadline));
+    }
     req.on("error", reject);
-    req.end();
+    req.end(opts.body);
   });
 }
 
@@ -179,6 +212,8 @@ export async function safeFetch(
     retries = DEFAULT_RETRIES,
     retryBaseDelayMs = DEFAULT_RETRY_BASE_DELAY_MS,
     headers = {},
+    method = "GET",
+    body,
   } = options;
 
   let lastError: unknown = null;
@@ -188,11 +223,11 @@ export async function safeFetch(
       let current = rawUrl;
       for (let hop = 0; hop <= maxRedirects; hop++) {
         const sync = checkUrlSync(current);
-        if (!sync.ok) throw new SsrfBlockedError(`blocked url: ${sync.reason}`);
+        if (!sync.ok) throw new SsrfBlockedError(`blocked url: ${sync.reason}`, sync.reason);
 
-        const res = await requestOnce(sync.url, { timeoutMs, maxBytes, headers });
+        const res = await requestOnce(sync.url, { timeoutMs, maxBytes, headers, method, body });
 
-        if (res.location && res.status >= 300 && res.status < 400) {
+        if (method === "GET" && res.location && res.status >= 300 && res.status < 400) {
           if (hop === maxRedirects) throw new Error("safe-fetch: too many redirects");
           current = new URL(res.location, sync.url).toString();
           continue;

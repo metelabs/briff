@@ -77,6 +77,8 @@ export async function runJob(
       log: jobLog,
       jobId: job.id,
       payload: job.payload,
+      attempt: job.attempts,
+      maxAttempts: job.maxAttempts,
       // Another worker may own the job now: abort instead of racing it.
       heartbeat: async () => {
         await touchHeartbeat();

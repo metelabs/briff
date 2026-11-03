@@ -1,6 +1,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { mapLimit } from "@/lib/concurrency";
 import { withOrg } from "@/lib/db/with-org";
+import { markAlertsDelivered } from "@/lib/delivery-targets/deliver";
 import { renderSecurityAlertEmail, type FirstScanSummary } from "@/lib/email/alert-email";
 import { sendMail, smtpConfig } from "@/lib/email/mailer";
 import { orgRecipients } from "@/lib/email/recipients";
@@ -342,6 +343,7 @@ export async function securityScan({
     alertsNew: 0,
     alertsBacklog: 0,
     alertsDelivered: 0,
+    targetsQueued: 0,
     alertsHeld: 0,
     alertsReopened: 0,
     alertsResolved: 0,
@@ -710,11 +712,17 @@ export async function securityScan({
         counts.emailsSent += sent;
         // Delivered once anyone received it; a total failure keeps the alerts for the next run.
         if (sent > 0) {
-          const res = await scoped.alert.updateMany({
-            where: { id: { in: [...urgent, ...backlog].map((a) => a.id) } },
-            data: { deliveredAt: new Date() },
-          });
-          counts.alertsDelivered += res.count;
+          const res = await markAlertsDelivered(
+            db,
+            org.id,
+            {
+              deliveredIds: [...urgent, ...backlog].map((a) => a.id),
+              urgentIds: urgent.map((a) => a.id),
+            },
+            log
+          );
+          counts.alertsDelivered += res.delivered;
+          counts.targetsQueued += res.queued;
         }
       },
       { maxWait: 10_000, timeout: DELIVERY_LOCK_HOLD_MS }

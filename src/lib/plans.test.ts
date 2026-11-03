@@ -9,6 +9,7 @@ import {
   PLAN_IDS,
   PLANS,
   PRICED_PLANS,
+  teamFeaturePlan,
   type PlanId,
 } from "./plans";
 
@@ -26,24 +27,32 @@ describe("limitsFor", () => {
       repoLimit: 10,
       streamLimit: 2,
       memberLimit: 1,
+      deliveryTargets: 0,
+      auditExport: false,
     });
     expect(limitsFor(row("pro"), cloud)).toEqual({
       plan: "pro",
       repoLimit: 50,
       streamLimit: 10,
       memberLimit: 3,
+      deliveryTargets: 0,
+      auditExport: false,
     });
     expect(limitsFor(row("team"), cloud)).toEqual({
       plan: "team",
       repoLimit: null,
       streamLimit: null,
       memberLimit: 10,
+      deliveryTargets: null,
+      auditExport: true,
     });
     expect(limitsFor(row("unlimited"), cloud)).toEqual({
       plan: "unlimited",
       repoLimit: null,
       streamLimit: null,
       memberLimit: null,
+      deliveryTargets: null,
+      auditExport: true,
     });
   });
 
@@ -70,7 +79,24 @@ describe("limitsFor", () => {
           repoLimit: null,
           streamLimit: null,
           memberLimit: null,
+          deliveryTargets: null,
+          auditExport: true,
         });
+  });
+});
+
+describe("Team features", () => {
+  it("are Team's alone among the sold plans and listed as its extras", () => {
+    expect(PRICED_PLANS.filter((p) => p.deliveryTargets !== 0).map((p) => p.id)).toEqual(["team"]);
+    expect(PRICED_PLANS.filter((p) => p.auditExport).map((p) => p.id)).toEqual(["team"]);
+    expect(PLANS.free.extras).toEqual([]);
+    expect(PLANS.pro.extras).toEqual([]);
+    expect(PLANS.team.extras).toEqual([
+      "Slack and webhook delivery",
+      "Audit log export",
+      "Priority support (1 business day)",
+    ]);
+    expect(teamFeaturePlan().id).toBe("team");
   });
 });
 
