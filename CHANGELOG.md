@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.14.0](https://github.com/metelabs/briff/compare/0.13.0...0.14.0) (2026-11-03)
+
+
+### Features
+
+* **ops:** per-org LLM cost, monthly LLM budget and abuse limits ([#63](https://github.com/metelabs/briff/issues/63)) ([38ad459](https://github.com/metelabs/briff/commit/38ad4596931cd59f7f8ee0a3814a92a48bfe06f2))
+* **team:** Slack and webhook delivery, audit log export, Team extras on pricing ([#62](https://github.com/metelabs/briff/issues/62)) ([30ba871](https://github.com/metelabs/briff/commit/30ba871eb352767d76cc84e817483abfc253fff7))
+
+
+### Bug Fixes
+
+* **alerts:** list every resolved alert the counter counts; GitHub link on public pages ([#59](https://github.com/metelabs/briff/issues/59)) ([d455742](https://github.com/metelabs/briff/commit/d455742a57e3cfe6f05a5e9d774d6d805f8aaa17))
+* **billing:** cut Pro to $4 and Team to $12 a month ([#60](https://github.com/metelabs/briff/issues/60)) ([bc7995f](https://github.com/metelabs/briff/commit/bc7995f895b1b33f91a17b93de6ef75aaaf7dfa9))
+
 ## [0.13.0](https://github.com/metelabs/briff/compare/0.12.0...0.13.0) (2026-11-02)
 
 
