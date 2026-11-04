@@ -27,8 +27,13 @@ export const PADDLE_CATALOG: Readonly<Record<PaddleEnv, readonly CatalogPrice[]>
     { priceId: "pri_01m6f8ct27w63hejyzxa69cdg9", plan: "team", interval: "month" },
     { priceId: "pri_01m6f8ct6a0dme5cygpx6yrajv", plan: "team", interval: "year" },
   ],
-  // Filled in when the live catalog exists; until then live checkout reports "not configured".
-  live: [],
+  // Created 4 Nov 2026 with the same amounts and custom_data as sandbox (docs/BILLING.md).
+  live: [
+    { priceId: "pri_01m6kth1n43hjcd3j1q2j088s5", plan: "pro", interval: "month" },
+    { priceId: "pri_01m6kth1vpxtn5seds4kxza8tr", plan: "pro", interval: "year" },
+    { priceId: "pri_01m6kth22gchft634d7r8kjvga", plan: "team", interval: "month" },
+    { priceId: "pri_01m6kth28h4zggpf14v1479q1v", plan: "team", interval: "year" },
+  ],
 };
 
 export function isPaidPlanId(value: unknown): value is PaidPlanId {

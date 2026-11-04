@@ -259,6 +259,12 @@ created with exactly those amounts in USD:
 3. Set `PADDLE_ENV=live` with the live API key, client token and a live notification destination
    secret.
 
+The live catalog was created on 4 Nov 2026 (products `pro_01m6kth16z45rfsxxmcrgkwv2k` Pro and
+`pro_01m6kth1fpmn2fsgtzaxzxp6a1` Team, the four price ids in `PADDLE_CATALOG.live`, a client
+token and the `Briff production` notification destination). A price change in live follows the
+sandbox rule: create the new price, archive the old one, replace the id here; never edit the
+amount of a price that has subscriptions.
+
 ## Price history
 
 - **3 Nov 2026:** Pro $12 → $4 a month ($120 → $40 a year), Team $39 → $12 a month ($390 → $120

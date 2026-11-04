@@ -223,19 +223,23 @@ describe("prorationMode", () => {
 });
 
 describe("catalog, money and the signed org link", () => {
-  it("has every sandbox price and no live ones yet", () => {
+  it("has every sandbox and live price, each id once", () => {
     expect(catalogComplete("sandbox")).toBe(true);
-    expect(catalogComplete("live")).toBe(false);
+    expect(catalogComplete("live")).toBe(true);
     expect(new Set(PADDLE_CATALOG.sandbox.map((p) => p.priceId)).size).toBe(4);
+    expect(new Set(PADDLE_CATALOG.live.map((p) => p.priceId)).size).toBe(4);
+    expect(PADDLE_CATALOG.live.every((p) => p.priceId.startsWith("pri_"))).toBe(true);
     expect(priceFor("sandbox", "team", "year")?.priceId).toBe("pri_01m6f8ct6a0dme5cygpx6yrajv");
+    expect(priceFor("live", "pro", "month")?.priceId).toBe("pri_01m6kth1n43hjcd3j1q2j088s5");
   });
 
   it("tells a subscription on an archived price of its plan from one on the list price", () => {
     const proMonth = { plan: "pro", interval: "month" } as const;
     expect(onArchivedPrice("sandbox", proMonth, "pri_01m6c6eh8vp89cnpqw7vpv2krh")).toBe(true);
     expect(onArchivedPrice("sandbox", proMonth, "pri_01m6f8cst11wvmmvpcw6k6q9xa")).toBe(false);
-    // No live catalog yet: nothing to move to.
-    expect(onArchivedPrice("live", proMonth, "pri_01m6c6eh8vp89cnpqw7vpv2krh")).toBe(false);
+    // Live has its own ids: a sandbox id there is "another price", the live id is current.
+    expect(onArchivedPrice("live", proMonth, "pri_01m6f8cst11wvmmvpcw6k6q9xa")).toBe(true);
+    expect(onArchivedPrice("live", proMonth, "pri_01m6kth1n43hjcd3j1q2j088s5")).toBe(false);
   });
 
   it("formats lowest-unit amounts, zero-decimal currencies included", () => {
