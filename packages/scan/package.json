@@ -1,6 +1,6 @@
 {
   "name": "briff-scan",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Briff scanner: reads lockfiles and runtime files and sends package names, installed versions and runtimes to Briff. No source code leaves the machine.",
   "keywords": [
     "briff",

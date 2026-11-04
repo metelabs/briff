@@ -143,7 +143,7 @@ instance's URL):
 
 <!-- prettier-ignore -->
 ```yaml
-# Briff scan (briff-scan 0.1.1, pinned to @0)
+# Briff scan (briff-scan 0.2.0, pinned to @0)
 name: briff
 on:
   push: { branches: [main] }
