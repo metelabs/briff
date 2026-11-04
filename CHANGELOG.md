@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.1](https://github.com/metelabs/briff/compare/0.15.0...0.15.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* **billing:** calm checkout completion; deflake GitHub installation-limit test ([#68](https://github.com/metelabs/briff/issues/68)) ([5130087](https://github.com/metelabs/briff/commit/5130087ae240cdaf534ddc0a0391150c5fcdf722))
+
 ## [0.15.0](https://github.com/metelabs/briff/compare/0.14.0...0.15.0) (2026-11-04)
 
 
