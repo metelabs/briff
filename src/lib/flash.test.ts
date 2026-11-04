@@ -81,12 +81,18 @@ describe("flashStep", () => {
 });
 
 describe("checkout flash", () => {
-  it("confirms the payment on the billing page and strips the param", () => {
-    expect(flashFor("/settings/billing", q("checkout=success"))).toEqual({
+  it("names the plan once the subscription landed and strips the param", () => {
+    expect(flashFor("/settings/billing", q("upgraded=pro"))).toEqual({
       kind: "ok",
-      message: "Payment received, your plan updates in a moment.",
-      strip: ["checkout"],
+      message: "You're on Pro. Thanks!",
+      strip: ["upgraded"],
     });
-    expect(flashFor("/settings", q("checkout=success"))).toBeNull();
+    expect(flashFor("/settings/billing", q("upgraded=team"))?.message).toBe(
+      "You're on Team. Thanks!"
+    );
+    expect(flashFor("/settings/billing", q("upgraded=unlimited"))).toBeNull();
+    expect(flashFor("/settings", q("upgraded=pro"))).toBeNull();
+    // Paddle's old success redirect no longer carries a message.
+    expect(flashFor("/settings/billing", q("checkout=success"))).toBeNull();
   });
 });

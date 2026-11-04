@@ -2,6 +2,9 @@
 // `<FlashToast />` shows the message as a toast once and strips these params from the URL,
 // so a refresh does not repeat it.
 
+import { PAID_PLAN_IDS } from "@/lib/billing/catalog";
+import { PLANS } from "@/lib/plans";
+
 export type FlashKind = "ok" | "error";
 
 export interface Flash {
@@ -49,12 +52,13 @@ const RULES: Rule[] = [
     value: "changed",
     flash: () => ({ kind: "ok", message: "Password changed. Other devices were signed out." }),
   },
-  {
+  // The checkout page navigates here once the webhook stored the subscription.
+  ...PAID_PLAN_IDS.map((plan): Rule => ({
     path: "/settings/billing",
-    param: "checkout",
-    value: "success",
-    flash: () => ({ kind: "ok", message: "Payment received, your plan updates in a moment." }),
-  },
+    param: "upgraded",
+    value: plan,
+    flash: () => ({ kind: "ok", message: `You're on ${PLANS[plan].name}. Thanks!` }),
+  })),
   {
     path: "/login",
     param: "reset",

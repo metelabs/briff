@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 
 import { useToast } from "@/components/ui/toast";
@@ -10,7 +10,6 @@ import { flashStep, strippedUrl } from "@/lib/flash";
 export function FlashToast() {
   const pathname = usePathname();
   const params = useSearchParams();
-  const router = useRouter();
   const toast = useToast();
   const shown = useRef<string | null>(null);
 
@@ -19,10 +18,14 @@ export function FlashToast() {
     shown.current = step.key;
     if (!step.show) return;
     toast(step.show.message, step.show.kind);
-    router.replace(strippedUrl(pathname, params, step.show.strip, window.location.hash), {
-      scroll: false,
-    });
-  }, [pathname, params, router, toast]);
+    // The native history API updates the URL without asking the server for the page again
+    // (router.replace would re-render it right after the navigation that brought the flash).
+    window.history.replaceState(
+      null,
+      "",
+      strippedUrl(pathname, params, step.show.strip, window.location.hash)
+    );
+  }, [pathname, params, toast]);
 
   return null;
 }

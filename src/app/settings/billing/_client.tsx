@@ -3,14 +3,7 @@
 import type { Paddle } from "@paddle/paddle-js";
 import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  useEffect,
-  useRef,
-  useState,
-  useTransition,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
+import { useRef, useState, useTransition, type CSSProperties, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Callout } from "@/components/ui/callout";
@@ -33,6 +26,8 @@ import {
   resumeSubscriptionAction,
   startCheckoutAction,
 } from "./actions";
+import { CheckoutWait } from "./checkout/_wait";
+import { chargedAmount } from "./checkout/flow";
 import { checkoutHref, loadPaddle, paddleTheme } from "./paddle";
 
 const PAID: readonly PaidPlanId[] = ["pro", "team"];
@@ -40,9 +35,6 @@ const INTERVALS = [
   { value: "month", label: "Monthly" },
   { value: "year", label: "Yearly" },
 ] as const;
-/** After checkout the webhook flips the plan; the page reloads its data until then. */
-const POLL_MS = 3000;
-const POLL_FOR_MS = 60_000;
 
 function longDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-GB", {
@@ -131,28 +123,6 @@ function PlanChoice({
   );
 }
 
-/** Reloads the server data every few seconds while `active`, for at most a minute. */
-function usePoll(active: boolean, onTimeout: () => void) {
-  const router = useRouter();
-  const timeout = useRef(onTimeout);
-  useEffect(() => {
-    timeout.current = onTimeout;
-  });
-  useEffect(() => {
-    if (!active) return;
-    const started = Date.now();
-    const id = window.setInterval(() => {
-      if (Date.now() - started > POLL_FOR_MS) {
-        window.clearInterval(id);
-        timeout.current();
-        return;
-      }
-      router.refresh();
-    }, POLL_MS);
-    return () => window.clearInterval(id);
-  }, [active, router]);
-}
-
 export interface CheckoutConfig {
   env: PaddleEnv;
   clientToken: string;
@@ -170,12 +140,10 @@ export function CheckoutPanel({
   config,
   plans,
   preselect,
-  awaitingCheckout,
 }: {
   config: CheckoutConfig;
   plans: readonly PaidPlanId[];
   preselect: { plan: PaidPlanId; interval: BillingInterval };
-  awaitingCheckout: boolean;
 }) {
   const toast = useToast();
   const router = useRouter();
@@ -183,16 +151,16 @@ export function CheckoutPanel({
   const [plan, setPlan] = useState<PaidPlanId>(
     plans.includes(preselect.plan) ? preselect.plan : (plans[0] ?? "pro")
   );
-  // Kept from the first render: FlashToast strips ?checkout=success from the URL.
-  const [waiting, setWaiting] = useState(awaitingCheckout);
-  const [timedOut, setTimedOut] = useState(false);
   const [pending, start] = useTransition();
   const paddle = useRef<Promise<Paddle | undefined> | null>(null);
-
-  usePoll(waiting, () => {
-    setWaiting(false);
-    setTimedOut(true);
-  });
+  // The terms of the overlay opened last: Paddle.js keeps the first listener for the page.
+  const opened = useRef<{ plan: PaidPlanId; interval: BillingInterval } | null>(null);
+  // The terms and amount Paddle completed; the panel then waits for the webhook.
+  const [completed, setCompleted] = useState<{
+    plan: PaidPlanId;
+    interval: BillingInterval;
+    amount: string;
+  } | null>(null);
 
   function open() {
     if (config.checkout === "inline") {
@@ -202,14 +170,18 @@ export function CheckoutPanel({
     start(async () => {
       const res = await startCheckoutAction({ plan, interval });
       if (!res.ok) return toast(res.message, "error");
+      const terms = { plan, interval };
       if (config.fake) {
-        return toast(
-          "BRIFF_PADDLE_FAKE is on: checkout needs a real Paddle client token.",
-          "error"
-        );
+        // No Paddle.js without a client token: go straight to what checkout.completed does.
+        setCompleted({ ...terms, amount: chargedAmount(undefined, terms) });
+        return;
       }
+      opened.current = terms;
       paddle.current ??= loadPaddle(config, (event) => {
-        if (event.name === "checkout.completed") setWaiting(true);
+        const done = opened.current;
+        if (event.name !== "checkout.completed" || !done) return;
+        setCompleted((prev) => prev ?? { ...done, amount: chargedAmount(event.data, done) });
+        void paddle.current?.then((p) => p?.Checkout.close());
       });
       const instance = await paddle.current.catch(() => {
         paddle.current = null;
@@ -226,13 +198,19 @@ export function CheckoutPanel({
           variant: "one-page",
           theme: paddleTheme(),
           allowLogout: false,
-          successUrl: `${window.location.origin}/settings/billing?checkout=success`,
         },
       });
     });
   }
 
   const upgradeLabel = `Upgrade to ${PLANS[plan].name}`;
+  if (completed) {
+    return (
+      <Panel index={2}>
+        <CheckoutWait {...completed} />
+      </Panel>
+    );
+  }
   return (
     <Panel index={2}>
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -249,23 +227,9 @@ export function CheckoutPanel({
           options={INTERVALS}
         />
       </div>
-      {waiting && (
-        <Callout
-          tone="ok"
-          className="mt-4"
-          message="Payment received. Your plan updates in a moment, as soon as Paddle confirms it."
-        />
-      )}
-      {timedOut && (
-        <Callout
-          tone="warn"
-          className="mt-4"
-          message="Paddle has not confirmed the payment yet. Reload this page in a minute; your plan changes as soon as it does."
-        />
-      )}
       <PlanChoice value={plan} onChange={setPlan} interval={interval} plans={plans} />
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <Button variant="primary" onClick={open} disabled={waiting || pending}>
+        <Button variant="primary" onClick={open} disabled={pending}>
           {upgradeLabel}
         </Button>
         <span className="text-fg-muted text-[12.5px]">

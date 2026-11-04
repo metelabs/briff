@@ -294,7 +294,6 @@ export default async function BillingPage({
             }}
             plans={offer.plans}
             preselect={preselect}
-            awaitingCheckout={one(params.checkout) === "success"}
           />
         ) : null}
 

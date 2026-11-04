@@ -4,12 +4,14 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { getBillingApi } from "@/lib/billing/api";
-import { BILLING_INTERVALS, PAID_PLAN_IDS } from "@/lib/billing/catalog";
+import { BILLING_INTERVALS, isPaidPlanId, PAID_PLAN_IDS } from "@/lib/billing/catalog";
 import { billingConfig } from "@/lib/billing/config";
 import * as manage from "@/lib/billing/manage";
 import { requireOrgContext, type OrgContext } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { getEnv } from "@/lib/env";
+
+import type { CheckoutStatus } from "./checkout/wait";
 
 // Settings -> Billing. Thin wrappers: src/lib/billing/manage.ts checks the role and the
 // subscription's org for every call.
@@ -106,4 +108,14 @@ export async function paymentMethodUrlAction() {
   const s = setup(ctx);
   if (!s) return NOT_CONFIGURED;
   return manage.paymentMethodUrl(getDb(), s.api, s.actor);
+}
+
+/**
+ * Polled after Paddle's `checkout.completed` (checkout/wait.ts): ready once the webhook stored
+ * the session org's subscription. Reads only that org; nothing comes from the browser.
+ */
+export async function checkoutStatusAction(): Promise<CheckoutStatus> {
+  const ctx = await requireOrgContext();
+  const live = await manage.liveSubscription(getDb(), ctx.orgId);
+  return live && isPaidPlanId(live.plan) ? { ready: true, plan: live.plan } : { ready: false };
 }

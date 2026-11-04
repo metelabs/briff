@@ -1,9 +1,9 @@
-import type { CheckoutOpenOptions } from "@paddle/paddle-js";
+import type { CheckoutEventsData, CheckoutOpenOptions } from "@paddle/paddle-js";
 import { describe, expect, it } from "vitest";
 
 import { lastPaid } from "@/lib/billing/labels";
 
-import { LOAD_FAILED, startInlineCheckout, type InlineCheckoutDeps } from "./flow";
+import { chargedAmount, LOAD_FAILED, startInlineCheckout, type InlineCheckoutDeps } from "./flow";
 
 const SESSION = {
   priceId: "pri_pro_month",
@@ -19,7 +19,6 @@ function deps(over: Partial<InlineCheckoutDeps> = {}) {
     load: async () => (loads++, { Checkout: { open: (o) => void opened.push(o) } }),
     noFrame: false,
     theme: "dark",
-    origin: "https://app.example",
     isActive: () => true,
     ...over,
   };
@@ -41,7 +40,6 @@ describe("startInlineCheckout", () => {
           frameTarget: "paddle-checkout-frame",
           frameInitialHeight: 450,
           allowLogout: false,
-          successUrl: "https://app.example/settings/billing?checkout=success",
         }),
       },
     ]);
@@ -87,6 +85,21 @@ describe("startInlineCheckout", () => {
     });
     expect(await startInlineCheckout(d)).toBeNull();
     expect(opened).toEqual([]);
+  });
+
+  it("leaves the redirect to the page: Paddle gets no successUrl", async () => {
+    const { d, opened } = deps();
+    await startInlineCheckout(d);
+    expect(opened[0].settings).not.toHaveProperty("successUrl");
+  });
+});
+
+describe("chargedAmount", () => {
+  it("shows what Paddle charged, else the plan's list price", () => {
+    const data = { totals: { total: 4.8 }, currency_code: "EUR" } as CheckoutEventsData;
+    expect(chargedAmount(data, { plan: "pro", interval: "month" })).toBe("€4.80");
+    expect(chargedAmount(undefined, { plan: "pro", interval: "month" })).toBe("$4");
+    expect(chargedAmount(undefined, { plan: "team", interval: "year" })).toBe("$120");
   });
 });
 
