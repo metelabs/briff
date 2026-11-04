@@ -12,6 +12,7 @@ import { webhookSignature } from "@/lib/github/signature";
 import { MAX_WEBHOOK_BYTES } from "@/lib/github/webhook";
 
 import { POST } from "./route";
+import { testInstallationId } from "@/test/github-ids";
 
 const url = process.env.TEST_DATABASE_URL;
 const SECRET = "webhook-secret-for-tests";
@@ -22,7 +23,7 @@ const push = JSON.parse(
 describe.skipIf(!url)("POST /api/github/webhook", () => {
   const saved = { ...process.env };
   const suffix = Date.now().toString(36);
-  const installationId = `5${Date.now()}`.slice(0, 12);
+  const installationId = testInstallationId();
   let orgId = "";
 
   const deliver = (event: string, body: unknown, signature?: string) => {

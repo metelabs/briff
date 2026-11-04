@@ -7,6 +7,7 @@ import { TENANT_MODELS, withOrg } from "@/lib/db/with-org";
 import { createOrgForUser } from "@/lib/org";
 
 import { deleteOrg, orgExportStream } from "./org-data";
+import { testInstallationId } from "@/test/github-ids";
 
 const url = process.env.TEST_DATABASE_URL;
 
@@ -129,7 +130,7 @@ describe.skipIf(!url)("org data export and deletion against Postgres", () => {
     await scoped.githubInstallation.create({
       data: {
         orgId,
-        installationId: `${Date.now()}${Math.floor(Math.random() * 1e6)}`,
+        installationId: testInstallationId(),
         accountLogin: name,
         accountType: "User",
       },

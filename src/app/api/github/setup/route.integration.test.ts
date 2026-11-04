@@ -8,6 +8,7 @@ import { getDb } from "@/lib/db/client";
 import { resetEnvCache } from "@/lib/env";
 import { linkInstallation } from "@/lib/github/installations";
 import { webhookSignature } from "@/lib/github/signature";
+import { testInstallationId } from "@/test/github-ids";
 
 const session = vi.hoisted(() => ({ orgId: "" }));
 vi.mock("@/lib/auth/session", () => ({
@@ -34,7 +35,7 @@ const reposAdded = JSON.parse(
 describe.skipIf(!url)("repo selection change on a linked installation", () => {
   const saved = { ...process.env };
   const suffix = Date.now().toString(36);
-  const installationId = `6${Date.now()}`.slice(0, 12);
+  const installationId = testInstallationId();
 
   const pending = () =>
     getDb().job.findMany({
