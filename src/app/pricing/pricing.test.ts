@@ -96,8 +96,12 @@ describe("pricing on the hosted service only", () => {
     vi.stubEnv("PADDLE_CLIENT_TOKEN", "test_synthetic");
     resetEnvCache();
     expect(renderToStaticMarkup(PricingPage())).not.toContain("Free during the beta");
-    // Live keys without live price ids: checkout is not available, so nothing is offered.
+    // The live catalog is complete too, so live keys offer checkout as well.
     vi.stubEnv("PADDLE_ENV", "live");
+    resetEnvCache();
+    expect(renderToStaticMarkup(PricingPage())).not.toContain("Free during the beta");
+    // Without the keys nothing is offered whatever the catalog says.
+    vi.stubEnv("PADDLE_API_KEY", "");
     resetEnvCache();
     expect(renderToStaticMarkup(PricingPage())).toContain("Free during the beta");
   });
