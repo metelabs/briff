@@ -25,6 +25,7 @@ import {
 } from "./installations";
 import { planAllowance } from "@/lib/plans";
 import { scanInstallation, scannedTreeEntries } from "./scan";
+import { testInstallationId } from "@/test/github-ids";
 
 // GitHub responses recorded from the public api.github.com for vercel/ms (repo, branch,
 // recursive tree, the scanned blobs); the token and the installation's repo
@@ -134,7 +135,7 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
         source: "local" as const,
       })),
     });
-    const installationId = `7${Date.now()}`.slice(0, 12);
+    const installationId = testInstallationId();
     await linkInstallation(db, {
       orgId: org.id,
       installationId,
@@ -181,7 +182,7 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
 
     await linkInstallation(db, {
       orgId: appOrg,
-      installationId: `9${Date.now()}`.slice(0, 12),
+      installationId: testInstallationId(),
       accountLogin: "vercel",
       accountType: "Organization",
       suspendedAt: null,
@@ -231,7 +232,7 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
     // The Action uploaded vercel/ms into cliOrg; installing the app there reuses that record.
     await linkInstallation(db, {
       orgId: cliOrg,
-      installationId: `8${Date.now()}`.slice(0, 12),
+      installationId: testInstallationId(),
       accountLogin: "vercel",
       accountType: "Organization",
       suspendedAt: null,
@@ -256,8 +257,8 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
     expect(await withOrg(db, cliOrg).repo.count({ where: { name: "vercel/ms" } })).toBe(0);
   });
 
-  async function freshInstallation(orgId: string, prefix: string): Promise<string> {
-    const installationId = `${prefix}${Date.now()}`.slice(0, 12);
+  async function freshInstallation(orgId: string): Promise<string> {
+    const installationId = testInstallationId();
     await linkInstallation(db, {
       orgId,
       installationId,
@@ -280,7 +281,7 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
   it("stores an empty snapshot when a known repo no longer has scanned files", async () => {
     const orgId = (await db.org.create({ data: { name: `empty-${suffix}` } })).id;
     orgs.push(orgId);
-    const installationId = await freshInstallation(orgId, "6");
+    const installationId = await freshInstallation(orgId);
     const run = (http: Http) =>
       scanInstallation({
         db,
@@ -311,7 +312,7 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
   it("keeps what it read and defers the rest to GitHub's reset time on a rate limit", async () => {
     const orgId = (await db.org.create({ data: { name: `rl-${suffix}` } })).id;
     orgs.push(orgId);
-    const installationId = await freshInstallation(orgId, "3");
+    const installationId = await freshInstallation(orgId);
     const reset = Math.floor(Date.now() / 1000) + 3600;
     const res = await scanInstallation({
       db,
@@ -342,7 +343,7 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
   it("keeps the stored snapshot when a file fails to parse", async () => {
     const orgId = (await db.org.create({ data: { name: `partial-${suffix}` } })).id;
     orgs.push(orgId);
-    const installationId = await freshInstallation(orgId, "4");
+    const installationId = await freshInstallation(orgId);
     const run = (http: Http) =>
       scanInstallation({
         db,
@@ -366,7 +367,7 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
   it("splits a deferred list longer than one payload allows", async () => {
     const orgId = (await db.org.create({ data: { name: `many-${suffix}` } })).id;
     orgs.push(orgId);
-    const installationId = await freshInstallation(orgId, "1");
+    const installationId = await freshInstallation(orgId);
     const many = Array.from({ length: 1500 }, (_, i) => ({ ...repo, full_name: `acme/r${i}` }));
     await scanInstallation({
       db,
@@ -402,7 +403,7 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
   it("skips an inaccessible repo in an explicit list and scans the rest", async () => {
     const orgId = (await db.org.create({ data: { name: `gone-${suffix}` } })).id;
     orgs.push(orgId);
-    const installationId = await freshInstallation(orgId, "9");
+    const installationId = await freshInstallation(orgId);
     const res = await scanInstallation({
       db,
       http: fakeGithub([]),
@@ -419,7 +420,7 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
   it("queues a bounded retry for repos that failed", async () => {
     const orgId = (await db.org.create({ data: { name: `retry-${suffix}` } })).id;
     orgs.push(orgId);
-    const installationId = await freshInstallation(orgId, "2");
+    const installationId = await freshInstallation(orgId);
     const failing = fakeGithub([], (p) =>
       p.includes("/git/trees/") ? new Response("{}", { status: 502 }) : null
     );
@@ -447,7 +448,7 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
 
   it("links an installation to one org only", async () => {
     const [cliOrg, appOrg] = orgs;
-    const installationId = `7${Date.now()}`.slice(0, 12);
+    const installationId = testInstallationId();
     const args = { installationId, accountLogin: "x", accountType: "User", suspendedAt: null };
     expect(await linkInstallation(db, { ...args, orgId: appOrg })).toBe("linked");
     expect(await linkInstallation(db, { ...args, orgId: appOrg })).toBe("already-linked");
@@ -457,20 +458,24 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
   it("refuses a new installation past the plan's limit, never a relink", async () => {
     const orgId = (await db.org.create({ data: { name: "install-limit", plan: "free" } })).id;
     try {
-      const base = `8${Date.now()}`.slice(0, 11);
+      const [first, second, third] = [
+        testInstallationId(),
+        testInstallationId(),
+        testInstallationId(),
+      ];
       const args = { accountLogin: "x", accountType: "User", suspendedAt: null, orgId };
       expect(planAllowance("free", "githubInstallations", { cloud: true })).toBe(1);
-      expect(await linkInstallation(db, { ...args, installationId: `${base}1`, cloud: true })).toBe(
+      expect(await linkInstallation(db, { ...args, installationId: first, cloud: true })).toBe(
         "linked"
       );
       // Two parallel setups for new installations: the lock lets neither pass the limit.
       expect(
         await Promise.all([
-          linkInstallation(db, { ...args, installationId: `${base}2`, cloud: true }),
-          linkInstallation(db, { ...args, installationId: `${base}3`, cloud: true }),
+          linkInstallation(db, { ...args, installationId: second, cloud: true }),
+          linkInstallation(db, { ...args, installationId: third, cloud: true }),
         ])
       ).toEqual(["at-limit", "at-limit"]);
-      expect(await linkInstallation(db, { ...args, installationId: `${base}1`, cloud: true })).toBe(
+      expect(await linkInstallation(db, { ...args, installationId: first, cloud: true })).toBe(
         "already-linked"
       );
       expect(await installationCapacity(db, orgId, true)).toEqual({
@@ -480,9 +485,9 @@ describe.skipIf(!url)("GitHub App scan against Postgres", () => {
       });
       expect(await installationCapacity(db, orgId, false)).toMatchObject({ limit: null });
       // Self-hosted: no limit; and a plan raised under the lock counts at once.
-      expect(await linkInstallation(db, { ...args, installationId: `${base}2` })).toBe("linked");
+      expect(await linkInstallation(db, { ...args, installationId: second })).toBe("linked");
       await db.org.update({ where: { id: orgId }, data: { plan: "pro" } });
-      expect(await linkInstallation(db, { ...args, installationId: `${base}3`, cloud: true })).toBe(
+      expect(await linkInstallation(db, { ...args, installationId: third, cloud: true })).toBe(
         "linked"
       );
     } finally {

@@ -4,6 +4,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
+import { testInstallationId } from "@/test/github-ids";
 
 // Runs only when TEST_DATABASE_URL points at a migrated, disposable database.
 const url = process.env.TEST_DATABASE_URL;
@@ -118,7 +119,7 @@ describe.skipIf(!url)("backlog review actions against Postgres", () => {
 describe.skipIf(!url)("re-check action against Postgres", () => {
   const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: url ?? "" }) });
   const suffix = Date.now().toString(36);
-  const installationId = `9${Date.now()}`;
+  const installationId = testInstallationId();
   let orgId = "";
   let scannerOrgId = "";
   let emptyOrgId = "";

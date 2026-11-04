@@ -49,8 +49,17 @@ not code.
    set by the instance admin. Billing is managed outside Paddle; contact support to change it."
    and only "Compare plans". An admin-set Free (limit overrides only) may still buy a plan,
    which then belongs to billing (`planSource = paddle`).
-2. Paddle redirects to `/settings/billing?checkout=success` ("Payment received, your plan
-   updates in a moment") and the page reloads its data every 3 s for up to 60 s.
+2. On Paddle.js's `checkout.completed` event (inline frame or overlay alike; no `successUrl` is
+   passed, so Paddle never navigates on its own) the checkout gives way to one "Setting up your
+   subscription…" panel with the plan and the amount charged (`CheckoutWait`,
+   `src/app/settings/billing/checkout/`). It polls `checkoutStatusAction` every 2 s for up to
+   60 s (`waitForSubscription`, `wait.ts`) until the webhook has stored the org's subscription,
+   then navigates once to `/settings/billing?upgraded=pro`, whose flash says "You're on Pro.
+   Thanks!". Nothing refreshes the page while it waits. Past 60 s the panel stays and says Paddle
+   has not confirmed yet, that the card was charged once and the plan appears on its own, with
+   "Back to Billing"; it never reads as a failed payment. With `BRIFF_PADDLE_FAKE` the inline
+   placeholder has a "Simulate checkout.completed" button (the overlay's Upgrade does the same),
+   and the plan lands when a signed webhook fixture is POSTed to `/api/billing/paddle`.
 3. Paddle sends `transaction.completed` and `subscription.created` to
    `POST /api/billing/paddle`. The webhook stores the subscription (`Subscription`, a tenant
    table) and sets `Org.plan` from the price's `custom_data.plan` (fallback: the catalog).
@@ -234,7 +243,7 @@ Test cards (any future expiry, any CVC):
 | `4000 0027 6000 3184` | First payment succeeds, renewals fail (dunning) |
 
 End to end: with the sandbox keys set, open Settings → Billing as an owner, Upgrade to Pro, pay
-with `4242 4242 4242 4242`. The page lands on `?checkout=success` and shows Pro within seconds;
+with `4242 4242 4242 4242`. "Setting up your subscription…" turns into Billing showing Pro within seconds;
 the notification log shows 200 for `transaction.completed` and `subscription.created`. Cancel,
 resume and change plan from the page; use **Developer tools → Simulations** for `past_due` and
 `canceled`. Locally, `BRIFF_PADDLE_FAKE=true` renders the page, the change-plan preview, the
