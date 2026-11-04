@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.0](https://github.com/metelabs/briff/compare/0.14.0...0.15.0) (2026-11-04)
+
+
+### Features
+
+* **billing:** live Paddle catalog price ids ([#64](https://github.com/metelabs/briff/issues/64)) ([3a30b34](https://github.com/metelabs/briff/commit/3a30b3495f92895b9fb71358438fd6021e7feee0))
+
 ## [0.14.0](https://github.com/metelabs/briff/compare/0.13.0...0.14.0) (2026-11-03)
 
 
