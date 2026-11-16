@@ -27,10 +27,12 @@ import { cn } from "@/lib/utils";
 import { isoWeekLabel } from "@/pipeline/bulletin";
 import {
   ago,
+  bulletinStreams,
   countdown,
   hasTrend,
   HEALTH_ORDER,
   streamColumns,
+  streamSchedule,
   type ActivityKind,
   type HealthBucket,
 } from "@/pipeline/home";
@@ -201,7 +203,7 @@ function StatTile({
 function TopStrip({ data, now, scopeName }: { data: HomeData; now: Date; scopeName: string }) {
   const { alerts, repos } = data;
   // Streams that get a Monday bulletin: repos, and the bulletin not turned off.
-  const withRepos = data.streams.filter((s) => s.repoCount > 0 && s.weeklyBulletin);
+  const withRepos = bulletinStreams(data.streams);
   const delta =
     alerts.delta === 0 ? (
       "same as last week"
@@ -301,7 +303,7 @@ function TopStrip({ data, now, scopeName }: { data: HomeData; now: Date; scopeNa
 
 function FirstMonday({ data, now }: { data: HomeData; now: Date }) {
   // Streams that get a Monday bulletin: repos, and the bulletin not turned off.
-  const withRepos = data.streams.filter((s) => s.repoCount > 0 && s.weeklyBulletin);
+  const withRepos = bulletinStreams(data.streams);
   return (
     <section aria-labelledby="first" className="rise [--i:2]">
       <SectionHeader id="first" title="Your first bulletin" />
@@ -421,7 +423,7 @@ function StreamEmpty({ stream }: { stream: HomeStream }) {
             Pick repos
           </Link>
         </>
-      ) : stream.weeklyBulletin ? (
+      ) : streamSchedule(stream) === "scheduled" ? (
         "No bulletin yet. The first one arrives Monday 04:00 UTC."
       ) : (
         "Security alerts only: this stream sends no Monday bulletin."
@@ -434,11 +436,11 @@ function StreamFoot({ stream, next }: { stream: HomeStream; next: Date }) {
   return (
     <div className="border-line mt-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t pt-3 text-[12.5px]">
       <span className="text-fg-muted">
-        {stream.repoCount > 0 && stream.weeklyBulletin ? (
+        {streamSchedule(stream) === "scheduled" ? (
           <>
             Next <b className="text-fg font-medium">{shortDate(next)}</b> 04:00 UTC
           </>
-        ) : stream.repoCount > 0 ? (
+        ) : streamSchedule(stream) === "security-only" ? (
           "Security alerts only"
         ) : (
           "Not scheduled"

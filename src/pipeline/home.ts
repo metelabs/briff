@@ -356,3 +356,18 @@ export function ringArcs<K extends string>(
     return arc;
   });
 }
+
+/** A stream's Monday bulletin on Home: scheduled, turned off (security alerts only), or no repos. */
+export type StreamSchedule = "scheduled" | "security-only" | "no-repos";
+
+export function streamSchedule(s: { repoCount: number; weeklyBulletin: boolean }): StreamSchedule {
+  if (s.repoCount === 0) return "no-repos";
+  return s.weeklyBulletin ? "scheduled" : "security-only";
+}
+
+/** Streams that get a Monday bulletin (the "Next bulletin" tile and the first-bulletin card). */
+export function bulletinStreams<T extends { repoCount: number; weeklyBulletin: boolean }>(
+  streams: readonly T[]
+): T[] {
+  return streams.filter((s) => streamSchedule(s) === "scheduled");
+}

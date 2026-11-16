@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  bulletinStreams,
+  streamSchedule,
   ago,
   attentionSeries,
   burstsOf,
@@ -287,5 +289,23 @@ describe("activity", () => {
     expect(merged.slice(0, 5).map((e) => e.key)).toEqual(["a7", "a6", "a5", "a4", "b0"]);
     expect(merged.slice(5, 7).map((e) => e.key)).toEqual(["a3", "b1"]);
     expect(merged.map((e) => e.key)).not.toContain("c0");
+  });
+});
+
+describe("stream schedule on Home", () => {
+  const weekly = { name: "Weekly", repoCount: 2, weeklyBulletin: true };
+  const securityOnly = { name: "Ops", repoCount: 1, weeklyBulletin: false };
+  const empty = { name: "Later", repoCount: 0, weeklyBulletin: true };
+
+  it("tells scheduled, security-only and empty streams apart", () => {
+    expect(streamSchedule(weekly)).toBe("scheduled");
+    expect(streamSchedule(securityOnly)).toBe("security-only");
+    expect(streamSchedule(empty)).toBe("no-repos");
+    expect(streamSchedule({ repoCount: 0, weeklyBulletin: false })).toBe("no-repos");
+  });
+
+  it("promises a Monday bulletin only for streams that send one", () => {
+    expect(bulletinStreams([weekly, securityOnly, empty]).map((s) => s.name)).toEqual(["Weekly"]);
+    expect(bulletinStreams([securityOnly])).toEqual([]);
   });
 });
