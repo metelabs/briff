@@ -223,6 +223,32 @@ describe.skipIf(!url)("manual stacks against Postgres", () => {
     });
   });
 
+  it("suggests only names a public registry confirmed, never another org's private ones", async () => {
+    const { suggestPackagesAction } = await import("@/app/stack/actions");
+    const prefix = `sugg-${suffix}`;
+    const [pub, priv] = await Promise.all([
+      db.package.create({
+        data: { ecosystem: "npm", name: `${prefix}-public`, latestVersion: "1.0.0" },
+      }),
+      db.package.create({ data: { ecosystem: "npm", name: `${prefix}-private` } }),
+    ]);
+    const foreign = await withOrg(db, otherOrgId).repo.create({
+      data: { orgId: otherOrgId, name: "secret", source: "local" },
+    });
+    await withOrg(db, otherOrgId).dependency.create({
+      data: {
+        orgId: otherOrgId,
+        repoId: foreign.id,
+        packageId: priv.id,
+        installedVersion: "1.0.0",
+      },
+    });
+    as(ownerId, orgId);
+    const res = await suggestPackagesAction("npm", prefix);
+    expect(res.known).toEqual([pub.name]);
+    await db.package.deleteMany({ where: { id: { in: [pub.id, priv.id] } } });
+  });
+
   it("only owners save or delete, and another org's stack is not found", async () => {
     as(memberId, orgId);
     expect(

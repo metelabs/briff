@@ -47,8 +47,9 @@ export async function suggestPackages(
             where: {
               ecosystem,
               name: { startsWith: prefix, mode: "insensitive" },
-              // Only packages some repo uses: a name nobody depends on may be a typo.
-              dependencies: { some: {} },
+              // Only names a public registry confirmed (refresh-packages stored a latest
+              // version): never another org's private package, never who depends on what.
+              latestVersion: { not: null },
             },
             select: { name: true },
             orderBy: { name: "asc" },
