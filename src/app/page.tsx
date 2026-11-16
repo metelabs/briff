@@ -107,7 +107,9 @@ export default async function HomePage({
         <div className="grid grid-cols-1 gap-8">
           <TopStrip data={data} now={now} scopeName={scopeName} />
 
-          {!anyBulletin && <FirstMonday data={data} now={now} />}
+          {!anyBulletin && data.streams.some((s) => s.weeklyBulletin) && (
+            <FirstMonday data={data} now={now} />
+          )}
 
           {(anyBulletin || hasTrend(data.trend)) && (
             <section aria-labelledby="trend" className="rise [--i:2]">
@@ -198,7 +200,8 @@ function StatTile({
 
 function TopStrip({ data, now, scopeName }: { data: HomeData; now: Date; scopeName: string }) {
   const { alerts, repos } = data;
-  const withRepos = data.streams.filter((s) => s.repoCount > 0);
+  // Streams that get a Monday bulletin: repos, and the bulletin not turned off.
+  const withRepos = data.streams.filter((s) => s.repoCount > 0 && s.weeklyBulletin);
   const delta =
     alerts.delta === 0 ? (
       "same as last week"
@@ -285,7 +288,11 @@ function TopStrip({ data, now, scopeName }: { data: HomeData; now: Date; scopeNa
           href={data.lastBulletin ? `/b/${data.lastBulletin.id}` : "/streams"}
           caption="Last bulletin"
           value={data.lastBulletin ? isoWeekLabel(data.lastBulletin.weekStart).slice(5) : "None"}
-          detail="No stream has repos, so no bulletin is scheduled."
+          detail={
+            data.streams.some((s) => s.repoCount > 0)
+              ? "Every stream with repos sends security alerts only."
+              : "No stream has repos, so no bulletin is scheduled."
+          }
         />
       )}
     </section>
@@ -293,7 +300,8 @@ function TopStrip({ data, now, scopeName }: { data: HomeData; now: Date; scopeNa
 }
 
 function FirstMonday({ data, now }: { data: HomeData; now: Date }) {
-  const withRepos = data.streams.filter((s) => s.repoCount > 0);
+  // Streams that get a Monday bulletin: repos, and the bulletin not turned off.
+  const withRepos = data.streams.filter((s) => s.repoCount > 0 && s.weeklyBulletin);
   return (
     <section aria-labelledby="first" className="rise [--i:2]">
       <SectionHeader id="first" title="Your first bulletin" />
@@ -413,8 +421,10 @@ function StreamEmpty({ stream }: { stream: HomeStream }) {
             Pick repos
           </Link>
         </>
-      ) : (
+      ) : stream.weeklyBulletin ? (
         "No bulletin yet. The first one arrives Monday 04:00 UTC."
+      ) : (
+        "Security alerts only: this stream sends no Monday bulletin."
       )}
     </p>
   );
@@ -424,10 +434,12 @@ function StreamFoot({ stream, next }: { stream: HomeStream; next: Date }) {
   return (
     <div className="border-line mt-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t pt-3 text-[12.5px]">
       <span className="text-fg-muted">
-        {stream.repoCount > 0 ? (
+        {stream.repoCount > 0 && stream.weeklyBulletin ? (
           <>
             Next <b className="text-fg font-medium">{shortDate(next)}</b> 04:00 UTC
           </>
+        ) : stream.repoCount > 0 ? (
+          "Security alerts only"
         ) : (
           "Not scheduled"
         )}

@@ -27,7 +27,8 @@ const { createOrgForUser } = await import("@/lib/org");
 const { loadOrgStacks } = await import("@/lib/match/stack");
 const { securityScan } = await import("@/security/scan");
 const { weeklyBulletin } = await import("@/pipeline/weekly");
-const { SECURITY_ALERT_REPOS } = await import("@/lib/streams");
+const { MUTED_ALERT_REPOS, SECURITY_ALERT_REPOS } = await import("@/lib/streams");
+const { removeRepoAction } = await import("@/app/repos/actions");
 
 const url = process.env.TEST_DATABASE_URL;
 
@@ -262,6 +263,11 @@ describe.skipIf(!url)("manual stacks against Postgres", () => {
       ok: false,
       message: "Only an owner can change stacks.",
     });
+    // The Repos page's remove goes through the same owner check for a manual stack.
+    expect(await removeRepoAction(stackId)).toEqual({
+      ok: false,
+      message: "Only an owner can change stacks.",
+    });
 
     const otherOwner = users[2];
     as(otherOwner, otherOrgId);
@@ -315,7 +321,13 @@ describe.skipIf(!url)("manual stacks against Postgres", () => {
       select: { included: true, name: true },
     });
     expect(repo).toEqual({ included: false, name: "Second (renamed)" });
-    expect(await deleteStackAction(second.id ?? "")).toMatchObject({ ok: true });
+    expect(await removeRepoAction(second.id ?? "")).toMatchObject({ ok: true });
+    expect(
+      await withOrg(db, orgId).orgEvent.findFirst({
+        where: { type: "stack_deleted" },
+        select: { detail: true },
+      })
+    ).toEqual({ detail: "Second (renamed)" });
   });
 
   it("security alerts reach a repo only through a stream with them on", async () => {
@@ -336,6 +348,11 @@ describe.skipIf(!url)("manual stacks against Postgres", () => {
       data: { securityAlerts: false },
     });
     expect(await alerting()).toEqual([]);
+    expect(
+      (await scoped.repo.findMany({ where: MUTED_ALERT_REPOS, select: { id: true } })).map(
+        (r) => r.id
+      )
+    ).toEqual([stackId]);
 
     // A pending alert of a muted repo is marked delivered without an email.
     const pkg = await db.package.findFirstOrThrow({ where: { ecosystem: "npm", name: "next" } });

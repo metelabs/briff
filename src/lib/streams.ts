@@ -197,6 +197,12 @@ export function repoGetsSecurityAlerts(streams: readonly Pick<StreamCadence, "se
   return streams.some((s) => s.securityAlerts);
 }
 
+/** Included repos whose every stream has security alerts off (the complement of the next one). */
+export const MUTED_ALERT_REPOS = {
+  included: true,
+  streams: { some: {}, none: { stream: { securityAlerts: true } } },
+};
+
 /**
  * Prisma filter for included repos that get same-day security alerts. `included` follows
  * stream membership, so a repo with no stream row (written before streams) keeps its alerts.
