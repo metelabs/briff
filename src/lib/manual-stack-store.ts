@@ -5,6 +5,7 @@ import { withOrg, type OrgDb } from "@/lib/db/with-org";
 import { isCloud } from "@/lib/env";
 import { enqueueJob, scheduleJob } from "@/lib/jobs/queue";
 import { log } from "@/lib/log";
+import { lockMembers } from "@/lib/members";
 import {
   loadOrgLimits,
   OrgLimitError,
@@ -27,7 +28,13 @@ export class ManualStackError extends Error {}
 
 type Tx = Parameters<Parameters<OrgDb["$transaction"]>[0]>[0];
 
+/**
+ * The membership lock first (a concurrent demotion cannot slip between the role check and the
+ * write; membership changes never take the limits lock, so the order cannot deadlock), then
+ * the limits lock, then the role.
+ */
 async function lockedOwner(tx: Tx, orgId: string, userId: string): Promise<void> {
+  await lockMembers(tx, orgId);
   await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(68422::int, hashtext(${orgId}))`;
   const member = await tx.orgMember.findFirst({ where: { userId }, select: { role: true } });
   if (member?.role !== "owner") throw new ManualStackError("Only an owner can change stacks.");
@@ -113,6 +120,7 @@ export async function saveManualStack(
       now,
       // The user's list is the whole stack: a package taken off resolves its alerts.
       completeSnapshots: true,
+      authoritative: true,
       resolvedBy: "manual_stack",
     });
 

@@ -231,6 +231,8 @@ export async function writeRepoSnapshot(
     packageIds: ReadonlyMap<string, string>;
     now: Date;
     completeSnapshots: boolean;
+    /** The snapshot is the user's own list (manual stacks); see planAlertResolution. */
+    authoritative?: boolean;
     resolvedBy: AlertResolvedBy;
   }
 ): Promise<RepoIngestResult & { repoId: string }> {
@@ -334,7 +336,8 @@ export async function writeRepoSnapshot(
             },
           ]
         : [];
-    })
+    }),
+    args.authoritative ?? false
   );
   if (plan.resolve.length > 0)
     await tx.alert.updateMany({
