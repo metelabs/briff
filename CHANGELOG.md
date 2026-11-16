@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.0](https://github.com/metelabs/briff/compare/0.15.1...0.16.0) (2026-11-16)
+
+
+### Features
+
+* **stack:** pick a stack by hand, per-stream cadence ([#70](https://github.com/metelabs/briff/issues/70)) ([c47aa77](https://github.com/metelabs/briff/commit/c47aa779a8dafc2826204d084e797a702a7f1b4a))
+
 ## [0.15.1](https://github.com/metelabs/briff/compare/0.15.0...0.15.1) (2026-11-04)
 
 
