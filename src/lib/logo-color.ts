@@ -8,7 +8,7 @@ export const TILE_BACKGROUND = { light: "#f2f5f7", dark: "#0d161b" } as const;
  * Below this contrast against the tile, a logo takes the foreground colour. Dark tiles need
  * more: a deep navy or purple mark reads on white but sinks into a near-black tile.
  */
-export const MIN_LOGO_CONTRAST = { light: 1.4, dark: 1.8 } as const;
+export const MIN_LOGO_CONTRAST = { light: 1.4, dark: 2.5 } as const;
 
 export interface LogoColors {
   /** `#rrggbb`, or null for the theme's foreground colour. */

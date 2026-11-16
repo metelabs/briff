@@ -17,6 +17,8 @@ export interface StackCardView extends StackRepo {
   id: string;
   connection: string;
   lastScan: string;
+  /** A manual stack's edit page; absent for scanned repos. */
+  editHref?: string;
 }
 
 type Filter = "all" | "drift" | "major" | "eol";
@@ -158,7 +160,21 @@ function RepoCard({
             )}
           </h3>
           <p className="text-fg-muted mt-0.5 text-[12.5px]">
-            {card.connection} · last scan {card.lastScan}
+            {card.editHref ? (
+              <>
+                {card.connection} · updated {card.lastScan} ·{" "}
+                <Link
+                  href={card.editHref}
+                  className="text-brand font-medium underline-offset-4 hover:underline"
+                >
+                  Edit
+                </Link>
+              </>
+            ) : (
+              <>
+                {card.connection} · last scan {card.lastScan}
+              </>
+            )}
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5">

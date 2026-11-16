@@ -29,6 +29,8 @@ export default async function StreamsPage({
       select: {
         id: true,
         name: true,
+        weeklyBulletin: true,
+        securityAlerts: true,
         repos: { select: { repoId: true } },
         bulletins: {
           where: { preview: false },
@@ -63,6 +65,8 @@ export default async function StreamsPage({
     return {
       id: s.id,
       name: s.name,
+      weeklyBulletin: s.weeklyBulletin,
+      securityAlerts: s.securityAlerts,
       memberIds: s.repos.map((r) => r.repoId),
       last: last
         ? `${isoWeekLabel(last.weekStart).slice(5)} · ${n === 0 ? "nothing to act on" : `${n} attention`}`
@@ -77,7 +81,7 @@ export default async function StreamsPage({
     <AppShell ctx={ctx} active="/streams">
       <PageHeader
         title="Streams"
-        sub="A stream is a named set of repos with its own weekly bulletin. A repo can be in more than one stream; security alerts cover every repo in any stream."
+        sub="A stream is a named set of repos with its own weekly bulletin and same-day security alerts; each can be turned off. A repo can be in more than one stream and gets alerts while any of them has them on."
         actions={<NewStreamButton />}
       />
       <StreamsEditor streams={summaries} repos={repos} recipients={to} initialId={initial} />

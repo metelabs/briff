@@ -1,8 +1,10 @@
 import { Layers } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { AppShell } from "@/components/shell/app-shell";
 import { ConnectReposButton } from "@/components/shell/connect-sheet";
+import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/ui/section-header";
 import { requireOrgContext } from "@/lib/auth/session";
@@ -30,6 +32,11 @@ export default async function StackPage() {
         eyebrow={`${plural(repos.length, "repo")} · ${scope.current?.name ?? "all streams"}`}
         title="Stack"
         sub="What every repo runs and what to move to, most urgent first. Runtimes come from package files, Dockerfiles and compose files; key packages are the direct dependencies most of your repos share."
+        actions={
+          <Link href="/stack/new" className={buttonVariants({ variant: "secondary" })}>
+            Pick a stack
+          </Link>
+        }
       />
       {repos.length === 0 || drift.every((r) => r.entries.length === 0) ? (
         <Card className="rise [--i:1]">
@@ -40,14 +47,16 @@ export default async function StackPage() {
           >
             {repos.length === 0
               ? "Once this stream has scanned repos, each one appears here with its runtimes and key packages, and what to move to."
-              : "No scan has reported a runtime or package for these repos yet. Connect a repo or run the scanner, and each one appears here with what to move to."}
+              : "No scan has reported a runtime or package for these repos yet. Connect a repo or run the scanner, and each one appears here with what to move to."}{" "}
+            Or pick your stack by hand, without sharing a repo.
           </EmptyState>
         </Card>
       ) : (
         <StackCards
-          cards={drift.map(({ lastScannedAt, ...card }) => ({
+          cards={drift.map(({ lastScannedAt, manual, ...card }) => ({
             ...card,
             lastScan: lastScannedAt ? shortDateTime(lastScannedAt) : "never",
+            ...(manual ? { editHref: `/stack/${card.id}/edit` } : {}),
           }))}
         />
       )}
