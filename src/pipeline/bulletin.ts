@@ -787,7 +787,11 @@ export function stackForSynthesis(
         .filter((d) => referenced.has(d.name))
         // A requirement (`~=2.0`) is no installed version; the model must not read it as one.
         .map((d) =>
-          d.unresolved ? `${d.name} (requires ${d.version})` : `${d.name}@${d.version}`
+          d.unresolved
+            ? d.version === "*"
+              ? `${d.name} (version not given)`
+              : `${d.name} (requires ${d.version})`
+            : `${d.name}@${d.version}`
         ),
       services: r.services,
       // Omitted when empty so stacks without runtime items keep their input hash.

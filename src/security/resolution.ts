@@ -93,7 +93,12 @@ export function planAlertResolution(
   alerts: readonly ResolvableAlert[],
   previousPackageIds: ReadonlySet<string>,
   completeSnapshot: boolean,
-  installed: readonly InstalledDependency[]
+  installed: readonly InstalledDependency[],
+  /**
+   * The snapshot is the user's own list (a manual stack): a package taken off is gone even when
+   * no package of its ecosystem is left, which a scan could not tell from a failed lockfile.
+   */
+  authoritative = false
 ): ResolutionPlan {
   const ecosystems = new Set(installed.map((d) => d.ecosystem));
   const plan: ResolutionPlan = { resolve: [], reopen: [] };
@@ -105,7 +110,7 @@ export function planAlertResolution(
         !affected &&
         (stillInstalled || completeSnapshot) &&
         previousPackageIds.has(alert.packageId) &&
-        ecosystems.has(alert.ecosystem) &&
+        (authoritative || ecosystems.has(alert.ecosystem)) &&
         coversOnlyOwnPackage(alert)
       )
         plan.resolve.push(alert.id);

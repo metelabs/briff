@@ -540,3 +540,38 @@ it("labels an Actions-only stack", () => {
   expect(repo.entries[0]).toMatchObject({ ecosystem: "Actions" });
   expect(repo.majorsBehind).toBe(0);
 });
+
+describe("manual stack rows without a version", () => {
+  it("say no version was given, for runtimes and packages", () => {
+    const [card] = computeDrift({
+      asOf: new Date("2026-11-16"),
+      repos: [{ key: "s", name: "My stack" }],
+      runtimes: [
+        {
+          repo: "s",
+          name: "redis",
+          version: "*",
+          normalized: null,
+          source: "manual",
+          image: null,
+          unresolved: false,
+          constraint: true,
+        },
+      ],
+      dependencies: [
+        {
+          repo: "s",
+          ecosystem: "npm",
+          packageName: "react",
+          installedVersion: "*",
+          unresolved: true,
+          latestVersion: "19.2.1",
+        },
+      ],
+    });
+    expect(card.entries.map((e) => [e.label, e.status, e.note])).toEqual([
+      ["Redis", "unknown", "No version given"],
+      ["react", "unknown", "No version given"],
+    ]);
+  });
+});

@@ -55,7 +55,7 @@ export function recentlyResolved<T extends Pick<ResolvedAlertRow, "resolvedAt">>
 }
 
 /** Alert.resolvedBy; null on rows resolved before it was recorded. */
-export type ResolvedCause = "briff_scan" | "github_app" | "security_scan" | null;
+export type ResolvedCause = "briff_scan" | "github_app" | "security_scan" | "manual_stack" | null;
 
 export function resolvedCauseLabel(cause: ResolvedCause): string {
   switch (cause) {
@@ -65,6 +65,8 @@ export function resolvedCauseLabel(cause: ResolvedCause): string {
       return "GitHub App scan";
     case "security_scan":
       return "security-scan re-check";
+    case "manual_stack":
+      return "stack edit";
     default:
       return "a later scan";
   }
@@ -139,11 +141,14 @@ export function resolvedSections(
   return out;
 }
 
-/** How a repo's scans reach Briff: the GitHub App (rescans on push) or briff-scan uploads. */
-export type RepoConnection = "app" | "scanner";
+/**
+ * How a repo's scans reach Briff: the GitHub App (rescans on push), briff-scan uploads, or a
+ * stack picked by hand (the user edits its versions).
+ */
+export type RepoConnection = "app" | "scanner" | "manual";
 
 /** Which "how Briff notices the fix" line an open package group gets. */
-export type FixHint = "app" | "scanner" | "mixed";
+export type FixHint = "app" | "scanner" | "manual" | "mixed";
 
 export function fixHintFor(
   repos: readonly string[],
@@ -153,17 +158,19 @@ export function fixHintFor(
   for (const repo of repos) for (const kind of connectionsOf.get(repo) ?? []) kinds.add(kind);
   if (kinds.size === 0) return null;
   if (kinds.size > 1) return "mixed";
-  return kinds.has("app") ? "app" : "scanner";
+  return [...kinds][0];
 }
 
 /** Repo name -> how its scans arrive. Two repos can share a name across sources. */
 export function repoConnections(
-  repos: readonly { name: string; githubInstallationId: string | null }[]
+  repos: readonly { name: string; githubInstallationId: string | null; source?: string }[]
 ): Map<string, Set<RepoConnection>> {
   const out = new Map<string, Set<RepoConnection>>();
   for (const repo of repos) {
     const kinds = out.get(repo.name) ?? new Set<RepoConnection>();
-    kinds.add(repo.githubInstallationId !== null ? "app" : "scanner");
+    kinds.add(
+      repo.source === "manual" ? "manual" : repo.githubInstallationId !== null ? "app" : "scanner"
+    );
     out.set(repo.name, kinds);
   }
   return out;

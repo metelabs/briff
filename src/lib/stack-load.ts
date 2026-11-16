@@ -9,8 +9,9 @@ import { connectionLabel } from "./repos";
 
 export interface StackCard extends StackRepo {
   id: string;
-  /** `GitHub App`, `GitHub`, `Local scanner`. */
+  /** `GitHub App`, `GitHub`, `Local scanner`, `Picked by hand`. */
   connection: string;
+  manual: boolean;
   lastScannedAt: Date | null;
 }
 
@@ -78,6 +79,7 @@ export async function loadDrift(
             ...card,
             id: repo.id,
             connection: connectionLabel(repo),
+            manual: repo.source === "manual",
             lastScannedAt: repo.lastScannedAt,
           },
         ]

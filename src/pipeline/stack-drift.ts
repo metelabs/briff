@@ -123,7 +123,10 @@ export function judgeRuntime(
     return { ...base, status: "unknown", note: "Version comes from a build variable" };
   }
   if (isConstraintRow({ ...row, unresolved: false })) {
-    return { ...base, status: "unknown", note: "A version range, not the version that runs" };
+    // `*`: a runtime picked on a manual stack without a version.
+    const note =
+      row.version === "*" ? "No version given" : "A version range, not the version that runs";
+    return { ...base, status: "unknown", note };
   }
   const version = row.normalized ?? row.version;
   const line = releaseLineOf(runtime, version);
@@ -346,7 +349,10 @@ export function computeDrift(input: {
               until: null,
               behind: 0,
               target: null,
-              note: "A requirement, no installed version",
+              note:
+                required.installedVersion === "*"
+                  ? "No version given"
+                  : "A requirement, no installed version",
             } satisfies Judged)
           : packageEntry(installed, p.latest);
       if (!judged) continue;

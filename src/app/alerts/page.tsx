@@ -94,13 +94,16 @@ export default async function AlertsPage({
     }),
     db.repo.findMany({
       where: repoScope(scope),
-      select: { name: true, githubInstallationId: true, lastScannedAt: true },
+      select: { name: true, source: true, githubInstallationId: true, lastScannedAt: true },
     }),
     activeInstallationIds(getDb(), ctx.orgId),
   ]);
   const repoCount = repos.length;
   const githubRepos = repos.filter((r) => r.githubInstallationId !== null).length;
-  const scannerRepoRows = repos.filter((r) => r.githubInstallationId === null);
+  // Manual stacks have no scan to re-run: they change when the user edits them.
+  const scannerRepoRows = repos.filter(
+    (r) => r.githubInstallationId === null && r.source !== "manual"
+  );
   const lastUploadAt = scannerRepoRows.reduce<Date | null>(
     (max, r) => (r.lastScannedAt && (!max || r.lastScannedAt > max) ? r.lastScannedAt : max),
     null

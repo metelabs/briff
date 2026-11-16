@@ -92,6 +92,7 @@ export const INCLUDED_FEATURES: readonly string[] = [
   "Same-day security alerts",
   "Re-check on demand",
   "Stack drift and end-of-life dates",
+  "Pick a stack by hand",
 ];
 
 export function isPlanId(value: unknown): value is PlanId {
@@ -206,4 +207,22 @@ export function planAllowance(
   { cloud }: { cloud: boolean }
 ): number | null {
   return cloud ? PLAN_ALLOWANCES[plan][key] : null;
+}
+
+// --- Manual stacks: items picked by hand (src/lib/manual-stack-store.ts) -----------------------
+
+/**
+ * Items (runtimes, packages, tools) across all of an org's manual stacks; null = unlimited.
+ * Each manual stack also counts as one repo toward `repos`.
+ */
+export const PLAN_STACK_ITEMS: Readonly<Record<PlanId, number | null>> = {
+  free: 25,
+  pro: 150,
+  team: null,
+  unlimited: null,
+};
+
+/** The stack item limit; only the hosted service enforces it. */
+export function stackItemLimit(plan: PlanId, { cloud }: { cloud: boolean }): number | null {
+  return cloud ? PLAN_STACK_ITEMS[plan] : null;
 }

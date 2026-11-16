@@ -15,6 +15,13 @@ const APP_HINT = "Resolves after you push the fix (Briff rescans on push).";
 
 /** How Briff notices the fix, by how the package's repos are connected. */
 function FixHintLine({ hint, scanCommand }: { hint: FixHint; scanCommand?: string }) {
+  if (hint === "manual") {
+    return (
+      <div className="text-fg-muted text-[12px]">
+        Resolves when you take the package off the stack or set a fixed version (Stack → Edit).
+      </div>
+    );
+  }
   const scanner = (
     <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
       {hint === "mixed" ? "briff-scan repos resolve" : "Resolves"} on the next upload (nightly)

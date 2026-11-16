@@ -6,6 +6,9 @@ file, no runtime dependencies). It finds every `package-lock.json` (v1–v3), `p
 `uv.lock`, `Pipfile.lock`, `requirements*.txt` and `go.mod` plus the runtime files below, and uploads **only** `{repo, package, installed version, direct}` and
 `{runtime, version, file}` to `POST /api/scan` (see [Ecosystems](#ecosystems)). No source code, no file contents, no absolute paths leave the machine.
 
+If you cannot run the scanner or share a repo, [pick your stack by hand](getting-started/pick-your-stack.md)
+instead: the same bulletin and alerts, from a list of runtimes, packages and tools.
+
 It runs in three places, all with the same code:
 
 | Where                     | How                                                          | Repo names                         |

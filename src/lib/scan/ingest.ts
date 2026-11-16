@@ -3,7 +3,9 @@ import { mergeActionMetadata } from "@scan/actions";
 import "server-only";
 
 import type { PrismaClient } from "@/generated/prisma/client";
-import { withOrg } from "@/lib/db/with-org";
+import type { AlertResolvedBy, RepoSource } from "@/generated/prisma/enums";
+import { withOrg, type OrgDb } from "@/lib/db/with-org";
+import type { GITHUB_ECOSYSTEM } from "@/lib/stack-catalog";
 import {
   mergeDeclarations,
   normalizePackageName,
@@ -32,7 +34,8 @@ export interface RepoIngestResult {
 
 /** A dependency row as stored: ecosystem resolved (npm when absent), name normalised. */
 export interface IngestDependency {
-  ecosystem: Ecosystem;
+  /** A scanner ecosystem, or GitHub for a tool picked on a manual stack (never sent to OSV). */
+  ecosystem: Ecosystem | typeof GITHUB_ECOSYSTEM;
   name: string;
   version: string;
   direct: boolean;
@@ -112,7 +115,7 @@ export function dedupeRuntimes(runtimes: ScanRuntime[]): ScanRuntime[] {
 }
 
 /** Package ids keyed by `packageKey(ecosystem, name)`; missing packages are created. */
-async function ensurePackages(
+export async function ensurePackages(
   db: PrismaClient,
   deps: readonly Pick<IngestDependency, "ecosystem" | "name">[]
 ) {
@@ -185,159 +188,207 @@ export async function ingestScan(
           throw new OrgLimitError(repoLimitMessage(limits));
         }
       }
-      const saved = existing
-        ? await tx.repo.update({
-            where: { id: existing.id },
-            data: { path: repo.path ?? null, ecosystem: repo.ecosystem, lastScannedAt: now },
-          })
-        : await tx.repo.create({
-            data: {
-              orgId,
-              name: repo.name,
-              source: body.source,
-              path: repo.path ?? null,
-              ecosystem: repo.ecosystem,
-              included: false,
-              firstSeenAt: now,
-              lastScannedAt: now,
-            },
-          });
-
-      const alerts = existing
-        ? await tx.alert.findMany({
-            where: { repoId: saved.id },
-            select: {
-              id: true,
-              resolvedAt: true,
-              advisory: {
-                select: {
-                  packageId: true,
-                  affected: true,
-                  packages: true,
-                  package: { select: { ecosystem: true, name: true } },
-                },
-              },
-            },
-          })
-        : [];
-      const alertPackageIds = [...new Set(alerts.map((a) => a.advisory.packageId))];
-      const previousPackageIds = new Set(
-        alertPackageIds.length > 0
-          ? (
-              await tx.dependency.findMany({
-                where: { repoId: saved.id, packageId: { in: alertPackageIds } },
-                select: { packageId: true },
-              })
-            ).map((d) => d.packageId)
-          : []
-      );
-
-      await tx.dependency.deleteMany({ where: { repoId: saved.id } });
-      const rows = repo.dependencies.flatMap((dep) => {
-        const packageId = packageIds.get(packageKey(dep.ecosystem, dep.name));
-        return packageId
-          ? [
-              {
-                orgId,
-                repoId: saved.id,
-                packageId,
-                installedVersion: dep.version,
-                direct: dep.direct,
-                dev: dep.dev,
-                manager: dep.manager,
-                group: dep.group,
-                requirement: dep.requirement,
-                project: dep.project,
-                constraint: dep.constraint,
-                metadata: dep.metadata,
-                unresolved: dep.unresolved,
-              },
-            ]
-          : [];
+      return writeRepoSnapshot(tx, orgId, {
+        source: body.source,
+        existingId: existing?.id ?? null,
+        repo: { ...repo, path: repo.path ?? null },
+        packageIds,
+        now,
+        completeSnapshots: options.completeSnapshots ?? false,
+        resolvedBy: options.completeSnapshots ? "github_app" : "briff_scan",
       });
-      if (rows.length > 0) await tx.dependency.createMany({ data: rows });
-
-      const plan = planAlertResolution(
-        alerts.map((a) => ({
-          id: a.id,
-          resolvedAt: a.resolvedAt,
-          packageId: a.advisory.packageId,
-          ecosystem: a.advisory.package.ecosystem,
-          packageName: a.advisory.package.name,
-          affected: a.advisory.affected,
-          covered: a.advisory.packages,
-        })),
-        previousPackageIds,
-        options.completeSnapshots ?? false,
-        repo.dependencies.flatMap((dep) => {
-          const packageId = packageIds.get(packageKey(dep.ecosystem, dep.name));
-          return packageId
-            ? [
-                {
-                  packageId,
-                  ecosystem: dep.ecosystem,
-                  name: dep.name,
-                  version: dep.version,
-                  unresolved: dep.unresolved,
-                  constraint: dep.constraint,
-                },
-              ]
-            : [];
-        })
-      );
-      if (plan.resolve.length > 0)
-        await tx.alert.updateMany({
-          where: { id: { in: plan.resolve } },
-          data: {
-            resolvedAt: now,
-            resolvedBy: options.completeSnapshots ? "github_app" : "briff_scan",
-          },
-        });
-      if (plan.reopen.length > 0)
-        await tx.alert.updateMany({
-          where: { id: { in: plan.reopen } },
-          data: { resolvedAt: null, resolvedBy: null },
-        });
-
-      let runtimesChanged = false;
-      if (repo.runtimes) {
-        const previous = await tx.repoRuntime.findMany({
-          where: { repoId: saved.id },
-          select: { name: true, version: true, normalized: true },
-        });
-        runtimesChanged = runtimesAdded(previous, repo.runtimes);
-        await tx.repoRuntime.deleteMany({ where: { repoId: saved.id } });
-        if (repo.runtimes.length > 0) {
-          await tx.repoRuntime.createMany({
-            data: repo.runtimes.map((r) => ({
-              orgId,
-              repoId: saved.id,
-              name: r.name,
-              version: r.version,
-              normalized: r.normalized ?? null,
-              source: r.source,
-              unresolved: r.unresolved ?? false,
-              image: r.image ?? null,
-              constraint: isConstraintRow({ ...r, unresolved: r.unresolved ?? false }),
-            })),
-          });
-        }
-      }
-
-      return {
-        name: repo.name,
-        created: !existing,
-        dependencies: rows.length,
-        direct: rows.filter((r) => r.direct).length,
-        runtimes: repo.runtimes ? repo.runtimes.length : null,
-        runtimesChanged,
-        alertsResolved: plan.resolve.length,
-        alertsReopened: plan.reopen.length,
-      };
     });
     if (result) results.push(result);
   }
   return results;
+}
+
+type RepoTx = Parameters<Parameters<OrgDb["$transaction"]>[0]>[0];
+
+/** One repo's content as stored: deduped dependencies, and runtimes when known. */
+export interface RepoSnapshot {
+  name: string;
+  path: string | null;
+  ecosystem: string;
+  dependencies: IngestDependency[];
+  /** Absent: the stored runtimes are left as they are. */
+  runtimes?: ScanRuntime[];
+}
+
+/**
+ * Writes one repo's snapshot inside the caller's transaction (which holds the org lock):
+ * upserts the repo (new repos start excluded), replaces its dependency rows, resolves or
+ * reopens its alerts, and replaces its runtime rows when the snapshot carries them. Shared by
+ * scan uploads and manual stacks (src/lib/manual-stack-store.ts).
+ */
+export async function writeRepoSnapshot(
+  tx: RepoTx,
+  orgId: string,
+  args: {
+    source: RepoSource;
+    existingId: string | null;
+    repo: RepoSnapshot;
+    packageIds: ReadonlyMap<string, string>;
+    now: Date;
+    completeSnapshots: boolean;
+    /** The snapshot is the user's own list (manual stacks); see planAlertResolution. */
+    authoritative?: boolean;
+    resolvedBy: AlertResolvedBy;
+  }
+): Promise<RepoIngestResult & { repoId: string }> {
+  const { source, repo, packageIds, now, completeSnapshots, resolvedBy } = args;
+  const existing = args.existingId ? { id: args.existingId } : null;
+  const saved = existing
+    ? await tx.repo.update({
+        where: { id: existing.id },
+        data: { path: repo.path, ecosystem: repo.ecosystem, lastScannedAt: now },
+      })
+    : await tx.repo.create({
+        data: {
+          orgId,
+          name: repo.name,
+          source,
+          path: repo.path,
+          ecosystem: repo.ecosystem,
+          included: false,
+          firstSeenAt: now,
+          lastScannedAt: now,
+        },
+      });
+
+  const alerts = existing
+    ? await tx.alert.findMany({
+        where: { repoId: saved.id },
+        select: {
+          id: true,
+          resolvedAt: true,
+          advisory: {
+            select: {
+              packageId: true,
+              affected: true,
+              packages: true,
+              package: { select: { ecosystem: true, name: true } },
+            },
+          },
+        },
+      })
+    : [];
+  const alertPackageIds = [...new Set(alerts.map((a) => a.advisory.packageId))];
+  const previousPackageIds = new Set(
+    alertPackageIds.length > 0
+      ? (
+          await tx.dependency.findMany({
+            where: { repoId: saved.id, packageId: { in: alertPackageIds } },
+            select: { packageId: true },
+          })
+        ).map((d) => d.packageId)
+      : []
+  );
+
+  await tx.dependency.deleteMany({ where: { repoId: saved.id } });
+  const rows = repo.dependencies.flatMap((dep) => {
+    const packageId = packageIds.get(packageKey(dep.ecosystem, dep.name));
+    return packageId
+      ? [
+          {
+            orgId,
+            repoId: saved.id,
+            packageId,
+            installedVersion: dep.version,
+            direct: dep.direct,
+            dev: dep.dev,
+            manager: dep.manager,
+            group: dep.group,
+            requirement: dep.requirement,
+            project: dep.project,
+            constraint: dep.constraint,
+            metadata: dep.metadata,
+            unresolved: dep.unresolved,
+          },
+        ]
+      : [];
+  });
+  if (rows.length > 0) await tx.dependency.createMany({ data: rows });
+
+  const plan = planAlertResolution(
+    alerts.map((a) => ({
+      id: a.id,
+      resolvedAt: a.resolvedAt,
+      packageId: a.advisory.packageId,
+      ecosystem: a.advisory.package.ecosystem,
+      packageName: a.advisory.package.name,
+      affected: a.advisory.affected,
+      covered: a.advisory.packages,
+    })),
+    previousPackageIds,
+    completeSnapshots,
+    repo.dependencies.flatMap((dep) => {
+      const packageId = packageIds.get(packageKey(dep.ecosystem, dep.name));
+      return packageId
+        ? [
+            {
+              packageId,
+              ecosystem: dep.ecosystem,
+              name: dep.name,
+              version: dep.version,
+              unresolved: dep.unresolved,
+              constraint: dep.constraint,
+            },
+          ]
+        : [];
+    }),
+    args.authoritative ?? false
+  );
+  if (plan.resolve.length > 0)
+    await tx.alert.updateMany({
+      where: { id: { in: plan.resolve } },
+      data: {
+        resolvedAt: now,
+        resolvedBy,
+      },
+    });
+  if (plan.reopen.length > 0)
+    await tx.alert.updateMany({
+      where: { id: { in: plan.reopen } },
+      data: { resolvedAt: null, resolvedBy: null },
+    });
+
+  let runtimesChanged = false;
+  if (repo.runtimes) {
+    const previous = await tx.repoRuntime.findMany({
+      where: { repoId: saved.id },
+      select: { name: true, version: true, normalized: true },
+    });
+    runtimesChanged = runtimesAdded(previous, repo.runtimes);
+    await tx.repoRuntime.deleteMany({ where: { repoId: saved.id } });
+    if (repo.runtimes.length > 0) {
+      await tx.repoRuntime.createMany({
+        data: repo.runtimes.map((r) => ({
+          orgId,
+          repoId: saved.id,
+          name: r.name,
+          version: r.version,
+          normalized: r.normalized ?? null,
+          source: r.source,
+          unresolved: r.unresolved ?? false,
+          image: r.image ?? null,
+          constraint: isConstraintRow({ ...r, unresolved: r.unresolved ?? false }),
+        })),
+      });
+    }
+  }
+
+  return {
+    name: repo.name,
+    repoId: saved.id,
+    created: !existing,
+    dependencies: rows.length,
+    direct: rows.filter((r) => r.direct).length,
+    runtimes: repo.runtimes ? repo.runtimes.length : null,
+    runtimesChanged,
+    alertsResolved: plan.resolve.length,
+    alertsReopened: plan.reopen.length,
+  };
 }
 
 export type ScannerOrgResolution =

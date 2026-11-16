@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import type { PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
+import { MUTED_ALERT_REPOS, SECURITY_ALERT_REPOS } from "@/lib/streams";
 import { renderBaseImageAlertEmail, type BaseImageEmailGroup } from "@/lib/email/alert-email";
 import { sendMail, smtpConfig } from "@/lib/email/mailer";
 import { orgRecipients } from "@/lib/email/recipients";
@@ -273,6 +274,7 @@ export async function baseImageScan({ db, log, heartbeat }: JobContext): Promise
     created: 0,
     deactivated: 0,
     held: 0,
+    suppressed: 0,
     errors: 0,
     emailsSent: 0,
     deliveryLocked: 0,
@@ -421,13 +423,20 @@ export async function baseImageScan({ db, log, heartbeat }: JobContext): Promise
           counts.deliveryLocked++;
           return;
         }
+        // Repos whose streams all turned security alerts off: kept on the page, marked
+        // delivered without an email (as security-scan does).
+        const muted = await scoped.baseImageAlert.updateMany({
+          where: { active: true, deliveredAt: null, repo: MUTED_ALERT_REPOS },
+          data: { deliveredAt: now },
+        });
+        counts.suppressed += muted.count;
         const pending = await scoped.baseImageAlert.findMany({
           where: {
             active: true,
             deliveredAt: null,
             // The window runs from the fix, not from when the row was stored.
             fixedAt: { gte: new Date(now.getTime() - FIX_WINDOW_MS) },
-            repo: { included: true },
+            repo: SECURITY_ALERT_REPOS,
           },
           include: { repo: { select: { name: true } } },
         });

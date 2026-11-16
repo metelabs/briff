@@ -214,6 +214,9 @@ enum OrgEventType {
   delivery_target_disabled @map("delivery_target.disabled")
   delivery_target_deleted  @map("delivery_target.deleted")
   audit_exported           @map("audit.exported")
+  stack_created            @map("stack.created")
+  stack_updated            @map("stack.updated")
+  stack_deleted            @map("stack.deleted")
 }
 
 // Audit log of membership and org changes, shown to owners under Settings -> Members.
@@ -330,6 +333,8 @@ model GithubInstallation {
 enum RepoSource {
   local
   github
+  // A stack picked by hand (/stack/new): no path, no scanner, the user edits its rows.
+  manual
 }
 
 model Repo {
@@ -666,6 +671,8 @@ enum AlertResolvedBy {
   github_app
   // security-scan: OSV no longer reports the stored version (daily or Re-check now).
   security_scan
+  // The user removed the package or changed its version on a manual stack.
+  manual_stack
 }
 
 model Alert {
@@ -715,6 +722,10 @@ model BulletinStream {
   org       Org          @relation(fields: [orgId], references: [id], onDelete: Cascade)
   name      String
   slug      String
+  // Cadence: the Monday bulletin and the same-day security alerts can each be turned off,
+  // never both (src/app/streams/actions.ts).
+  weeklyBulletin Boolean @default(true)
+  securityAlerts Boolean @default(true)
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
   repos     StreamRepo[]

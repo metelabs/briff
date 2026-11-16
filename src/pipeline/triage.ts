@@ -1,4 +1,5 @@
 import { withOrg } from "@/lib/db/with-org";
+import { SECURITY_ALERT_REPOS } from "@/lib/streams";
 import { getEnv } from "@/lib/env";
 import { renderUrgentEmail, type UrgentItem } from "@/lib/email/alert-email";
 import { sendMail, smtpConfig } from "@/lib/email/mailer";
@@ -350,8 +351,11 @@ export async function triageItems({ db, log, heartbeat }: JobContext): Promise<J
           where: { itemId: { in: urgent.map((u) => u.itemId) } },
           select: { itemId: true, repoIds: true },
         }),
-        scoped.repo.findMany({ where: { included: true }, select: { id: true, name: true } }),
+        scoped.repo.findMany({ where: SECURITY_ALERT_REPOS, select: { id: true, name: true } }),
       ]);
+      // Every stream set to the weekly bulletin only: stack-wide items stay quiet too.
+      if (repos.length === 0 && (await scoped.repo.count({ where: { included: true } })) > 0)
+        continue;
       const items = urgentForOrg(
         urgent,
         matches.map((m) => ({

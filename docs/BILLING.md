@@ -14,14 +14,18 @@ and the page `src/app/settings/billing/`. API shapes follow `@paddle/paddle-node
 
 Limits and features come from `PLANS` in `src/lib/plans.ts` (prices too; nothing else types
 them). Every plan includes the weekly bulletin per stream, same-day security alerts, re-check on
-demand and stack drift / end-of-life dates (`INCLUDED_FEATURES`).
+demand, stack drift / end-of-life dates and picking a stack by hand (`INCLUDED_FEATURES`).
 
-| Plan      | Repos     | Streams   | Members   | Slack and webhook delivery | Audit log export | Support               |
-| --------- | --------- | --------- | --------- | -------------------------- | ---------------- | --------------------- |
-| Free      | 10        | 2         | 1         | no                         | no               | 2 business days       |
-| Pro       | 50        | 10        | 3         | no                         | no               | 2 business days       |
-| Team      | unlimited | unlimited | 10        | yes (unlimited targets)    | yes              | 1 business day        |
-| Unlimited | unlimited | unlimited | unlimited | yes                        | yes              | (admin-set, not sold) |
+| Plan      | Repos     | Streams   | Members   | Stack items | Slack and webhook delivery | Audit log export | Support               |
+| --------- | --------- | --------- | --------- | ----------- | -------------------------- | ---------------- | --------------------- |
+| Free      | 10        | 2         | 1         | 25          | no                         | no               | 2 business days       |
+| Pro       | 50        | 10        | 3         | 150         | no                         | no               | 2 business days       |
+| Team      | unlimited | unlimited | 10        | unlimited   | yes (unlimited targets)    | yes              | 1 business day        |
+| Unlimited | unlimited | unlimited | unlimited | unlimited   | yes                        | yes              | (admin-set, not sold) |
+
+Stack items are the runtimes, packages and tools of all manual stacks together
+(`PLAN_STACK_ITEMS`, checked in `saveManualStack` under the org's limits lock; each manual stack
+also counts as one repo). See [Pick your stack](getting-started/pick-your-stack.md).
 
 Team's extras (`Plan.extras`) are listed on its pricing card. `limitsFor` returns
 `deliveryTargets` (0 = not on the plan, null = unlimited) and `auditExport`; Settings →

@@ -77,9 +77,11 @@ export function Onboarding({
       <h1 className="type-page rise mt-5 mb-2 [--i:1]">Connect your repos</h1>
       <p className="text-fg-muted rise mb-6 text-[15px] [--i:2]">
         Briff never reads your code. The GitHub App or the scanner reads only lockfiles, manifests
-        and runtime files, and Briff keeps the package names, versions and runtimes in them.
+        and runtime files, and Briff keeps the package names, versions and runtimes in them. Or skip
+        both and pick your stack by hand.
       </p>
       <ConnectRepos
+        pickHref="/stack/new?first=1"
         stream={data.stream}
         apiUrl={data.apiUrl}
         status={status}

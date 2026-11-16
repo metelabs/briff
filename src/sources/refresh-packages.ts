@@ -3,7 +3,10 @@ import { serviceForPackage } from "@/lib/services";
 import type { JobContext, JobResult } from "@/worker/types";
 import { ECOSYSTEMS, isEcosystem } from "@scan/ecosystems";
 
+import { GITHUB_ECOSYSTEM } from "@/lib/stack-catalog";
+
 import { syncServices } from "./catalog";
+import { advisoriesUrl } from "./github-advisories";
 import { githubReleasesFeedUrl, githubRepoUrl, parseGithubRepo } from "./github-releases";
 import { fetchRegistryPackage } from "./registries";
 
@@ -26,6 +29,7 @@ export async function refreshPackages({ db, log, heartbeat }: JobContext): Promi
     deprecated: 0,
     servicesLinked: 0,
     releaseSources: 0,
+    toolAdvisorySources: 0,
   };
 
   // Service links are a pure name mapping: cheap enough for every package.
@@ -94,6 +98,8 @@ export async function refreshPackages({ db, log, heartbeat }: JobContext): Promi
     throw new Error(`all ${stale.length} registry lookups failed`);
   }
 
+  counts.toolAdvisorySources = await bootstrapGithubTools(db);
+
   const withFeeds = await db.package.findMany({
     where: { releaseFeedUrl: { not: null }, dependencies: { some: { direct: true } } },
     select: { id: true, releaseFeedUrl: true, repoUrl: true, serviceId: true },
@@ -116,4 +122,43 @@ export async function refreshPackages({ db, log, heartbeat }: JobContext): Promi
 
   log.info(counts, "refresh: done");
   return { counts };
+}
+
+/**
+ * Tools picked on a manual stack (Package.ecosystem GitHub, name `owner/repo`) have no
+ * registry: the name is the repository. They get its releases feed (created with the other
+ * release sources) and its security advisories as a `security` source. Returns the number
+ * of advisory sources created.
+ */
+async function bootstrapGithubTools(db: JobContext["db"]): Promise<number> {
+  const tools = await db.package.findMany({
+    where: { ecosystem: GITHUB_ECOSYSTEM, dependencies: { some: { direct: true } } },
+    select: { id: true, name: true, releaseFeedUrl: true, serviceId: true },
+  });
+  const advisorySources = [];
+  for (const tool of tools) {
+    const ref = parseGithubRepo(tool.name);
+    if (!ref) continue;
+    if (!tool.releaseFeedUrl) {
+      await db.package.update({
+        where: { id: tool.id },
+        data: {
+          repoUrl: githubRepoUrl(ref),
+          releaseFeedUrl: githubReleasesFeedUrl(ref),
+          lastRefreshedAt: new Date(),
+        },
+      });
+    }
+    advisorySources.push({
+      kind: "github_advisories" as const,
+      url: advisoriesUrl(ref.owner, ref.repo),
+      name: `${ref.owner}/${ref.repo} security advisories`,
+      packageId: tool.id,
+      serviceId: tool.serviceId,
+      class: "security" as const,
+    });
+  }
+  if (advisorySources.length === 0) return 0;
+  const created = await db.source.createMany({ data: advisorySources, skipDuplicates: true });
+  return created.count;
 }

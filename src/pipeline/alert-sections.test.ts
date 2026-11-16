@@ -166,5 +166,9 @@ describe("fixHintFor", () => {
     expect(fixHintFor(["web", "shop"], connections)).toBe("mixed");
     expect(fixHintFor(["both"], connections)).toBe("mixed");
     expect(fixHintFor(["unknown"], connections)).toBeNull();
+    const manual = repoConnections([
+      { name: "My stack", githubInstallationId: null, source: "manual" },
+    ]);
+    expect(fixHintFor(["My stack"], manual)).toBe("manual");
   });
 });

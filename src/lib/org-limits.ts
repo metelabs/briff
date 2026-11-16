@@ -43,6 +43,10 @@ export function repoLimitMessage(limits: OrgLimits): string {
   return limitMessage("Repository", limits.repoLimit, limits);
 }
 
+export function stackItemLimitMessage(limit: number, limits: OrgLimits): string {
+  return limitMessage("Stack item", limit, limits);
+}
+
 export async function createLimitedStream(
   db: PrismaClient,
   orgId: string,

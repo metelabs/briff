@@ -5,7 +5,8 @@ Briff learns your stack from scans. Every scanner sends the same thing: per repo
 files, Dockerfiles and compose files. No source code and no file contents leave the repo.
 
 Open **Connect repos** in the top bar (on your first sign-in, the onboarding page shows the same
-steps). It has three tabs.
+steps). It has three tabs. Without repo access or a scanner, [pick your stack](pick-your-stack.md)
+by hand instead.
 
 | Way            | Best for                                       | Setup                                          |
 | -------------- | ---------------------------------------------- | ---------------------------------------------- |

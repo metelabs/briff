@@ -43,6 +43,8 @@ export interface HomeStream {
   id: string;
   name: string;
   repoCount: number;
+  /** False: the stream sends security alerts only, no Monday bulletin. */
+  weeklyBulletin: boolean;
   latest: {
     id: string;
     weekStart: Date;
@@ -65,7 +67,7 @@ export async function loadHome(orgId: string, scope: StreamScope, now: Date) {
   const [streams, bulletins, alertRows, repos, { drift }, activity] = await Promise.all([
     db.bulletinStream.findMany({
       orderBy: { createdAt: "asc" },
-      select: { id: true, name: true, _count: { select: { repos: true } } },
+      select: { id: true, name: true, weeklyBulletin: true, _count: { select: { repos: true } } },
     }),
     // At most one bulletin per stream and week, so the 12 weeks stay small.
     db.bulletin.findMany({
@@ -155,6 +157,7 @@ export async function loadHome(orgId: string, scope: StreamScope, now: Date) {
       id: s.id,
       name: s.name,
       repoCount: s._count.repos,
+      weeklyBulletin: s.weeklyBulletin,
       latest: last && {
         id: last.id,
         weekStart: last.weekStart,

@@ -89,7 +89,10 @@ export function ConnectRepos({
   github,
   className,
   onNavigate,
+  pickHref = "/stack/new",
 }: {
+  /** The third path: pick a stack by hand instead of connecting repos. */
+  pickHref?: string;
   stream: { id: string; name: string } | null;
   apiUrl: string;
   status: ScanStatus;
@@ -192,6 +195,22 @@ export function ConnectRepos({
             </OStep>
           </>
         )}
+      </Card>
+      <Card className="rise mt-3 flex flex-wrap items-center justify-between gap-3 p-[18px] [--i:5]">
+        <div className="min-w-0 flex-[1_1_300px]">
+          <h4 className="text-[15px] font-semibold">Or pick your stack</h4>
+          <p className="text-fg-muted mt-1 text-[13.5px]">
+            No repo access and no scanner: choose your runtimes, packages and tools from a list,
+            with versions if you know them.
+          </p>
+        </div>
+        <Link
+          href={pickHref}
+          onClick={onNavigate}
+          className={buttonVariants({ variant: "secondary" })}
+        >
+          Pick your stack
+        </Link>
       </Card>
     </div>
   );

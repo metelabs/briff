@@ -26,6 +26,15 @@
           ]
         },
         {
+          "slug": "getting-started/pick-your-stack",
+          "title": "Pick your stack",
+          "parts": [
+            {
+              "file": "docs/getting-started/pick-your-stack.md"
+            }
+          ]
+        },
+        {
           "slug": "getting-started/first-bulletin",
           "title": "Your first bulletin",
           "parts": [

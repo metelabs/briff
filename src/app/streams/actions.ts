@@ -7,7 +7,14 @@ import { z } from "zod";
 import { requireOrgContext } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { withOrg } from "@/lib/db/with-org";
-import { deleteStream, freeSlug, setStreamRepos, STREAM_NAME_MAX } from "@/lib/streams";
+import {
+  deleteStream,
+  freeSlug,
+  isValidCadence,
+  setStreamRepos,
+  STREAM_NAME_MAX,
+  type StreamCadence,
+} from "@/lib/streams";
 
 export interface StreamFormState {
   ok: boolean;
@@ -77,6 +84,28 @@ export async function saveStreamReposAction(
   revalidateStreams();
   const n = repoIds.data.length;
   return { ok: true, message: `Saved, ${n} ${n === 1 ? "repo" : "repos"}.`, repoIds: repoIds.data };
+}
+
+/** The Monday bulletin and the same-day security alerts; one of them stays on. */
+export async function setStreamCadenceAction(
+  streamId: string,
+  cadence: StreamCadence
+): Promise<{ ok: boolean; message: string }> {
+  const ctx = await requireOrgContext();
+  const id = idSchema.safeParse(streamId);
+  const parsed = z
+    .object({ weeklyBulletin: z.boolean(), securityAlerts: z.boolean() })
+    .safeParse(cadence);
+  if (!id.success || !parsed.success) return { ok: false, message: "Invalid input." };
+  if (!isValidCadence(parsed.data))
+    return { ok: false, message: "Keep the bulletin or the security alerts on." };
+  const res = await withOrg(getDb(), ctx.orgId).bulletinStream.updateMany({
+    where: { id: id.data },
+    data: parsed.data,
+  });
+  if (res.count !== 1) return { ok: false, message: "Unknown stream." };
+  revalidateStreams();
+  return { ok: true, message: "Saved." };
 }
 
 /** Deleting a stream keeps its bulletins; they lose the stream (streamId set to null). */

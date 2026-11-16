@@ -46,6 +46,12 @@ export function eventSentence(event: OrgEventFacts): string {
       return `${actor} removed ${targetLabel(event.detail)}`;
     case "audit_exported":
       return `${actor} exported the audit log`;
+    case "stack_created":
+      return `${actor} created the stack ${event.detail ?? ""}`.trimEnd();
+    case "stack_updated":
+      return `${actor} updated the stack ${event.detail ?? ""}`.trimEnd();
+    case "stack_deleted":
+      return `${actor} deleted the stack ${event.detail ?? ""}`.trimEnd();
   }
 }
 
@@ -64,6 +70,9 @@ export const EVENT_TYPE_NAMES: Readonly<Record<OrgEventType, string>> = {
   delivery_target_disabled: "delivery_target.disabled",
   delivery_target_deleted: "delivery_target.deleted",
   audit_exported: "audit.exported",
+  stack_created: "stack.created",
+  stack_updated: "stack.updated",
+  stack_deleted: "stack.deleted",
 };
 
 /** `delivery_target.*` detail: "<kind>:<masked url>", e.g. "slack:hooks.slack.com …a1B2". */

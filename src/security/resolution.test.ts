@@ -131,3 +131,14 @@ describe("planAlertResolution", () => {
     });
   });
 });
+
+describe("planAlertResolution on a manual stack", () => {
+  const pypi = dep({ packageId: "p-django", ecosystem: "PyPI", name: "django", version: "5.0.0" });
+
+  it("resolves a removed package even when no package of its ecosystem is left", () => {
+    // A complete scan without any npm row could be a lockfile that failed to parse: kept open.
+    expect(planAlertResolution([alert()], before, true, [pypi]).resolve).toEqual([]);
+    // The user's own list says it is gone.
+    expect(planAlertResolution([alert()], before, true, [pypi], true).resolve).toEqual(["a1"]);
+  });
+});

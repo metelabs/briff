@@ -1,6 +1,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { mapLimit } from "@/lib/concurrency";
 import { withOrg } from "@/lib/db/with-org";
+import { SECURITY_ALERT_REPOS } from "@/lib/streams";
 import { markAlertsDelivered } from "@/lib/delivery-targets/deliver";
 import { renderSecurityAlertEmail, type FirstScanSummary } from "@/lib/email/alert-email";
 import { sendMail, smtpConfig } from "@/lib/email/mailer";
@@ -345,6 +346,7 @@ export async function securityScan({
     alertsDelivered: 0,
     targetsQueued: 0,
     alertsHeld: 0,
+    alertsSuppressed: 0,
     alertsReopened: 0,
     alertsResolved: 0,
     deliveryLocked: 0,
@@ -647,9 +649,25 @@ export async function securityScan({
             }
           }
         }
+        // Repos whose streams all turned security alerts off: their alerts are kept for the
+        // Alerts page and the bulletin, marked delivered so turning alerts on later does not
+        // send a backlog of old ones.
+        const alerting = new Set(
+          (await scoped.repo.findMany({ where: SECURITY_ALERT_REPOS, select: { id: true } })).map(
+            (r) => r.id
+          )
+        );
+        const muted = pending.filter((a) => a.repo.included && !alerting.has(a.repoId));
+        if (muted.length > 0) {
+          const res = await scoped.alert.updateMany({
+            where: { id: { in: muted.map((a) => a.id) }, deliveredAt: null },
+            data: { deliveredAt: new Date() },
+          });
+          counts.alertsSuppressed += res.count;
+        }
         // A pending alert whose repo no longer has a vulnerable version installed is stale.
         const live = pending.filter(
-          (a) => a.repo.included && atRisk.has(alertKey(a.advisoryId, a.repoId))
+          (a) => alerting.has(a.repoId) && atRisk.has(alertKey(a.advisoryId, a.repoId))
         );
         const { urgent, backlog, held } = splitPending(live);
         counts.alertsHeld += held;

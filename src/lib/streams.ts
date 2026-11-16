@@ -114,24 +114,33 @@ export async function setRepoInStream(
   repoId: string,
   member: boolean
 ): Promise<boolean> {
-  return db.$transaction(async (tx) => {
-    const stream = await tx.bulletinStream.findFirst({
-      where: { id: streamId },
-      select: { id: true },
-    });
-    if (!stream) return false;
-    await lockRepos(tx, [repoId]);
-    const repo = await tx.repo.findFirst({ where: { id: repoId }, select: { id: true } });
-    if (!repo) return false;
-    if (member)
-      await tx.streamRepo.createMany({
-        data: [{ orgId, streamId, repoId }],
-        skipDuplicates: true,
-      });
-    else await tx.streamRepo.deleteMany({ where: { streamId, repoId } });
-    await syncRepoInclusion(tx, [repoId]);
-    return true;
+  return db.$transaction((tx) => setRepoInStreamTx(tx, orgId, streamId, repoId, member));
+}
+
+/** setRepoInStream inside the caller's transaction (a manual stack's save). */
+export async function setRepoInStreamTx(
+  tx: OrgTx,
+  orgId: string,
+  streamId: string,
+  repoId: string,
+  member: boolean
+): Promise<boolean> {
+  const stream = await tx.bulletinStream.findFirst({
+    where: { id: streamId },
+    select: { id: true },
   });
+  if (!stream) return false;
+  await lockRepos(tx, [repoId]);
+  const repo = await tx.repo.findFirst({ where: { id: repoId }, select: { id: true } });
+  if (!repo) return false;
+  if (member)
+    await tx.streamRepo.createMany({
+      data: [{ orgId, streamId, repoId }],
+      skipDuplicates: true,
+    });
+  else await tx.streamRepo.deleteMany({ where: { streamId, repoId } });
+  await syncRepoInclusion(tx, [repoId]);
+  return true;
 }
 
 /** Deletes a stream; its bulletins stay (streamId becomes null) and its repos are recounted. */
@@ -161,3 +170,44 @@ export async function ensureDefaultStream(db: OrgTx, orgId: string): Promise<voi
   });
   if (!existing) await db.bulletinStream.create({ data: { orgId, ...DEFAULT_STREAM } });
 }
+
+// --- Cadence -----------------------------------------------------------------------------------
+// A stream sends its Monday bulletin when `weeklyBulletin` is on. Same-day security alerts
+// (security-scan emails, the runtime urgent pass, triage's urgent email) go to a repo only when
+// at least one of its streams has `securityAlerts` on; delivery targets follow the same email.
+
+export interface StreamCadence {
+  weeklyBulletin: boolean;
+  securityAlerts: boolean;
+}
+
+export type CadenceChoice = "weekly" | "security" | "both";
+
+export function cadenceOf(choice: CadenceChoice): StreamCadence {
+  return { weeklyBulletin: choice !== "security", securityAlerts: choice !== "weekly" };
+}
+
+/** At least one of the two stays on. */
+export function isValidCadence(c: StreamCadence): boolean {
+  return c.weeklyBulletin || c.securityAlerts;
+}
+
+/** Whether a repo gets same-day security alerts, from the cadence of the streams it is in. */
+export function repoGetsSecurityAlerts(streams: readonly Pick<StreamCadence, "securityAlerts">[]) {
+  return streams.some((s) => s.securityAlerts);
+}
+
+/** Included repos whose every stream has security alerts off (the complement of the next one). */
+export const MUTED_ALERT_REPOS = {
+  included: true,
+  streams: { some: {}, none: { stream: { securityAlerts: true } } },
+};
+
+/**
+ * Prisma filter for included repos that get same-day security alerts. `included` follows
+ * stream membership, so a repo with no stream row (written before streams) keeps its alerts.
+ */
+export const SECURITY_ALERT_REPOS = {
+  included: true,
+  OR: [{ streams: { none: {} } }, { streams: { some: { stream: { securityAlerts: true } } } }],
+};

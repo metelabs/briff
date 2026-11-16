@@ -20,6 +20,7 @@ import {
   deleteStreamAction,
   renameStreamAction,
   saveStreamReposAction,
+  setStreamCadenceAction,
   type StreamFormState,
 } from "./actions";
 
@@ -28,6 +29,8 @@ const INITIAL: StreamFormState = { ok: true, message: null };
 export interface StreamSummary {
   id: string;
   name: string;
+  weeklyBulletin: boolean;
+  securityAlerts: boolean;
   memberIds: string[];
   /** "W43 · 3 attention" for the latest bulletin; null before the first one. */
   last: string | null;
@@ -75,6 +78,17 @@ export function NewStreamButton() {
   );
 }
 
+function sendsLine(s: StreamSummary, recipients: string): string {
+  if (s.memberIds.length === 0) return "Nothing until it has repos";
+  if (!recipients) return "Nobody: no member has a verified email";
+  const what = s.weeklyBulletin
+    ? s.securityAlerts
+      ? "Monday 04:00 UTC and same-day security alerts"
+      : "Monday 04:00 UTC only, no same-day alerts"
+    : "Same-day security alerts only, no Monday bulletin";
+  return `${what} to ${recipients}`;
+}
+
 export function StreamsEditor({
   streams,
   repos,
@@ -119,13 +133,7 @@ export function StreamsEditor({
               <dt className="text-fg-muted">Repos</dt>
               <dd>{s.memberIds.length > 0 ? plural(s.memberIds.length, "repo") : "none yet"}</dd>
               <dt className="text-fg-muted">Sends</dt>
-              <dd className="min-w-0 [overflow-wrap:anywhere]">
-                {s.memberIds.length === 0
-                  ? "Nothing until it has repos"
-                  : recipients
-                    ? `Monday 04:00 UTC to ${recipients}`
-                    : "Nobody: no member has a verified email"}
-              </dd>
+              <dd className="min-w-0 [overflow-wrap:anywhere]">{sendsLine(s, recipients)}</dd>
               {s.last && (
                 <>
                   <dt className="text-fg-muted">Last</dt>
@@ -245,6 +253,56 @@ function StreamRepos({
   );
 }
 
+function StreamCadence({ stream }: { stream: StreamSummary }) {
+  const toast = useToast();
+  const [cadence, setCadence] = useState({
+    weeklyBulletin: stream.weeklyBulletin,
+    securityAlerts: stream.securityAlerts,
+  });
+  const [saving, startSave] = useTransition();
+  const change = (key: keyof typeof cadence, on: boolean) => {
+    const next = { ...cadence, [key]: on };
+    if (!next.weeklyBulletin && !next.securityAlerts) {
+      toast("Keep the bulletin or the security alerts on.", "info");
+      return;
+    }
+    const before = cadence;
+    setCadence(next);
+    startSave(async () => {
+      const res = await setStreamCadenceAction(stream.id, next);
+      if (!res.ok) {
+        setCadence(before);
+        toast(res.message, "info");
+      }
+    });
+  };
+  const option = (key: keyof typeof cadence, title: string, help: string) => (
+    <label className="flex cursor-pointer items-start gap-2.5">
+      <Checkbox
+        className="mt-0.5"
+        checked={cadence[key]}
+        disabled={saving}
+        onCheckedChange={(checked) => change(key, checked)}
+      />
+      <span className="grid gap-0.5">
+        <span className="text-[13.5px] font-medium">{title}</span>
+        <span className="text-fg-muted text-[12.5px]">{help}</span>
+      </span>
+    </label>
+  );
+  return (
+    <fieldset className="grid gap-2.5">
+      <legend className="mb-2 text-[13px] font-medium">What this stream sends</legend>
+      {option("weeklyBulletin", "Weekly bulletin", "Every Monday 04:00 UTC.")}
+      {option(
+        "securityAlerts",
+        "Security alerts",
+        "Same day, for critical and high advisories and runtime security releases."
+      )}
+    </fieldset>
+  );
+}
+
 function StreamSettings({ stream }: { stream: StreamSummary }) {
   const [state, action, renaming] = useActionState(renameStreamAction, INITIAL);
   const [deleting, startDelete] = useTransition();
@@ -253,6 +311,7 @@ function StreamSettings({ stream }: { stream: StreamSummary }) {
   const shownName = state.name ?? stream.name;
   return (
     <div className="border-line grid gap-4 border-t px-[18px] py-4">
+      <StreamCadence key={`${stream.weeklyBulletin}:${stream.securityAlerts}`} stream={stream} />
       <form action={action} className="grid gap-1.5">
         <input type="hidden" name="streamId" value={stream.id} />
         <Label htmlFor={`name-${stream.id}`}>Name (shown in the email subject)</Label>
