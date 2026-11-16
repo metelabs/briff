@@ -6,11 +6,15 @@ import { isConstraintRow } from "@scan/runtimes";
 
 export const NEW_REPO_DAYS = 7;
 
-/** How a repo reaches Briff: the local scanner, the GitHub App, or a GitHub upload (the Action). */
+/**
+ * How a repo reaches Briff: the local scanner, the GitHub App, a GitHub upload (the Action),
+ * or picked by hand (a manual stack).
+ */
 export function connectionLabel(repo: {
-  source: "local" | "github";
+  source: "local" | "github" | "manual";
   githubInstallationId: string | null;
 }): string {
+  if (repo.source === "manual") return "Picked by hand";
   return repo.source === "local"
     ? "Local scanner"
     : repo.githubInstallationId

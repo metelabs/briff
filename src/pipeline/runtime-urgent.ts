@@ -1,5 +1,6 @@
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
+import { SECURITY_ALERT_REPOS } from "@/lib/streams";
 import { getEnv } from "@/lib/env";
 import { renderUrgentEmail } from "@/lib/email/alert-email";
 import { sendMail, smtpConfig } from "@/lib/email/mailer";
@@ -165,8 +166,9 @@ async function deliverRuntimeUrgent(
     const pending = selectRuntimeWork(stored, now);
     if (pending.length === 0) continue;
 
+    // Only repos in a stream with security alerts on; the others' matches are handled silently.
     const repos = await scoped.repo.findMany({
-      where: { included: true },
+      where: SECURITY_ALERT_REPOS,
       select: { id: true, name: true },
     });
     const includedRepos = new Map(repos.map((r) => [r.id, r.name]));

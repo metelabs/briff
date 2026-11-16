@@ -635,6 +635,8 @@ export async function storeBulletin(
 
 async function streamsOf(db: PrismaClient, orgId: string): Promise<StreamRef[]> {
   const rows = await withOrg(db, orgId).bulletinStream.findMany({
+    // Streams set to security alerts only get no Monday bulletin.
+    where: { weeklyBulletin: true },
     orderBy: { createdAt: "asc" },
     select: { id: true, name: true, repos: { select: { repoId: true } } },
   });

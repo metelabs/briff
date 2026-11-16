@@ -40,6 +40,9 @@ export interface RuntimeRow {
 
 const ACTION_MAX = 300;
 
+/** RepoRuntime.source of a runtime picked on a manual stack (src/lib/manual-stack.ts). */
+export const MANUAL_RUNTIME_SOURCE = "manual";
+
 /** Fallback image name for rows scanned before the repository was recorded: the first IMAGE_RUNTIMES entry. */
 export function imageFor(runtime: string): string | null {
   const entry = Object.entries(IMAGE_RUNTIMES).find(([, id]) => id === runtime);
@@ -223,6 +226,9 @@ export function repoAction(
         return `${repo}: rebuild to pick up ${name} ${status.version}; the ${ref(row.version)} tag already points to it`;
       }
       const raw = row.version.trim();
+      // A manual stack names the release line only; there is no file to edit.
+      if (row.source === MANUAL_RUNTIME_SOURCE)
+        return `${repo}: update ${name} to ${status.version} or later`;
       if (/^v?\d/.test(raw)) return `${repo}: set ${runtime} ${status.version} in ${row.source}`;
       return `${repo}: run ${runtime} ${status.version} or later (${row.source} allows ${raw})`;
     }
@@ -238,6 +244,8 @@ export function repoAction(
       if (row.unresolved) {
         return `${repo}: ${runtime} version unknown (${unresolvedReason(row)}); check which version runs; fixed in ${fixed.join(", ")}`;
       }
+      if (row.source === MANUAL_RUNTIME_SOURCE)
+        return `${repo}: check which ${name} version runs (no version given); fixed in ${fixed.join(", ")}`;
       return `${repo}: check which ${name} version runs (${row.source}: ${row.version}); fixed in ${fixed.join(", ")}`;
     case "unaffected":
       return "";

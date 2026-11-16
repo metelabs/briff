@@ -2,7 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import type { OrgDb } from "@/lib/db/with-org";
 
-import { setRepoInStream, setStreamRepos, slugify, uniqueSlug } from "./streams";
+import {
+  cadenceOf,
+  isValidCadence,
+  repoGetsSecurityAlerts,
+  setRepoInStream,
+  setStreamRepos,
+  slugify,
+  uniqueSlug,
+} from "./streams";
 
 describe("stream slugs", () => {
   it("makes URL-safe slugs, also from Turkish names", () => {
@@ -83,5 +91,23 @@ describe("membership writes", () => {
     const { db, calls } = fakeDb();
     expect(await setStreamRepos(db, "o1", "s1", [])).toBe(true);
     expect(calls.at(-1)?.[2]).toMatchObject({ data: { included: false } });
+  });
+});
+
+describe("stream cadence", () => {
+  it("a repo gets security alerts when any of its streams has them on", () => {
+    const weeklyOnly = { securityAlerts: false };
+    const both = { securityAlerts: true };
+    expect(repoGetsSecurityAlerts([weeklyOnly, both])).toBe(true);
+    expect(repoGetsSecurityAlerts([weeklyOnly, weeklyOnly])).toBe(false);
+    expect(repoGetsSecurityAlerts([])).toBe(false);
+  });
+
+  it("maps the onboarding choice and keeps one of the two on", () => {
+    expect(cadenceOf("both")).toEqual({ weeklyBulletin: true, securityAlerts: true });
+    expect(cadenceOf("weekly")).toEqual({ weeklyBulletin: true, securityAlerts: false });
+    expect(cadenceOf("security")).toEqual({ weeklyBulletin: false, securityAlerts: true });
+    expect(isValidCadence({ weeklyBulletin: false, securityAlerts: false })).toBe(false);
+    expect(isValidCadence(cadenceOf("security"))).toBe(true);
   });
 });

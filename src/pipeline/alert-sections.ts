@@ -55,7 +55,7 @@ export function recentlyResolved<T extends Pick<ResolvedAlertRow, "resolvedAt">>
 }
 
 /** Alert.resolvedBy; null on rows resolved before it was recorded. */
-export type ResolvedCause = "briff_scan" | "github_app" | "security_scan" | null;
+export type ResolvedCause = "briff_scan" | "github_app" | "security_scan" | "manual_stack" | null;
 
 export function resolvedCauseLabel(cause: ResolvedCause): string {
   switch (cause) {
@@ -65,6 +65,8 @@ export function resolvedCauseLabel(cause: ResolvedCause): string {
       return "GitHub App scan";
     case "security_scan":
       return "security-scan re-check";
+    case "manual_stack":
+      return "stack edit";
     default:
       return "a later scan";
   }

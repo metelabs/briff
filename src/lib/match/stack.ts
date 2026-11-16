@@ -3,6 +3,9 @@ import "server-only";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { withOrg } from "@/lib/db/with-org";
 import { serviceByKey, serviceForPackage } from "@/lib/services";
+import { GITHUB_ECOSYSTEM } from "@/lib/stack-catalog";
+import { advisoriesUrl } from "@/sources/github-advisories";
+import { parseGithubRepo } from "@/sources/github-releases";
 
 import {
   runtimesOf,
@@ -71,11 +74,14 @@ export async function loadOrgStacks(db: PrismaClient, orgIds?: string[]): Promis
           repoIds: new Set([dep.repoId]),
           serviceKey,
         });
-        if (pkg.releaseFeedUrl) {
-          packagesByFeed.set(pkg.releaseFeedUrl, [
-            ...(packagesByFeed.get(pkg.releaseFeedUrl) ?? []),
-            key,
-          ]);
+        // A tool picked on a manual stack is matched by its repo's releases and advisories.
+        const ref = pkg.ecosystem === GITHUB_ECOSYSTEM ? parseGithubRepo(pkg.name) : null;
+        const feeds = [
+          ...(pkg.releaseFeedUrl ? [pkg.releaseFeedUrl] : []),
+          ...(ref ? [advisoriesUrl(ref.owner, ref.repo)] : []),
+        ];
+        for (const feed of feeds) {
+          packagesByFeed.set(feed, [...(packagesByFeed.get(feed) ?? []), key]);
         }
       }
       // Services and traits only follow direct usage; a transitive Sentry
