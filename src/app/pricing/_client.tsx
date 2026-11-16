@@ -6,7 +6,14 @@ import { useState, type CSSProperties } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/segmented";
-import { limitLabel, monthsFree, PRICED_PLANS, usd, type Plan } from "@/lib/plans";
+import {
+  limitLabel,
+  monthsFree,
+  PLAN_STACK_ITEMS,
+  PRICED_PLANS,
+  usd,
+  type Plan,
+} from "@/lib/plans";
 import { cn } from "@/lib/utils";
 
 type Period = "monthly" | "yearly";
@@ -80,6 +87,7 @@ export function PricingCards({ billing = false }: { billing?: boolean }) {
                 limitLabel(plan.repos, "repo"),
                 limitLabel(plan.streams, "stream"),
                 limitLabel(plan.members, "member"),
+                `${limitLabel(PLAN_STACK_ITEMS[plan.id], "item")} picked by hand`,
               ].map((line) => (
                 <li key={line} className="flex items-center gap-2">
                   <Check aria-hidden className="text-ok size-4 shrink-0" />

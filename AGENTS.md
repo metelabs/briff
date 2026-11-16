@@ -54,7 +54,9 @@ src/lib/jobs/            queue: enqueue (idempotent), claim (SKIP LOCKED), backo
 src/lib/scan/            /api/scan schema + ingest, scan tokens (tokens.ts pure, token-store.ts DB)
 src/lib/rss/, platforms/ ported from an earlier feed aggregator (SSRF-safe fetch, RSS/Atom parser, HN/GH/PH)
 src/lib/match/           deterministic item -> org matcher + stack loader
-src/lib/streams.ts       bulletin streams: slugs, membership writes, Repo.included sync
+src/lib/streams.ts       bulletin streams: slugs, membership writes, Repo.included sync, cadence (SECURITY_ALERT_REPOS)
+src/lib/stack-catalog.ts manual stacks: the picker's catalog (pure); manual-stack.ts rows (pure), manual-stack-store.ts
+                         save/delete, stack-lookup.ts typeahead, stack-icons.ts simple-icons (server only), logo-color.ts
 src/lib/plans.ts         plans (PLANS: prices, limits; PLAN_ALLOWANCES: AI budget, scan uploads a day, GitHub installations) and limitsFor;
                          checks in org-limits.ts, usage in org-capacity.ts
 src/lib/usage.ts         OrgUsage rollup (per org and UTC day: LLM tokens + estimated cost, scan uploads); budget maths
@@ -339,6 +341,19 @@ compose.yaml             self-hosting stack (web, worker, postgres; .env.selfhos
   recounts `included` in one transaction after locking the repo rows. Deleting a
   stream keeps its bulletins (`Bulletin.streamId` is set to null). New orgs get a "Weekly" stream
   (`src/lib/org.ts`, written through `withOrg` in the same transaction as the org).
+  Cadence: `BulletinStream.weeklyBulletin` (weekly-bulletin skips the stream) and `securityAlerts`
+  (one stays on). Same-day security email (security-scan, runtime urgent pass, triage urgent) goes
+  only to repos matching `SECURITY_ALERT_REPOS`: included and in a stream with alerts on (or in no
+  stream row at all); pending alerts of muted repos are marked delivered without an email.
+- Manual stacks (docs/getting-started/pick-your-stack.md): a `Repo` with `source = manual`, picked on
+  `/stack/new` and `/stack/<id>/edit`, stored through `writeRepoSnapshot` (the scan ingest's writer)
+  as Dependency / RepoRuntime rows (runtime `source = "manual"`). No version → `*` requirement row
+  (`constraint` + `unresolved`: matched, never compared or sent to OSV); an exact version is a pin.
+  Tools are Packages of the non-OSV ecosystem `GitHub` (`owner/repo`); refresh-packages gives them a
+  releases feed and a `github_advisories` source, and `loadOrgStacks` maps both URLs to the
+  package. Owners only, under the limits lock, with `PLAN_STACK_ITEMS` across all manual stacks and
+  `stack.*` OrgEvents. Icons: simple-icons imported by name in `src/lib/stack-icons.ts` (server),
+  handed to the client picker as paths; never fetched from the web.
 
 ## Run locally
 

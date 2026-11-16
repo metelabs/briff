@@ -92,6 +92,7 @@ export const INCLUDED_FEATURES: readonly string[] = [
   "Same-day security alerts",
   "Re-check on demand",
   "Stack drift and end-of-life dates",
+  "Pick a stack by hand",
 ];
 
 export function isPlanId(value: unknown): value is PlanId {

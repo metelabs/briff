@@ -331,7 +331,7 @@ const STEPS = [
   {
     art: ConnectArt,
     title: "Connect",
-    body: "Install the GitHub App, or run briff-scan in CI or on your laptop.",
+    body: "Install the GitHub App, run briff-scan in CI or on your laptop, or pick your stack by hand.",
   },
   {
     art: NightlyArt,
